@@ -130,7 +130,9 @@ const ProductCardProviderContext = React.memo(({ product }) => {
             display: '-webkit-box',
             WebkitLineClamp: { xs: 8, sm: 7, md: 6, lg: 8 },
             WebkitBoxOrient: 'vertical',
-            textAlign: 'justify',
+            // Changed from 'justify' to 'left' to avoid uneven word spacing
+            // when text is narrow; 'start' can be used for RTL-awareness.
+            textAlign: 'left',
             mb: 0.5,
             color: 'text.primary',
             fontWeight: 400,

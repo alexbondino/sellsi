@@ -25,9 +25,9 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
     if (!customMsg.trim() || !selectedOption) return;
     // WhatsApp soporta saltos de línea con \n (que luego encodeURIComponent convierte a %0A)
     const title = selectedOption === 1 ? '*Atención comercial*' : '*Soporte técnico y sugerencias*';
-    const userInfo = userProfile 
-      ? `${userProfile.user_nm} - ${(userProfile.user_id ? userProfile.user_id.substring(0,8) : 'N/A')}`
-      : 'Usuario - ID no disponible';
+    const userInfo = userProfile
+      ? `${userProfile.user_nm} - ${userProfile.email || 'Email no disponible'}`
+      : 'Usuario - Email no disponible';
     // Usar salto de línea real (\n), encodeURIComponent lo convertirá a %0A
     const fullMessage = `${title}:\n${userInfo}\n${customMsg}`;
     const url = `https://wa.me/56963109664?text=${encodeURIComponent(fullMessage)}`;

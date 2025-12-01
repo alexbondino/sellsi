@@ -47,7 +47,7 @@ const globalCache = {
             isStale: this.isStale
           });
         } else {
-          console.log('⚠️ [useOptimizedUserShippingRegion] Cache en sessionStorage expirado (>30min)');
+          
           sessionStorage.removeItem('user_shipping_region_cache');
         }
       }
@@ -119,7 +119,7 @@ const fetchUserRegionCentralized = async () => {
     globalCache.persist(); // Persistir cambios
   } else if (!globalCache.cachedUserId && currentUserId) {
     // Si no hay cachedUserId pero hay currentUserId, actualizar sin borrar
-    console.log('🔧 [useOptimizedUserShippingRegion] Sincronizando cachedUserId sin borrar región');
+    
     globalCache.cachedUserId = currentUserId;
     if (globalCache.userRegion) {
       globalCache.persist(); // Persistir con el userId actualizado
@@ -155,7 +155,7 @@ const fetchUserRegionCentralized = async () => {
     // ⚡ OPTIMISTIC UPDATE: Cache expirado pero válido (< 30min)
     // Retornar el valor viejo MIENTRAS refrescamos en background
     if (cacheAge < globalCache.SESSION_CACHE_DURATION) {
-      console.log('⚡ [useOptimizedUserShippingRegion] Cache stale, usando valor anterior mientras se refresca');
+      
       globalCache.isStale = true;
       notifySubscribers(); // Notificar que tenemos valor stale
       
@@ -171,7 +171,7 @@ const fetchUserRegionCentralized = async () => {
             globalCache.isStale = false;
             globalCache.persist();
             notifySubscribers();
-            console.log('✅ [useOptimizedUserShippingRegion] Cache refrescado en background');
+            
           }
         } catch (err) {
           console.error('⚠️ [useOptimizedUserShippingRegion] Error al refrescar en background:', err);
@@ -185,7 +185,7 @@ const fetchUserRegionCentralized = async () => {
     }
     
     // Cache muy viejo (> 30min): forzar refresh bloqueante
-    console.log('⚠️ [useOptimizedUserShippingRegion] Cache muy viejo (>30min), refresh bloqueante');
+    
   }
 
   // Si no hay usuario autenticado -> limpiar y salir
@@ -241,7 +241,7 @@ const fetchUserRegionCentralized = async () => {
  */
 export const useOptimizedUserShippingRegion = () => {
   const [userRegion, setUserRegion] = useState(() => {
-    console.log('🔧 [useOptimizedUserShippingRegion] Hook montándose, globalCache.userRegion:', globalCache.userRegion);
+    
     return globalCache.userRegion;
   });
   const [isLoadingUserRegion, setIsLoadingUserRegion] = useState(globalCache.isLoading);
@@ -305,22 +305,22 @@ export const useOptimizedUserShippingRegion = () => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         // Página restaurada desde background
-        console.log('👁️ [useOptimizedUserShippingRegion] Página restaurada, verificando cache...');
+        
         
         // Si el cache está stale o expirado, refrescar suavemente
         if (globalCache.timestamp) {
           const cacheAge = Date.now() - globalCache.timestamp;
           
           if (cacheAge > globalCache.CACHE_DURATION) {
-            console.log('🔄 [useOptimizedUserShippingRegion] Cache expirado tras restaurar, refrescando...');
+            
             // El fetch ya maneja optimistic updates, no perderemos el valor
             fetchUserRegionCentralized();
           } else {
-            console.log('✅ [useOptimizedUserShippingRegion] Cache aún válido tras restaurar');
+            
           }
         } else if (!globalCache.isLoading && !globalCache.userRegion) {
           // Si no hay cache y no está cargando, inicializar
-          console.log('🔄 [useOptimizedUserShippingRegion] Sin cache tras restaurar, inicializando...');
+          
           fetchUserRegionCentralized();
         }
       }

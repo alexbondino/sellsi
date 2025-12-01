@@ -122,14 +122,6 @@ export const initializeCartWithUser = async (userId, set, get) => {
 
     // Si backend vacío y hay items locales => migración legítima (primer sync)
     if (localItems.length > 0) {
-      // DEBUG: ver qué se migrará
-      try {
-        // eslint-disable-next-line no-console
-        console.log('[cartStore.backend] migrateLocalCart payload:', {
-          userId,
-          localItems,
-        });
-      } catch (e) {}
       // Filtrar locales que NO existan ya en backend (clave: product_id + offer_id)
       const backendKeySet = new Set(
         (backendCart.items || []).map(
@@ -161,15 +153,6 @@ export const initializeCartWithUser = async (userId, set, get) => {
         } catch (_) {}
       }
 
-      // DEBUG: registrar items devueltos por backend tras migración
-      try {
-        // eslint-disable-next-line no-console
-        console.log('[cartStore.backend] finalItems after init:', {
-          cartId: backendCart.cart_id,
-          finalItems,
-        });
-      } catch (e) {}
-
       set({
         items: finalItems || [],
         cartId: backendCart.cart_id,
@@ -180,15 +163,6 @@ export const initializeCartWithUser = async (userId, set, get) => {
       });
     } else {
       // Solo cargar el carrito del backend
-      // DEBUG: registrar items cargados desde backend cuando no hay migración
-      try {
-        // eslint-disable-next-line no-console
-        console.log('[cartStore.backend] initialize from backendCart:', {
-          cartId: backendCart.cart_id,
-          items: backendCart.items,
-        });
-      } catch (e) {}
-
       set({
         items: backendCart.items || [],
         cartId: backendCart.cart_id,
@@ -279,16 +253,6 @@ export const addItemWithBackend = async (
   try {
     set({ isSyncing: true });
 
-    // DEBUG: registrar payload enviado al backend
-    try {
-      // eslint-disable-next-line no-console
-      console.log('[cartStore.backend] addItemWithBackend payload:', {
-        cartId: state.cartId,
-        product,
-        quantity,
-      });
-    } catch (e) {}
-
     // Ensure we are using the correct cart_id for the authenticated user to satisfy RLS.
     let userIdForRequest = state.userId;
     // If supabase.auth.getUser is available in the environment, prefer it.
@@ -326,15 +290,6 @@ export const addItemWithBackend = async (
       { includeItems: false }
     );
     const cartIdToUse = backendCart?.cart_id || state.cartId;
-
-    try {
-      // eslint-disable-next-line no-console
-      console.log('[cartStore.backend] addItemWithBackend authUid vs cartId', {
-        authUid: userIdForRequest,
-        stateCartId: state.cartId,
-        resolvedCartId: cartIdToUse,
-      });
-    } catch (e) {}
 
     // Persist resolved cartId into state so future ops use it
     try {
@@ -411,6 +366,15 @@ export const addItemWithBackend = async (
       }
     }
 
+    // ✅ CRITICAL FIX: Asegurar que los campos de free_shipping del producto original
+    // se preserven incluso cuando enriched existe pero no los tiene
+    const freeShippingFields = {
+      free_shipping_enabled: product?.free_shipping_enabled ?? product?.freeShippingEnabled ?? false,
+      free_shipping_min_quantity: product?.free_shipping_min_quantity ?? product?.freeShippingMinQuantity ?? null,
+      freeShippingEnabled: product?.freeShippingEnabled ?? product?.free_shipping_enabled ?? false,
+      freeShippingMinQuantity: product?.freeShippingMinQuantity ?? product?.free_shipping_min_quantity ?? null,
+    };
+
     set(current => {
       const items = Array.isArray(current.items) ? [...current.items] : [];
       if (result) {
@@ -424,12 +388,19 @@ export const addItemWithBackend = async (
           items[idx] = {
             ...items[idx],
             ...(enriched || result),
+            ...freeShippingFields, // ✅ Siempre agregar campos de free_shipping
             quantity: enriched?.quantity || result.quantity,
           };
         } else if (enriched) {
-          items.unshift(enriched);
-        } else {
+          // ✅ Mergear enriched con los campos de free_shipping del producto original
           items.unshift({
+            ...enriched,
+            ...freeShippingFields,
+          });
+        } else {
+          // Fallback: usar datos del producto original + resultado del insert
+          items.unshift({
+            // Datos del resultado del insert
             id: result.cart_items_id,
             cart_items_id: result.cart_items_id,
             product_id: result.product_id,
@@ -438,6 +409,27 @@ export const addItemWithBackend = async (
             offered_price: result.offered_price,
             metadata: result.metadata || {},
             document_type: result.document_type || 'ninguno',
+            // Datos del producto original que se estaba agregando
+            name: product.name || product.nombre || product.productnm,
+            nombre: product.nombre || product.name || product.productnm,
+            price: product.price || product.precio,
+            precio: product.precio || product.price,
+            image: product.image || product.imagen,
+            imagen: product.imagen || product.image,
+            supplier: product.supplier || product.proveedor,
+            proveedor: product.proveedor || product.supplier,
+            supplier_id: product.supplier_id,
+            shippingRegions: product.shippingRegions || product.shipping_regions || product.delivery_regions || [],
+            delivery_regions: product.delivery_regions || product.shippingRegions || [],
+            price_tiers: product.price_tiers || product.priceTiers || [],
+            priceTiers: product.priceTiers || product.price_tiers || [],
+            stock: product.stock || product.maxStock,
+            maxStock: product.maxStock || product.stock,
+            // ✅ CRÍTICO: Campos de envío gratis
+            free_shipping_enabled: product.free_shipping_enabled ?? product.freeShippingEnabled ?? false,
+            free_shipping_min_quantity: product.free_shipping_min_quantity ?? product.freeShippingMinQuantity ?? null,
+            freeShippingEnabled: product.freeShippingEnabled ?? product.free_shipping_enabled ?? false,
+            freeShippingMinQuantity: product.freeShippingMinQuantity ?? product.free_shipping_min_quantity ?? null,
           });
         }
       }

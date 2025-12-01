@@ -18,6 +18,7 @@ import { Box, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Modal, MODAL_TYPES } from '../../feedback';
 import { useTransferInfoValidation } from '../../../hooks/profile/useTransferInfoValidation';
+import { useAuth } from '../../../../infrastructure/providers';
 
 /**
  * Hook personalizado para manejar la lógica del modal
@@ -26,6 +27,7 @@ export const useTransferInfoModal = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const navigate = useNavigate();
+  const { isBuyer } = useAuth();
   
   const { isComplete, isLoading, missingFieldLabels } = useTransferInfoValidation();
 
@@ -58,7 +60,9 @@ export const useTransferInfoModal = () => {
   const handleRegisterAccount = () => {
     setIsOpen(false);
     // Navegar con parámetros para resaltar campos
-    navigate('/supplier/profile?section=transfer&highlight=true');
+    // Detectar rol para usar la ruta correcta
+    const profilePath = isBuyer ? '/buyer/profile' : '/supplier/profile';
+    navigate(`${profilePath}?section=transfer&highlight=true`);
   };
 
   const handleClose = () => {

@@ -85,18 +85,6 @@ const OrderSummary = ({
       (isAdvancedShippingMode && shippingValidation && !shippingValidation.isCartCompatible)
     )
     
-    console.log('🔘 [OrderSummary] Button disabled check:', {
-      disabled,
-      reasons,
-      userRegion,
-      shippingValidation: {
-        userRegion: shippingValidation?.userRegion,
-        isLoading: shippingValidation?.isLoading,
-        isCartCompatible: shippingValidation?.isCartCompatible
-      },
-      isAdvancedShippingMode
-    });
-    
     return disabled
   }
   return (

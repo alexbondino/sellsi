@@ -3,6 +3,7 @@ import { Box, Typography } from '@mui/material';
 import { Modal, MODAL_TYPES } from '../../feedback';
 import { useNavigate } from 'react-router-dom';
 import { useShippingInfoValidation } from '../../../hooks/profile/useShippingInfoValidation';
+import { useAuth } from '../../../../infrastructure/providers';
 
 // Hook para controlar apertura del modal de shipping
 export const useShippingInfoModal = () => {
@@ -10,6 +11,7 @@ export const useShippingInfoModal = () => {
   // Reusamos unified shipping para saber si el usuario tiene región configurada
   const { isComplete, isLoading, missingFieldLabels, refresh } = useShippingInfoValidation();
   const navigate = useNavigate();
+  const { isBuyer } = useAuth();
 
   // Refs reactivas para leer estado actual dentro de timers
   const isLoadingRef = React.useRef(isLoading);
@@ -45,7 +47,10 @@ export const useShippingInfoModal = () => {
 
   const handleConfigureShipping = () => {
     setIsOpen(false);
-    navigate('/supplier/profile?section=shipping&highlight=true');
+    // Navegar al perfil con parámetros para resaltar campos de shipping
+    // Detectar rol para usar la ruta correcta
+    const profilePath = isBuyer ? '/buyer/profile' : '/supplier/profile';
+    navigate(`${profilePath}?section=shipping&highlight=true`);
   };
 
   const handleClose = () => setIsOpen(false);

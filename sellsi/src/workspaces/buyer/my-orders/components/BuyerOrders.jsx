@@ -1,4 +1,5 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { 
   Box, 
   Typography, 
@@ -11,37 +12,77 @@ import {
   Divider,
   Stack,
   Tooltip,
-  Button
+  Button,
+  IconButton
 } from '@mui/material';
 import './BuyerOrders.css';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { ThemeProvider, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
+import { supabase } from '../../../../services/supabase';
 import { useBuyerOrders } from '../hooks/useBuyerOrders';
-import { createSignedInvoiceUrl } from '../../../../services/storage/invoiceStorageService'; // legacy fallback
 import { CheckoutSummaryImage } from '../../../../components/UniversalProductImage';
 // Unificar formateo de fechas con TableRows (usa workspaces/marketplace/utils/formatters)
 import { formatDate as formatDateUnified } from '../../../../workspaces/marketplace';
 import ContactModal from '../../../../shared/components/modals/ContactModal';
+import ConfirmDialog from '../../../../shared/components/modals/ConfirmDialog';
 import BuyerOrdersSkeleton from '../../../../shared/components/display/skeletons/BuyerOrdersSkeleton';
+import InvoiceDownload from './InvoiceDownload';
+import OrdersPagination from './OrdersPagination';
+import { getStatusChips, normalizeOrderStatus } from '../utils/orderStatusUtils';
 
 const BuyerOrders = memo(function BuyerOrders() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   // ============================================================================
-  // HOOKS Y ESTADO
+  // AUTENTICACIÓN - Obtener buyer ID desde Supabase Auth
   // ============================================================================
-  // Obtener el buyer ID del localStorage (método temporal)
-  const buyerId = localStorage.getItem('user_id');
+  const [buyerId, setBuyerId] = React.useState(null);
+  const [authResolved, setAuthResolved] = React.useState(false);
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const resolveBuyerId = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const authUid = user?.id || null;
+        if (!isMounted) return;
+        setBuyerId(authUid);
+        setAuthResolved(true);
+      } catch (e) {
+        console.error('[BuyerOrders] Error obteniendo usuario Supabase:', e);
+        setBuyerId(null);
+        setAuthResolved(true);
+      }
+    };
+
+    resolveBuyerId();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+  
+  // ============================================================================
+  // ESTADO DEL COMPONENTE
+  // ============================================================================
+  
+  // State for delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   
   // Hook personalizado para manejar pedidos del comprador
   const {
     orders,
     loading,
     error,
+    hideExpiredOrder,
     getProductImage,
     getStatusDisplayName,
     getStatusColor,
@@ -90,6 +131,42 @@ const BuyerOrders = memo(function BuyerOrders() {
   }, []);
 
   // ============================================================================
+  // DELETE EXPIRED ORDER HANDLERS
+  // ============================================================================
+  const handleOpenDeleteDialog = React.useCallback((order) => {
+    setOrderToDelete(order);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleCloseDeleteDialog = React.useCallback(() => {
+    setDeleteDialogOpen(false);
+    setOrderToDelete(null);
+  }, []);
+
+  const handleConfirmDelete = React.useCallback(async () => {
+    if (!orderToDelete) return;
+    
+    setDeleteLoading(true);
+    try {
+      const orderId = orderToDelete.parent_order_id || orderToDelete.order_id;
+      const result = await hideExpiredOrder(orderId);
+      
+      if (result.success) {
+        toast.success('Pedido eliminado correctamente');
+      } else {
+        console.error('[BuyerOrders] Failed to delete order:', result.error);
+        toast.error('Error al eliminar el pedido');
+      }
+    } catch (err) {
+      console.error('[BuyerOrders] Error deleting order:', err);
+      toast.error('Error al eliminar el pedido');
+    } finally {
+      setDeleteLoading(false);
+      handleCloseDeleteDialog();
+    }
+  }, [orderToDelete, hideExpiredOrder, handleCloseDeleteDialog]);
+
+  // ============================================================================
   // PAGINACIÓN (5 órdenes por página)
   // ============================================================================
   const ORDERS_PER_PAGE = 5;
@@ -118,91 +195,6 @@ const BuyerOrders = memo(function BuyerOrders() {
     return (orders || []).slice(startIndex, endIndex);
   }, [orders, startIndex, endIndex]);
 
-  const Pagination = React.useMemo(() => {
-    if (!orders || orders.length <= ORDERS_PER_PAGE) return null;
-
-    const showPages = 5; // similar a Marketplace
-    let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
-    let endPage = Math.min(totalPages, startPage + showPages - 1);
-    if (endPage - startPage < showPages - 1) {
-      startPage = Math.max(1, endPage - showPages + 1);
-    }
-
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: 1,
-          py: 2,
-          flexWrap: 'wrap'
-        }}
-      >
-        <Button
-          variant="outlined"
-          disabled={currentPage === 1}
-          onClick={() => handlePageChange(currentPage - 1)}
-          sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}
-        >
-          ‹ Anterior
-        </Button>
-
-        {startPage > 1 && (
-          <>
-            <Button
-              variant={1 === currentPage ? 'contained' : 'outlined'}
-              onClick={() => handlePageChange(1)}
-              sx={{ minWidth: 40 }}
-            >
-              1
-            </Button>
-            {startPage > 2 && <Typography variant="body2">...</Typography>}
-          </>
-        )}
-
-        {Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((page) => (
-          <Button
-            key={page}
-            variant={page === currentPage ? 'contained' : 'outlined'}
-            onClick={() => handlePageChange(page)}
-            sx={{ minWidth: 40, fontSize: '0.875rem' }}
-          >
-            {page}
-          </Button>
-        ))}
-
-        {endPage < totalPages && (
-          <>
-            {endPage < totalPages - 1 && (
-              <Typography variant="body2">...</Typography>
-            )}
-            <Button
-              variant={totalPages === currentPage ? 'contained' : 'outlined'}
-              onClick={() => handlePageChange(totalPages)}
-              sx={{ minWidth: 40 }}
-            >
-              {totalPages}
-            </Button>
-          </>
-        )}
-
-        <Button
-          variant="outlined"
-          disabled={currentPage === totalPages}
-          onClick={() => handlePageChange(currentPage + 1)}
-          sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}
-        >
-          Siguiente ›
-        </Button>
-
-        <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-          Página {currentPage} de {totalPages}
-        </Typography>
-      </Box>
-    );
-  }, [orders, ORDERS_PER_PAGE, currentPage, totalPages, handlePageChange]);
-
   // DEBUG DIAGNOSTICS disabled for production
   const DEBUG_BUYER_ORDERS_UI = false;
 
@@ -210,8 +202,8 @@ const BuyerOrders = memo(function BuyerOrders() {
   // RENDERIZADO CONDICIONAL
   // ============================================================================
   
-  // Mostrar loading: usar skeletons inteligentes en lugar de spinner
-  if (loading) {
+  // Mostrar loading mientras se resuelve autenticación o se cargan órdenes
+  if (!authResolved || loading) {
     return (
       <ThemeProvider theme={dashboardThemeCore}>
         <Box
@@ -290,125 +282,7 @@ const BuyerOrders = memo(function BuyerOrders() {
   // Estado de producto basado exclusivamente en el estado del pedido (fuente de verdad backend)
   const getProductStatus = (_item, _orderDate, orderStatus) => {
     if (orderStatus === 'cancelled') return 'rejected'; // unificamos cancelado como rechazado para el primer chip
-    const allowed = ['pending', 'accepted', 'rejected', 'in_transit', 'delivered'];
-    return allowed.includes(orderStatus) ? orderStatus : 'pending';
-  };
-
-  // Función para obtener los chips de estado (4 etapas incluyendo Pago Confirmado)
-  const getStatusChips = (status, paymentStatus, order = null) => {
-    // � FIX: Verificar cancelled_at además de status para determinar cancelación real
-  const isPaymentExpired = paymentStatus === 'expired';
-  // Do not treat a payment expiration alone as a rejected/cancelled order for UI chips.
-  // If payment expired, avoid marking cancelled/rejected chips as active.
-  const isCancelled = (status === 'cancelled' || (order && order.cancelled_at)) && !isPaymentExpired;
-  const isRejected = (status === 'rejected' && !isPaymentExpired) || isCancelled;
-    if (isRejected) {
-      // Determinar label y color del chip de pago según payment_status
-      const getPaymentChipInfo = (paymentStatus) => {
-        switch (paymentStatus) {
-          case 'paid':
-            return {
-              label: 'Pago Confirmado',
-              color: 'success',
-              tooltip: 'Pago confirmado.'
-            };
-          case 'expired':
-            return {
-              label: 'Pago Expirado',
-              color: 'error',
-              tooltip: 'El tiempo para completar el pago se agotó (20 minutos).'
-            };
-          case 'pending':
-          default:
-            return {
-              label: 'Procesando Pago',
-              color: 'warning',
-              tooltip: 'Pago en proceso.'
-            };
-        }
-      };
-
-      const paymentInfo = getPaymentChipInfo(paymentStatus);
-      return [
-        // Un único chip de pago que evoluciona según payment_status
-        {
-          key: 'pago',
-          label: paymentInfo.label,
-          active: paymentStatus === 'paid' || paymentStatus === 'pending' || paymentStatus === 'expired',
-          color: paymentInfo.color,
-          tooltip: paymentInfo.tooltip
-        },
-        { key: 'rechazado', label: isCancelled ? 'Cancelado' : 'Rechazado', active: true, color: 'error', tooltip: isCancelled ? 'Tu pedido fue cancelado.' : 'Tu pedido fue rechazado por el proveedor.' },
-        { key: 'en_transito', label: 'En Transito', active: false, color: 'default', tooltip: 'Pendiente de despacho por el proveedor.' },
-        { key: 'entregado', label: 'Entregado', active: false, color: 'default', tooltip: 'Aún no se ha entregado.' }
-      ];
-    }
-
-    // Determinar clave activa única
-    let activeKey = null;
-    // 🔧 FIX: Si hay cancelled_at, la orden está cancelada independientemente del status
-    if (order && order.cancelled_at) {
-      activeKey = 'rechazado'; // Mostrar como cancelado
-    } else if (status === 'delivered') {
-      activeKey = 'entregado';
-    } else if (status === 'in_transit') {
-      activeKey = 'en_transito';
-    } else if (status === 'accepted') {
-      activeKey = 'aceptado';
-    } else if (paymentStatus === 'paid' || paymentStatus === 'pending' || paymentStatus === 'expired') {
-      activeKey = 'pago';
-    }
-
-    const chips = [
-      // Un único chip de pago. La etiqueta y el estilo se deciden por el estado de pago.
-      {
-        key: 'pago',
-        label: paymentStatus === 'paid' 
-          ? 'Pago Confirmado' 
-          : paymentStatus === 'expired' 
-            ? 'Pago Expirado' 
-            : 'Procesando Pago',
-        active: activeKey === 'pago',
-        // 🔧 IMPROVEMENT: Si ya hemos avanzado más allá del pago, mostrar como completado
-        color: (activeKey === 'pago') 
-          ? (paymentStatus === 'paid' ? 'success' : paymentStatus === 'expired' ? 'error' : 'warning')
-          : (paymentStatus === 'paid' && ['aceptado', 'en_transito', 'entregado'].includes(activeKey)) 
-            ? 'success' : 'default',
-        tooltip: paymentStatus === 'paid'
-          ? 'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.'
-          : paymentStatus === 'expired'
-            ? 'El tiempo para completar el pago se agotó (20 minutos).'
-            : 'Estamos verificando tu pago.'
-      },
-      {
-        key: 'aceptado',
-        label: 'Pedido Aceptado',
-        active: activeKey === 'aceptado',
-        color: 'info',
-        tooltip: activeKey === 'aceptado'
-          ? 'El proveedor aceptó tu pedido.'
-          : 'En espera de aceptación por el proveedor.'
-      },
-      {
-        key: 'en_transito',
-        label: 'En Transito',
-        active: activeKey === 'en_transito',
-        color: 'secondary',
-        tooltip: activeKey === 'en_transito'
-          ? 'El pedido fue despachado y está en camino.'
-          : 'Pendiente de despacho por el proveedor.'
-      },
-      {
-        key: 'entregado',
-        label: 'Entregado',
-        active: activeKey === 'entregado',
-        color: 'success',
-        tooltip: activeKey === 'entregado'
-          ? 'El pedido fue entregado.'
-          : 'Aún no se ha entregado.'
-      }
-    ];
-    return chips;
+    return normalizeOrderStatus(orderStatus);
   };
 
   // Render especial para órdenes de pago (tabla orders) con payment_status
@@ -447,7 +321,12 @@ const BuyerOrders = memo(function BuyerOrders() {
           {orders.length > 0 ? (
             <>
               {/* Paginación superior */}
-              {Pagination}
+              <OrdersPagination
+                totalItems={orders?.length || 0}
+                itemsPerPage={ORDERS_PER_PAGE}
+                currentPage={currentPage}
+                onPageChange={handlePageChange}
+              />
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {visibleOrders.map(order => (
                 <Paper
@@ -501,17 +380,42 @@ const BuyerOrders = memo(function BuyerOrders() {
               Orden de Pago {formatOrderNumber(order.parent_order_id)}
                         </Typography>
                       )}
-                      <Box sx={{ textAlign: 'right' }}>
-                        <Typography variant="h6" color="primary.main" fontWeight="bold">
-                          {formatCurrency(
-                            order.final_amount || (order.total_amount + getShippingAmount(order)) || order.total_amount
-                          )}{order.is_virtual_split ? ' (Subtotal)' : ''}
-                        </Typography>
-                        { getShippingAmount(order) > 0 ? (
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                            Incluye envío: {formatCurrency(getShippingAmount(order))}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {/* Delete button for expired payment orders */}
+                        {order.payment_status === 'expired' && (
+                          <Tooltip title="Eliminar pedido de la lista">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenDeleteDialog(order)}
+                              sx={{
+                                color: 'error.main',
+                                '&:hover': {
+                                  backgroundColor: 'error.lighter',
+                                },
+                                '&:focus': {
+                                  outline: 'none',
+                                },
+                                '&:focus-visible': {
+                                  outline: 'none',
+                                }
+                              }}
+                            >
+                              <DeleteOutlineIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        <Box sx={{ textAlign: 'right' }}>
+                          <Typography variant="h6" color="primary.main" fontWeight="bold">
+                            {formatCurrency(
+                              order.final_amount || (order.total_amount + getShippingAmount(order)) || order.total_amount
+                            )}{order.is_virtual_split ? ' (Subtotal)' : ''}
                           </Typography>
-                        ) : null }
+                          { getShippingAmount(order) > 0 ? (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              Incluye envío: {formatCurrency(getShippingAmount(order))}
+                            </Typography>
+                          ) : null }
+                        </Box>
                       </Box>
                     </Box>
                     <Typography variant="body2" color="text.secondary">
@@ -811,9 +715,26 @@ const BuyerOrders = memo(function BuyerOrders() {
       
   {/* Contact modal global para esta página */}
   <ContactModal open={openContactModal} onClose={closeContact} />
+  
+  {/* Delete confirmation dialog for expired orders */}
+  <ConfirmDialog
+    open={deleteDialogOpen}
+    title="¿Eliminar este pedido?"
+    description={`El pedido ${orderToDelete ? formatOrderNumber(orderToDelete.parent_order_id || orderToDelete.order_id) : ''} con pago expirado será eliminado de tu lista de pedidos. Esta acción no se puede deshacer.`}
+    confirmText={deleteLoading ? 'Eliminando...' : 'Eliminar'}
+    cancelText="Cancelar"
+    onConfirm={handleConfirmDelete}
+    onCancel={handleCloseDeleteDialog}
+    disabled={deleteLoading}
+  />
             </Box>
               {/* Paginación inferior */}
-              {Pagination}
+              <OrdersPagination
+                totalItems={orders?.length || 0}
+                itemsPerPage={ORDERS_PER_PAGE}
+                currentPage={currentPage}
+                onPageChange={handlePageChange}
+              />
             </>
           ) : (
             // Estado vacío
@@ -839,141 +760,3 @@ const BuyerOrders = memo(function BuyerOrders() {
 BuyerOrders.displayName = 'BuyerOrders';
 
 export default BuyerOrders;
-
-// Helper component to download invoices with client-side throttling
-const InvoiceDownload = ({ invoicePath, documentType = 'documento', orderId }) => {
-  const [loading, setLoading] = React.useState(false);
-
-  const DOWNLOAD_LIMIT_COUNT = 5; // max attempts
-  const DOWNLOAD_WINDOW_MS = 60 * 1000; // per 60 seconds
-  const storageKey = `invoice_downloads_${orderId}`;
-
-  const canDownload = () => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return true;
-      const arr = JSON.parse(raw);
-      const now = Date.now();
-      const recent = arr.filter(ts => now - ts < DOWNLOAD_WINDOW_MS);
-      return recent.length < DOWNLOAD_LIMIT_COUNT;
-    } catch (e) {
-      return true;
-    }
-  };
-
-  const recordDownload = () => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      const arr = raw ? JSON.parse(raw) : [];
-      arr.push(Date.now());
-      // Keep only last N to avoid growing forever
-      const pruned = arr.slice(-DOWNLOAD_LIMIT_COUNT * 2);
-      localStorage.setItem(storageKey, JSON.stringify(pruned));
-    } catch (e) {
-      // ignore
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!canDownload()) {
-      alert('Límite de descargas alcanzado. Intenta de nuevo en un momento.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // QUICK WIN: usar edge function segura para validar ownership antes de generar URL
-      const token = localStorage.getItem('sb:token') || localStorage.getItem('access_token') || localStorage.getItem('sb-access-token');
-      const endpoint = `${import.meta.env.VITE_SUPABASE_URL || ''}/functions/v1/get-invoice-url`;
-  let signedUrl = null;
-      try {
-        const resp = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
-          },
-          body: JSON.stringify({ path: invoicePath })
-        });
-        if (resp.ok) {
-          const json = await resp.json();
-            signedUrl = json.url || null;
-        } else {
-          // Fallback a método antiguo sólo si 404/403 para no romper UX (se puede retirar luego)
-          if (resp.status === 404 || resp.status === 403) {
-            // no fallback para seguridad estricta; mostrar error
-            const errJson = await resp.json().catch(()=>({}));
-            alert(errJson.error || 'No autorizado para descargar esta factura.');
-            return;
-          } else {
-            // fallback legacy
-            const legacy = await createSignedInvoiceUrl(invoicePath, 60);
-            signedUrl = legacy?.data?.signedUrl || null;
-          }
-        }
-      } catch (edgeErr) {
-        // fallback legacy en caso de fallo de red a función
-        try {
-          const legacy = await createSignedInvoiceUrl(invoicePath, 60);
-          signedUrl = legacy?.data?.signedUrl || null;
-        } catch (_) {}
-      }
-      if (!signedUrl) {
-        alert('No se pudo generar la URL de descarga. Intenta más tarde.');
-        return;
-      }
-      recordDownload();
-      // Intento 1: descarga directa creando un blob
-      try {
-        const resp = await fetch(signedUrl);
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const blob = await resp.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        // Derivar nombre de archivo desde el path original
-        const filename = (invoicePath.split('/')?.pop() || 'factura.pdf').replace(/\?.*$/, '');
-        a.href = url;
-        a.download = filename.endsWith('.pdf') ? filename : filename + '.pdf';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, 250);
-      } catch (e) {
-        // Fallback: abrir en nueva pestaña para que el navegador gestione la vista previa
-        window.open(signedUrl, '_blank');
-      }
-    } catch (e) {
-      console.error('Error generando URL firmada:', e);
-      alert('Error al generar descarga.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Typography variant="caption" color="text.secondary">
-        Tu {documentType === 'boleta' ? 'Boleta' : documentType === 'factura' ? 'Factura' : ''} está lista para ser descargada.
-      </Typography>
-      <Button
-        size="small"
-        variant="text"
-        onClick={handleDownload}
-        disabled={loading}
-        sx={{
-          border: 'none',
-          boxShadow: 'none',
-          textTransform: 'none',
-          color: 'primary.main',
-          p: 0,
-          minWidth: 'auto',
-          '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
-        }}
-      >
-        {loading ? 'Generando...' : 'Descargar'}
-      </Button>
-    </Box>
-  );
-};

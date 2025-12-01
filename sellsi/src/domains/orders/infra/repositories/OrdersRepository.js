@@ -23,10 +23,13 @@ export class OrdersRepository {
           payment_method,
           created_at,
           updated_at,
-          supplier_parts_meta
+          supplier_parts_meta,
+          hidden_by_buyer
         `)
       .eq('user_id', buyerId)
       .in('payment_status', ['paid', 'pending', 'expired'])
+      // Filter out orders hidden by buyer (soft-delete for expired orders)
+      .or('hidden_by_buyer.is.null,hidden_by_buyer.eq.false')
       .order('created_at', { ascending: false });
     if (typeof limit === 'number') {
       if (typeof offset === 'number') {

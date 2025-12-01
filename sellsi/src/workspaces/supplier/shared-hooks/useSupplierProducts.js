@@ -310,6 +310,9 @@ export const useSupplierProducts = (options = {}) => {
         tramoPrecioMax,
         delivery_regions: product.delivery_regions || [],
         ventas: ventasByProduct[product.productid] || 0,
+        // Despacho gratuito
+        free_shipping_enabled: product.free_shipping_enabled || false,
+        free_shipping_min_quantity: product.free_shipping_min_quantity || null,
       };
     });
   }, [filteredProducts, ventasByProduct]);

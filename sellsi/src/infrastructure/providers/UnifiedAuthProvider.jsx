@@ -76,7 +76,11 @@ export const UnifiedAuthProvider = ({ children }) => {
       const { data: fullProfile, error } = await getUserProfile(userId);
 
       // Extraer solo los campos necesarios para auth state
+      // Incluir user_id para que componentes como WhatsAppWidget puedan
+      // mostrar un identificador corto sin caer en 'N/A'. Si fullProfile
+      // no contiene user_id, usar el id de sesión (userId) como fallback.
       const userData = fullProfile ? {
+        user_id: fullProfile.user_id || userId,
         user_nm: fullProfile.user_nm,
         main_supplier: fullProfile.main_supplier,
         logo_url: fullProfile.logo_url,
@@ -112,7 +116,8 @@ export const UnifiedAuthProvider = ({ children }) => {
         // Invalidar cache para que próxima llamada obtenga el perfil nuevo
         invalidateUserProfileCache(userId);
         setNeedsOnboarding(true); // Nuevo perfil siempre necesita onboarding
-        setUserProfile(newProfile);
+        // Asegurar que el nuevo perfil expuesto incluya user_id para consumidores
+        setUserProfile({ ...newProfile, user_id: userId });
         setLoadingUserStatus(false);
         return;
       }
@@ -191,13 +196,13 @@ export const UnifiedAuthProvider = ({ children }) => {
     try {
       const { data: userData, error } = await supabase
         .from('users')
-        .select('user_nm, main_supplier, logo_url')
+        .select('user_id, user_nm, main_supplier, logo_url')
         .eq('user_id', session.user.id)
         .single();
       if (!error && userData) {
-        setUserProfile(userData);
-        setLastMainSupplier(userData.main_supplier);
-      }
+          setUserProfile(userData);
+          setLastMainSupplier(userData.main_supplier);
+        }
     } catch(e) {}
   };
 

@@ -66,7 +66,7 @@ export default function HeroSection({
             textAlign: 'left',
           }}
         >
-          Plataforma que conecta{' '}
+          Conectamos{' '}
           <Box component="span" sx={{ color: '#3f6ce9ff' }}>
             Compradores
           </Box>{' '}
@@ -74,7 +74,7 @@ export default function HeroSection({
           <Box component="span" sx={{ color: '#F59E0B' }}>
             Proveedores
           </Box>{' '}
-          de todo Chile
+          en todo Chile
         </Typography>
 
         <Typography
@@ -86,9 +86,11 @@ export default function HeroSection({
             textAlign: 'left',
           }}
         >
-          Nuestro marketplace corporativo simplifica el abastecimiento, conecta
-          compradores con proveedores confiables, impulsa las ventas y asegura
-          transacciones rápidas y seguras. Todo, en un solo lugar.
+          Con{' '}
+          <Box component="span" sx={{ fontWeight: 700, display: 'inline' }}>
+            Sellsi
+          </Box>{' '}
+          simplificamos tus procesos de compras y ventas corporativas mediante un canal directo y centralizado, ya sea para compras puntuales o abastecimiento por volumen. Negocia y cotiza en línea en un entorno amigable y sin intermediarios.
         </Typography>
 
         <Box
