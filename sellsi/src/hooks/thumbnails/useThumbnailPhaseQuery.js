@@ -47,13 +47,16 @@ export function useThumbnailPhaseQuery(
   const stableKey = QUERY_KEYS.THUMBNAIL(productId);
   const opts = getPhaseQueryOptions(phase);
 
+  // ✅ FIX N+1: Si el producto ya tiene thumbnails (fase final), NO ejecutar query
+  const isFinalPhase = phase === 'thumbnails_ready' || phase === 'thumbnails_skipped_webp';
+  
   const query = useQuery({
     queryKey: phaseKey,
     queryFn: () => fetchThumbnail(productId),
     staleTime: opts.staleTime,
     gcTime: opts.gcTime,
     refetchInterval: opts.refetchInterval,
-    enabled: !!productId && !!phase && externalEnabled,
+    enabled: !!productId && !!phase && externalEnabled && !isFinalPhase,
     meta: { phase },
   });
 

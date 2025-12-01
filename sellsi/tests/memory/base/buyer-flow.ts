@@ -243,6 +243,19 @@ export class BuyerFlowRunner {
     }
   }
 
+  async navigateToCart(): Promise<void> {
+    console.log('  → Carrito');
+    await this.safeClick(SELECTORS.sidebarItem('Carrito'), ROUTES.buyer.cart);
+    await this.waitForPageLoad();
+  }
+
+  /**
+   * Alias para close() - para compatibilidad
+   */
+  async cleanup(): Promise<void> {
+    await this.close();
+  }
+
   // =========================================================================
   // CICLO COMPLETO
   // =========================================================================

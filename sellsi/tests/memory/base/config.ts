@@ -55,6 +55,8 @@ export const ROUTES = {
     marketplace: '/buyer/marketplace',
     offers: '/buyer/offers',
     orders: '/buyer/orders',
+    cart: '/buyer/cart',
+    paymentMethod: '/buyer/paymentmethod',
   },
   supplier: {
     products: '/supplier/products',

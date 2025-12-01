@@ -49,6 +49,13 @@ export {
   printCSV,
   getPageComparisons,
   printPageComparison,
+  // Network Metrics
+  NetworkMetricsCollector,
+  calculateNetworkTotals,
+  printNetworkPageSummary,
+  printNetworkTotalSummary,
+  generateNetworkCSV,
+  printNetworkCSV,
 } from './metrics';
 
 export type {
@@ -61,4 +68,8 @@ export type {
   CSSAnimationInfo,
   ReactRenderInfo,
   PageComparison,
+  // Network types
+  NetworkRequest,
+  NetworkPageMetrics,
+  NetworkTestResult,
 } from './metrics';

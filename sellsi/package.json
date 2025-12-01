@@ -27,6 +27,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:memory": "playwright test --config=playwright.memory.config.ts tests/memory/memory-leak.spec.ts",
     "test:performance": "playwright test --config=playwright.memory.config.ts tests/memory/performance.spec.ts",
+    "test:network": "playwright test --config=playwright.memory.config.ts tests/memory/network.spec.ts",
+    "test:api": "playwright test --config=playwright.memory.config.ts tests/memory/api-efficiency.spec.ts",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:pipeline": "node scripts/test-pipeline.js",
