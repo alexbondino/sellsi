@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { 
   Box, 
   Typography, 
@@ -13,6 +13,7 @@ import {
   Tooltip,
   Button
 } from '@mui/material';
+import './BuyerOrders.css';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import { ThemeProvider, useTheme } from '@mui/material/styles';
@@ -27,7 +28,7 @@ import { formatDate as formatDateUnified } from '../../../../workspaces/marketpl
 import ContactModal from '../../../../shared/components/modals/ContactModal';
 import BuyerOrdersSkeleton from '../../../../shared/components/display/skeletons/BuyerOrdersSkeleton';
 
-const BuyerOrders = () => {
+const BuyerOrders = memo(function BuyerOrders() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   // ============================================================================
@@ -777,19 +778,12 @@ const BuyerOrders = () => {
                                   const highlight = isPagoChip && order.payment_status === 'paid' && recentlyPaid.has(order.order_id) && !hasAdvancedStatus;
                                   
                                   // ✨ GLOW EFFECT: Agregar glow a todos los chips activos con colores específicos
-                                  const getGlowColor = (chipKey, chipColor) => {
-                                    const glowColors = {
-                                      'pago': 'rgba(76,175,80,0.6)', // Verde para pago
-                                      'aceptado': 'rgba(33,150,243,0.6)', // Azul para aceptado
-                                      'en_transito': 'rgba(156,39,176,0.6)', // Púrpura para en tránsito
-                                      'entregado': 'rgba(76,175,80,0.6)', // Verde para entregado
-                                      'rechazado': 'rgba(244,67,54,0.6)' // Rojo para rechazado
-                                    };
-                                    return glowColors[chipKey] || 'rgba(158,158,158,0.6)'; // Gris por defecto
-                                  };
-                                  
+                                  // Determinar si debe brillar y qué clase CSS usar
                                   const shouldGlow = highlight || (chip.active && chip.key !== 'pago');
-                                  const glowColor = getGlowColor(chip.key, chip.color);
+                                  const glowClass = shouldGlow 
+                                    ? `chip-glow chip-glow-${chip.key}` 
+                                    : '';
+                                  
                                   return (
                                     <Tooltip key={chip.key} title={computedTooltip} arrow placement="left">
                                       <Chip
@@ -797,28 +791,10 @@ const BuyerOrders = () => {
                                         color={chip.active || highlight ? (chip.color || 'default') : 'default'}
                                         variant={(chip.active || highlight) ? 'filled' : 'outlined'}
                                         size="small"
+                                        className={glowClass}
                                         sx={{
                                           fontSize: '0.70rem',
                                           opacity: (chip.active || highlight) ? 1 : 0.45,
-                                          ...(shouldGlow ? {
-                                            position: 'relative',
-                                            boxShadow: `0 0 0 0 ${glowColor}`,
-                                            animation: `pulse${chip.key} 1.5s ease-in-out infinite`,
-                                            [`@keyframes pulse${chip.key}`]: {
-                                              '0%': { 
-                                                boxShadow: `0 0 0 0 ${glowColor}`,
-                                                transform: 'scale(1)'
-                                              },
-                                              '50%': { 
-                                                boxShadow: `0 0 0 8px ${glowColor.replace('0.6', '0')}`,
-                                                transform: 'scale(1.02)'
-                                              },
-                                              '100%': { 
-                                                boxShadow: `0 0 0 0 ${glowColor.replace('0.6', '0')}`,
-                                                transform: 'scale(1)'
-                                              }
-                                            }
-                                          } : {})
                                         }}
                                       />
                                     </Tooltip>
@@ -858,7 +834,9 @@ const BuyerOrders = () => {
       </Box>
     </ThemeProvider>
   );
-};
+});
+
+BuyerOrders.displayName = 'BuyerOrders';
 
 export default BuyerOrders;
 

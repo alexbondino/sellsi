@@ -25,6 +25,8 @@
     "test:integration": "jest --testPathPatterns=\"integration\" --coverage --coverageDirectory=coverage/integration",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:memory": "playwright test --config=playwright.memory.config.ts tests/memory/memory-leak.spec.ts",
+    "test:performance": "playwright test --config=playwright.memory.config.ts tests/memory/performance.spec.ts",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:pipeline": "node scripts/test-pipeline.js",

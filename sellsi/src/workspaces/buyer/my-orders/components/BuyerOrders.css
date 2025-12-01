@@ -1,0 +1,73 @@
+/**
+ * Animaciones de pulso para chips de estado en BuyerOrders
+ * 
+ * Estas animaciones estaban definidas inline en el sx prop de cada Chip,
+ * lo cual causaba recálculos de CSS excesivos (560+ RecalcStyles).
+ * 
+ * Al moverlas a CSS estático, se reducen significativamente los recálculos.
+ */
+
+/* ========================================================================= */
+/* KEYFRAMES - Definidos una sola vez, reutilizados por clase               */
+/* ========================================================================= */
+
+/* Animación base de pulso - usada por todos los estados */
+@keyframes chipPulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--glow-color, rgba(158, 158, 158, 0.6));
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px var(--glow-color-transparent, rgba(158, 158, 158, 0));
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 0 0 0 0 var(--glow-color-transparent, rgba(158, 158, 158, 0));
+    transform: scale(1);
+  }
+}
+
+/* ========================================================================= */
+/* CLASES DE ESTADO - Cada una define su color de glow                      */
+/* ========================================================================= */
+
+.chip-glow {
+  position: relative;
+  animation: chipPulse 1.5s ease-in-out infinite;
+}
+
+/* Pago - Verde */
+.chip-glow-pago {
+  --glow-color: rgba(76, 175, 80, 0.6);
+  --glow-color-transparent: rgba(76, 175, 80, 0);
+}
+
+/* Aceptado - Azul */
+.chip-glow-aceptado {
+  --glow-color: rgba(33, 150, 243, 0.6);
+  --glow-color-transparent: rgba(33, 150, 243, 0);
+}
+
+/* En tránsito - Púrpura */
+.chip-glow-en_transito {
+  --glow-color: rgba(156, 39, 176, 0.6);
+  --glow-color-transparent: rgba(156, 39, 176, 0);
+}
+
+/* Entregado - Verde */
+.chip-glow-entregado {
+  --glow-color: rgba(76, 175, 80, 0.6);
+  --glow-color-transparent: rgba(76, 175, 80, 0);
+}
+
+/* Rechazado - Rojo */
+.chip-glow-rechazado {
+  --glow-color: rgba(244, 67, 54, 0.6);
+  --glow-color-transparent: rgba(244, 67, 54, 0);
+}
+
+/* Default - Gris */
+.chip-glow-default {
+  --glow-color: rgba(158, 158, 158, 0.6);
+  --glow-color-transparent: rgba(158, 158, 158, 0);
+}
