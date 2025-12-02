@@ -29,6 +29,9 @@ import {
 } from '../../../../utils/priceCalculation';
 import { AddToCart } from '../../cart';
 
+// 🔍 DEBUG: Contador de renders
+let cardRenderCount = 0;
+
 /**
  * ProductCardBuyerContext - Renders the specific content and actions for a buyer's product card.
  * This component is an internal part of the main ProductCard.
@@ -60,6 +63,12 @@ const ProductCardBuyerContext = React.memo(
       product.proveedorVerificado ||
       product.supplierVerified ||
       false;
+
+    // 🔍 DEBUG: Log del primer render de cada producto
+    cardRenderCount++;
+    if (cardRenderCount <= 5) {
+      console.warn(`🔍 [ProductCard #${cardRenderCount}] id=${String(product.id).substring(0,8)}, minPrice=${product.minPrice}, maxPrice=${product.maxPrice}, tiersStatus=${product.tiersStatus}`);
+    }
 
     // Centralized: product.priceTiers now populated (deferred) by useProducts batching logic
     const price_tiers = product.priceTiers || [];

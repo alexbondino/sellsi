@@ -21,6 +21,18 @@ const useDebounce = (value, delay) => {
 
 export const useMarketplaceState = () => {
   const { products, loading, error, getPriceTiers, registerProductNode } = useProducts()
+  
+  // 🔍 DEBUG: Log cuando products cambia
+  if (products?.length > 0) {
+    const sample = products.slice(0, 2).map(p => ({
+      id: String(p.id).substring(0, 8),
+      minPrice: p.minPrice,
+      maxPrice: p.maxPrice,
+      tiersStatus: p.tiersStatus
+    }))
+    console.warn('🔍 [useMarketplaceState] products recibidos:', products.length, 'sample:', sample)
+  }
+  
   const [seccionActiva, setSeccionActiva] = useState('todos')
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas')
   const [filtroVisible, setFiltroVisible] = useState(false)
