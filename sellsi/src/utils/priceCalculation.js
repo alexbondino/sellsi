@@ -138,6 +138,11 @@ export const formatProductForCart = (product, quantity, tiers = []) => {
     precioTotal: totalPrice,
     precioOriginal: basePrice,
     tramoAplicado: appliedTier,
+    // Free shipping fields - preserve both naming conventions
+    free_shipping_enabled: product.free_shipping_enabled ?? product.freeShippingEnabled ?? false,
+    free_shipping_min_quantity: product.free_shipping_min_quantity ?? product.freeShippingMinQuantity ?? null,
+    freeShippingEnabled: product.free_shipping_enabled ?? product.freeShippingEnabled ?? false,
+    freeShippingMinQuantity: product.free_shipping_min_quantity ?? product.freeShippingMinQuantity ?? null,
   }
 }
 

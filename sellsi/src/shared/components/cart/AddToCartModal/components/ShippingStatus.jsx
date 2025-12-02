@@ -50,7 +50,7 @@ export function ShippingStatus({
     return (
       <Alert severity="success" sx={{ mt: 2 }} icon={<CheckIcon />}>
         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          Este producto tiene despacho hacia tu región: {getUserRegionName(effectiveUserRegion)}
+          Producto con despacho disponible a tu región
         </Typography>
         {sanitizedMsg && (
           <Typography variant="caption" color="text.secondary">

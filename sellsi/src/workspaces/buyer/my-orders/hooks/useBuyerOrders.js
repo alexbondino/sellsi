@@ -3,6 +3,8 @@ import { orderService } from '../../../../services/user';
 import { supabase } from '../../../../services/supabase';
 import { isUUID } from '../../../../domains/orders/shared/validation';
 import { splitOrderBySupplier } from '../../../../domains/orders/shared/splitOrderBySupplier';
+import { formatDate } from '../../../../shared/utils/formatters/dateFormatters';
+import { formatCurrency } from '../../../../shared/utils/formatters/priceFormatters';
 
 /**
  * Hook para manejar los pedidos de un comprador.
@@ -155,13 +157,26 @@ export const useBuyerOrders = buyerId => {
   }, [buyerId, mergeAndSplit]);
 
   // Initial load - guard contra doble invocación (React StrictMode monta dos veces en dev)
+  // Reset didFetchRef when buyerId changes from null to valid to allow re-fetch
   const didFetchRef = useRef(false);
+  const prevBuyerIdRef = useRef(buyerId);
+  
   useEffect(() => {
+    // If buyerId changed from null/invalid to valid, allow re-fetch
+    const prevWasInvalid = !prevBuyerIdRef.current || !isUUID(prevBuyerIdRef.current);
+    const currentIsValid = buyerId && isUUID(buyerId);
+    
+    if (prevWasInvalid && currentIsValid) {
+      didFetchRef.current = false; // Reset to allow fetch
+    }
+    prevBuyerIdRef.current = buyerId;
+    
     if (didFetchRef.current) return;
+    if (!currentIsValid) return; // Don't fetch if buyerId is still invalid
+    
     didFetchRef.current = true;
     fetchOrders();
-    // Nota: no limpiamos didFetchRef porque queremos evitar refetch accidental en remounts cortos
-  }, [fetchOrders]);
+  }, [fetchOrders, buyerId]);
 
   // Realtime subscription for payment orders (payment_status updates)
   useEffect(() => {
@@ -303,21 +318,39 @@ export const useBuyerOrders = buyerId => {
     return colorMap[status] || 'default';
   };
 
-  const formatDate = dateString => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString('es-CL', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  /**
+   * Hide an expired payment order from the buyer's list.
+   * Calls RPC mark_order_hidden_by_buyer which sets hidden_by_buyer = true.
+   * Only works for orders with payment_status = 'expired'.
+   * @param {string} orderId - The order ID to hide
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  const hideExpiredOrder = useCallback(async (orderId) => {
+    if (!orderId) return { success: false, error: 'Order ID is required' };
+    
+    try {
+      const { data, error: rpcError } = await supabase.rpc('mark_order_hidden_by_buyer', { 
+        p_order_id: orderId 
+      });
+      
+      if (rpcError) {
+        console.error('[useBuyerOrders] hideExpiredOrder RPC error:', rpcError);
+        return { success: false, error: rpcError.message };
+      }
+      
+      // Remove from local state immediately for instant UI feedback
+      setOrders(prev => prev.filter(o => {
+        // Filter out all parts that belong to this order
+        const orderIdMatch = o.order_id === orderId || o.parent_order_id === orderId;
+        return !orderIdMatch;
+      }));
+      
+      return { success: true, data };
+    } catch (err) {
+      console.error('[useBuyerOrders] hideExpiredOrder exception:', err);
+      return { success: false, error: err.message };
+    }
+  }, []);
 
-  const formatCurrency = amount => {
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP',
-    }).format(amount);
-  };
-
-  return { orders, loading, error, fetchOrders, getProductImage, getStatusDisplayName, getStatusColor, formatDate, formatCurrency };
+  return { orders, loading, error, fetchOrders, hideExpiredOrder, getProductImage, getStatusDisplayName, getStatusColor, formatDate, formatCurrency };
 };

@@ -18,6 +18,8 @@ import {
 import useCartStore from '../../stores/cart/cartStore';
 import { formatProductForCart } from '../../../utils/priceCalculation';
 import { supabase } from '../../../services/supabase';
+import { useAuth } from '../../../infrastructure/providers';
+import { waitForAuthStable } from '../../../infrastructure/auth/AuthReadyCoordinator';
 
 /**
  * ============================================================================
@@ -56,6 +58,7 @@ const AddToCart = ({
   // ESTADOS Y HOOKS
   // ============================================================================
   const navigate = useNavigate();
+  const { isBuyer } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const openingRef = React.useRef(false); // reentrancy guard
   const [currentUserId, setCurrentUserId] = useState(null);
@@ -164,6 +167,9 @@ const AddToCart = ({
         }
 
         // ✅ Solo si hay sesión válida, validar shipping
+        // 🔄 PRIMERO: Esperar a que el estado de auth sea estable (caches refrescados post-login)
+        await waitForAuthStable(3000);
+        
         // Antes de abrir el modal de selección, forzar/esperar resolución de validación shipping
         // 1) Intento inmediato
         let didOpenShipping = openIfIncomplete();
@@ -241,8 +247,10 @@ const AddToCart = ({
     setModalOpen(false);
     if (onModalStateChange) onModalStateChange(false);
     // Redirigir directamente al perfil con sección de facturación destacada
-    navigate('/buyer/profile?section=billing&highlight=true');
-  }, [navigate, onModalStateChange]);
+    // Detectar rol para usar la ruta correcta
+    const profilePath = isBuyer ? '/buyer/profile' : '/supplier/profile';
+    navigate(`${profilePath}?section=billing&highlight=true`);
+  }, [navigate, onModalStateChange, isBuyer]);
 
   // Mantener sincronizado el estado de apertura hacia el consumidor (card/grid) por si abre/cierra por otros caminos
   useEffect(() => {
@@ -254,7 +262,6 @@ const AddToCart = ({
   const handleAddToCart = useCallback(
     async cartItem => {
       try {
-        console.log('🛒 [AddToCart] Datos recibidos del modal:', cartItem);
         const isOffered = !!(
           cartItem.isOfferProduct ||
           cartItem.offer_id ||
@@ -357,10 +364,6 @@ const AddToCart = ({
             unitPrice: cartItem.unitPrice,
             totalPrice: cartItem.totalPrice,
           };
-          console.log(
-            '📦 [AddToCart] Producto REGULAR final para carrito:',
-            finalProduct
-          );
           await addItem(finalProduct, cartItem.quantity);
         }
 

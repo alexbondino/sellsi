@@ -175,7 +175,8 @@ export function TopBarView({
                 </span>
               </Tooltip>
             )}
-            {isLoggedIn && profileMenuButton}
+            {/* FIX: Eliminado profileMenuButton de mobile - nunca era visible (display:none)
+                pero causaba una descarga innecesaria del logo (~177KB) */}
             <IconButton
               onClick={onOpenMobileMenu}
               id="topbar-mobile-menu-button"

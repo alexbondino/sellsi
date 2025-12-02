@@ -38,10 +38,6 @@ const MobileCartItem = ({
   const imageUrl = item.imageUrl || item.image_url || item.thumbnail_url || '/placeholder-product.png';
   const showOfferDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debugShowOffers') === '1';
   const isOfferedFlag = !!(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price);
-  if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production') {
-    // eslint-disable-next-line no-console
-    console.log('[MobileCartItem debug] id:', item.id, 'isOffered:', isOfferedFlag, 'showOfferDebug:', showOfferDebug, 'product_id:', item.product_id || item.productid || item.id);
-  }
   
   return (
     <motion.div

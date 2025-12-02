@@ -789,6 +789,8 @@ const AddToCartModal = ({
               <SubtotalSection
                 currentPricing={currentPricing}
                 shippingValidation={shippingValidation}
+                product={enrichedProduct}
+                quantity={quantity}
               />
             </Box>
 

@@ -13,6 +13,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../../services/supabase';
 import { getUserProfile } from '../../../services/user';
 import { mapUserProfileToFormData } from '../../../utils/profileHelpers';
+import { onCacheReady } from '../../../infrastructure/auth/AuthReadyCoordinator';
 
 export const SHIPPING_INFO_STATES = {
   COMPLETE: 'complete',
@@ -213,6 +214,8 @@ export const useShippingInfoValidation = () => {
         );
         const cachePayload = { data: shippingData, validation };
         globalShippingInfoCache.set(cachePayload);
+        // ✅ Notificar al AuthReadyCoordinator que shipping cache está listo
+        try { onCacheReady('shipping-info'); } catch(e) {}
         return cachePayload;
       } catch (err) {
         setError(err.message);
@@ -256,9 +259,8 @@ export const useShippingInfoValidation = () => {
         globalShippingInfoCache.invalidate();
         if (eventUserId) {
           setCurrentUserId(eventUserId);
-          setTimeout(() => {
-            load(true);
-          }, 100); // Force reload with delay
+          // ✅ FIX: Eliminar setTimeout para reducir race conditions
+          load(true);
         } else {
           resetState();
         }

@@ -1,10 +1,14 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { Modal, MODAL_TYPES } from '../../feedback';
 import { useBillingInfoValidation } from '../../../hooks/profile/useBillingInfoValidation';
+import { useAuth } from '../../../../infrastructure/providers';
 
 export const useBillingInfoModal = () => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const navigate = useNavigate();
+  const { isBuyer } = useAuth();
   const { isComplete, isLoading, missingFieldLabels } = useBillingInfoValidation();
 
   const openIfIncomplete = () => {
@@ -15,7 +19,17 @@ export const useBillingInfoModal = () => {
     return false; // no se abrió
   };
 
-  return { isOpen, setIsOpen, isComplete, isLoading, missingFieldLabels, openIfIncomplete };
+  const handleGoToBilling = () => {
+    setIsOpen(false);
+    // Navegar al perfil con parámetros para resaltar campos de billing
+    // Detectar rol para usar la ruta correcta
+    const profilePath = isBuyer ? '/buyer/profile' : '/supplier/profile';
+    navigate(`${profilePath}?section=billing&highlight=true`);
+  };
+
+  const handleClose = () => setIsOpen(false);
+
+  return { isOpen, setIsOpen, isComplete, isLoading, missingFieldLabels, openIfIncomplete, handleGoToBilling, handleClose };
 };
 
 export const BillingInfoValidationModal = ({
