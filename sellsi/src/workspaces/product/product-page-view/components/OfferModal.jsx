@@ -373,17 +373,19 @@ const OfferModal = ({
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
+          backgroundColor: '#2E52B2',
+          color: '#fff',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <GavelIcon color="primary" />
-          <Typography variant="h6">Hacer Oferta</Typography>
+          <GavelIcon sx={{ color: '#fff' }} />
+          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>Hacer Oferta</Typography>
         </Box>
         <IconButton
           onClick={handleClose}
           disabled={loading}
           size="small"
-          sx={{ position: 'absolute', right: 8, color: 'text.secondary' }}
+          sx={{ position: 'absolute', right: 8, color: '#fff' }}
         >
           <CloseIcon />
         </IconButton>

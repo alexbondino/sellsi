@@ -58,16 +58,6 @@ export const addItemLocal = (
     });
   }
 
-  // DEBUG: registrar el item que se agregó localmente para diagnosticar pérdida de metadata de oferta
-  try {
-    // eslint-disable-next-line no-console
-    console.log('[cartStore.local] addItemLocal payload:', {
-      incomingProduct: product,
-      preparedItem: item,
-      existingItem: !!existingItem,
-    });
-  } catch (e) {}
-
   // Delegar al módulo de historial
   setTimeout(() => {
     historyStore.saveToHistory(get(), 'addItem', {

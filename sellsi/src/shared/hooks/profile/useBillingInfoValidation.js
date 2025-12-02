@@ -17,6 +17,7 @@ import { getUserProfile } from '../../../services/user';
 import { supabase } from '../../../services/supabase';
 import { validateRut } from '../../../utils/validators';
 import { mapUserProfileToFormData } from '../../../utils/profileHelpers';
+import { onCacheReady } from '../../../infrastructure/auth/AuthReadyCoordinator';
 
 export const BILLING_INFO_STATES = {
   COMPLETE: 'complete',
@@ -237,6 +238,8 @@ export const useBillingInfoValidation = () => {
         const cachePayload = { data: billingData, validation };
         globalBillingInfoCache.set(cachePayload);
         setLastLoadedAt(Date.now()); // ✅ Marcar cuándo cargamos
+        // ✅ Notificar al AuthReadyCoordinator que billing cache está listo
+        try { onCacheReady('billing-info'); } catch(e) {}
         return cachePayload;
       } catch (err) {
         console.error('[useBillingInfoValidation] Error:', err);
@@ -266,6 +269,22 @@ export const useBillingInfoValidation = () => {
     window.addEventListener('billing-info-invalidated', handleInvalidation);
     return () => {
       window.removeEventListener('billing-info-invalidated', handleInvalidation);
+    };
+  }, [load]);
+
+  // ✅ FIX: Escuchar user-changed para recargar datos post-login
+  useEffect(() => {
+    const handleUserChanged = (event) => {
+      const eventUserId = event.detail?.userId;
+      if (eventUserId) {
+        // Nuevo usuario logueado - recargar billing info
+        load(true);
+      }
+    };
+    
+    window.addEventListener('user-changed', handleUserChanged);
+    return () => {
+      window.removeEventListener('user-changed', handleUserChanged);
     };
   }, [load]);
 

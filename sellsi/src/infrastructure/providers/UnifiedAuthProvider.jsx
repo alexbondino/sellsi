@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, useMemo 
 import { supabase } from '../../services/supabase';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getUserProfile, invalidateUserProfileCache } from '../../services/user/profileService';
+import { onAuthStarted, onAuthCleared } from '../auth/AuthReadyCoordinator';
 
 // Unified Auth + Role Context
 const UnifiedAuthContext = createContext();
@@ -76,7 +77,11 @@ export const UnifiedAuthProvider = ({ children }) => {
       const { data: fullProfile, error } = await getUserProfile(userId);
 
       // Extraer solo los campos necesarios para auth state
+      // Incluir user_id para que componentes como WhatsAppWidget puedan
+      // mostrar un identificador corto sin caer en 'N/A'. Si fullProfile
+      // no contiene user_id, usar el id de sesión (userId) como fallback.
       const userData = fullProfile ? {
+        user_id: fullProfile.user_id || userId,
         user_nm: fullProfile.user_nm,
         main_supplier: fullProfile.main_supplier,
         logo_url: fullProfile.logo_url,
@@ -112,7 +117,8 @@ export const UnifiedAuthProvider = ({ children }) => {
         // Invalidar cache para que próxima llamada obtenga el perfil nuevo
         invalidateUserProfileCache(userId);
         setNeedsOnboarding(true); // Nuevo perfil siempre necesita onboarding
-        setUserProfile(newProfile);
+        // Asegurar que el nuevo perfil expuesto incluya user_id para consumidores
+        setUserProfile({ ...newProfile, user_id: userId });
         setLoadingUserStatus(false);
         return;
       }
@@ -154,22 +160,26 @@ export const UnifiedAuthProvider = ({ children }) => {
         if (newSession?.user?.id) {
           try { localStorage.setItem('user_id', newSession.user.id); } catch(e) {}
         }
+        // 🔄 Iniciar coordinación de auth-ready (los caches deben notificar cuando estén listos)
+        try { onAuthStarted(); } catch(e) {}
         try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
         try { window.invalidateTransferInfoCache?.(); } catch(e) {}
         try { window.invalidateBillingInfoCache?.(); } catch(e) {}
         try { window.invalidateShippingInfoCache?.(); } catch(e) {}
         try { window.globalCache?.clear?.(); } catch(e) {}
-        // Dispatch custom event for user change
-        setTimeout(() => { window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: newSession?.user?.id } })); }, 100);
+        // Dispatch custom event for user change (sin delay para reducir race conditions)
+        window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: newSession?.user?.id } }));
         fetchProfile(newSession);
       } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
         setSession(newSession);
         ['user_id','account_type','supplierid','sellerid','access_token','auth_token','currentAppRole'].forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
+        // 🚪 Limpiar estado de coordinación auth-ready
+        try { onAuthCleared(); } catch(e) {}
         try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
         try { window.invalidateTransferInfoCache?.(); } catch(e) {}
         try { window.invalidateBillingInfoCache?.(); } catch(e) {}
         try { window.invalidateShippingInfoCache?.(); } catch(e) {}
-        setTimeout(() => { window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: null } })); }, 100);
+        window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: null } }));
         setManualRoleOverride(null);
         fetchProfile(newSession);
       } else if (event === 'USER_UPDATED') {
@@ -191,13 +201,13 @@ export const UnifiedAuthProvider = ({ children }) => {
     try {
       const { data: userData, error } = await supabase
         .from('users')
-        .select('user_nm, main_supplier, logo_url')
+        .select('user_id, user_nm, main_supplier, logo_url')
         .eq('user_id', session.user.id)
         .single();
       if (!error && userData) {
-        setUserProfile(userData);
-        setLastMainSupplier(userData.main_supplier);
-      }
+          setUserProfile(userData);
+          setLastMainSupplier(userData.main_supplier);
+        }
     } catch(e) {}
   };
 

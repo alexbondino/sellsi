@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import {
   Paper,
   Box,
@@ -23,8 +23,32 @@ const MobileCheckoutBar = ({
   formatPrice,
   disabled = false
 }) => {
+  // ✅ FIX: Ref para bloqueo inmediato anti-doble-click (igual que desktop)
+  const isClickBlockedRef = useRef(false);
+  
   const buttonText = variant === 'cart' ? 'Continuar' : 'Confirmar Pago';
   const loadingText = variant === 'cart' ? 'Cargando...' : 'Procesando...';
+
+  // ✅ FIX: Handler con guard de ref para evitar múltiples clicks
+  const handleClick = useCallback(() => {
+    // Bloqueo inmediato con ref (no espera re-render de useState)
+    if (isClickBlockedRef.current) {
+      console.log('[MobileCheckoutBar] Click ignorado - ya procesando');
+      return;
+    }
+    isClickBlockedRef.current = true;
+    
+    // Ejecutar callback
+    if (onCheckout) {
+      onCheckout();
+    }
+    
+    // Desbloquear después de un tiempo prudente (si no hay redirect)
+    // El componente padre (PaymentMethodSelector) manejará el estado de loading
+    setTimeout(() => {
+      isClickBlockedRef.current = false;
+    }, 3000);
+  }, [onCheckout]);
 
   return (
     <Paper
@@ -83,7 +107,7 @@ const MobileCheckoutBar = ({
         <Button
           variant="contained"
           size="large"
-          onClick={onCheckout}
+          onClick={handleClick}
           disabled={isLoading || disabled || total <= 0}
           startIcon={
             isLoading ? (

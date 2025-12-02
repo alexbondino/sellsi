@@ -19,6 +19,7 @@ export const MODAL_TYPES = {
   ORDER_TRUCK: 'orderTruck',
   ORDER_BRIEFCASE: 'orderBriefcase',
   ORDER_CANCEL: 'orderCancel',
+  QUOTATION: 'quotation', // Nuevo: Modal de cotización con header azul sellsi
 };
 
 export const getModalConfig = type => {
@@ -79,6 +80,14 @@ export const getModalConfig = type => {
         iconBgColor: null,
         confirmColor: 'error',
         confirmText: 'Cancelar',
+      };
+    case MODAL_TYPES.QUOTATION:
+      return {
+        icon: InfoIcon,
+        iconColor: '#fff',
+        iconBgColor: null,
+        confirmColor: 'primary',
+        confirmText: 'Sí, descargar',
       };
     case MODAL_TYPES.INFO:
     default:

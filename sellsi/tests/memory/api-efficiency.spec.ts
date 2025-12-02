@@ -219,7 +219,9 @@ class DeepAPICollector {
     } else if (url.pathname.includes('/auth/')) {
       endpoint = 'auth/' + (url.pathname.split('/auth/')[1]?.split('?')[0] || 'unknown');
     } else if (url.pathname.includes('/storage/')) {
-      endpoint = 'storage/' + url.pathname.split('/storage/')[1]?.substring(0, 50);
+      // FIXED: Usar la ruta completa para Storage (no truncar)
+      // Esto es necesario para detectar correctamente duplicados de imágenes
+      endpoint = 'storage/' + (url.pathname.split('/storage/')[1] || 'unknown');
     }
     
     // Parse query params
@@ -357,13 +359,18 @@ function analyzeEndpoint(endpoint: string, calls: APICallDetail[]): EndpointSumm
   const times = calls.map(c => c.timing.total);
   const sizes = calls.map(c => c.response.bodySize);
   
-  // Detect duplicates by query params + method
+  // Detect duplicates by query params + method (and URL for storage)
   const callSignatures = new Map<string, APICallDetail[]>();
   for (const call of calls) {
+    // FIXED: Para Storage, incluir la URL completa en el signature
+    // ya que diferentes imágenes tienen params={} y body=undefined iguales
+    const isStorage = call.endpoint.startsWith('storage/');
     const signature = JSON.stringify({
       method: call.method,
       params: call.request.queryParams,
-      body: call.request.body
+      body: call.request.body,
+      // Para Storage: usar la URL completa para distinguir imágenes diferentes
+      url: isStorage ? call.url : undefined
     });
     
     if (!callSignatures.has(signature)) {

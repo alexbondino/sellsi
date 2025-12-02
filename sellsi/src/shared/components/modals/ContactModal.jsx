@@ -185,7 +185,7 @@ const ContactModal = ({ open, onClose }) => {
       <Box
         sx={{
           position: 'relative',
-          background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+          backgroundColor: '#2E52B2',
           color: 'white',
           py: { xs: 0.5, sm: 1.5, md: 3, lg: 4, xl: 4 },
           px: 3,
@@ -349,15 +349,14 @@ const ContactModal = ({ open, onClose }) => {
                 textTransform: 'none',
                 fontSize: '1rem',
                 fontWeight: '600',
-                background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-                boxShadow: '0 4px 14px rgba(25, 118, 210, 0.25)',
+                backgroundColor: '#2E52B2',
+                boxShadow: '0 4px 14px rgba(46, 82, 178, 0.25)',
                 '&:hover': {
-                  background:
-                    'linear-gradient(135deg, #2E52B2 0%, #1976d2 100%)',
-                  boxShadow: '0 6px 20px rgba(25, 118, 210, 0.35)',
+                  backgroundColor: '#243f8f',
+                  boxShadow: '0 6px 20px rgba(46, 82, 178, 0.35)',
                   transform: 'translateY(-1px)',
                 },
-                '&:disabled': { background: '#e0e0e0', boxShadow: 'none' },
+                '&:disabled': { backgroundColor: '#e0e0e0', boxShadow: 'none' },
               }}
             >
               {isSubmitting ? 'Enviando...' : 'Enviar mensaje'}
