@@ -29,9 +29,6 @@ import {
 } from '../../../../utils/priceCalculation';
 import { AddToCart } from '../../cart';
 
-// 🔍 DEBUG: Contador de renders
-let cardRenderCount = 0;
-
 /**
  * ProductCardBuyerContext - Renders the specific content and actions for a buyer's product card.
  * This component is an internal part of the main ProductCard.
@@ -63,12 +60,6 @@ const ProductCardBuyerContext = React.memo(
       product.proveedorVerificado ||
       product.supplierVerified ||
       false;
-
-    // 🔍 DEBUG: Log del primer render de cada producto
-    cardRenderCount++;
-    if (cardRenderCount <= 5) {
-      console.warn(`🔍 [ProductCard #${cardRenderCount}] id=${String(product.id).substring(0,8)}, minPrice=${product.minPrice}, maxPrice=${product.maxPrice}, tiersStatus=${product.tiersStatus}`);
-    }
 
     // Centralized: product.priceTiers now populated (deferred) by useProducts batching logic
     const price_tiers = product.priceTiers || [];
@@ -126,9 +117,27 @@ const ProductCardBuyerContext = React.memo(
         );
       }
 
-      // Single price (no tiers) - use effective fallback price rather than raw precio which may be 0
+      // ✅ FIX: Usar minPrice/maxPrice del price summary cuando hay rango (sin necesidad de tiers cargados)
+      const minPriceNum = Number(effectiveMinPrice) || 0;
+      const maxPriceNum = Number(effectiveMaxPrice) || 0;
+      const hasRange = minPriceNum > 0 && maxPriceNum > 0 && minPriceNum !== maxPriceNum;
+      
+      if (hasRange) {
+        return (
+          <PriceDisplay
+            price={maxPriceNum}
+            minPrice={minPriceNum}
+            showRange={true}
+            variant="h5"
+            color="#1976d2"
+            sx={{ lineHeight: 1.1, fontSize: { xs: 14, sm: 16, md: 22 } }}
+          />
+        );
+      }
+
+      // Single price (no tiers, no range) - use effective fallback price
       const displayPrice = hasValidBasePrice
-        ? effectiveMaxPrice ?? effectiveMinPrice ?? 0
+        ? maxPriceNum || minPriceNum || 0
         : 0;
       return (
         <PriceDisplay
@@ -147,6 +156,9 @@ const ProductCardBuyerContext = React.memo(
       effectiveMaxPrice,
       effectiveMinPrice,
       precioOriginal,
+      product.minPrice,
+      product.maxPrice,
+      product.tiersStatus,
     ]);
 
     return (
