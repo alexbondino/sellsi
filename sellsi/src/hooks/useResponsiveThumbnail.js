@@ -27,13 +27,16 @@ export const useResponsiveThumbnail = product => {
     product?.product_id ||
     product?.productId;
 
-  // Query si no hay objeto thumbnails cargado o si sólo tenemos thumbnail_url sin el JSON completo
-  const hasLocalThumbnailsObject = !!(
+  // Query si no hay thumbnails locales disponibles
+  // FIX N+1: Considerar thumbnail_url como suficiente para evitar query innecesario
+  const hasLocalThumbnails = !!(
     product &&
-    product.thumbnails &&
-    typeof product.thumbnails === 'object'
+    (
+      (product.thumbnails && typeof product.thumbnails === 'object') ||
+      (product.thumbnail_url && typeof product.thumbnail_url === 'string' && product.thumbnail_url.length > 0)
+    )
   );
-  const needsQuery = !!productId && !hasLocalThumbnailsObject; // siempre intentar completar el JSON si falta
+  const needsQuery = !!productId && !hasLocalThumbnails;
 
   const {
     data: dbThumbnails,

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useMemo } from 'react';
 import { supabase } from '../../services/supabase';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { getUserProfile, invalidateUserProfileCache } from '../../services/user/profileService';
+import { onAuthStarted, onAuthCleared } from '../auth/AuthReadyCoordinator';
 
 // Unified Auth + Role Context
 const UnifiedAuthContext = createContext();
@@ -71,52 +73,53 @@ export const UnifiedAuthProvider = ({ children }) => {
     fetchingUsersRef.current.add(userId);
 
     try {
-      const { data: userData, error } = await supabase
-        .from('users')
-        .select('user_nm, main_supplier, logo_url, email')
-        .eq('user_id', userId)
-        .single();
+      // 🔧 OPTIMIZADO: Reutilizar profileService con cache (reduce queries duplicadas)
+      const { data: fullProfile, error } = await getUserProfile(userId);
 
-      // 🔧 MEJORADO: Si el perfil no existe, crearlo automáticamente
-      if (error) {
-        // Error PGRST116 = no rows found
-        if (error.code === 'PGRST116') {
-          console.log('📝 Perfil no encontrado, creando automáticamente...');
-          
-          const { data: newProfile, error: createError } = await supabase
-            .from('users')
-            .insert({
-              user_id: userId,
-              email: currentSession.user.email,
-              user_nm: USER_NAME_STATUS.PENDING,
-              main_supplier: true,
-              country: 'No especificado',
-            })
-            .select('user_nm, main_supplier, logo_url, email')
-            .single();
+      // Extraer solo los campos necesarios para auth state
+      // Incluir user_id para que componentes como WhatsAppWidget puedan
+      // mostrar un identificador corto sin caer en 'N/A'. Si fullProfile
+      // no contiene user_id, usar el id de sesión (userId) como fallback.
+      const userData = fullProfile ? {
+        user_id: fullProfile.user_id || userId,
+        user_nm: fullProfile.user_nm,
+        main_supplier: fullProfile.main_supplier,
+        logo_url: fullProfile.logo_url,
+        email: fullProfile.email,
+      } : null;
 
-          if (createError) {
-            console.error('❌ Error creando perfil automático:', createError);
-            setNeedsOnboarding(true);
-            setUserProfile(null);
-            setLoadingUserStatus(false);
-            try { localStorage.removeItem('user_id'); } catch(e) {}
-            return;
-          }
+      // 🔧 Si el perfil no existe, crearlo automáticamente
+      if (error || !userData) {
+        console.log('📝 Perfil no encontrado, creando automáticamente...');
+        
+        const { data: newProfile, error: createError } = await supabase
+          .from('users')
+          .insert({
+            user_id: userId,
+            email: currentSession.user.email,
+            user_nm: USER_NAME_STATUS.PENDING,
+            main_supplier: true,
+            country: 'No especificado',
+          })
+          .select('user_nm, main_supplier, logo_url, email')
+          .single();
 
-          console.log('✅ Perfil creado automáticamente');
-          setNeedsOnboarding(true); // Nuevo perfil siempre necesita onboarding
-          setUserProfile(newProfile);
+        if (createError) {
+          console.error('❌ Error creando perfil automático:', createError);
+          setNeedsOnboarding(true);
+          setUserProfile(null);
           setLoadingUserStatus(false);
+          try { localStorage.removeItem('user_id'); } catch(e) {}
           return;
         }
 
-        // Otro tipo de error (red, permisos, etc.)
-        console.error('❌ Error fetching profile:', error);
-        setNeedsOnboarding(true);
-        setUserProfile(null);
+        console.log('✅ Perfil creado automáticamente');
+        // Invalidar cache para que próxima llamada obtenga el perfil nuevo
+        invalidateUserProfileCache(userId);
+        setNeedsOnboarding(true); // Nuevo perfil siempre necesita onboarding
+        // Asegurar que el nuevo perfil expuesto incluya user_id para consumidores
+        setUserProfile({ ...newProfile, user_id: userId });
         setLoadingUserStatus(false);
-        try { localStorage.removeItem('user_id'); } catch(e) {}
         return;
       }
 
@@ -157,22 +160,26 @@ export const UnifiedAuthProvider = ({ children }) => {
         if (newSession?.user?.id) {
           try { localStorage.setItem('user_id', newSession.user.id); } catch(e) {}
         }
+        // 🔄 Iniciar coordinación de auth-ready (los caches deben notificar cuando estén listos)
+        try { onAuthStarted(); } catch(e) {}
         try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
         try { window.invalidateTransferInfoCache?.(); } catch(e) {}
         try { window.invalidateBillingInfoCache?.(); } catch(e) {}
         try { window.invalidateShippingInfoCache?.(); } catch(e) {}
         try { window.globalCache?.clear?.(); } catch(e) {}
-        // Dispatch custom event for user change
-        setTimeout(() => { window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: newSession?.user?.id } })); }, 100);
+        // Dispatch custom event for user change (sin delay para reducir race conditions)
+        window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: newSession?.user?.id } }));
         fetchProfile(newSession);
       } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
         setSession(newSession);
         ['user_id','account_type','supplierid','sellerid','access_token','auth_token','currentAppRole'].forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
+        // 🚪 Limpiar estado de coordinación auth-ready
+        try { onAuthCleared(); } catch(e) {}
         try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
         try { window.invalidateTransferInfoCache?.(); } catch(e) {}
         try { window.invalidateBillingInfoCache?.(); } catch(e) {}
         try { window.invalidateShippingInfoCache?.(); } catch(e) {}
-        setTimeout(() => { window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: null } })); }, 100);
+        window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: null } }));
         setManualRoleOverride(null);
         fetchProfile(newSession);
       } else if (event === 'USER_UPDATED') {
@@ -194,13 +201,13 @@ export const UnifiedAuthProvider = ({ children }) => {
     try {
       const { data: userData, error } = await supabase
         .from('users')
-        .select('user_nm, main_supplier, logo_url')
+        .select('user_id, user_nm, main_supplier, logo_url')
         .eq('user_id', session.user.id)
         .single();
       if (!error && userData) {
-        setUserProfile(userData);
-        setLastMainSupplier(userData.main_supplier);
-      }
+          setUserProfile(userData);
+          setLastMainSupplier(userData.main_supplier);
+        }
     } catch(e) {}
   };
 

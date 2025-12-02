@@ -20,12 +20,19 @@ export const LayoutProvider = ({ children }) => {
   const [currentSideBarWidth, setCurrentSideBarWidth] = useState(SideBarWidth);
   const [sideBarCollapsed, setSideBarCollapsed] = useState(false);
 
-  // Solo actualiza el cache buster cuando cambia el logoUrl
+  // FIX: Usar useRef para evitar re-renders que causan doble petición HTTP
+  // El cache buster debe cambiar cuando logoUrl REALMENTE cambia de valor
   const logoUrl = userProfile ? userProfile.logo_url : null;
-  const [logoCacheBuster, setLogoCacheBuster] = useState(Date.now());
+  const prevLogoUrlRef = React.useRef(logoUrl);
+  const [logoCacheBuster, setLogoCacheBuster] = useState(() => Date.now());
 
   useEffect(() => {
-    setLogoCacheBuster(Date.now());
+    // Actualizar cache buster cuando logoUrl cambia (incluyendo de null a valor o viceversa)
+    if (prevLogoUrlRef.current !== logoUrl) {
+      prevLogoUrlRef.current = logoUrl;
+      // Siempre actualizar el cache buster cuando hay un cambio real
+      setLogoCacheBuster(Date.now());
+    }
   }, [logoUrl]);
 
   // Handler para cuando cambia el ancho de la sidebar

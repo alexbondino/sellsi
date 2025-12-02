@@ -53,9 +53,18 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
 
     // Validar que los datos necesarios fueron recibidos
     if (!amount || !subject || !currency) {
+      logErr('invalid_payload', { amount, subject, currency, order_id, buyer_id, cart_id });
       return respond(400, { error_code: 'INVALID_PAYLOAD', error: 'Faltan datos requeridos: amount, subject, currency.' });
     }
-    log('payload_received', { amount, subject });
+    log('payload_received', { 
+      amount, 
+      subject, 
+      currency,
+      order_id,
+      buyer_id,
+      cart_id,
+      cart_items_count: Array.isArray(cart_items) ? cart_items.length : 0
+    });
 
     // 2. Verificar que las variables de entorno necesarias estén configuradas
   const apiKey = Deno.env.get('KHIPU_API_KEY');
@@ -220,25 +229,57 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       notify_url: notifyUrl,
     });
 
-  log('khipu_request', { body: JSON.parse(body) });
+  log('khipu_request', { 
+    url: khipuApiUrl,
+    body: JSON.parse(body),
+    api_key_length: apiKey?.length || 0,
+    api_key_prefix: apiKey?.substring(0, 10) + '...'
+  });
 
-    const khipuResponse = await fetch(khipuApiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        Accept: 'application/json',
-      },
-      body,
-    });
+    let khipuResponse: Response;
+    try {
+      khipuResponse = await fetch(khipuApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          Accept: 'application/json',
+        },
+        body,
+      });
+    } catch (fetchErr) {
+      logErr('khipu_fetch_failed', { error: String(fetchErr) });
+      return respond(502, { error_code: 'KHIPU_FETCH_FAILED', error: 'No se pudo conectar con Khipu API' });
+    }
 
-  log('khipu_response_status', { status: khipuResponse.status });
+  log('khipu_response_status', { status: khipuResponse.status, statusText: khipuResponse.statusText });
 
     // 5. Procesar la respuesta de Khipu
-    const responseData = await khipuResponse.json();
+    let responseData: any;
+    let rawResponseText: string = '';
+    try {
+      rawResponseText = await khipuResponse.text();
+      log('khipu_response_raw', { length: rawResponseText.length, text: rawResponseText.substring(0, 1000) });
+      responseData = JSON.parse(rawResponseText);
+    } catch (jsonErr) {
+      logErr('khipu_response_parse_failed', { error: String(jsonErr), raw_text: rawResponseText.substring(0, 500) });
+      return respond(502, { error_code: 'KHIPU_RESPONSE_PARSE_FAILED', error: 'Respuesta de Khipu no es JSON válido', raw: rawResponseText.substring(0, 200) });
+    }
+
     if (!khipuResponse.ok) {
-      const errorMessage = responseData.message || 'Error desconocido de Khipu.';
-      throw new Error(`Error de la API de Khipu: ${errorMessage}`);
+      const errorMessage = responseData.message || responseData.error || 'Error desconocido de Khipu.';
+      logErr('khipu_api_error', {
+        status: khipuResponse.status,
+        error_message: errorMessage,
+        full_response: responseData,
+        request_body: JSON.parse(body)
+      });
+      return respond(khipuResponse.status === 400 ? 400 : 502, { 
+        error_code: 'KHIPU_API_ERROR', 
+        error: errorMessage,
+        khipu_status: khipuResponse.status,
+        khipu_response: responseData
+      });
     }
   log('khipu_response_body', { response: responseData });
 

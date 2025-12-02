@@ -25,7 +25,8 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,
+        // 🔍 DEBUG TEMPORAL: desactivar drop_console para diagnosticar bug de price tiers
+        drop_console: false, // TODO: volver a true después del debug
         drop_debugger: true,
         pure_funcs: ['console.log', 'console.info', 'console.debug'],
       },

@@ -12,6 +12,10 @@ import {
   regiones, 
   getComunasByRegion 
 } from '../../../../utils/chileData';
+import { 
+  getHighlightFieldStyle, 
+  getHighlightHelperText 
+} from '../../../../utils/fieldHighlightStyles';
 
 /**
  * Sección de Dirección de Despacho del perfil
@@ -20,17 +24,21 @@ import {
 const ShippingInfoSection = ({ 
   formData, 
   onFieldChange,
-  onRegionChange 
-  , showErrors = false
+  onRegionChange,
+  showErrors = false,
+  shouldHighlight = false // Nueva prop para highlight visual consistente
 }) => {
   
+  // Combinar showErrors (validación) con shouldHighlight (redirección desde modal)
+  const isHighlighted = showErrors || shouldHighlight;
+
   const handleRegionChange = (event) => {
     const value = event.target.value;
     onRegionChange('shipping', 'shippingRegion', 'shippingCommune', value);
   };
 
   return (
-    <Box sx={{ p: 3, height: 'fit-content' }}>
+    <Box id="shipping-info-section" sx={{ p: 3, height: 'fit-content' }}>
       <Box sx={{ mb: 2 }}>
         <Typography variant="h6">Dirección de Despacho</Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -40,8 +48,15 @@ const ShippingInfoSection = ({
       </Box>
       
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <FormControl fullWidth size="small" error={showErrors && !formData.shippingRegion}>
-          <InputLabel>Región</InputLabel>
+        <FormControl 
+          fullWidth 
+          size="small" 
+          error={isHighlighted && !formData.shippingRegion}
+          sx={getHighlightFieldStyle(formData.shippingRegion, isHighlighted)}
+        >
+          <InputLabel sx={isHighlighted && !formData.shippingRegion ? { color: '#f44336', fontWeight: 'bold' } : {}}>
+            Región
+          </InputLabel>
           <Select
             value={formData.shippingRegion || ''}
             onChange={handleRegionChange}
@@ -72,13 +87,21 @@ const ShippingInfoSection = ({
               </MenuItem>
             ))}
           </Select>
-          {showErrors && !formData.shippingRegion ? (
+          {isHighlighted && !formData.shippingRegion && (
             <Typography variant="caption" color="error">Región es obligatoria</Typography>
-          ) : null}
+          )}
         </FormControl>
         
-  <FormControl fullWidth size="small" disabled={!formData.shippingRegion} error={showErrors && !formData.shippingCommune}>
-          <InputLabel>Comuna</InputLabel>
+        <FormControl 
+          fullWidth 
+          size="small" 
+          disabled={!formData.shippingRegion} 
+          error={isHighlighted && !formData.shippingCommune}
+          sx={getHighlightFieldStyle(formData.shippingCommune, isHighlighted)}
+        >
+          <InputLabel sx={isHighlighted && !formData.shippingCommune ? { color: '#f44336', fontWeight: 'bold' } : {}}>
+            Comuna
+          </InputLabel>
           <Select
             value={formData.shippingCommune || ''}
             onChange={(e) => {
@@ -110,10 +133,10 @@ const ShippingInfoSection = ({
                 {comuna.label}
               </MenuItem>
             ))}
-            </Select>
-            {showErrors && !formData.shippingCommune ? (
-              <Typography variant="caption" color="error">Comuna es obligatoria</Typography>
-            ) : null}
+          </Select>
+          {isHighlighted && !formData.shippingCommune && (
+            <Typography variant="caption" color="error">Comuna es obligatoria</Typography>
+          )}
         </FormControl>
         
         <TextField
@@ -124,8 +147,9 @@ const ShippingInfoSection = ({
           variant="outlined"
           size="small"
           placeholder="Halimeda 433"
-          error={showErrors && !formData.shippingAddress}
-          helperText={showErrors && !formData.shippingAddress ? 'Dirección de envío es obligatoria' : ''}
+          error={isHighlighted && !formData.shippingAddress}
+          helperText={getHighlightHelperText(formData.shippingAddress, isHighlighted, '', 'Dirección de envío es obligatoria')}
+          sx={getHighlightFieldStyle(formData.shippingAddress, isHighlighted)}
         />
         
         <TextField
@@ -136,8 +160,9 @@ const ShippingInfoSection = ({
           variant="outlined"
           size="small"
           type="number"
-          error={showErrors && !formData.shippingNumber}
-          helperText={showErrors && !formData.shippingNumber ? 'Número de dirección es obligatorio' : ''}
+          error={isHighlighted && !formData.shippingNumber}
+          helperText={getHighlightHelperText(formData.shippingNumber, isHighlighted, '', 'Número de dirección es obligatorio')}
+          sx={getHighlightFieldStyle(formData.shippingNumber, isHighlighted)}
         />
         
         <TextField

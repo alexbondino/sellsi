@@ -66,7 +66,7 @@ const BottomBar = () => {
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
                   <SocialIcon href="https://www.linkedin.com/company/sellsi/" icon={<LinkedInIcon />} hoverColor="#0077b5" label="LinkedIn" />
                   <SocialIcon href="#" icon={<InstagramIcon />} hoverColor="#e4405f" label="Instagram" />
-                  <SocialIcon href="#" icon={<WhatsAppIcon />} hoverColor="#25d366" label="WhatsApp" />
+                  <SocialIcon href="https://wa.me/56963109664" icon={<WhatsAppIcon />} hoverColor="#25d366" label="WhatsApp" />
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, justifyContent: 'center' }}>
@@ -102,7 +102,7 @@ const BottomBar = () => {
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', width: '100%' }}>
                 <SocialIcon href="https://www.linkedin.com/company/sellsi/" icon={<LinkedInIcon />} hoverColor="#0077b5" label="LinkedIn" />
                 <SocialIcon href="#" icon={<InstagramIcon />} hoverColor="#e4405f" label="Instagram" />
-                <SocialIcon href="#" icon={<WhatsAppIcon />} hoverColor="#25d366" label="WhatsApp" />
+                <SocialIcon href="https://wa.me/56963109664" icon={<WhatsAppIcon />} hoverColor="#25d366" label="WhatsApp" />
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 0, justifyContent: 'center', width: '100%' }}>
                 <IconButton href="tel:+56963109664" sx={{ color: '#b0b0b0', mr: 1, p: 0, '&:hover': { color: '#25d366', backgroundColor: 'rgba(255,255,255,0.1)' } }} aria-label="Llamar">

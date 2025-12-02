@@ -21,6 +21,7 @@ const useDebounce = (value, delay) => {
 
 export const useMarketplaceState = () => {
   const { products, loading, error, getPriceTiers, registerProductNode } = useProducts()
+  
   const [seccionActiva, setSeccionActiva] = useState('todos')
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas')
   const [filtroVisible, setFiltroVisible] = useState(false)

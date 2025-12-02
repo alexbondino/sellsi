@@ -14,6 +14,10 @@ import {
   getComunasByRegion 
 } from '../../../../utils/chileData';
 import { validateRut, validateEmail } from '../../../../utils/validators';
+import { 
+  getHighlightFieldStyle, 
+  getHighlightHelperText 
+} from '../../../../utils/fieldHighlightStyles';
 
 /**
  * Sección de Facturación del perfil
@@ -32,7 +36,8 @@ const BillingInfoSection = ({
   onBlurSensitive,
   showBilling = true,  // Nueva prop para controlar visibilidad
   showUpdateButton = true,  // Nueva prop para controlar el botón
-  showErrors = false, // Nuevo: mostrar errores cuando validación falle
+  showErrors = false, // Mostrar errores cuando validación falle
+  shouldHighlight = false, // Nueva prop para highlight visual consistente
   id // Prop para identificar la sección (scroll/highlight)
 }) => {
   
@@ -46,8 +51,10 @@ const BillingInfoSection = ({
     return null;
   }
 
+  // Combinar showErrors (validación) con shouldHighlight (redirección desde modal)
+  const isHighlighted = showErrors || shouldHighlight;
   const businessNameFilled = !!(formData.businessName && formData.businessName.trim() !== '');
-  const shouldShowError = (fieldValue) => showErrors && businessNameFilled && (!fieldValue || String(fieldValue).trim() === '');
+  const shouldShowError = (fieldValue) => isHighlighted && businessNameFilled && (!fieldValue || String(fieldValue).trim() === '');
 
   return (
     <Box id={id} sx={{ p: 3, height: 'fit-content' }}>
@@ -85,7 +92,13 @@ const BillingInfoSection = ({
           variant="outlined"
           size="small"
           error={(!validateRut(formData.billingRut)) || shouldShowError(formData.billingRut)}
-          helperText={!validateRut(formData.billingRut) ? 'Formato de RUT inválido' : (shouldShowError(formData.billingRut) ? 'Obligatorio' : '')}
+          helperText={getHighlightHelperText(
+            formData.billingRut, 
+            shouldShowError(formData.billingRut), 
+            !validateRut(formData.billingRut) ? 'Formato de RUT inválido' : '', 
+            'RUT es obligatorio'
+          )}
+          sx={getHighlightFieldStyle(formData.billingRut, shouldShowError(formData.billingRut))}
         />
         
         <TextField
@@ -96,7 +109,8 @@ const BillingInfoSection = ({
           variant="outlined"
           size="small"
           error={shouldShowError(formData.businessLine)}
-          helperText={shouldShowError(formData.businessLine) ? 'Obligatorio' : ''}
+          helperText={getHighlightHelperText(formData.businessLine, shouldShowError(formData.businessLine), '', 'Giro es obligatorio')}
+          sx={getHighlightFieldStyle(formData.businessLine, shouldShowError(formData.businessLine))}
         />
         
         <TextField
@@ -107,11 +121,19 @@ const BillingInfoSection = ({
           variant="outlined"
           size="small"
           error={shouldShowError(formData.billingAddress)}
-          helperText={shouldShowError(formData.billingAddress) ? 'Obligatorio' : ''}
+          helperText={getHighlightHelperText(formData.billingAddress, shouldShowError(formData.billingAddress), '', 'Dirección es obligatoria')}
+          sx={getHighlightFieldStyle(formData.billingAddress, shouldShowError(formData.billingAddress))}
         />
         
-  <FormControl fullWidth size="small" error={shouldShowError(formData.billingRegion)}>
-          <InputLabel>Región</InputLabel>
+        <FormControl 
+          fullWidth 
+          size="small" 
+          error={shouldShowError(formData.billingRegion)}
+          sx={getHighlightFieldStyle(formData.billingRegion, shouldShowError(formData.billingRegion))}
+        >
+          <InputLabel sx={shouldShowError(formData.billingRegion) ? { color: '#f44336', fontWeight: 'bold' } : {}}>
+            Región
+          </InputLabel>
           <Select
             value={formData.billingRegion || ''}
             onChange={handleRegionChange}
@@ -142,10 +164,21 @@ const BillingInfoSection = ({
               </MenuItem>
             ))}
           </Select>
-  </FormControl>
+          {shouldShowError(formData.billingRegion) && (
+            <Typography variant="caption" color="error">Región es obligatoria</Typography>
+          )}
+        </FormControl>
         
-  <FormControl fullWidth size="small" disabled={!formData.billingRegion} error={shouldShowError(formData.billingCommune)}>
-          <InputLabel>Comuna</InputLabel>
+        <FormControl 
+          fullWidth 
+          size="small" 
+          disabled={!formData.billingRegion} 
+          error={shouldShowError(formData.billingCommune)}
+          sx={getHighlightFieldStyle(formData.billingCommune, shouldShowError(formData.billingCommune))}
+        >
+          <InputLabel sx={shouldShowError(formData.billingCommune) ? { color: '#f44336', fontWeight: 'bold' } : {}}>
+            Comuna
+          </InputLabel>
           <Select
             value={formData.billingCommune || ''}
             onChange={(e) => onFieldChange('billingCommune', e.target.value)}
@@ -176,9 +209,9 @@ const BillingInfoSection = ({
               </MenuItem>
             ))}
           </Select>
-          {shouldShowError(formData.billingCommune) ? (
-              <Typography variant="caption" color="error">Obligatoria</Typography>
-            ) : null}
+          {shouldShowError(formData.billingCommune) && (
+            <Typography variant="caption" color="error">Comuna es obligatoria</Typography>
+          )}
         </FormControl>
         
         {/* Botón Actualizar - Solo se muestra si showUpdateButton es true */}

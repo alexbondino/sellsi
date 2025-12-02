@@ -80,13 +80,13 @@ const QuotationModal = ({
       isOpen={open}
       onClose={onClose}
       onSubmit={handleConfirm}
-      type={MODAL_TYPES.INFO}
+      type={MODAL_TYPES.QUOTATION}
       title="Descargar Cotización"
       submitButtonText="Sí, descargar"
       cancelButtonText="Cancelar"
       showCancelButton={true}
     >
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mt: 1.5, mb: 0 }}>
         <Typography
           variant="body1"
           component="div"

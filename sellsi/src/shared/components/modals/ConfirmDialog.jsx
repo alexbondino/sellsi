@@ -1,5 +1,6 @@
 import React from 'react'
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material'
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 const ConfirmDialog = ({
   open,
@@ -11,6 +12,9 @@ const ConfirmDialog = ({
   onCancel,
   disabled = false,
 }) => {
+  // Bloquear scroll del body y sidebar cuando el modal está abierto
+  useBodyScrollLock(open);
+
   return (
     <Dialog
       open={open}

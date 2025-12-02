@@ -25,6 +25,7 @@ import { useProfileImage } from '../hooks/useProfileImage';
 import { useSensitiveFields } from '../hooks/useSensitiveFields';
 import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserShippingRegion';
 import { useRoleSync } from '../../../shared/hooks';
+import { useAuth } from '../../../infrastructure/providers/UnifiedAuthProvider';
 
 // Secciones modulares
 import TransferInfoSection from '../components/sections/TransferInfoSection';
@@ -59,6 +60,7 @@ import { invalidateBillingInfoCache } from '../../../shared/hooks/profile/useBil
 const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpdateHandler }) => {
   const { showBanner } = useBanner();
   const location = useLocation(); // Para obtener parámetros de URL
+  const { refreshUserProfile } = useAuth(); // Para actualizar avatar en TopBar sin F5
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -84,7 +86,13 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
     if (section === 'transfer' && highlight === 'true') {
       setShouldHighlightTransferFields(true);
       console.log('🎯 Resaltando campos de información bancaria por redirección');
-      
+      // Scroll automático a la sección de transferencia
+      setTimeout(() => {
+        const transferSection = document.getElementById('transfer-info-section');
+        if (transferSection) {
+          transferSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
       // Remover el highlight después de 10 segundos para mejor UX
       const timer = setTimeout(() => {
         setShouldHighlightTransferFields(false);
@@ -95,6 +103,13 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
     if (section === 'shipping' && highlight === 'true') {
       setShouldHighlightShippingFields(true);
       console.log('🎯 Resaltando campos de dirección de despacho por redirección');
+      // Scroll automático a la sección de shipping
+      setTimeout(() => {
+        const shippingSection = document.getElementById('shipping-info-section');
+        if (shippingSection) {
+          shippingSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
       const timer = setTimeout(() => { setShouldHighlightShippingFields(false); }, 10000);
       return () => clearTimeout(timer);
     }
@@ -505,16 +520,26 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         logoPublicUrl = url;
       }
 
-      // Actualizar en BD
-      await updateUserProfile(user.id, { logo_url: logoPublicUrl });
-      
       // Actualizar estado local - recargar perfil desde la BD
       const updatedProfile = await getUserProfile(user.id);
       if (updatedProfile?.data) {
+        // ✅ IMPORTANTE: Actualizar AMBOS estados para que el avatar se actualice sin F5
+        // - loadedProfile: para el formulario de datos
+        // - userProfile: para useProfileImage hook que controla el avatar
+        const mappedProfile = {
+          ...updatedProfile.data,
+          user_id: user.id,
+          logo_url: updatedProfile.data.logo_url,
+          ...mapUserProfileToFormData(updatedProfile.data),
+        };
         setLoadedProfile(updatedProfile.data);
+        setUserProfile(mappedProfile);
       }
       
-  showBanner({ message: 'Imagen actualizada correctamente', severity: 'success' });
+      // ✅ IMPORTANTE: Actualizar el contexto global para que TopBar/Avatar se actualicen sin F5
+      await refreshUserProfile();
+      
+      showBanner({ message: 'Imagen actualizada correctamente', severity: 'success' });
     } catch (error) {
       throw new Error(error.message || 'Error al guardar la imagen');
     }
@@ -736,6 +761,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             toggleSensitiveData={toggleSensitiveData}
             getSensitiveFieldValue={getSensitiveFieldValue}
             shouldHighlight={shouldHighlightTransferFields}
+            id="transfer-info-section"
           />
 
           {/* Segunda fila - Primera columna: Dirección de Despacho */}
@@ -743,7 +769,8 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             formData={formData}
             onFieldChange={handleFieldChange}
             onRegionChange={(type, regionField, comunaField, value) => { handleRegionChange(type, regionField, comunaField, value); }}
-            showErrors={showShippingErrors || shouldHighlightShippingFields}
+            showErrors={showShippingErrors}
+            shouldHighlight={shouldHighlightShippingFields}
           />
 
           {/* Segunda fila - Segunda columna: Facturación (independiente) */}
@@ -760,7 +787,8 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             onBlurSensitive={handleSensitiveBlur}
             showBilling={true}
             showUpdateButton={false}
-            showErrors={showBillingErrors || shouldHighlightBillingFields}
+            showErrors={showBillingErrors}
+            shouldHighlight={shouldHighlightBillingFields}
           />
         </Box>
         {/* Botón Actualizar al fondo del Paper */}
