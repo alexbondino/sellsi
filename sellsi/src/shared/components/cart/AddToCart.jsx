@@ -19,6 +19,7 @@ import useCartStore from '../../stores/cart/cartStore';
 import { formatProductForCart } from '../../../utils/priceCalculation';
 import { supabase } from '../../../services/supabase';
 import { useAuth } from '../../../infrastructure/providers';
+import { waitForAuthStable } from '../../../infrastructure/auth/AuthReadyCoordinator';
 
 /**
  * ============================================================================
@@ -166,6 +167,9 @@ const AddToCart = ({
         }
 
         // ✅ Solo si hay sesión válida, validar shipping
+        // 🔄 PRIMERO: Esperar a que el estado de auth sea estable (caches refrescados post-login)
+        await waitForAuthStable(3000);
+        
         // Antes de abrir el modal de selección, forzar/esperar resolución de validación shipping
         // 1) Intento inmediato
         let didOpenShipping = openIfIncomplete();

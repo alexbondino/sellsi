@@ -203,8 +203,14 @@ export function useProducts() {
       productsCache.inFlight = null
       if (!controller.signal.aborted && mountedRef.current) {
         setProductsCb(result)
+        // ✅ FIX: Esperar price summaries ANTES de setLoading(false)
+        // Esto evita que las cards muestren "Cargando precios..." brevemente
+        try { 
+          await fetchPriceSummaries(result.map(p => p.id))
+        } catch (e) {
+          console.warn('[useProducts] fetchPriceSummaries failed:', e)
+        }
         setLoading(false)
-        try { fetchPriceSummaries(result.map(p => p.id)) } catch {}
         performance.mark?.('products_fetch_end')
         if (performance.measure) { try { performance.measure('products_fetch','products_fetch_start','products_fetch_end') } catch {} }
       }

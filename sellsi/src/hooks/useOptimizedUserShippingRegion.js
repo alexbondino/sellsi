@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getUserProfile } from '../services/user';
+import { onCacheReady } from '../infrastructure/auth/AuthReadyCoordinator';
 
 // Cache global compartido entre todas las instancias
 // MEJORA: Ahora incluye cachedUserId para evitar contaminación entre cuentas.
@@ -217,6 +218,8 @@ const fetchUserRegionCentralized = async () => {
       globalCache.timestamp = Date.now();
       globalCache.isStale = false;
       globalCache.persist(); // Persistir nuevo valor
+      // ✅ Notificar al AuthReadyCoordinator que user-region cache está listo
+      try { onCacheReady('user-region'); } catch(e) {}
     }
     globalCache.cachedUserId = currentUserId;
     return globalCache.userRegion;

@@ -15,7 +15,7 @@
 export const CONFIG = {
   baseUrl: 'http://localhost:3000',
   credentials: {
-    email: 'klausanderson95@gmail.com',
+    email: 'xemoge9898@cotasen.com',
     password: 'Aa1234567',
   },
   // Tiempos de espera

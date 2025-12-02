@@ -130,12 +130,13 @@ const Modal = ({
           ].includes(type)
             ? 3
             : 2,
-          // Estilos Sellsi para modales ORDER_*
+          // Estilos Sellsi para modales ORDER_* y QUOTATION
           ...([
             MODAL_TYPES.ORDER_CHECK,
             MODAL_TYPES.ORDER_TRUCK,
             MODAL_TYPES.ORDER_BRIEFCASE,
             MODAL_TYPES.ORDER_CANCEL,
+            MODAL_TYPES.QUOTATION,
           ].includes(type) && {
             backgroundColor: '#2E52B2',
             color: '#fff',
@@ -187,6 +188,7 @@ const Modal = ({
               MODAL_TYPES.ORDER_TRUCK,
               MODAL_TYPES.ORDER_BRIEFCASE,
               MODAL_TYPES.ORDER_CANCEL,
+              MODAL_TYPES.QUOTATION,
             ].includes(type) && (
               <IconComponent sx={{ fontSize: 24, color: '#fff' }} />
             )}
@@ -206,8 +208,9 @@ const Modal = ({
                 MODAL_TYPES.ORDER_TRUCK,
                 MODAL_TYPES.ORDER_BRIEFCASE,
                 MODAL_TYPES.ORDER_CANCEL,
+                MODAL_TYPES.QUOTATION,
               ].includes(type)
-                ? '600'
+                ? '700'
                 : 'normal'
             }
             sx={{
@@ -218,6 +221,7 @@ const Modal = ({
                 MODAL_TYPES.ORDER_TRUCK,
                 MODAL_TYPES.ORDER_BRIEFCASE,
                 MODAL_TYPES.ORDER_CANCEL,
+                MODAL_TYPES.QUOTATION,
               ].includes(type) ? '#fff' : 'text.primary',
             }}
           >
@@ -236,6 +240,7 @@ const Modal = ({
                   MODAL_TYPES.ORDER_TRUCK,
                   MODAL_TYPES.ORDER_BRIEFCASE,
                   MODAL_TYPES.ORDER_CANCEL,
+                  MODAL_TYPES.QUOTATION,
                 ].includes(type) ? '#fff' : 'grey.500',
               }}
             >
@@ -249,7 +254,7 @@ const Modal = ({
         dividers={isFormModal}
         sx={{
           textAlign: isFormModal ? 'left' : 'center',
-          pt: isFormModal ? 2 : 2,
+          pt: type === MODAL_TYPES.QUOTATION ? 2 : (isFormModal ? 2 : 2),
           pb: isFormModal ? 2 : 2,
         }}
       >

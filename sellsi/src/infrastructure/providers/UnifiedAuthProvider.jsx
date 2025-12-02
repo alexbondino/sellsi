@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, useMemo 
 import { supabase } from '../../services/supabase';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getUserProfile, invalidateUserProfileCache } from '../../services/user/profileService';
+import { onAuthStarted, onAuthCleared } from '../auth/AuthReadyCoordinator';
 
 // Unified Auth + Role Context
 const UnifiedAuthContext = createContext();
@@ -159,22 +160,26 @@ export const UnifiedAuthProvider = ({ children }) => {
         if (newSession?.user?.id) {
           try { localStorage.setItem('user_id', newSession.user.id); } catch(e) {}
         }
+        // 🔄 Iniciar coordinación de auth-ready (los caches deben notificar cuando estén listos)
+        try { onAuthStarted(); } catch(e) {}
         try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
         try { window.invalidateTransferInfoCache?.(); } catch(e) {}
         try { window.invalidateBillingInfoCache?.(); } catch(e) {}
         try { window.invalidateShippingInfoCache?.(); } catch(e) {}
         try { window.globalCache?.clear?.(); } catch(e) {}
-        // Dispatch custom event for user change
-        setTimeout(() => { window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: newSession?.user?.id } })); }, 100);
+        // Dispatch custom event for user change (sin delay para reducir race conditions)
+        window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: newSession?.user?.id } }));
         fetchProfile(newSession);
       } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
         setSession(newSession);
         ['user_id','account_type','supplierid','sellerid','access_token','auth_token','currentAppRole'].forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
+        // 🚪 Limpiar estado de coordinación auth-ready
+        try { onAuthCleared(); } catch(e) {}
         try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
         try { window.invalidateTransferInfoCache?.(); } catch(e) {}
         try { window.invalidateBillingInfoCache?.(); } catch(e) {}
         try { window.invalidateShippingInfoCache?.(); } catch(e) {}
-        setTimeout(() => { window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: null } })); }, 100);
+        window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: null } }));
         setManualRoleOverride(null);
         fetchProfile(newSession);
       } else if (event === 'USER_UPDATED') {
