@@ -14,8 +14,21 @@ function isCacheFresh() {
   return productsCache.data && (Date.now() - productsCache.fetchedAt) < PRODUCTS_CACHE_TTL;
 }
 
+// --- Cache GLOBAL para price summaries (persiste entre navegaciones) ---
+const PRICE_SUMMARY_TTL = Number(ENV.VITE_PRICE_SUMMARY_TTL_MS) || 3 * 60_000; // 3 minutes default
+const globalSummariesCache = new Map(); // id -> { data: summaryObj, ts }
+const globalSummariesInFlight = new Map(); // chunkKey -> promise
+
+// --- Cache GLOBAL para tiers (persiste entre navegaciones) ---
+const TIERS_CACHE_TTL = 3 * 60_000; // 3 minutes
+const globalTiersCache = new Map(); // productId -> { data: tiersArray, ts }
+const globalTiersPending = new Set(); // productIds en vuelo
+
 // Variable de entorno para usar mocks en desarrollo
 const USE_MOCKS = ENV.VITE_USE_MOCKS;
+
+// 🔍 DEBUG: ID único para cada instancia del hook
+let hookInstanceCounter = 0
 
 /**
  * Hook para obtener productos del marketplace, usando mocks o backend según flag.
@@ -24,18 +37,26 @@ export function useProducts() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  // Cache de tiers: productId -> array tiers
-  const tiersCacheRef = useRef(new Map())
-  const pendingFetchRef = useRef(new Set())
+  // Refs locales solo para control de montaje y métricas
   const abortRef = useRef(null)
   const observerRef = useRef(null)
   const mountedRef = useRef(true)
   // Instrumentation for debugging network counts (temporary)
   const metricsRef = useRef({ priceSummaryCalls: 0, tiersBatchCalls: 0 })
+  
+  // 🔍 DEBUG: ID único para esta instancia
+  const instanceIdRef = useRef(null)
+  if (instanceIdRef.current === null) {
+    instanceIdRef.current = ++hookInstanceCounter
+    console.log(`🔍 [useProducts] NUEVA INSTANCIA #${instanceIdRef.current} creada`)
+  }
+  const instanceId = instanceIdRef.current
 
   // --- Fetch inicial (sin tiers) ---
   useEffect(() => {
     mountedRef.current = true
+    console.log(`🔍 [useProducts #${instanceId}] useEffect INICIO - mountedRef.current = true`)
+    console.log(`🔍 [useProducts #${instanceId}] Cache state: fresh=${isCacheFresh()}, data=${productsCache.data?.length || 0} items, inFlight=${!!productsCache.inFlight}`)
     setLoading(true)
     setError(null)
 
@@ -51,17 +72,35 @@ export function useProducts() {
     abortRef.current = controller
     performance.mark?.('products_fetch_start')
 
-    // Si cache fresca, usar y disparar refresh en background (stale-while-revalidate mínimo)
+    // Si cache fresca, usar directamente pero enriquecer con tiers cacheados
     if (isCacheFresh()) {
-      setProducts(productsCache.data)
+      console.log(`🔍 [useProducts #${instanceId}] PATH A: Cache fresca, usando ${productsCache.data?.length} productos cacheados`)
+      // ✅ Aplicar tiers del globalTiersCache a productos que aún tienen tiersStatus: 'idle'
+      const enrichedProducts = productsCache.data.map(p => {
+        if (p.tiersStatus !== 'idle') return p
+        const cachedTiers = globalTiersCache.get(String(p.id))
+        if (cachedTiers && (Date.now() - cachedTiers.ts) < TIERS_CACHE_TTL) {
+          const tiers = cachedTiers.data
+          if (tiers.length === 0) {
+            return { ...p, priceTiers: [], tiersStatus: 'loaded' }
+          }
+          const precios = tiers.map(t => Number(t.price) || 0).filter(n => n > 0)
+          const minPrice = precios.length ? Math.min(...precios) : p.minPrice
+          const maxPrice = precios.length ? Math.max(...precios) : p.maxPrice
+          return { ...p, priceTiers: tiers, minPrice, maxPrice, tiersStatus: 'loaded' }
+        }
+        return p
+      })
+      console.log(`🔍 [useProducts #${instanceId}] PATH A: setProducts con ${enrichedProducts.length} productos enriquecidos`)
+      setProducts(enrichedProducts)
       setLoading(false)
-      // Revalidate en background sin bloquear UI
-      refreshProducts(controller, setProducts, setError)
     } else {
+      console.log(`🔍 [useProducts #${instanceId}] PATH B: Cache NO fresca, llamando refreshProducts`)
       refreshProducts(controller, setProducts, setError, true)
     }
 
     return () => {
+      console.log(`🔍 [useProducts #${instanceId}] useEffect CLEANUP - mountedRef.current = false`)
       mountedRef.current = false
       controller.abort()
     }
@@ -69,13 +108,23 @@ export function useProducts() {
 
   // Función externa para refrescar (dedup + eq is_active true)
   const refreshProducts = useCallback(async (controller, setProductsCb, setErrorCb, setLoadingInitially = false) => {
+    console.log(`🔍 [useProducts #${instanceId}] refreshProducts INICIO`)
     try {
-      if (isCacheFresh() || controller.signal.aborted) return
+      if (isCacheFresh() || controller.signal.aborted) {
+        console.log(`🔍 [useProducts #${instanceId}] refreshProducts: EARLY RETURN (cacheFresh=${isCacheFresh()}, aborted=${controller.signal.aborted})`)
+        return
+      }
       if (productsCache.inFlight) {
+        console.log(`🔍 [useProducts #${instanceId}] PATH B.1: inFlight existe, esperando...`)
         const data = await productsCache.inFlight
+        console.log(`🔍 [useProducts #${instanceId}] PATH B.1: inFlight resolvió con ${data?.length} productos`)
+        console.log(`🔍 [useProducts #${instanceId}] PATH B.1: aborted=${controller.signal.aborted}, mounted=${mountedRef.current}`)
         if (!controller.signal.aborted && mountedRef.current) {
+          console.log(`🔍 [useProducts #${instanceId}] PATH B.1: setProducts con ${data?.length} productos (SIN fetchPriceSummaries)`)
           setProductsCb(data)
           setLoading(false)
+        } else {
+          console.log(`🔍 [useProducts #${instanceId}] PATH B.1: SKIPPED setProducts (aborted o unmounted)`)
         }
         return
       }
@@ -161,7 +210,8 @@ export function useProducts() {
             priceTiers: [],
             minPrice: basePrice,
             maxPrice: basePrice,
-            tiersStatus: 'idle',
+            // ✅ Si tiene precio base válido, marcar loaded. Si no, marcar idle para cargar tiers.
+            tiersStatus: basePrice > 0 ? 'loaded' : 'idle',
             shippingRegions,
           }
         })
@@ -175,13 +225,25 @@ export function useProducts() {
       })()
 
       const result = await productsCache.inFlight
+      console.log(`🔍 [useProducts #${instanceId}] PATH B.2: Fetch completó con ${result?.length} productos`)
       productsCache.data = result
       productsCache.fetchedAt = Date.now()
       productsCache.inFlight = null
+      console.log(`🔍 [useProducts #${instanceId}] PATH B.2: aborted=${controller.signal.aborted}, mounted=${mountedRef.current}`)
       if (!controller.signal.aborted && mountedRef.current) {
+        console.log(`🔍 [useProducts #${instanceId}] PATH B.2: setProducts con ${result?.length} productos`)
         setProductsCb(result)
+        // ✅ FIX: Esperar price summaries ANTES de setLoading(false)
+        // Esto evita que las cards muestren "Cargando precios..." brevemente
+        console.log(`🔍 [useProducts #${instanceId}] PATH B.2: Llamando fetchPriceSummaries con ${result?.length} IDs`)
+        try { 
+          await fetchPriceSummaries(result.map(p => p.id))
+          console.log(`🔍 [useProducts #${instanceId}] PATH B.2: fetchPriceSummaries COMPLETÓ`)
+        } catch (e) {
+          console.warn('[useProducts] fetchPriceSummaries failed:', e)
+        }
+        console.log(`🔍 [useProducts #${instanceId}] PATH B.2: setLoading(false)`)
         setLoading(false)
-        try { fetchPriceSummaries(result.map(p => p.id)) } catch {}
         performance.mark?.('products_fetch_end')
         if (performance.measure) { try { performance.measure('products_fetch','products_fetch_start','products_fetch_end') } catch {} }
       }
@@ -201,11 +263,7 @@ export function useProducts() {
   }
 
   // --- Fetch summaries from backend view (min/max/tiers_count) ---
-  // Per-id cache for price summaries (TTL)
-  const PRICE_SUMMARY_TTL = Number(ENV.VITE_PRICE_SUMMARY_TTL_MS) || 3 * 60_000 // 3 minutes default
   const PRICE_SUMMARY_CHUNK = 100
-  const summariesCacheRef = useRef(new Map()) // id -> { data: summaryObj, ts }
-  const summariesInFlightRef = useRef(new Map()) // chunkKey -> promise
 
   const chunkArray = (arr, size) => {
     const out = []
@@ -214,26 +272,26 @@ export function useProducts() {
   }
 
   const fetchPriceSummaries = useCallback(async (productIds) => {
+    console.log(`🔍 [fetchPriceSummaries #${instanceId}] INICIO con ${productIds?.length} IDs`)
+    console.log(`🔍 [fetchPriceSummaries #${instanceId}] mountedRef.current = ${mountedRef.current}`)
     const now = Date.now()
     const ids = (productIds || [])
       .map((id) => (id == null ? '' : String(id).trim()))
       .filter((s) => s && s.toLowerCase() !== 'nan')
-    if (ids.length === 0) return
+    if (ids.length === 0) {
+      console.log(`🔍 [fetchPriceSummaries #${instanceId}] EARLY RETURN: 0 IDs válidos`)
+      return
+    }
 
-    try {
-      metricsRef.current.priceSummaryCalls += 1
-      console.debug(`[useProducts] fetchPriceSummaries called (#${metricsRef.current.priceSummaryCalls}) ids=${ids.length}`, ids.slice(0,10))
-    } catch (_) {}
-
-    // Only request summaries for product IDs that exist in current products state
-    const validIds = ids.filter(id => products.find(p => String(p.id) === id))
-    if (validIds.length === 0) return
+    // ✅ Ya no validamos contra products state - los IDs vienen del resultado del fetch
+    const validIds = ids
+    console.log(`🔍 [fetchPriceSummaries #${instanceId}] ${validIds.length} IDs válidos`)
 
     // Determine which ids need fetching (not cached or expired)
     const idsToFetch = []
     const cachedById = new Map()
     for (const id of validIds) {
-      const entry = summariesCacheRef.current.get(id)
+      const entry = globalSummariesCache.get(id)
       if (entry && (now - entry.ts) < PRICE_SUMMARY_TTL) {
         cachedById.set(id, entry.data)
       } else {
@@ -243,28 +301,36 @@ export function useProducts() {
 
     // If nothing to fetch, just apply cached results
     if (idsToFetch.length === 0) {
-      setProducts(prev => prev.map(p => {
-        const s = cachedById.get(String(p.id))
-        if (!s) return p
-        const minPrice = s.min_price != null ? Number(s.min_price) : p.minPrice
-        const maxPrice = s.max_price != null ? Number(s.max_price) : p.maxPrice
-        const tiersCount = s.tiers_count != null ? Number(s.tiers_count) : 0
-        const hasVariable = !!s.has_variable_pricing
-        const nextStatus = tiersCount === 0 ? 'loaded' : (p.tiersStatus === 'idle' ? 'idle' : p.tiersStatus)
-        return { ...p, minPrice, maxPrice, tiers_count: tiersCount, has_variable_pricing: hasVariable, tiersStatus: nextStatus }
-      }))
+      console.log(`🔍 [fetchPriceSummaries #${instanceId}] Todos en cache (${cachedById.size}), aplicando directamente`)
+      console.log(`🔍 [fetchPriceSummaries #${instanceId}] mountedRef ANTES de setProducts: ${mountedRef.current}`)
+      setProducts(prev => {
+        console.log(`🔍 [fetchPriceSummaries #${instanceId}] setProducts callback ejecutando, prev.length=${prev.length}`)
+        return prev.map(p => {
+          const s = cachedById.get(String(p.id))
+          if (!s) return p
+          const minPrice = s.min_price != null ? Number(s.min_price) : p.minPrice
+          const maxPrice = s.max_price != null ? Number(s.max_price) : p.maxPrice
+          const tiersCount = s.tiers_count != null ? Number(s.tiers_count) : 0
+          const hasVariable = !!s.has_variable_pricing
+          // ✅ Si tenemos price summary, marcar como 'loaded' (ya tenemos min/max para mostrar)
+          return { ...p, minPrice, maxPrice, tiers_count: tiersCount, has_variable_pricing: hasVariable, tiersStatus: 'loaded' }
+        })
+      })
+      console.log(`🔍 [fetchPriceSummaries #${instanceId}] setProducts (cache) llamado`)
       return
     }
 
+    console.log(`🔍 [fetchPriceSummaries #${instanceId}] Necesita fetch: ${idsToFetch.length} IDs (${cachedById.size} en cache)`)
     try {
       // Chunk and fetch, with simple in-flight dedupe per chunk
       const chunks = chunkArray(idsToFetch, PRICE_SUMMARY_CHUNK)
+      console.log(`🔍 [fetchPriceSummaries #${instanceId}] Fetching ${chunks.length} chunks...`)
       const fetchedResults = []
       for (const chunk of chunks) {
         const chunkKey = chunk.join(',')
         let p
-        if (summariesInFlightRef.current.has(chunkKey)) {
-          p = summariesInFlightRef.current.get(chunkKey)
+        if (globalSummariesInFlight.has(chunkKey)) {
+          p = globalSummariesInFlight.get(chunkKey)
         } else {
           p = (async () => {
             return await supabase
@@ -272,53 +338,68 @@ export function useProducts() {
               .select('productid,min_price,max_price,tiers_count,has_variable_pricing')
               .in('productid', chunk)
           })()
-          summariesInFlightRef.current.set(chunkKey, p)
+          globalSummariesInFlight.set(chunkKey, p)
         }
         try {
           const res = await p
-          summariesInFlightRef.current.delete(chunkKey)
+          globalSummariesInFlight.delete(chunkKey)
           const { data, error } = res || { data: [], error: null }
           if (error) throw error
           // store into cache
           for (const d of (data || [])) {
-            summariesCacheRef.current.set(String(d.productid), { data: d, ts: Date.now() })
+            globalSummariesCache.set(String(d.productid), { data: d, ts: Date.now() })
             fetchedResults.push(d)
           }
         } catch (errChunk) {
-          summariesInFlightRef.current.delete(chunkKey)
+          globalSummariesInFlight.delete(chunkKey)
           throw errChunk
         }
       }
 
       // Merge cached + fetched and update products
-      setProducts(prev => prev.map(p => {
-        const id = String(p.id)
-        const s = summariesCacheRef.current.get(id)?.data || cachedById.get(id)
-        if (!s) return p
-        const minPrice = s.min_price != null ? Number(s.min_price) : p.minPrice
-        const maxPrice = s.max_price != null ? Number(s.max_price) : p.maxPrice
-        const tiersCount = s.tiers_count != null ? Number(s.tiers_count) : 0
-        const hasVariable = !!s.has_variable_pricing
-        const nextStatus = tiersCount === 0 ? 'loaded' : (p.tiersStatus === 'idle' ? 'idle' : p.tiersStatus)
-        return { ...p, minPrice, maxPrice, tiers_count: tiersCount, has_variable_pricing: hasVariable, tiersStatus: nextStatus }
-      }))
+      console.log(`🔍 [fetchPriceSummaries #${instanceId}] Fetch completó con ${fetchedResults.length} resultados`)
+      console.log(`🔍 [fetchPriceSummaries #${instanceId}] mountedRef ANTES de setProducts (fetch): ${mountedRef.current}`)
+      console.log(`🔍 [fetchPriceSummaries #${instanceId}] globalSummariesCache tiene ${globalSummariesCache.size} entries`)
+      setProducts(prev => {
+        console.log(`🔍 [fetchPriceSummaries #${instanceId}] setProducts (fetch) callback ejecutando, prev.length=${prev.length}`)
+        const updated = prev.map(p => {
+          const id = String(p.id)
+          const s = globalSummariesCache.get(id)?.data || cachedById.get(id)
+          if (!s) return p
+          const minPrice = s.min_price != null ? Number(s.min_price) : p.minPrice
+          const maxPrice = s.max_price != null ? Number(s.max_price) : p.maxPrice
+          const tiersCount = s.tiers_count != null ? Number(s.tiers_count) : 0
+          const hasVariable = !!s.has_variable_pricing
+          // ✅ Si tenemos price summary, marcar como 'loaded' (ya tenemos min/max para mostrar)
+          return { ...p, minPrice, maxPrice, tiers_count: tiersCount, has_variable_pricing: hasVariable, tiersStatus: 'loaded' }
+        })
+        // Log de muestra de precios actualizados
+        const sample = updated.slice(0, 3).map(p => ({ id: p.id?.substring(0,8), minPrice: p.minPrice, maxPrice: p.maxPrice }))
+        console.log(`🔍 [fetchPriceSummaries #${instanceId}] Muestra de precios actualizados:`, sample)
+        return updated
+      })
+      console.log(`🔍 [fetchPriceSummaries #${instanceId}] setProducts (fetch) llamado`)
     } catch (e) {
       console.warn('[useProducts] fetchPriceSummaries failed - falling back to base prices', e)
       // Mark products that were waiting for summaries as loaded so UI uses base price instead of perpetual loading
       setProducts(prev => prev.map(p => ({ ...p, tiersStatus: p.tiersStatus === 'idle' ? 'loaded' : p.tiersStatus })))
       return
     }
-  }, [products])
+  }, []) // ✅ Sin dependencia de products - usamos setProducts con callback
 
   // --- Fetch diferido de tiers (batch) ---
   const fetchTiersBatch = useCallback(async (productIds) => {
+    const now = Date.now()
     // Normalize incoming ids to strings and filter invalids (empty / 'NaN')
     const incoming = (productIds || []).map(id => (id == null ? '' : String(id).trim()))
     // If we already fetched price summaries, avoid requesting tiers for products that have 0 tiers
     // Only request tiers for ids that correspond to known products in memory.
     const ids = incoming.filter(id => {
       if (!id || id.toLowerCase() === 'nan') return false
-      if (tiersCacheRef.current.has(id) || pendingFetchRef.current.has(id)) return false
+      // Check global cache with TTL
+      const cached = globalTiersCache.get(id)
+      if (cached && (now - cached.ts) < TIERS_CACHE_TTL) return false
+      if (globalTiersPending.has(id)) return false
       // Only proceed if this id belongs to a product currently in state
       const prod = products.find(p => String(p.id) === id)
       if (!prod) return false
@@ -326,11 +407,10 @@ export function useProducts() {
       return true
     })
     if (ids.length === 0) return
-    ids.forEach(id => pendingFetchRef.current.add(id))
+    ids.forEach(id => globalTiersPending.add(id))
     // Instrumentation
     try {
       metricsRef.current.tiersBatchCalls += 1
-      console.debug(`[useProducts] fetchTiersBatch called (#${metricsRef.current.tiersBatchCalls}) ids=${ids.length}`, ids.slice(0,20))
     } catch (_) {}
     const batchKey = ids.join(',')
     performance.mark?.(`tiers_fetch_start_${batchKey}`)
@@ -351,7 +431,7 @@ export function useProducts() {
         const pid = String(p.id)
         if (!ids.includes(pid)) return p
         const tiers = grouped.get(pid) || []
-        tiersCacheRef.current.set(pid, tiers)
+        globalTiersCache.set(pid, { data: tiers, ts: Date.now() })
         if (tiers.length === 0) {
           return { ...p, priceTiers: [], tiersStatus: 'loaded' }
         }
@@ -364,11 +444,8 @@ export function useProducts() {
       console.error('[tiers] error batch', e)
       setProducts(prev => prev.map(p => ids.includes(p.id) ? { ...p, tiersStatus: 'error' } : p))
     } finally {
-      ids.forEach(id => pendingFetchRef.current.delete(id))
+      ids.forEach(id => globalTiersPending.delete(id))
       const endKey = ids.join(',')
-      try {
-        console.debug(`[useProducts] fetchTiersBatch finished (#${metricsRef.current.tiersBatchCalls}) ids=${ids.length}`)
-      } catch (_) {}
       performance.mark?.(`tiers_fetch_end_${endKey}`)
       if (performance.measure) {
         try { performance.measure(`tiers_fetch_${endKey}`,`tiers_fetch_start_${endKey}`,`tiers_fetch_end_${endKey}`) } catch {}
@@ -380,7 +457,8 @@ export function useProducts() {
   const getPriceTiers = useCallback((productId) => {
   const pid = productId == null ? '' : String(productId).trim()
   if (!pid || pid.toLowerCase() === 'nan') return []
-  if (tiersCacheRef.current.has(pid)) return tiersCacheRef.current.get(pid)
+  const cached = globalTiersCache.get(pid)
+  if (cached && (Date.now() - cached.ts) < TIERS_CACHE_TTL) return cached.data
   // lanzar fetch individual (batch de 1) si no está
   fetchTiersBatch([pid])
   setProducts(prev => prev.map(p => String(p.id) === pid && p.tiersStatus === 'idle' ? { ...p, tiersStatus: 'loading' } : p))
