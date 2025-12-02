@@ -195,7 +195,8 @@ export const useShippingInfoValidation = () => {
           error: authError,
         } = await supabase.auth.getUser();
         if (authError || !user) throw new Error('Usuario no autenticado');
-        const profileResp = await getUserProfile(user.id);
+        // ✅ Bug 8 - Pasar {force} a getUserProfile para evitar cache de 60s
+        const profileResp = await getUserProfile(user.id, { force });
         if (!profileResp?.data) throw new Error('Perfil no disponible');
         const formData = mapUserProfileToFormData(profileResp.data);
         const shippingData = {

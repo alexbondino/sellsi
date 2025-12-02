@@ -394,13 +394,12 @@ export const useOptimizedProductOwnership = () => {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('user-login', handleAuthEvents);
-    window.addEventListener('user-logout', handleAuthEvents);
+    // ✅ Bug 11 - Fix: usar 'user-changed' (evento real del sistema)
+    window.addEventListener('user-changed', handleAuthEvents);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('user-login', handleAuthEvents);
-      window.removeEventListener('user-logout', handleAuthEvents);
+      window.removeEventListener('user-changed', handleAuthEvents);
     };
   }, []);
 

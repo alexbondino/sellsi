@@ -281,17 +281,18 @@ const AddToCartModal = ({
     isComplete: isBillingComplete,
     isLoading: isLoadingBilling,
     missingFieldLabels: missingBillingLabels,
-    refreshIfStale, // ✅ MEJORA: Solo recarga si hubo invalidación (optimiza llamadas)
+    refresh, // ✅ FIX: Usar refresh() en lugar de refreshIfStale() para F5/race condition
+    state: billingState, // Para detectar si hay error
   } = useBillingInfoValidation();
 
-  // ✅ FIX: Refresh billing info cuando el modal se abre para evitar datos stale
-  // Usa refreshIfStale para evitar llamadas innecesarias si no hubo cambios
+  // ✅ FIX: Refresh billing info cuando el modal se abre
+  // Siempre forzar recarga al abrir para evitar race condition en F5 (producción rápida)
+  // Esto asegura datos frescos incluso si el load() inicial falló por timing de auth
   useEffect(() => {
     if (open) {
-      // Solo recarga si hubo invalidación desde la última carga
-      refreshIfStale();
+      refresh();
     }
-  }, [open, refreshIfStale]);
+  }, [open, refresh]);
 
   // ============================================================================
   // ESTADOS LOCALES

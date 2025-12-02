@@ -47,11 +47,8 @@ const globalBillingInfoCache = {
     try {
       currentUserId = localStorage.getItem('user_id');
     } catch (e) {}
-    if (
-      currentUserId &&
-      this.cachedUserId &&
-      currentUserId !== this.cachedUserId
-    ) {
+    // ✅ Bug 1 - Fix: usar !== simple (si cachedUserId es null también limpia)
+    if (this.cachedUserId !== currentUserId) {
       this.clear();
       return null;
     }
@@ -180,7 +177,8 @@ export const useBillingInfoValidation = () => {
           return cached;
         }
       }
-      if (globalBillingInfoCache.isLoading) {
+      // ✅ FIX: Si force=true, NO esperar a isLoading (evita deadlock en F5 race condition)
+      if (!force && globalBillingInfoCache.isLoading) {
         return new Promise(resolve => {
           const wait = () => {
             if (!globalBillingInfoCache.isLoading)

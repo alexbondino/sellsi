@@ -1,8 +1,14 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useMemo } from 'react';
-import { supabase } from '../../services/supabase';
+import { supabase, invalidateAuthUserCache } from '../../services/supabase';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getUserProfile, invalidateUserProfileCache } from '../../services/user/profileService';
 import { onAuthStarted, onAuthCleared } from '../auth/AuthReadyCoordinator';
+// 🧹 Imports para Nuclear Cleanup (Kill Switch - Fase 1)
+import { useOrdersStore } from '../../shared/stores/orders/ordersStore';
+import { useOfferStore } from '../../stores/offerStore';
+import useCartHistory from '../../shared/stores/cart/useCartHistory';
+import { useNotificationsStore } from '../../domains/notifications/store/notificationsStore';
+import { queryClient } from '../../utils/queryClient';
 
 // Unified Auth + Role Context
 const UnifiedAuthContext = createContext();
@@ -20,6 +26,56 @@ export const useRole = () => {
 };
 
 const USER_NAME_STATUS = { PENDING: 'pendiente' };
+
+/**
+ * ☢️ NUCLEAR CLEANUP - Kill Switch para logout
+ * Limpia TODOS los caches, stores y localStorage del usuario anterior
+ * Resuelve Bugs: 6, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20
+ */
+const performNuclearCleanup = () => {
+  console.warn('☢️ NUCLEAR CLEANUP - Limpiando sesión anterior ☢️');
+  
+  // 1. Auth Ready Coordinator
+  try { onAuthCleared(); } catch(e) {}
+  
+  // 2. Stores Zustand (Bugs 12, 13, 14, 15)
+  try { useOrdersStore.getState().clearOrders(); } catch(e) { console.debug('clearOrders:', e); }
+  try { useCartHistory.getState().clearHistory(); } catch(e) { console.debug('clearHistory:', e); }
+  try { useOfferStore.getState().clearOffersCache(); } catch(e) { console.debug('clearOffersCache:', e); }
+  try { useNotificationsStore.getState().reset?.(); } catch(e) { console.debug('notifications reset:', e); }
+  
+  // 3. React Query (Bug 20) - Cache de 15-30min
+  try { queryClient.clear(); } catch(e) { console.debug('queryClient.clear:', e); }
+  
+  // 4. Realtime Subscriptions (Bugs 17, 18)
+  try { 
+    delete window.__ordersRealtimeSubscribed;
+    useOrdersStore.getState().unsubscribeRealtime?.();
+  } catch(e) {}
+  try { useOfferStore.getState().unsubscribeAll?.(); } catch(e) {}
+  
+  // 5. Caches de servicio (Bugs 10, 19)
+  try { invalidateUserProfileCache(); } catch(e) {}
+  try { invalidateAuthUserCache(); } catch(e) {}
+  
+  // 6. localStorage (Bugs 14, 16)
+  ['user_id','account_type','supplierid','sellerid','access_token','auth_token',
+   'currentAppRole','sellsi-cart-v3-refactored','notifications_forced_read',
+   'notifications_read_buffer'].forEach(k => { 
+    try { localStorage.removeItem(k); } catch(e) {} 
+  });
+  
+  // 7. sessionStorage (Bug 6)
+  try { sessionStorage.clear(); } catch(e) {}
+  
+  // 8. Legacy invalidators (redundancia por seguridad)
+  try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
+  try { window.invalidateTransferInfoCache?.(); } catch(e) {}
+  try { window.invalidateBillingInfoCache?.(); } catch(e) {}
+  try { window.invalidateShippingInfoCache?.(); } catch(e) {}
+  
+  console.log('✅ Nuclear Cleanup Completado');
+};
 
 export const UnifiedAuthProvider = ({ children }) => {
   // Auth state
@@ -151,6 +207,15 @@ export const UnifiedAuthProvider = ({ children }) => {
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setSession(data.session);
+      // ✅ FIX: Disparar user-changed también cuando se restaura sesión existente (F5)
+      // Esto permite que los hooks de billing/transfer/shipping recarguen sus datos
+      if (data.session?.user?.id) {
+        try { localStorage.setItem('user_id', data.session.user.id); } catch(e) {}
+        // Delay pequeño para asegurar que los hooks ya están montados y escuchando
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: data.session.user.id } }));
+        }, 50);
+      }
       fetchProfile(data.session);
     });
     const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
@@ -170,18 +235,18 @@ export const UnifiedAuthProvider = ({ children }) => {
         // Dispatch custom event for user change (sin delay para reducir race conditions)
         window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: newSession?.user?.id } }));
         fetchProfile(newSession);
-      } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+      } else if (event === 'TOKEN_REFRESHED') {
+        // ✅ FIX Bug 9: TOKEN_REFRESHED NO es logout
+        // Supabase renueva JWT cada ~1 hora, solo actualizar session
         setSession(newSession);
-        ['user_id','account_type','supplierid','sellerid','access_token','auth_token','currentAppRole'].forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
-        // 🚪 Limpiar estado de coordinación auth-ready
-        try { onAuthCleared(); } catch(e) {}
-        try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
-        try { window.invalidateTransferInfoCache?.(); } catch(e) {}
-        try { window.invalidateBillingInfoCache?.(); } catch(e) {}
-        try { window.invalidateShippingInfoCache?.(); } catch(e) {}
-        window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: null } }));
+        // NO limpiar localStorage, NO invalidar caches, NO disparar user-changed con null
+      } else if (event === 'SIGNED_OUT') {
+        // 🧹 SIGNED_OUT real: Limpieza total con Nuclear Cleanup
+        performNuclearCleanup();
+        setSession(null);
         setManualRoleOverride(null);
-        fetchProfile(newSession);
+        window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: null } }));
+        // fetchProfile(null) no es necesario - ya está todo limpio
       } else if (event === 'USER_UPDATED') {
         setSession(newSession);
         if (newSession?.user?.id) {
