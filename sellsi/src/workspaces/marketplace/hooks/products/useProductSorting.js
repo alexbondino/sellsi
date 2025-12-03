@@ -42,9 +42,19 @@ export const useProductSorting = (productos = []) => {
           return aNombre.localeCompare(bNombre, 'es', { sensitivity: 'base' });
         });
       case 'menor-precio':
-        return productosArray.sort((a, b) => (a.precio || 0) - (b.precio || 0))
+        // ✅ FIX: Usar minPrice (precio mínimo de priceTiers) para ordenar de menor a mayor
+        return productosArray.sort((a, b) => {
+          const aPrice = a.minPrice ?? a.precio ?? 0;
+          const bPrice = b.minPrice ?? b.precio ?? 0;
+          return aPrice - bPrice;
+        })
       case 'mayor-precio':
-        return productosArray.sort((a, b) => (b.precio || 0) - (a.precio || 0))
+        // ✅ FIX: Usar maxPrice (precio máximo de priceTiers) para ordenar de mayor a menor
+        return productosArray.sort((a, b) => {
+          const aPrice = a.maxPrice ?? a.precio ?? 0;
+          const bPrice = b.maxPrice ?? b.precio ?? 0;
+          return bPrice - aPrice;
+        })
       case 'mayor-descuento':
         return productosArray.sort(
           (a, b) => (b.descuento || 0) - (a.descuento || 0)

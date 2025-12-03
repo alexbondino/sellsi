@@ -49,6 +49,7 @@ import { useSmartSkeleton } from '../hooks/useSmartSkeleton';
 import { StockIndicator } from '../../../../workspaces/marketplace';
 import QuotationModal from './QuotationModal';
 import ContactModal from '../../../../shared/components/modals/ContactModal';
+import ProductPricing from './ProductHeader/ProductPricing';
 import { useSupplierDocumentTypes } from '../../../../shared/utils/supplierDocumentTypes';
 import { formatNumber } from '../../../../shared/utils/formatters/numberFormatters';
 
@@ -103,7 +104,7 @@ const ProductHeader = React.memo(
 
     // Debug logs removed
 
-    const [copied, setCopied] = useState({ name: false, price: false });
+    const [copied, setCopied] = useState({ name: false, price: false, allTiers: false });
     // ✅ NUEVO: Estado para el modal de cotización
     const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false);
     // ✅ NUEVO: Estado para el modal de contacto
@@ -190,295 +191,23 @@ const ProductHeader = React.memo(
       return { defaultQuantity, defaultUnitPrice };
     };
 
-    // Lógica para mostrar precios y tramos
+    // Reemplazado por componente reutilizable `ProductPricing`
     const showPriceSkeleton = useSmartSkeleton(loadingTiers);
-    let priceContent;
-    if (showPriceSkeleton) {
-      priceContent = <PriceTiersSkeleton rows={4} />;
-    } else if (errorTiers) {
-      priceContent = (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 1,
-            mb: 2,
-          }}
-        >
-          <Typography variant="body2" color="error.main">
-            Error al cargar precios
-          </Typography>
-          <Tooltip title="Reintenta o revisa tu conexión" arrow>
-            <ContentCopyIcon color="disabled" fontSize="small" />
-          </Tooltip>
-        </Box>
-      );
-    } else if (tiers && tiers.length > 0) {
-      // Mostrar tabla de tramos
-      priceContent = (
-        <Box sx={{ mb: 3 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1,
-              mb: 1,
-            }}
-          >
-            <Typography variant="h6" sx={{ color: 'text.primary' }}>
-              Precios por volumen
-            </Typography>
-            <Tooltip
-              title="El precio varía según la cantidad que compres. Cada tramo indica el precio unitario para ese rango de unidades."
-              arrow
-              placement="right"
-            >
-              <InfoOutlinedIcon
-                color="action"
-                fontSize="small"
-                sx={{ cursor: 'pointer' }}
-              />
-            </Tooltip>
-            <Tooltip title="Copiar todos los precios" arrow placement="right">
-              <IconButton
-                size="small"
-                onClick={handleCopyAllTiers}
-                sx={{
-                  ml: 0.5,
-                  boxShadow: 'none',
-                  outline: 'none',
-                  bgcolor: 'transparent',
-                  '&:hover': {
-                    backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                  },
-                  '&:active': {
-                    boxShadow: 'none !important',
-                    outline: 'none !important',
-                    background: 'rgba(25, 118, 210, 0.04) !important',
-                  },
-                  '&:focus': {
-                    boxShadow: 'none !important',
-                    outline: 'none !important',
-                    background: 'rgba(25, 118, 210, 0.04) !important',
-                  },
-                  '&:focus-visible': {
-                    boxShadow: 'none !important',
-                    outline: 'none !important',
-                    background: 'rgba(25, 118, 210, 0.04) !important',
-                  },
-                }}
-              >
-                {copied.allTiers ? (
-                  <CheckCircleOutlineIcon color="success" fontSize="small" />
-                ) : (
-                  <ContentCopyIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-          </Box>{' '}
-          <TableContainer
-            component={Paper}
-            sx={{ maxWidth: 400, mx: 'auto', mb: 2 }}
-          >
-            <Table size="small">
-              <TableBody>
-                {tiers.map((tier, idx) => {
-                  // Determinar el mensaje del tooltip basado en si es el último tramo
-                  const isLastTier = idx === tiers.length - 1;
-                  let tooltipMessage;
-                  let rangeText;
 
-                  if (isLastTier) {
-                    // Para el último tramo: "Si compras X unidades o más"
-                    tooltipMessage = `Si compras ${
-                      tier.min_quantity
-                    } unidades o más, el precio unitario es $${tier.price.toLocaleString(
-                      'es-CL'
-                    )}`;
-                    rangeText = `${tier.min_quantity}+ uds`;
-                  } else {
-                    // Para tramos intermedios: calcular el máximo basado en el siguiente tramo
-                    const nextTier = tiers[idx + 1];
-                    const maxQuantity = nextTier
-                      ? nextTier.min_quantity - 1
-                      : tier.max_quantity;
-
-                    tooltipMessage = `Si compras entre ${
-                      tier.min_quantity
-                    } y ${maxQuantity} unidades, el precio unitario es de $${tier.price.toLocaleString(
-                      'es-CL'
-                    )}`;
-                    rangeText = `${tier.min_quantity} - ${maxQuantity} uds`;
-                  }
-                  return (
-                    <Tooltip
-                      key={idx}
-                      title={tooltipMessage}
-                      arrow
-                      placement="right"
-                    >
-                      <TableRow hover sx={{ cursor: 'help' }}>
-                        <TableCell align="center" sx={{ fontWeight: 600 }}>
-                          {rangeText}
-                        </TableCell>
-                        <TableCell align="center">
-                          <Typography color="text.primary" fontWeight={700}>
-                            ${tier.price.toLocaleString('es-CL')}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    </Tooltip>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          {/* Botón de Cotización para tramos - Solo si está logueado y NO es producto propio */}
-          {isLoggedIn && !isOwnProduct && (
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                justifyContent: 'flex-start',
-                mt: 2,
-                mb: 4,
-                width: '100%',
-                gap: 1,
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-start',
-                  gap: 1,
-                }}
-              >
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  ¿Necesitas alguna condición especial?
-                </Typography>
-                <Button
-                  variant="text"
-                  size="small"
-                  sx={{
-                    color: 'primary.main',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    p: 0,
-                    minWidth: 'auto',
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                      textDecoration: 'underline',
-                    },
-                  }}
-                  onClick={handleOpenContactModal}
-                >
-                  Contáctanos
-                </Button>
-              </Box>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-start',
-                  gap: 1,
-                }}
-              >
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  ¿Quieres saber los detalles de todo?
-                </Typography>
-                <Button
-                  variant="text"
-                  size="small"
-                  sx={{
-                    color: 'primary.main',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    p: 0,
-                    minWidth: 'auto',
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                      textDecoration: 'underline',
-                    },
-                  }}
-                  onClick={handleOpenQuotationModal}
-                >
-                  Cotiza aquí
-                </Button>
-              </Box>
-            </Box>
-          )}
-        </Box>
-      );
-    } else {
-      // Precio único (sin tramos) - Con box similar a los tramos
-      priceContent = (
-        <Box
-          sx={{
-            mb: 3,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            justifyContent: 'flex-start',
-            width: '100%',
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-              mb: 1,
-              width: '100%',
-            }}
-          >
-            <Typography variant="h6" sx={{ color: 'text.primary' }}>
-              Precio
-            </Typography>
-          </Box>
-
-          {/* Tabla para precio unitario con mismo estilo que tramos */}
-          <TableContainer
-            component={Paper}
-            sx={{
-              maxWidth: 400,
-              mb: 2,
-              width: 'fit-content',
-            }}
-          >
-            <Table size="small">
-              <TableBody>
-                <TableRow hover>
-                  <TableCell align="center" sx={{ fontWeight: 600 }}>
-                    Por unidad
-                  </TableCell>
-                  <TableCell align="center">
-                    <PriceDisplay
-                      price={product.precio}
-                      originalPrice={product.precioOriginal}
-                      variant="body1"
-                      sx={{
-                        fontWeight: 700,
-                        color: 'text.primary',
-                        fontSize: '1rem',
-                        '& .MuiTypography-root': {
-                          color: 'text.primary',
-                        },
-                      }}
-                    />
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
-      );
-    }
+    const priceContent = (
+      <ProductPricing
+        product={product}
+        tiers={finalTiers}
+        loadingTiers={loadingTiers}
+        errorTiers={errorTiers}
+        isLoggedIn={isLoggedIn}
+        isOwnProduct={isOwnProduct}
+        copied={copied}
+        onCopyAllTiers={handleCopyAllTiers}
+        onOpenContactModal={handleOpenContactModal}
+        onOpenQuotationModal={handleOpenQuotationModal}
+      />
+    );
 
     // Memoized image resolver so effect deps remain stable.
     const resolveImageSrc = useCallback(
@@ -912,81 +641,7 @@ const ProductHeader = React.memo(
             {/* Precios and/or tramos */}
             {priceContent}
 
-            {/* Botón de Cotización - Solo para precio único, si está logueado y NO es producto propio */}
-            {!(tiers && tiers.length > 0) && isLoggedIn && !isOwnProduct && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  justifyContent: 'flex-start',
-                  mb: 4,
-                  width: '100%',
-                  gap: 1,
-                }}
-              >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    gap: 1,
-                  }}
-                >
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    ¿Necesitas alguna condición especial?
-                  </Typography>
-                  <Button
-                    variant="text"
-                    size="small"
-                    sx={{
-                      color: 'primary.main',
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      p: 0,
-                      minWidth: 'auto',
-                      '&:hover': {
-                        backgroundColor: 'transparent',
-                        textDecoration: 'underline',
-                      },
-                    }}
-                    onClick={handleOpenContactModal}
-                  >
-                    Contáctanos
-                  </Button>
-                </Box>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    gap: 1,
-                  }}
-                >
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    ¿Quieres saber los detalles de todo?
-                  </Typography>
-                  <Button
-                    variant="text"
-                    size="small"
-                    sx={{
-                      color: 'primary.main',
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      p: 0,
-                      minWidth: 'auto',
-                      '&:hover': {
-                        backgroundColor: 'transparent',
-                        textDecoration: 'underline',
-                      },
-                    }}
-                    onClick={handleOpenQuotationModal}
-                  >
-                    Cotiza aquí
-                  </Button>
-                </Box>
-              </Box>
-            )}
+            {/* Buttons handled inside `ProductPricing` component */}
 
             {/* Botones de Compra */}
             {/* Solo mostrar acciones de compra si NO es supplier, ni supplier marketplace, ni mis productos, ni es producto propio */}

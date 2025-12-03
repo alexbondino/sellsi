@@ -57,14 +57,17 @@ class CartService {
         let searchError = null;
 
         try {
+          // FIX: Usar .order().limit(1) en lugar de .maybeSingle() para manejar
+          // múltiples carritos activos (PGRST116). Siempre tomamos el más reciente.
           const { data, error } = await supabase
             .from('carts')
             .select('cart_id, status, created_at, updated_at')
             .eq('user_id', userId)
             .eq('status', 'active')
-            .maybeSingle();
+            .order('created_at', { ascending: false })
+            .limit(1);
 
-          existingCart = data;
+          existingCart = data?.[0] ?? null;
           searchError = error;
         } catch (err) {
           searchError = err;

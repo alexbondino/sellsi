@@ -215,6 +215,14 @@ const useSupplierProductFilters = create((set, get) => ({
         valueB = Number(valueB) || 0
       }
 
+      // ✅ FIX: Manejo especial para ordenamiento por precio considerando priceTiers
+      if (sortBy === 'precio') {
+        // Usar tramoPrecioMin (precio mínimo de priceTiers) o minPrice como fallback
+        // Paréntesis para evitar mezcla de '??' con '||' que rompe el parser
+        valueA = (a.tramoPrecioMin ?? a.minPrice ?? Number(a.price)) || 0
+        valueB = (b.tramoPrecioMin ?? b.minPrice ?? Number(b.price)) || 0
+      }
+
       // Manejo especial para strings
       if (typeof valueA === 'string') {
         valueA = valueA.toLowerCase()

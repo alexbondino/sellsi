@@ -90,7 +90,7 @@ const ProductPricing = ({
       <Box sx={ACTION_STYLES.containerWithMargin}>
         <Box sx={ACTION_STYLES.row}>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            ¿Necesitas alguna condición especial?
+            ¿Necesitas solicitar alguna condición especial?
           </Typography>
           <Button
             variant="text"

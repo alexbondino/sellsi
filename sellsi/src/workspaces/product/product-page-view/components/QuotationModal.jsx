@@ -82,20 +82,10 @@ const QuotationModal = ({
       onSubmit={handleConfirm}
       type={MODAL_TYPES.QUOTATION}
       title="Descargar Cotización"
-      submitButtonText="Sí, descargar"
+      submitButtonText="Descargar"
       cancelButtonText="Cancelar"
       showCancelButton={true}
     >
-      <Box sx={{ mt: 1.5, mb: 0 }}>
-        <Typography
-          variant="body1"
-          component="div"
-          sx={{ color: 'text.secondary', lineHeight: 1.6 }}
-        >
-          ¿Estás seguro de que deseas continuar?
-        </Typography>
-      </Box>
-
       <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
         <Box sx={{ mb: 1 }}>
           <Typography
