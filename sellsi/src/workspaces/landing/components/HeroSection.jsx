@@ -86,11 +86,10 @@ export default function HeroSection({
             textAlign: 'left',
           }}
         >
-          Con{' '}
           <Box component="span" sx={{ fontWeight: 700, display: 'inline' }}>
             Sellsi
           </Box>{' '}
-          simplificamos tus procesos de compras y ventas corporativas mediante un canal directo y centralizado, ya sea para compras puntuales o abastecimiento por volumen. Negocia y cotiza en línea en un entorno amigable y sin intermediarios.
+          es tu mejor aliado para centralizar tus compras y ventas corporativas. Accede directamente a empresas, negocia sin intermediarios y cierra negocios de cualquier tamaño.
         </Typography>
 
         <Box
