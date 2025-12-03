@@ -255,6 +255,34 @@ export const useLoginForm = () => {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        console.error('❌ Error en OAuth de Google:', error);
+        dispatch({
+          type: 'SET_ERROR_CORREO',
+          payload: 'Error al iniciar sesión con Google',
+        });
+      }
+    } catch (error) {
+      console.error('Error en login con Google:', error);
+      dispatch({
+        type: 'SET_ERROR_CORREO',
+        payload: 'Error de conexión. Intenta de nuevo.',
+      });
+    }
+  };
+
   const resetForm = () => {
     dispatch({ type: 'RESET_FORM' });
   };
@@ -263,6 +291,7 @@ export const useLoginForm = () => {
     state,
     dispatch,
     handleLogin,
+    handleGoogleLogin,
     resetForm,
     reenviarCorreo,
   };

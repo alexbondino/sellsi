@@ -3,9 +3,12 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../../services/supabase';
+import { trackLoginIP } from '../../../../services/security';
+import { useRole } from '../../../../infrastructure/providers';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const { redirectToInitialHome } = useRole();
 
   useEffect(() => {
     const handleAuth = async () => {
@@ -23,11 +26,11 @@ export default function AuthCallback() {
           return;
         }
 
-        // Manejo de OAuth/PKCE
+        // Manejo de OAuth/PKCE (Google, etc.)
         const hasCode = url.searchParams.get('code');
         if (hasCode) {
           console.log('🔐 Procesando OAuth/PKCE...');
-          const { error } = await supabase.auth.exchangeCodeForSession(
+          const { data, error } = await supabase.auth.exchangeCodeForSession(
             window.location.href
           );
           if (error) {
@@ -35,8 +38,79 @@ export default function AuthCallback() {
             navigate('/?error=oauth_failed');
             return;
           }
-          console.log('✅ OAuth exitoso');
-          navigate('/', { replace: true });
+
+          const user = data?.user;
+          if (!user) {
+            console.error('❌ No se pudo obtener usuario después de OAuth');
+            navigate('/?error=oauth_user_failed');
+            return;
+          }
+
+          console.log('✅ OAuth exitoso para usuario:', user.email);
+
+          // Verificar si el perfil existe, si no, crearlo
+          let { data: perfil, error: perfilError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+          if (perfilError || !perfil) {
+            console.log('📝 Creando perfil para usuario OAuth...');
+            const { data: newPerfil, error: createError } = await supabase
+              .from('users')
+              .insert({
+                user_id: user.id,
+                email: user.email,
+                user_nm:
+                  user.user_metadata?.full_name ||
+                  user.email.split('@')[0] ||
+                  'Usuario',
+                main_supplier: true, // Por defecto proveedor
+                phone_nbr: user.user_metadata?.phone || '',
+                country: user.user_metadata?.pais || 'No especificado',
+                avatar_url: user.user_metadata?.avatar_url || null,
+              })
+              .select()
+              .single();
+
+            if (createError) {
+              console.error('❌ Error creando perfil OAuth:', createError);
+              // Continuar de todas formas, el perfil se puede crear después
+            } else {
+              perfil = newPerfil;
+              console.log('✅ Perfil OAuth creado exitosamente');
+            }
+          } else {
+            console.log('✅ Perfil OAuth ya existe');
+          }
+
+          // Guardar información en localStorage
+          localStorage.setItem('user_id', user.id);
+
+          // Tracking de IP
+          try {
+            const provider = user.app_metadata?.provider || 'google';
+            const ipResult = await trackLoginIP(user.id, `${provider}_oauth`);
+            if (ipResult.success) {
+              console.log('📡 IP actualizada en login OAuth:', ipResult.ip);
+            }
+          } catch (ipError) {
+            console.warn('⚠️ Error en tracking de IP:', ipError);
+          }
+
+          // Guardar account_type basado en main_supplier
+          if (perfil?.main_supplier) {
+            localStorage.setItem('account_type', 'proveedor');
+          } else {
+            localStorage.setItem('account_type', 'comprador');
+          }
+
+          // Redirigir usando el RoleProvider
+          console.log('🔄 Redirigiendo a home...');
+          setTimeout(() => {
+            redirectToInitialHome();
+          }, 500);
           return;
         }
 
