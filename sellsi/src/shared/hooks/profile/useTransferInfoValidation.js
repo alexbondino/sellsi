@@ -18,6 +18,7 @@ import { getUserProfile } from '../../../services/user';
 import { validateRut, validateEmail } from '../../../utils/validators';
 import { mapUserProfileToFormData } from '../../../utils/profileHelpers'; // ✅ Usar el mapeo correcto
 import { supabase } from '../../../services/supabase'; // ✅ Para obtener el userId actual
+import { onCacheReady } from '../../../infrastructure/auth/AuthReadyCoordinator'; // ✅ Bug 4 - Notificar coordinador
 
 /**
  * Estados de validación de información bancaria
@@ -37,6 +38,7 @@ const globalTransferInfoCache = {
   timestamp: null,
   isLoading: false,
   cachedUserId: null,
+  lastInvalidatedAt: 0, // ✅ Bug 5 - Timestamp para detectar invalidaciones
   CACHE_DURATION: 20 * 60 * 1000, // 20 minutos
 
   get: () => {
@@ -59,11 +61,8 @@ const globalTransferInfoCache = {
     try {
       currentUserId = localStorage.getItem('user_id');
     } catch (e) {}
-    if (
-      currentUserId &&
-      globalTransferInfoCache.cachedUserId &&
-      currentUserId !== globalTransferInfoCache.cachedUserId
-    ) {
+    // ✅ Bug 1 - Fix: usar !== simple (si cachedUserId es null también limpia)
+    if (globalTransferInfoCache.cachedUserId !== currentUserId) {
       // Usuario cambió: invalidar para evitar contaminación cruzada
       globalTransferInfoCache.clear();
       return null;
@@ -90,7 +89,12 @@ const globalTransferInfoCache = {
   },
 
   invalidate: () => {
+    globalTransferInfoCache.lastInvalidatedAt = Date.now(); // ✅ Bug 5
     globalTransferInfoCache.clear();
+    // ✅ Bug 2 - Emitir evento para que instancias montadas se enteren
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('transfer-info-invalidated'));
+    }
   },
 };
 
@@ -229,7 +233,8 @@ export const useTransferInfoValidation = (userId = null) => {
           throw new Error('Usuario no autenticado');
         }
 
-        const profileResponse = await getUserProfile(user.id); // ✅ Pasar el userId
+        // ✅ Bug 8 - Pasar {force} a getUserProfile para evitar cache de 60s
+        const profileResponse = await getUserProfile(user.id, { force: forceRefresh });
 
         if (!profileResponse || !profileResponse.data) {
           throw new Error('No se pudo obtener el perfil del usuario');
@@ -262,6 +267,8 @@ export const useTransferInfoValidation = (userId = null) => {
         // Guardar en cache
         const cacheData = { data: transferData, validation };
         globalTransferInfoCache.set(cacheData);
+        // ✅ Bug 4 - Notificar al coordinador de auth-ready
+        try { onCacheReady('transfer-info'); } catch(e) {}
 
         return cacheData;
       } catch (err) {
@@ -297,6 +304,24 @@ export const useTransferInfoValidation = (userId = null) => {
    */
   useEffect(() => {
     loadTransferInfo();
+  }, [loadTransferInfo]);
+
+  /**
+   * ✅ Bug 3 - Escuchar evento de invalidación para recargar datos
+   */
+  useEffect(() => {
+    const handleInvalidation = () => loadTransferInfo(true);
+    window.addEventListener('transfer-info-invalidated', handleInvalidation);
+    return () => window.removeEventListener('transfer-info-invalidated', handleInvalidation);
+  }, [loadTransferInfo]);
+
+  /**
+   * ✅ Bug 3 - Escuchar user-changed para recargar post-login
+   */
+  useEffect(() => {
+    const handleUserChanged = (e) => e.detail?.userId && loadTransferInfo(true);
+    window.addEventListener('user-changed', handleUserChanged);
+    return () => window.removeEventListener('user-changed', handleUserChanged);
   }, [loadTransferInfo]);
 
   /**

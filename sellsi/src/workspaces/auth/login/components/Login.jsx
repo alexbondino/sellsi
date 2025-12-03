@@ -12,8 +12,11 @@ import {
   InputAdornment,
   IconButton,
   Paper,
+  Button,
+  Divider,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import GoogleIcon from '@mui/icons-material/Google';
 
 import { PrimaryButton } from '../../../../shared/components';
 import { useLoginForm } from '../hooks/useLoginForm';
@@ -62,7 +65,7 @@ const Logo = memo(() => (
 ));
 
 // ✅ LOGIN FORM COMPONENT
-const LoginForm = memo(({ state, dispatch, onSubmit }) => (
+const LoginForm = memo(({ state, dispatch, onSubmit, onGoogleLogin }) => (
   <Paper
     elevation={3}
     sx={{
@@ -74,6 +77,35 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
       borderRadius: 2,
     }}
   >
+    {/* Botón de Google */}
+    <Button
+      fullWidth
+      variant="outlined"
+      startIcon={<GoogleIcon />}
+      onClick={onGoogleLogin}
+      sx={{
+        mb: 2,
+        py: 1.2,
+        borderColor: '#dadce0',
+        color: '#3c4043',
+        textTransform: 'none',
+        fontSize: 14,
+        fontWeight: 500,
+        '&:hover': {
+          borderColor: '#d2d3d4',
+          backgroundColor: '#f8f9fa',
+        },
+      }}
+    >
+      Continuar con Google
+    </Button>
+
+    <Divider sx={{ my: 2 }}>
+      <Typography variant="body2" color="text.secondary">
+        o
+      </Typography>
+    </Divider>
+
     <form onSubmit={onSubmit}>
       <Box display="flex" flexDirection="column" gap={1.5}>
         <TextField
@@ -178,8 +210,14 @@ const FooterLinks = memo(({ dispatch, onClose, onOpenRegister }) => (
 
 // ✅ MAIN COMPONENT
 export default function Login({ open, onClose, onOpenRegister }) {
-  const { state, dispatch, handleLogin, resetForm, reenviarCorreo } =
-    useLoginForm();
+  const {
+    state,
+    dispatch,
+    handleLogin,
+    handleGoogleLogin,
+    resetForm,
+    reenviarCorreo,
+  } = useLoginForm();
   const location = useLocation();
 
   // ✅ Bloquear scroll del body cuando el modal está abierto
@@ -266,24 +304,25 @@ export default function Login({ open, onClose, onOpenRegister }) {
                 📧 Verificación de email pendiente
               </Typography>
               <Typography variant="body2" sx={{ mb: 2, textAlign: 'center' }}>
-                Por favor, revisa tu correo electrónico 
+                Por favor, revisa tu correo electrónico
                 {state.correo && (
                   <>
-                    {' '}(<strong>{state.correo}</strong>)
+                    {' '}
+                    (<strong>{state.correo}</strong>)
                   </>
                 )}{' '}
                 y haz clic en el enlace de confirmación que te enviamos.
               </Typography>
-              <Typography 
-                variant="body2" 
-                color="text.secondary" 
+              <Typography
+                variant="body2"
+                color="text.secondary"
                 sx={{ mb: 2, textAlign: 'center', fontSize: '0.875rem' }}
               >
                 💡 Revisa también tu carpeta de spam o correo no deseado.
               </Typography>
-              <Typography 
-                variant="caption" 
-                color="text.secondary" 
+              <Typography
+                variant="caption"
+                color="text.secondary"
                 sx={{ mb: 3, textAlign: 'center' }}
               >
                 Hemos reenviado el correo de verificación automáticamente.
@@ -307,6 +346,7 @@ export default function Login({ open, onClose, onOpenRegister }) {
                 state={state}
                 dispatch={dispatch}
                 onSubmit={handleSubmit}
+                onGoogleLogin={handleGoogleLogin}
               />
               <FooterLinks
                 dispatch={dispatch}

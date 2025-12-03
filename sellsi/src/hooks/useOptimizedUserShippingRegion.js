@@ -106,9 +106,8 @@ const fetchUserRegionCentralized = async () => {
   })();
 
   // Si user cambió respecto al cache, invalidar inmediatamente
-  // ⚡ FIX CRÍTICO: Solo invalidar si AMBOS existen y son DIFERENTES
-  // No invalidar si uno es null (puede ser timing issue de localStorage)
-  if (globalCache.cachedUserId && currentUserId && globalCache.cachedUserId !== currentUserId) {
+  // ✅ Bug 7 - Fix: usar !== simple para cubrir caso de cachedUserId null
+  if (globalCache.cachedUserId !== currentUserId) {
     console.log('🔄 [useOptimizedUserShippingRegion] Usuario cambió, invalidando cache:', {
       cached: globalCache.cachedUserId,
       current: currentUserId
@@ -118,13 +117,6 @@ const fetchUserRegionCentralized = async () => {
     globalCache.cachedUserId = currentUserId;
     globalCache.isStale = false;
     globalCache.persist(); // Persistir cambios
-  } else if (!globalCache.cachedUserId && currentUserId) {
-    // Si no hay cachedUserId pero hay currentUserId, actualizar sin borrar
-    
-    globalCache.cachedUserId = currentUserId;
-    if (globalCache.userRegion) {
-      globalCache.persist(); // Persistir con el userId actualizado
-    }
   }
 
   // Si ya está cargando, esperar a que termine

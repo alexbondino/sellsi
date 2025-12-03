@@ -132,4 +132,21 @@ export const useNotificationsStore = create((set, get) => ({
     const unreadCount = merged.filter(n=>!n.is_read).length;
     set({ notifications: merged, unreadCount, hasMore: list.length >= 20 });
   },
+
+  // 🧹 Reset completo para logout (Bug 14 - Kill Switch)
+  reset: () => {
+    set({
+      notifications: [],
+      unreadCount: 0,
+      hasMore: true,
+      isLoading: false,
+      activeTab: 'all',
+      pendingMarkReadIds: new Set(),
+      forcedReadIds: new Set(),
+    });
+    try {
+      localStorage.removeItem('notifications_forced_read');
+      localStorage.removeItem('notifications_read_buffer');
+    } catch(_) {}
+  },
 }));
