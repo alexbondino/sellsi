@@ -90,9 +90,9 @@ const CheckoutSummary = ({
   };
 
   // ✅ CÁLCULO CENTRALIZADO Y CORRECTO
-  const { subtotalWithIva, grandTotal, baseTotal, paymentFee } = useMemo(() => {
+  const { subtotalWithIva, grandTotal, baseTotal, paymentFee, paymentFeeLabel } = useMemo(() => {
     if (!orderData.items || orderData.items.length === 0) {
-      return { subtotalWithIva: 0, orderTotal: 0 };
+      return { subtotalWithIva: 0, grandTotal: 0, baseTotal: 0, paymentFee: 0, paymentFeeLabel: '' };
     }
 
     const totalBruto = orderData.items.reduce((total, item) => {
@@ -101,18 +101,31 @@ const CheckoutSummary = ({
       return total + quantity * unitPrice;
     }, 0);
 
-    // Khipu fee (fixed $500 when payment method is selected)
-  const khipuFee = selectedMethod ? 500 : 0;
+    // Total base (sin fee de pago)
+    const baseTotalCalc = Math.trunc(totalBruto) + shippingCost;
 
-    // Total del pedido: Subtotal (con IVA incluido) + Envío + Khipu
-  const baseTotal = Math.trunc(totalBruto) + shippingCost; // sin fee
-  const finalOrderTotal = baseTotal + khipuFee;
+    // Calcular fee según método de pago seleccionado
+    let fee = 0;
+    let feeLabel = '';
+    if (selectedMethod) {
+      if (selectedMethod.id === 'khipu') {
+        fee = 500; // Comisión fija Khipu
+        feeLabel = 'Comisión Khipu';
+      } else if (selectedMethod.id === 'flow') {
+        fee = Math.round(baseTotalCalc * 0.0319); // 3.19% Flow
+        feeLabel = 'Comisión Flow (3.19%)';
+      }
+    }
+
+    // Total del pedido: Subtotal (con IVA incluido) + Envío + Fee
+    const finalOrderTotal = baseTotalCalc + fee;
 
     return {
-  subtotalWithIva: Math.trunc(totalBruto),
-  grandTotal: finalOrderTotal,
-  baseTotal,
-  paymentFee: khipuFee,
+      subtotalWithIva: Math.trunc(totalBruto),
+      grandTotal: finalOrderTotal,
+      baseTotal: baseTotalCalc,
+      paymentFee: fee,
+      paymentFeeLabel: feeLabel,
     };
   }, [orderData.items, shippingCost, selectedMethod]);
 
@@ -308,12 +321,12 @@ const CheckoutSummary = ({
               </Typography>
             </Stack>
 
-            {/* Mostrar comisión Khipu cuando hay método de pago seleccionado */}
-            {selectedMethod && (
+            {/* Mostrar comisión según método de pago seleccionado */}
+            {selectedMethod && paymentFee > 0 && (
               <Stack direction="row" justifyContent="space-between">
-                <Typography variant="body2">Khipu</Typography>
+                <Typography variant="body2">{paymentFeeLabel}</Typography>
                 <Typography variant="body2" fontWeight="medium">
-                  {checkoutService.formatPrice(500)}
+                  {checkoutService.formatPrice(paymentFee)}
                 </Typography>
               </Stack>
             )}

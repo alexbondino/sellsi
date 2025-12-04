@@ -6,6 +6,7 @@ import { supabase } from '../../../services/supabase';
 import { PAYMENT_STATUS } from '../constants/paymentMethods';
 import { trackUserAction } from '../../../services/security';
 import { default as khipuService } from './khipuService';
+import { default as flowService } from './flowService';
 
 class CheckoutService {
   // ===== ÓRDENES =====
@@ -352,6 +353,91 @@ class CheckoutService {
       };
     } catch (error) {
       console.error('Error processing Khipu payment:', error);
+      throw new Error(`Error en el pago: ${error.message}`);
+    }
+  }
+
+  /**
+   * Procesar pago con Flow
+   * @param {Object} paymentData - Datos del pago
+   * @returns {Object} Resultado del pago
+   */
+  async processFlowPayment(paymentData) {
+    try {
+      console.log('[CheckoutService] Iniciando pago con Flow - paymentData (pre-seal):', paymentData);
+
+      // Seguridad: pedir al servidor que selle el pricing y use su grand_total
+      let sealedAmount = null;
+      try {
+        const { data: sealed, error: sealErr } = await supabase.rpc('finalize_order_pricing', { p_order_id: paymentData.orderId });
+        if (sealErr) {
+          console.error('[CheckoutService] finalize_order_pricing error (Flow):', sealErr);
+          throw sealErr;
+        }
+        const sealedOrder = Array.isArray(sealed) ? sealed[0] : sealed;
+        const sealedTotalBase = Math.round(Number(sealedOrder?.total || 0));
+        const sealedPaymentFee = Math.round(Number(sealedOrder?.payment_fee || 0));
+        sealedAmount = Math.round(Number(sealedOrder?.grand_total ?? (sealedTotalBase + sealedPaymentFee)));
+        console.log('[CheckoutService] Flow sealed pricing received', { sealedTotalBase, sealedPaymentFee, sealedAmount });
+      } catch (sealEx) {
+        console.error('[CheckoutService] No se pudo sellar el precio antes de invocar Flow:', sealEx);
+        throw new Error('No se pudo verificar el precio sellado');
+      }
+
+      // Validar monto sellado
+      if (!flowService.validateAmount(sealedAmount)) {
+        console.error('[CheckoutService] Monto sellado inválido para Flow:', sealedAmount);
+        throw new Error('Monto inválido para Flow (mínimo $350 CLP)');
+      }
+
+      // Crear orden de pago en Flow usando monto sellado
+      const flowResponse = await flowService.createPaymentOrder({
+        orderId: paymentData.orderId,
+        userId: paymentData.userId,
+        userEmail: paymentData.userEmail,
+        total: sealedAmount,
+        currency: paymentData.currency || 'CLP',
+        items: paymentData.items,
+        shippingAddress: paymentData.shippingAddress || null,
+        billingAddress: paymentData.billingAddress || null,
+      });
+
+      if (!flowResponse.success) {
+        throw new Error('Error al crear orden de pago en Flow');
+      }
+
+      // Crear transacción de pago
+      const { error: transactionError } = await supabase
+        .from('payment_transactions')
+        .insert({
+          order_id: paymentData.orderId,
+          payment_method: 'flow',
+          external_payment_id: flowResponse.flowOrder?.toString() || flowResponse.token,
+          external_transaction_id: flowResponse.token,
+          amount: sealedAmount,
+          currency: paymentData.currency || 'CLP',
+          status: 'pending',
+          gateway_response: flowResponse,
+        });
+
+      if (transactionError) {
+        console.error('[CheckoutService] Error creando transacción Flow:', transactionError);
+        // No lanzar error, la orden ya se creó correctamente
+      }
+
+      console.log('[CheckoutService] Pago Flow creado exitosamente:', flowResponse);
+
+      return {
+        success: true,
+        flowOrder: flowResponse.flowOrder,
+        paymentUrl: flowResponse.paymentUrl,
+        token: flowResponse.token,
+        status: PAYMENT_STATUS.PENDING,
+        paymentMethod: 'flow',
+        processedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error('Error processing Flow payment:', error);
       throw new Error(`Error en el pago: ${error.message}`);
     }
   }
