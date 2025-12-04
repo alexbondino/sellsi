@@ -36,43 +36,23 @@ export default function ResetPassword() {
   useEffect(() => {
     const init = async () => {
       try {
-        // Verificar si tenemos tokens de recovery en el hash
-        const hashParams = new URLSearchParams(
-          window.location.hash.replace(/^#/, '')
-        );
+        console.log('🔍 ResetPassword - Iniciando verificación...');
 
-        const access_token = hashParams.get('access_token');
-        const refresh_token = hashParams.get('refresh_token');
-        const type = hashParams.get('type');
+        // Verificar si estamos en modo recovery (marcado por AuthCallback)
+        const isRecoveryMode = localStorage.getItem('recovery_mode') === 'true';
+        const recoveryUserId = localStorage.getItem('recovery_user_id');
 
-        console.log('🔍 ResetPassword - verificando tokens...');
-        console.log('  access_token:', !!access_token);
-        console.log('  refresh_token:', !!refresh_token);
-        console.log('  type:', type);
+        console.log('  recovery_mode:', isRecoveryMode);
+        console.log('  recovery_user_id:', recoveryUserId);
 
-        // Si tenemos los tokens, establecer sesión TEMPORAL solo para recovery
-        if (access_token && refresh_token && type === 'recovery') {
-          console.log('🔐 Estableciendo sesión temporal de recovery...');
-
-          const { data, error } = await supabase.auth.setSession({
-            access_token,
-            refresh_token,
-          });
-
-          if (error || !data.session) {
-            throw new Error('Token de recuperación inválido o expirado.');
-          }
-
-          console.log('✅ Sesión temporal de recovery establecida');
-          setIsVerifying(false);
-          return;
-        }
-
-        // Fallback: verificar si ya hay sesión activa (por si vienen de otro flujo)
+        // Verificar que hay sesión activa
         const {
           data: { session },
           error: sessionError,
         } = await supabase.auth.getSession();
+
+        console.log('  session exists:', !!session);
+        console.log('  session user:', session?.user?.id);
 
         if (!session || sessionError) {
           throw new Error(
@@ -80,7 +60,24 @@ export default function ResetPassword() {
           );
         }
 
-        console.log('✅ Sesión de recuperación encontrada');
+        // Verificar que la sesión corresponde al usuario de recovery
+        if (
+          isRecoveryMode &&
+          recoveryUserId &&
+          session.user.id !== recoveryUserId
+        ) {
+          throw new Error('Sesión de recuperación inválida.');
+        }
+
+        // Si no está en modo recovery pero tiene sesión, rechazar
+        // (previene que alguien con sesión normal entre a esta página)
+        if (!isRecoveryMode) {
+          throw new Error(
+            'Esta página es solo para recuperación de contraseña. Por favor, solicita un enlace de recuperación.'
+          );
+        }
+
+        console.log('✅ Sesión de recovery verificada correctamente');
         setIsVerifying(false);
       } catch (err) {
         console.error('❌ Error de verificación:', err.message);
@@ -120,6 +117,10 @@ export default function ResetPassword() {
       if (upErr) throw upErr;
 
       setOk(true);
+
+      // Limpiar banderas de recovery
+      localStorage.removeItem('recovery_mode');
+      localStorage.removeItem('recovery_user_id');
 
       // Cerrar sesión local
       await supabase.auth.signOut();
