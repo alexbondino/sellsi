@@ -36,27 +36,63 @@ export default function ResetPassword() {
   useEffect(() => {
     const init = async () => {
       try {
-        // AuthCallback ya verificó el token y estableció la sesión
-        // Solo verificamos que tengamos una sesión activa de recuperación
+        // Verificar si tenemos tokens de recovery en el hash
+        const hashParams = new URLSearchParams(
+          window.location.hash.replace(/^#/, '')
+        );
+
+        const access_token = hashParams.get('access_token');
+        const refresh_token = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
+
+        console.log('🔍 ResetPassword - verificando tokens...');
+        console.log('  access_token:', !!access_token);
+        console.log('  refresh_token:', !!refresh_token);
+        console.log('  type:', type);
+
+        // Si tenemos los tokens, establecer sesión TEMPORAL solo para recovery
+        if (access_token && refresh_token && type === 'recovery') {
+          console.log('🔐 Estableciendo sesión temporal de recovery...');
+
+          const { data, error } = await supabase.auth.setSession({
+            access_token,
+            refresh_token,
+          });
+
+          if (error || !data.session) {
+            throw new Error('Token de recuperación inválido o expirado.');
+          }
+
+          console.log('✅ Sesión temporal de recovery establecida');
+          setIsVerifying(false);
+          return;
+        }
+
+        // Fallback: verificar si ya hay sesión activa (por si vienen de otro flujo)
         const {
           data: { session },
-          error,
+          error: sessionError,
         } = await supabase.auth.getSession();
 
-        if (!session || error) {
+        if (!session || sessionError) {
           throw new Error(
-            'No hay sesión activa para restablecer la contraseña.'
+            'No hay sesión de recuperación válida. Por favor, solicita un nuevo enlace.'
           );
         }
 
-        console.log('✅ Sesión de recuperación activa');
+        console.log('✅ Sesión de recuperación encontrada');
         setIsVerifying(false);
       } catch (err) {
-        console.error('Error de verificación:', err);
+        console.error('❌ Error de verificación:', err.message);
         setIsVerifying(false);
-        window.location.replace(
-          `${window.location.origin}/?error=invalid_recovery_link`
-        );
+        setError(err.message || 'Enlace de recuperación inválido o expirado.');
+
+        // Redirigir después de 3 segundos
+        setTimeout(() => {
+          window.location.replace(
+            `${window.location.origin}/?error=invalid_recovery_link`
+          );
+        }, 3000);
       }
     };
 
@@ -104,6 +140,27 @@ export default function ResetPassword() {
     return (
       <Box sx={{ minHeight: '80vh', display: 'grid', placeItems: 'center' }}>
         <Typography>Verificando enlace...</Typography>
+      </Box>
+    );
+  }
+
+  // Si hay error de verificación, mostrar mensaje
+  if (error && !password) {
+    return (
+      <Box
+        sx={{ minHeight: '80vh', display: 'grid', placeItems: 'center', p: 2 }}
+      >
+        <Paper sx={{ p: 3, width: '100%', maxWidth: 420, textAlign: 'center' }}>
+          <Typography variant="h6" color="error" gutterBottom>
+            Enlace inválido o expirado
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {error}
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 2 }} color="text.secondary">
+            Redirigiendo...
+          </Typography>
+        </Paper>
       </Box>
     );
   }

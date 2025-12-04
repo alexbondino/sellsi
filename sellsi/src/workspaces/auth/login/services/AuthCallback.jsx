@@ -14,56 +14,69 @@ export default function AuthCallback() {
     const handleAuth = async () => {
       try {
         const url = new URL(window.location.href);
-        // Parse both query params and hash (fragment) because Supabase may
-        // return recovery tokens in either place depending on redirect settings.
         const searchParams = url.searchParams;
         const hashParams = new URLSearchParams(
           window.location.hash.replace(/^#/, '')
         );
 
-        const token_hash =
-          searchParams.get('token_hash') ||
-          searchParams.get('token') ||
-          hashParams.get('token') ||
-          hashParams.get('token_hash');
-
-        const type = searchParams.get('type') || hashParams.get('type') || null;
+        console.log('🔍 AuthCallback - URL completa:', window.location.href);
+        console.log('🔍 Query params:', Object.fromEntries(searchParams));
+        console.log('🔍 Hash params:', Object.fromEntries(hashParams));
 
         const error_description =
           searchParams.get('error_description') ||
           hashParams.get('error_description');
 
-        // Manejar errores de Supabase
         if (error_description) {
           console.error('❌ Error de Supabase:', error_description);
           navigate('/?error=auth_failed');
           return;
         }
 
-        // Primero: si viene un token de recuperación (recovery), priorizamos
-        // su manejo para evitar que otros listeners o la sesión auto-establecida
-        // redirijan al home antes de mostrar el formulario de restablecer.
-        if (token_hash && type === 'recovery') {
-          console.log('🔐 Manejo de recovery (token en query/hash)...');
+        // PRIORIDAD 1: Detectar recovery ANTES de que Supabase establezca sesión automática
+        const type = searchParams.get('type') || hashParams.get('type');
+        const access_token =
+          hashParams.get('access_token') || searchParams.get('access_token');
+        const refresh_token =
+          hashParams.get('refresh_token') || searchParams.get('refresh_token');
+        const token_hash =
+          searchParams.get('token_hash') ||
+          searchParams.get('token') ||
+          hashParams.get('token') ||
+          hashParams.get('token_hash');
 
-          const { data, error } = await supabase.auth.verifyOtp({
-            token_hash,
-            type,
-          });
+        console.log('🔍 Type detectado:', type);
+        console.log('🔍 Has access_token:', !!access_token);
+        console.log('🔍 Has refresh_token:', !!refresh_token);
+        console.log('🔍 Has token_hash:', !!token_hash);
 
-          if (error) {
-            console.error(
-              '❌ Error verificando token de recovery:',
-              error.message
-            );
-            navigate('/?error=verification_failed');
-            return;
-          }
+        // Detectar flujo de recovery: type=recovery O tiene tokens de sesión en hash
+        const isRecovery =
+          type === 'recovery' ||
+          (access_token &&
+            refresh_token &&
+            type !== 'signup' &&
+            type !== 'invite');
 
+        if (isRecovery) {
+          console.log('🔐 DETECTADO: Flujo de recovery password');
           console.log(
-            '✅ Token de recovery verificado, redirigiendo a reset password...'
+            '🚫 Previniendo auto-login, redirigiendo a página de reset...'
           );
-          navigate('/auth/reset-password', { replace: true });
+
+          // Limpiar cualquier sesión existente para evitar auto-login
+          await supabase.auth.signOut({ scope: 'local' });
+
+          // Redirigir a página de reset CON los tokens para que pueda verificarlos
+          // Los pasamos en el hash para que ResetPassword pueda usarlos
+          const resetUrl = new URL(
+            '/auth/reset-password',
+            window.location.origin
+          );
+          if (access_token)
+            resetUrl.hash = `access_token=${access_token}&refresh_token=${refresh_token}&type=recovery`;
+
+          window.location.replace(resetUrl.toString());
           return;
         }
 
@@ -155,8 +168,8 @@ export default function AuthCallback() {
           return;
         }
 
-        // 🔧 NUEVO: Manejo de email verification/signup/recovery
-        if (token_hash && type) {
+        // 🔧 Manejo de email verification/signup (NO recovery, ya se manejó arriba)
+        if (token_hash && type && type !== 'recovery') {
           console.log(`🔐 Verificando token de tipo: ${type}...`);
 
           const { data, error } = await supabase.auth.verifyOtp({
@@ -171,15 +184,6 @@ export default function AuthCallback() {
           }
 
           console.log('✅ Token verificado exitosamente');
-
-          // Manejar recuperación de contraseña - redirigir al formulario de reset
-          if (type === 'recovery') {
-            console.log(
-              '🔐 Token de recuperación verificado, redirigiendo a reset password...'
-            );
-            navigate('/auth/reset-password', { replace: true });
-            return;
-          }
 
           // Crear perfil temporal si no existe (para signup/invite)
           if (data?.user && (type === 'signup' || type === 'invite')) {
