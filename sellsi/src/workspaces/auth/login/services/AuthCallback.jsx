@@ -14,10 +14,24 @@ export default function AuthCallback() {
     const handleAuth = async () => {
       try {
         const url = new URL(window.location.href);
+        // Parse both query params and hash (fragment) because Supabase may
+        // return recovery tokens in either place depending on redirect settings.
+        const searchParams = url.searchParams;
+        const hashParams = new URLSearchParams(
+          window.location.hash.replace(/^#/, '')
+        );
+
         const token_hash =
-          url.searchParams.get('token_hash') || url.searchParams.get('token');
-        const type = url.searchParams.get('type');
-        const error_description = url.searchParams.get('error_description');
+          searchParams.get('token_hash') ||
+          searchParams.get('token') ||
+          hashParams.get('token') ||
+          hashParams.get('token_hash');
+
+        const type = searchParams.get('type') || hashParams.get('type') || null;
+
+        const error_description =
+          searchParams.get('error_description') ||
+          hashParams.get('error_description');
 
         // Manejar errores de Supabase
         if (error_description) {
@@ -26,8 +40,35 @@ export default function AuthCallback() {
           return;
         }
 
+        // Primero: si viene un token de recuperación (recovery), priorizamos
+        // su manejo para evitar que otros listeners o la sesión auto-establecida
+        // redirijan al home antes de mostrar el formulario de restablecer.
+        if (token_hash && type === 'recovery') {
+          console.log('🔐 Manejo de recovery (token en query/hash)...');
+
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash,
+            type,
+          });
+
+          if (error) {
+            console.error(
+              '❌ Error verificando token de recovery:',
+              error.message
+            );
+            navigate('/?error=verification_failed');
+            return;
+          }
+
+          console.log(
+            '✅ Token de recovery verificado, redirigiendo a reset password...'
+          );
+          navigate('/auth/reset-password', { replace: true });
+          return;
+        }
+
         // Manejo de OAuth/PKCE (Google, etc.)
-        const hasCode = url.searchParams.get('code');
+        const hasCode = searchParams.get('code') || hashParams.get('code');
         if (hasCode) {
           console.log('🔐 Procesando OAuth/PKCE...');
           const { data, error } = await supabase.auth.exchangeCodeForSession(
