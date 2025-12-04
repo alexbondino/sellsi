@@ -125,18 +125,23 @@ export default function ResetPassword() {
 
       setOk(true);
 
-      // Limpiar banderas de recovery
+      console.log('✅ Contraseña actualizada exitosamente');
+      console.log('🔐 Limpiando modo recovery e iniciando sesión...');
+
+      // Limpiar banderas de recovery para permitir navegación normal
       localStorage.removeItem('recovery_mode');
       localStorage.removeItem('recovery_user_id');
 
-      // Cerrar sesión local
-      await supabase.auth.signOut();
+      // NO cerrar sesión - mantener al usuario logueado
+      // La sesión ya está activa desde el enlace de recovery
 
-      // Redirigir al mismo host con banner
-      const base = window.location.origin;
-      const url = new URL(base);
-      url.searchParams.set('banner', 'reset_success');
-      window.location.replace(url.toString());
+      // Esperar un momento para que los cambios se propaguen
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Redirigir al home (la sesión ya está establecida)
+      // UnifiedAuthProvider se encargará de redirigir al workspace correcto
+      console.log('🏠 Redirigiendo al home...');
+      window.location.href = window.location.origin;
     } catch (err) {
       setError(err?.message ?? 'Ocurrió un error al cambiar la contraseña.');
     } finally {
