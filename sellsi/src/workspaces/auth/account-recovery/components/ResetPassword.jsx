@@ -37,8 +37,14 @@ export default function ResetPassword() {
     const init = async () => {
       try {
         console.log('🔍 ResetPassword - Iniciando verificación...');
+        console.log('🔍 URL completa:', window.location.href);
 
-        // PRIORIDAD 1: Verificar si venimos directamente desde el email (tokens en hash/query)
+        // Marcar modo recovery INMEDIATAMENTE al montar este componente
+        // Esto previene que UnifiedAuthProvider redirija
+        localStorage.setItem('recovery_mode', 'true');
+        console.log('🔐 Modo recovery activado');
+
+        // Verificar si venimos directamente desde el email (tokens en hash/query)
         const hashParams = new URLSearchParams(
           window.location.hash.replace(/^#/, '')
         );
@@ -49,81 +55,41 @@ export default function ResetPassword() {
           hashParams.get('access_token') || searchParams.get('access_token');
         const refresh_token =
           hashParams.get('refresh_token') || searchParams.get('refresh_token');
+        const token_hash =
+          searchParams.get('token_hash') || hashParams.get('token_hash');
 
         console.log('  URL type:', type);
         console.log('  Has access_token in URL:', !!access_token);
         console.log('  Has refresh_token in URL:', !!refresh_token);
+        console.log('  Has token_hash in URL:', !!token_hash);
 
-        // Si venimos directamente del email (type=recovery o tokens en URL)
-        if (type === 'recovery' || (access_token && refresh_token)) {
-          console.log(
-            '🔐 Flujo directo desde email - estableciendo modo recovery...'
-          );
-
-          // Marcar modo recovery INMEDIATAMENTE antes de que UnifiedAuthProvider redirija
-          localStorage.setItem('recovery_mode', 'true');
-
-          // Verificar sesión (Supabase ya la estableció desde el hash)
-          const {
-            data: { session },
-            error: sessionError,
-          } = await supabase.auth.getSession();
-
-          if (!session || sessionError) {
-            throw new Error('Token de recuperación inválido o expirado.');
-          }
-
-          localStorage.setItem('recovery_user_id', session.user.id);
-          console.log('✅ Sesión de recovery verificada desde email');
-          setIsVerifying(false);
-          return;
-        }
-
-        // PRIORIDAD 2: Verificar si ya estamos en modo recovery (marcado previamente)
-        const isRecoveryMode = localStorage.getItem('recovery_mode') === 'true';
-        const recoveryUserId = localStorage.getItem('recovery_user_id');
-
-        console.log('  recovery_mode:', isRecoveryMode);
-        console.log('  recovery_user_id:', recoveryUserId);
-
-        // Verificar que hay sesión activa
+        // Verificar sesión (Supabase ya la estableció desde el hash)
         const {
           data: { session },
           error: sessionError,
         } = await supabase.auth.getSession();
 
         console.log('  session exists:', !!session);
-        console.log('  session user:', session?.user?.id);
+        console.log('  session error:', sessionError?.message);
 
         if (!session || sessionError) {
           throw new Error(
-            'No hay sesión de recuperación válida. Por favor, solicita un nuevo enlace.'
+            'Token de recuperación inválido o expirado. Por favor, solicita un nuevo enlace.'
           );
         }
 
-        // Verificar que la sesión corresponde al usuario de recovery
-        if (
-          isRecoveryMode &&
-          recoveryUserId &&
-          session.user.id !== recoveryUserId
-        ) {
-          throw new Error('Sesión de recuperación inválida.');
-        }
-
-        // Si no está en modo recovery pero tiene sesión, rechazar
-        // (previene que alguien con sesión normal entre a esta página)
-        if (!isRecoveryMode) {
-          throw new Error(
-            'Esta página es solo para recuperación de contraseña. Por favor, solicita un enlace de recuperación.'
-          );
-        }
-
-        console.log('✅ Sesión de recovery verificada correctamente');
+        // Guardar user_id para validación
+        localStorage.setItem('recovery_user_id', session.user.id);
+        console.log('✅ Sesión de recovery verificada - mostrando formulario');
         setIsVerifying(false);
       } catch (err) {
         console.error('❌ Error de verificación:', err.message);
         setIsVerifying(false);
         setError(err.message || 'Enlace de recuperación inválido o expirado.');
+
+        // Limpiar recovery mode si falla
+        localStorage.removeItem('recovery_mode');
+        localStorage.removeItem('recovery_user_id');
 
         // Redirigir después de 3 segundos
         setTimeout(() => {
