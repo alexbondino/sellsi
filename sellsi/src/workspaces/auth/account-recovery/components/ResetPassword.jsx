@@ -38,7 +38,48 @@ export default function ResetPassword() {
       try {
         console.log('🔍 ResetPassword - Iniciando verificación...');
 
-        // Verificar si estamos en modo recovery (marcado por AuthCallback)
+        // PRIORIDAD 1: Verificar si venimos directamente desde el email (tokens en hash/query)
+        const hashParams = new URLSearchParams(
+          window.location.hash.replace(/^#/, '')
+        );
+        const searchParams = new URLSearchParams(window.location.search);
+
+        const type = hashParams.get('type') || searchParams.get('type');
+        const access_token =
+          hashParams.get('access_token') || searchParams.get('access_token');
+        const refresh_token =
+          hashParams.get('refresh_token') || searchParams.get('refresh_token');
+
+        console.log('  URL type:', type);
+        console.log('  Has access_token in URL:', !!access_token);
+        console.log('  Has refresh_token in URL:', !!refresh_token);
+
+        // Si venimos directamente del email (type=recovery o tokens en URL)
+        if (type === 'recovery' || (access_token && refresh_token)) {
+          console.log(
+            '🔐 Flujo directo desde email - estableciendo modo recovery...'
+          );
+
+          // Marcar modo recovery INMEDIATAMENTE antes de que UnifiedAuthProvider redirija
+          localStorage.setItem('recovery_mode', 'true');
+
+          // Verificar sesión (Supabase ya la estableció desde el hash)
+          const {
+            data: { session },
+            error: sessionError,
+          } = await supabase.auth.getSession();
+
+          if (!session || sessionError) {
+            throw new Error('Token de recuperación inválido o expirado.');
+          }
+
+          localStorage.setItem('recovery_user_id', session.user.id);
+          console.log('✅ Sesión de recovery verificada desde email');
+          setIsVerifying(false);
+          return;
+        }
+
+        // PRIORIDAD 2: Verificar si ya estamos en modo recovery (marcado previamente)
         const isRecoveryMode = localStorage.getItem('recovery_mode') === 'true';
         const recoveryUserId = localStorage.getItem('recovery_user_id');
 

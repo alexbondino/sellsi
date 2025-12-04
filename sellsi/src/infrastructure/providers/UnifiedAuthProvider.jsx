@@ -281,13 +281,21 @@ export const UnifiedAuthProvider = ({ children }) => {
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
 
-      // ⚠️ RECOVERY MODE: Si estamos en modo recovery, NO procesar como sesión normal
+      // ⚠️ RECOVERY MODE: Detectar tokens de recovery en URL ANTES de procesar
+      const currentUrl = window.location.href;
+      const hashMatch =
+        currentUrl.match(/#.*type=recovery/) ||
+        currentUrl.match(/#.*access_token=.*&.*refresh_token=/);
+      const isRecoveryUrl =
+        hashMatch || currentUrl.includes('/auth/reset-password');
       const isRecoveryMode = localStorage.getItem('recovery_mode') === 'true';
 
-      if (isRecoveryMode) {
+      if (isRecoveryUrl || isRecoveryMode) {
         console.log(
           '🔐 Sesión inicial durante recovery mode - NO fetching profile ni redirigiendo'
         );
+        console.log('  isRecoveryUrl:', !!isRecoveryUrl);
+        console.log('  isRecoveryMode:', isRecoveryMode);
         setSession(data.session);
         setLoadingUserStatus(false);
         return;
@@ -315,14 +323,22 @@ export const UnifiedAuthProvider = ({ children }) => {
       (event, newSession) => {
         if (!mounted) return;
         if (event === 'SIGNED_IN') {
-          // ⚠️ RECOVERY MODE: Si estamos en modo recovery, NO procesar como login normal
+          // ⚠️ RECOVERY MODE: Detectar tokens de recovery en URL o localStorage
+          const currentUrl = window.location.href;
+          const hashMatch =
+            currentUrl.match(/#.*type=recovery/) ||
+            currentUrl.match(/#.*access_token=.*&.*refresh_token=/);
+          const isRecoveryUrl =
+            hashMatch || currentUrl.includes('/auth/reset-password');
           const isRecoveryMode =
             localStorage.getItem('recovery_mode') === 'true';
 
-          if (isRecoveryMode) {
+          if (isRecoveryUrl || isRecoveryMode) {
             console.log(
               '🔐 SIGNED_IN durante recovery mode - ignorando auto-redirect'
             );
+            console.log('  isRecoveryUrl:', !!isRecoveryUrl);
+            console.log('  isRecoveryMode:', isRecoveryMode);
             setSession(newSession);
             // NO llamar fetchProfile ni redirigir - el usuario está cambiando contraseña
             return;
