@@ -89,20 +89,21 @@ export default function ServicesSection({
               textAlign: 'left',
             }}
           >
-            Simplifica y agiliza tus compras B2B en un solo lugar
+            Centraliza y agiliza tus compras B2B en un solo lugar
           </Typography>
 
           <Box sx={{ display: 'grid', gap: 1.25, mt: 4 }}>
             <Bullet color="#2E52B2">
-              Encuentra proveedores verificados y confiables en minutos.
+              Accede a proveedores verificados: Encuentra socios comerciales
+              confiables en minutos.
             </Bullet>
             <Bullet color="#2E52B2">
-              Ahorra tiempo comparando precios y condiciones en un solo
-              marketplace.
+              Optimiza tus tiempos de compra: Cotiza en línea, negocia volumen y
+              cierra tratos en tiempo récord, sin cadenas de correos.
             </Bullet>
             <Bullet color="#2E52B2">
-              Realiza compras seguras con procesos simples, transparentes y
-              confiables.
+              Simplifica tu gestión: Realiza compras seguras y obtén tus
+              facturas al instante en nuestra plataforma.
             </Bullet>
           </Box>
 
@@ -139,19 +140,21 @@ export default function ServicesSection({
               lineHeight: 1.2,
             }}
           >
-            Llega a nuevos clientes y aumenta tus ventas
+            Expande tu mercado y potencia tus ventas B2B
           </Typography>
 
           <Box sx={{ display: 'grid', gap: 1.25, mt: 4 }}>
             <Bullet color="#F59E0B">
-              Accede a una red creciente de empresas compradoras en Chile.
+              Accede a demanda calificada: Conecta con una red de empresas en
+              Chile listas para comprar, sin salir a prospectar.
             </Bullet>
             <Bullet color="#F59E0B">
-              Destaca tus productos en un marketplace seguro y confiable.
+              Recibe cotizaciones directas: Digitaliza tu catálogo y cierra
+              ventas por volumen con clientes que buscan lo que ofreces.
             </Bullet>
             <Bullet color="#F59E0B">
-              Simplifica la gestión de ventas con herramientas diseñadas para
-              ti.
+              Centraliza tu operación: Gestiona pedidos, negocia precios y emite
+              tus facturas automáticamente en nuestra plataforma.
             </Bullet>
           </Box>
 
