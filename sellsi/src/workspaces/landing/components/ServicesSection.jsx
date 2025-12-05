@@ -80,6 +80,29 @@ export default function ServicesSection({
           gridRow={{ xs: '2', md: '1' }}
           height="100%"
         >
+          <Box
+            sx={{
+              display: 'inline-flex',
+              px: 2,
+              py: 0.75,
+              borderRadius: '50px',
+              bgcolor: 'rgba(46, 82, 178, 0.1)',
+              border: '1px solid rgba(46, 82, 178, 0.2)',
+              mb: 2,
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                color: '#2E52B2',
+                letterSpacing: '0.5px',
+              }}
+            >
+              PARA COMPRADORES
+            </Typography>
+          </Box>
+
           <Typography
             variant="h2"
             sx={{
@@ -130,6 +153,29 @@ export default function ServicesSection({
 
         {/* (2,1) Texto Proveedores */}
         <Box gridColumn="1" gridRow={{ xs: '3', md: '2' }}>
+          <Box
+            sx={{
+              display: 'inline-flex',
+              px: 2,
+              py: 0.75,
+              borderRadius: '50px',
+              bgcolor: 'rgba(245, 158, 11, 0.1)',
+              border: '1px solid rgba(245, 158, 11, 0.2)',
+              mb: 2,
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                color: '#F59E0B',
+                letterSpacing: '0.5px',
+              }}
+            >
+              PARA PROVEEDORES
+            </Typography>
+          </Box>
+
           <Typography
             variant="h2"
             sx={{
