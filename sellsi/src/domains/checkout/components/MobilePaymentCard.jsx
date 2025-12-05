@@ -48,7 +48,7 @@ const MobilePaymentCard = ({
           borderColor: 'primary.main',
           transform: 'translateY(-1px)'
         },
-        backgroundColor: isSelected ? 'primary.light' : 'background.paper'
+        backgroundColor: isSelected ? 'rgba(25, 118, 210, 0.08)' : 'background.paper'
       }}
     >
   <Box sx={{ py: { xs: 0.55, sm: 0.95 }, px: { xs: 0.5, sm: 0.9 } }}>
@@ -59,7 +59,7 @@ const MobilePaymentCard = ({
               width: { xs: 46, sm: 50 },
               height: { xs: 46, sm: 50 },
               borderRadius: 2,
-              backgroundColor: isSelected ? 'primary.main' : 'grey.100',
+              backgroundColor: 'grey.100',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -69,10 +69,12 @@ const MobilePaymentCard = ({
           >
             {method.id === 'khipu' ? (
               <Box component="img" src={method.icon || '/Checkout/khipu.svg'} alt="khipu" sx={{ width: 28, height: 28 }} />
+            ) : method.id === 'flow' ? (
+              <Box component="img" src={method.icon || '/Checkout/flow.svg'} alt="flow" sx={{ width: 28, height: 28 }} />
             ) : (
               React.cloneElement(getMethodIcon(method.id), {
                 sx: { 
-                  color: isSelected ? 'white' : 'text.secondary',
+                  color: 'text.secondary',
                   fontSize: 28
                 }
               })
@@ -116,28 +118,35 @@ const MobilePaymentCard = ({
           />
         </Stack>
         
-        {/* Fees Information */}
-        {method.fees && method.fees > 0 && (
-          <Alert 
-            severity="info" 
-            sx={{ 
-              mt: 2, 
-              borderRadius: 2,
-              backgroundColor: 'info.light',
-              '& .MuiAlert-message': {
-                fontSize: '0.875rem'
-              }
-            }}
-          >
-            <Typography variant="body2">
-              <strong>Comisión:</strong> {formatPrice(method.fees)}
+        {/* Footer: Comisión/Límites a la izquierda, Instantáneo a la derecha */}
+        <Stack 
+          direction="row" 
+          justifyContent="space-between" 
+          alignItems="center"
+          sx={{ mt: 1.5, pt: 1, borderTop: '1px solid rgba(0,0,0,0.06)' }}
+        >
+          {/* Comisión y Límites */}
+          <Stack spacing={0.3}>
+            {/* Comisión */}
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+              <strong>Comisión:</strong>{' '}
+              {method.fees?.fixed > 0 
+                ? formatPrice(method.fees.fixed)
+                : method.fees?.percentage > 0 
+                  ? `${method.fees.percentage}%`
+                  : 'Sin comisión'}
             </Typography>
-          </Alert>
-        )}
-        
-        {/* Processing Time */}
-        {method.processingTime && (
-          <Box sx={{ mt: 1.5 }}>
+            
+            {/* Límites */}
+            {method.minAmount && method.maxAmount && (
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                <strong>Límites:</strong> {formatPrice(method.minAmount)} - {formatPrice(method.maxAmount)}
+              </Typography>
+            )}
+          </Stack>
+          
+          {/* Processing Time Badge */}
+          {method.processingTime && (
             <Typography 
               variant="caption" 
               color="text.secondary"
@@ -151,28 +160,8 @@ const MobilePaymentCard = ({
             >
               ⏱️ {method.processingTime}
             </Typography>
-          </Box>
-        )}
-        
-        {/* Security Badge */}
-        {method.secure && (
-          <Box sx={{ mt: 1 }}>
-            <Typography 
-              variant="caption" 
-              color="success.main"
-              sx={{ 
-                backgroundColor: 'success.light',
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-                fontSize: '0.75rem',
-                fontWeight: 600
-              }}
-            >
-              🔒 Pago seguro
-            </Typography>
-          </Box>
-        )}
+          )}
+        </Stack>
       </Box>
     </Card>
   );

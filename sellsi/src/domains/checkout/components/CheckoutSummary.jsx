@@ -112,8 +112,8 @@ const CheckoutSummary = ({
         fee = 500; // Comisión fija Khipu
         feeLabel = 'Comisión Khipu';
       } else if (selectedMethod.id === 'flow') {
-        fee = Math.round(baseTotalCalc * 0.0319); // 3.19% Flow
-        feeLabel = 'Comisión Flow (3.19%)';
+        fee = Math.round(baseTotalCalc * 0.038); // 3.8% Flow
+        feeLabel = 'Comisión Flow (3.8%)';
       }
     }
 

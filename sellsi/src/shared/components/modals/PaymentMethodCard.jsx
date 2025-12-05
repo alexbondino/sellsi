@@ -167,9 +167,12 @@ const PaymentMethodCard = ({
                   alignItems="center"
                 >
                   <Typography variant="body2" color="text.secondary">
-                    {fees.total > 0 && formatPrice
-                      ? `Comisión: ${formatPrice(fees.total)}`
-                      : 'Comisión de $500'
+                    {/* Flow: mostrar porcentaje, Khipu: mostrar monto fijo */}
+                    {method.fees?.percentage > 0
+                      ? `Comisión: ${method.fees.percentage}%`
+                      : method.fees?.fixed > 0 && formatPrice
+                        ? `Comisión: ${formatPrice(method.fees.fixed)}`
+                        : 'Sin comisión adicional'
                     }
                   </Typography>
                   <CheckCircleIcon 
