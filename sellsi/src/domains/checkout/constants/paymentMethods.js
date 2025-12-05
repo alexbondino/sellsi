@@ -8,7 +8,7 @@ export const PAYMENT_METHODS = {
     name: 'Transferencia por Khipu',
     description: 'Pago seguro mediante transferencia bancaria instantánea',
     icon: '/Checkout/khipu.svg',
-    enabled: true,
+    enabled: false, // Temporalmente deshabilitado
     fees: {
       percentage: 0, // Sin comisiones adicionales por parte de Sellsi
       fixed: 500 // Comisión fija $500 CLP
@@ -38,7 +38,7 @@ export const PAYMENT_METHODS = {
     icon: '/Checkout/flow.svg',
     enabled: true,
     fees: {
-      percentage: 3.19, // 3.19% del total
+      percentage: 3.8, // 3.8% del total
       fixed: 0
     },
     minAmount: 350, // Flow mínimo ~$350 CLP

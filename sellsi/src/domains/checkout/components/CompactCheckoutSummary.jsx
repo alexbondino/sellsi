@@ -24,14 +24,26 @@ import {
 const CompactCheckoutSummary = ({ 
   orderData,
   formatPrice,
-  variant = 'minimal' // 'minimal' | 'detailed'
+  variant = 'minimal', // 'minimal' | 'detailed'
+  selectedMethod = null
 }) => {
   const [expanded, setExpanded] = useState(false);
   
   const itemCount = orderData.items?.length || 0;
-  const total = orderData.total || 0;
   const subtotal = orderData.subtotal || 0;
   const shipping = orderData.shipping || 0;
+  
+  // Calcular comisión según método de pago
+  const baseTotal = subtotal + shipping;
+  let paymentFee = 0;
+  if (selectedMethod) {
+    if (selectedMethod.id === 'khipu') {
+      paymentFee = 500;
+    } else if (selectedMethod.id === 'flow') {
+      paymentFee = Math.round(baseTotal * 0.038); // 3.8%
+    }
+  }
+  const total = baseTotal + paymentFee;
 
   if (variant === 'minimal') {
     return (
@@ -122,6 +134,12 @@ const CompactCheckoutSummary = ({
                   {shipping === 0 ? '¡GRATIS!' : formatPrice(shipping)}
                 </Typography>
               </Stack>
+              {selectedMethod && paymentFee > 0 && (
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="caption" color="text.secondary">Comisión</Typography>
+                  <Typography variant="caption">{formatPrice(paymentFee)}</Typography>
+                </Stack>
+              )}
             </Stack>
           </Box>
         </Collapse>

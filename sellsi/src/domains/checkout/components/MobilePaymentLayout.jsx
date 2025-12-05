@@ -50,6 +50,7 @@ const MobilePaymentLayout = ({
           orderData={orderData}
           formatPrice={formatPrice}
           variant="minimal"
+          selectedMethod={selectedMethod}
         />
         
         {/* Payment methods */}

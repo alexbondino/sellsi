@@ -62,7 +62,7 @@ class FlowService {
 
       const paymentPayload = {
         amount: Math.round(total),
-        subject: `Compra Sellsi #${orderId}`,
+        subject: `Compra en Sellsi #${orderId}`,
         currency: currency || 'CLP',
         buyer_id: userId || null,
         order_id: orderId,

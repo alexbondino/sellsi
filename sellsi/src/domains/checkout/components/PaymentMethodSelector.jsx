@@ -2,7 +2,7 @@
 // PAYMENT METHOD SELECTOR - VERSIÓN FINAL
 // ============================================================================
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -86,6 +86,28 @@ const PaymentMethodSelector = () => {
   // Refs para bloqueo inmediato anti-doble-click
   const isProcessingRef = useRef(false);
   const paymentSuccessRef = useRef(false);
+
+  // ===== CÁLCULO BASE TOTAL (igual que CheckoutSummary) =====
+  const baseTotal = useMemo(() => {
+    if (!orderData.items || orderData.items.length === 0) return 0;
+    
+    const getItemPrice = item => {
+      if (item.price_tiers && item.price_tiers.length > 0) {
+        const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0;
+        return calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
+      }
+      return item.price || 0;
+    };
+    
+    const totalBruto = orderData.items.reduce((total, item) => {
+      const unitPrice = getItemPrice(item);
+      const quantity = item.quantity || 0;
+      return total + quantity * unitPrice;
+    }, 0);
+    
+    const shippingCost = orderData.shipping || 0;
+    return Math.trunc(totalBruto) + shippingCost;
+  }, [orderData.items, orderData.shipping]);
 
   // ===== EFECTOS =====
 
@@ -438,7 +460,7 @@ const PaymentMethodSelector = () => {
                       <AnimatePresence>
                         {availableMethods.map(method => {
                           const isSelected = selectedMethodId === method.id;
-                          const fees = getMethodFees(method.id, orderData.total);
+                          const fees = getMethodFees(method.id, baseTotal);
                           return (
                             <PaymentMethodCard
                               key={method.id}

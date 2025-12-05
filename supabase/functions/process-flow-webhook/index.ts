@@ -35,6 +35,10 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
     console.error(JSON.stringify({ tag: 'process-flow-webhook', level: 'error', request_id: requestId, msg, ...extra }));
 
   try {
+    // Extraer order_id del query string (pasado en urlConfirmation)
+    const url = new URL(req.url);
+    const orderIdFromUrl = url.searchParams.get('oid');
+
     // 1. Flow envía POST con content-type application/x-www-form-urlencoded
     // Solo envía un parámetro: token
     const contentType = req.headers.get('content-type') || '';
@@ -56,7 +60,7 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
       });
     }
 
-    log('token_received', { token_prefix: token.substring(0, 20) + '...' });
+    log('token_received', { token_prefix: token.substring(0, 20) + '...', orderIdFromUrl });
 
     // 2. Obtener credenciales
     const flowApiKey = Deno.env.get('FLOW_API_KEY');
@@ -103,7 +107,7 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
     // 4. Extraer datos de la respuesta
     const {
       flowOrder,
-      commerceOrder,  // Nuestro order_id (UUID)
+      commerceOrder,  // Ahora es formato corto #XXXXXXXX
       status,         // 1=pendiente, 2=pagada, 3=rechazada, 4=anulada
       subject,
       amount,
@@ -112,18 +116,32 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
       paymentData,
     } = statusData;
 
-    // commerceOrder debería ser el UUID de nuestra orden
-    let orderId = commerceOrder;
+    // Extraer order_id (UUID) - múltiples fuentes por orden de prioridad
+    let orderId: string | null = null;
+    
+    // Fuente 1: Query string de urlConfirmation (más confiable, no visible al usuario)
+    if (orderIdFromUrl && orderIdFromUrl.length === 36) {
+      orderId = orderIdFromUrl;
+    }
 
-    // Fallback 1: extraer de optional
+    // Fuente 2: optional (fallback para pagos antiguos)
     if (!orderId || orderId.length !== 36) {
       try {
         const optData = typeof optional === 'string' ? JSON.parse(optional) : optional;
-        if (optData?.order_id) orderId = optData.order_id;
+        if (optData?.o) orderId = optData.o;
+        else if (optData?.oid) orderId = optData.oid;
+        else if (optData?.order_id) orderId = optData.order_id;
       } catch {}
     }
 
-    // Fallback 2: extraer UUID del subject
+    // Fuente 3: commerceOrder si es UUID (legacy)
+    if (!orderId || orderId.length !== 36) {
+      if (commerceOrder && commerceOrder.length === 36) {
+        orderId = commerceOrder;
+      }
+    }
+
+    // Fuente 4: extraer UUID del subject (fallback extremo)
     if (!orderId || orderId.length !== 36) {
       const uuidMatch = subject?.match(/([0-9a-fA-F-]{36})/);
       if (uuidMatch) {

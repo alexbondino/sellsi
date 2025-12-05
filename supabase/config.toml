@@ -312,3 +312,13 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # ============================================================
 [functions.preview-invoice]
 verify_jwt = false
+
+# Flow Payment Integration - MUST be public (no JWT) for Flow webhooks
+[functions.create-payment-flow]
+verify_jwt = false
+
+[functions.process-flow-webhook]
+verify_jwt = false
+
+[functions.flow-return]
+verify_jwt = false
