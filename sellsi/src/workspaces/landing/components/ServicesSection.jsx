@@ -142,14 +142,21 @@ export default function ServicesSection({
             sx={{
               fontWeight: 800,
               color: '#2E52B2',
-              mb: 2,
+              mb: 1,
               textAlign: 'left',
             }}
           >
             Centraliza y agiliza tus compras B2B en un solo lugar
           </Typography>
 
-          <Box sx={{ display: 'grid', gap: 1.25, mt: 4 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 1.25,
+              mt: 4,
+              '& *': { fontSize: 17 },
+            }}
+          >
             <Bullet color="#2E52B2">
               Accede a proveedores verificados: Encuentra socios comerciales
               confiables en minutos.
@@ -227,7 +234,7 @@ export default function ServicesSection({
             sx={{
               fontWeight: 800,
               color: '#F59E0B',
-              mb: 2,
+              mb: 1,
               textAlign: 'left',
               lineHeight: 1.2,
             }}
@@ -235,7 +242,9 @@ export default function ServicesSection({
             Expande tu mercado y potencia tus ventas B2B
           </Typography>
 
-          <Box sx={{ display: 'grid', gap: 1.25, mt: 4 }}>
+          <Box
+            sx={{ display: 'grid', gap: 1.25, mt: 4, '& *': { fontSize: 17 } }}
+          >
             <Bullet color="#F59E0B">
               Accede a demanda calificada: Conecta con una red de empresas en
               Chile listas para comprar, sin salir a prospectar.
