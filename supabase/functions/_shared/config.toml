@@ -16,3 +16,19 @@
 [process-khipu-webhook]
   verify_jwt = false
   import_map = "./import_map.json"
+
+# ============================================================================
+# CONFIGURACIÓN DE FUNCIONES EDGE PARA FLOW
+# ============================================================================
+
+[create-payment-flow]
+  verify_jwt = false
+  import_map = "./import_map.json"
+
+[process-flow-webhook]
+  verify_jwt = false
+  import_map = "./import_map.json"
+
+[flow-return]
+  verify_jwt = false
+  import_map = "./import_map.json"

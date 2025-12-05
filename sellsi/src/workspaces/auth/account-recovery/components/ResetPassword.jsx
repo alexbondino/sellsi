@@ -36,56 +36,60 @@ export default function ResetPassword() {
   useEffect(() => {
     const init = async () => {
       try {
-        // Verificar si tenemos tokens de recovery en el hash
+        console.log('🔍 ResetPassword - Iniciando verificación...');
+        console.log('🔍 URL completa:', window.location.href);
+
+        // Marcar modo recovery INMEDIATAMENTE al montar este componente
+        // Esto previene que UnifiedAuthProvider redirija
+        localStorage.setItem('recovery_mode', 'true');
+        console.log('🔐 Modo recovery activado');
+
+        // Verificar si venimos directamente desde el email (tokens en hash/query)
         const hashParams = new URLSearchParams(
           window.location.hash.replace(/^#/, '')
         );
+        const searchParams = new URLSearchParams(window.location.search);
 
-        const access_token = hashParams.get('access_token');
-        const refresh_token = hashParams.get('refresh_token');
-        const type = hashParams.get('type');
+        const type = hashParams.get('type') || searchParams.get('type');
+        const access_token =
+          hashParams.get('access_token') || searchParams.get('access_token');
+        const refresh_token =
+          hashParams.get('refresh_token') || searchParams.get('refresh_token');
+        const token_hash =
+          searchParams.get('token_hash') || hashParams.get('token_hash');
 
-        console.log('🔍 ResetPassword - verificando tokens...');
-        console.log('  access_token:', !!access_token);
-        console.log('  refresh_token:', !!refresh_token);
-        console.log('  type:', type);
+        console.log('  URL type:', type);
+        console.log('  Has access_token in URL:', !!access_token);
+        console.log('  Has refresh_token in URL:', !!refresh_token);
+        console.log('  Has token_hash in URL:', !!token_hash);
 
-        // Si tenemos los tokens, establecer sesión TEMPORAL solo para recovery
-        if (access_token && refresh_token && type === 'recovery') {
-          console.log('🔐 Estableciendo sesión temporal de recovery...');
-
-          const { data, error } = await supabase.auth.setSession({
-            access_token,
-            refresh_token,
-          });
-
-          if (error || !data.session) {
-            throw new Error('Token de recuperación inválido o expirado.');
-          }
-
-          console.log('✅ Sesión temporal de recovery establecida');
-          setIsVerifying(false);
-          return;
-        }
-
-        // Fallback: verificar si ya hay sesión activa (por si vienen de otro flujo)
+        // Verificar sesión (Supabase ya la estableció desde el hash)
         const {
           data: { session },
           error: sessionError,
         } = await supabase.auth.getSession();
 
+        console.log('  session exists:', !!session);
+        console.log('  session error:', sessionError?.message);
+
         if (!session || sessionError) {
           throw new Error(
-            'No hay sesión de recuperación válida. Por favor, solicita un nuevo enlace.'
+            'Token de recuperación inválido o expirado. Por favor, solicita un nuevo enlace.'
           );
         }
 
-        console.log('✅ Sesión de recuperación encontrada');
+        // Guardar user_id para validación
+        localStorage.setItem('recovery_user_id', session.user.id);
+        console.log('✅ Sesión de recovery verificada - mostrando formulario');
         setIsVerifying(false);
       } catch (err) {
         console.error('❌ Error de verificación:', err.message);
         setIsVerifying(false);
         setError(err.message || 'Enlace de recuperación inválido o expirado.');
+
+        // Limpiar recovery mode si falla
+        localStorage.removeItem('recovery_mode');
+        localStorage.removeItem('recovery_user_id');
 
         // Redirigir después de 3 segundos
         setTimeout(() => {
@@ -121,14 +125,23 @@ export default function ResetPassword() {
 
       setOk(true);
 
-      // Cerrar sesión local
-      await supabase.auth.signOut();
+      console.log('✅ Contraseña actualizada exitosamente');
+      console.log('🔐 Limpiando modo recovery e iniciando sesión...');
 
-      // Redirigir al mismo host con banner
-      const base = window.location.origin;
-      const url = new URL(base);
-      url.searchParams.set('banner', 'reset_success');
-      window.location.replace(url.toString());
+      // Limpiar banderas de recovery para permitir navegación normal
+      localStorage.removeItem('recovery_mode');
+      localStorage.removeItem('recovery_user_id');
+
+      // NO cerrar sesión - mantener al usuario logueado
+      // La sesión ya está activa desde el enlace de recovery
+
+      // Esperar un momento para que los cambios se propaguen
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Redirigir al home (la sesión ya está establecida)
+      // UnifiedAuthProvider se encargará de redirigir al workspace correcto
+      console.log('🏠 Redirigiendo al home...');
+      window.location.href = window.location.origin;
     } catch (err) {
       setError(err?.message ?? 'Ocurrió un error al cambiar la contraseña.');
     } finally {

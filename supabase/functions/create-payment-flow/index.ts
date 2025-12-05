@@ -310,16 +310,18 @@ serve(req => withMetrics('create-payment-flow', req, async () => {
     }
 
     // 9. Construir parámetros para Flow
+    // Formato de order_id corto: últimos 8 caracteres en mayúsculas (igual que BuyerOrders)
+    const shortOrderId = order_id.slice(-8).toUpperCase();
+    
     const flowParams: Record<string, any> = {
       apiKey: flowApiKey,
-      commerceOrder: order_id,
-      subject: subject || `Compra Sellsi #${order_id}`,
+      commerceOrder: `#${shortOrderId}`, // Formato corto visible al usuario
+      subject: 'Compra en Sellsi', // Descripción genérica
       currency: 'CLP',
       amount: sealedGrandTotal,
       email: payerEmail,
-      urlConfirmation: `${supabaseUrl}/functions/v1/process-flow-webhook`,
-      urlReturn: `${FRONTEND_URL}/buyer/orders?payment=flow&order=${order_id}`,
-      optional: JSON.stringify({ order_id, buyer_id, sealed_at: new Date().toISOString() }),
+      urlConfirmation: `${supabaseUrl}/functions/v1/process-flow-webhook?oid=${order_id}`,
+      urlReturn: `${supabaseUrl}/functions/v1/flow-return?order=${order_id}`,
     };
 
     // 10. Firmar

@@ -9,6 +9,19 @@ if (!projectRef) {
   process.exit(1);
 }
 
+// ============================================================================
+// Funciones que deben ser PÚBLICAS (sin JWT) - webhooks externos, etc.
+// ============================================================================
+const PUBLIC_FUNCTIONS = new Set([
+  'create-payment-flow',
+  'process-flow-webhook',
+  'flow-return',
+  'create-khipu-payment',
+  'process-khipu-webhook',
+  'verify-khipu-payment',
+  'preview-invoice',
+]);
+
 function safeExec(cmd) {
   try {
     return execSync(cmd, { encoding: 'utf8' }).toString();
@@ -52,11 +65,34 @@ if (deployList.length === 0) {
 
 console.log('Functions to deploy:', deployList.join(', '));
 
-const cmd = ['npx', 'supabase', 'functions', 'deploy', ...deployList, '--project-ref', projectRef].join(' ');
-console.log('Running:', cmd);
-try {
-  execSync(cmd, { stdio: 'inherit' });
-} catch (e) {
-  console.error('Deploy command failed:', e.message);
-  process.exit(1);
+// Separar funciones públicas de las que requieren JWT
+const publicFuncs = deployList.filter(f => PUBLIC_FUNCTIONS.has(f));
+const privateFuncs = deployList.filter(f => !PUBLIC_FUNCTIONS.has(f));
+
+// Deploy funciones privadas (con JWT)
+if (privateFuncs.length > 0) {
+  const cmdPrivate = ['npx', 'supabase', 'functions', 'deploy', ...privateFuncs, '--project-ref', projectRef].join(' ');
+  console.log('\n🔒 Deploying PRIVATE functions (with JWT):', privateFuncs.join(', '));
+  console.log('Running:', cmdPrivate);
+  try {
+    execSync(cmdPrivate, { stdio: 'inherit' });
+  } catch (e) {
+    console.error('Deploy command failed for private functions:', e.message);
+    process.exit(1);
+  }
 }
+
+// Deploy funciones públicas (sin JWT) - webhooks, etc.
+if (publicFuncs.length > 0) {
+  const cmdPublic = ['npx', 'supabase', 'functions', 'deploy', ...publicFuncs, '--project-ref', projectRef, '--no-verify-jwt'].join(' ');
+  console.log('\n🌐 Deploying PUBLIC functions (no JWT):', publicFuncs.join(', '));
+  console.log('Running:', cmdPublic);
+  try {
+    execSync(cmdPublic, { stdio: 'inherit' });
+  } catch (e) {
+    console.error('Deploy command failed for public functions:', e.message);
+    process.exit(1);
+  }
+}
+
+console.log('\n✅ All functions deployed successfully!');

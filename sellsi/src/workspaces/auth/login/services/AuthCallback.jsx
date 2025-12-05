@@ -60,23 +60,27 @@ export default function AuthCallback() {
 
         if (isRecovery) {
           console.log('🔐 DETECTADO: Flujo de recovery password');
-          console.log(
-            '🚫 Previniendo auto-login, redirigiendo a página de reset...'
+
+          // Supabase puede haber establecido la sesión automáticamente desde el hash
+          // Necesitamos verificar y marcar esta sesión como "recovery" antes de redirigir
+          const { data: sessionData } = await supabase.auth.getSession();
+
+          if (sessionData?.session) {
+            console.log('⚠️ Sesión de recovery ya establecida por Supabase');
+            // Marcar en localStorage que esta es una sesión de recovery
+            localStorage.setItem('recovery_mode', 'true');
+            localStorage.setItem(
+              'recovery_user_id',
+              sessionData.session.user.id
+            );
+          }
+
+          console.log('🚫 Redirigiendo a página de reset de contraseña...');
+
+          // Redirigir a página de reset SIN tokens en hash (ya están en la sesión de Supabase)
+          window.location.replace(
+            `${window.location.origin}/auth/reset-password`
           );
-
-          // Limpiar cualquier sesión existente para evitar auto-login
-          await supabase.auth.signOut({ scope: 'local' });
-
-          // Redirigir a página de reset CON los tokens para que pueda verificarlos
-          // Los pasamos en el hash para que ResetPassword pueda usarlos
-          const resetUrl = new URL(
-            '/auth/reset-password',
-            window.location.origin
-          );
-          if (access_token)
-            resetUrl.hash = `access_token=${access_token}&refresh_token=${refresh_token}&type=recovery`;
-
-          window.location.replace(resetUrl.toString());
           return;
         }
 
