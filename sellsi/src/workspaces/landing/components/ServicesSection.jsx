@@ -34,17 +34,33 @@ export default function ServicesSection({
 
   const Img = ({ src }) => (
     <Box
-      component="img"
-      src={src}
-      alt="Landing Media"
       sx={{
+        position: 'relative',
         width: '100%',
-        height: '{ xs: 220, sm: 260, md: 340, lg: 380 }',
-        objectFit: 'cover',
-        borderRadius: 2,
-        boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
-    />
+    >
+      <Box
+        component="img"
+        src={src}
+        alt="Landing Media"
+        sx={{
+          width: '100%',
+          height: { xs: 280, sm: 320, md: 380, lg: 420 },
+          objectFit: 'cover',
+          borderRadius: 3,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            transform: 'translateY(-8px)',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
+          },
+        }}
+      />
+    </Box>
   );
 
   return (
@@ -66,11 +82,21 @@ export default function ServicesSection({
             xs: 'auto auto auto auto',
             md: 'auto auto',
           },
-          gap: 6,
+          gap: { xs: 6, md: 8 },
+          alignItems: 'center',
         }}
       >
         {/* (1,1) Imagen Compradores */}
-        <Box gridColumn="1" gridRow="1" height="100%">
+        <Box
+          gridColumn="1"
+          gridRow="1"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+          }}
+        >
           <Img src={IMAGE_1} />
         </Box>
 
@@ -78,7 +104,12 @@ export default function ServicesSection({
         <Box
           gridColumn={{ xs: '1', md: '2' }}
           gridRow={{ xs: '2', md: '1' }}
-          height="100%"
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            height: '100%',
+          }}
         >
           <Box
             sx={{
@@ -89,6 +120,9 @@ export default function ServicesSection({
               bgcolor: 'rgba(46, 82, 178, 0.1)',
               border: '1px solid rgba(46, 82, 178, 0.2)',
               mb: 2,
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '40%',
             }}
           >
             <Typography
@@ -152,7 +186,16 @@ export default function ServicesSection({
         </Box>
 
         {/* (2,1) Texto Proveedores */}
-        <Box gridColumn="1" gridRow={{ xs: '3', md: '2' }}>
+        <Box
+          gridColumn="1"
+          gridRow={{ xs: '3', md: '2' }}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            height: '100%',
+          }}
+        >
           <Box
             sx={{
               display: 'inline-flex',
@@ -162,6 +205,9 @@ export default function ServicesSection({
               bgcolor: 'rgba(245, 158, 11, 0.1)',
               border: '1px solid rgba(245, 158, 11, 0.2)',
               mb: 2,
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '40%',
             }}
           >
             <Typography
@@ -226,7 +272,16 @@ export default function ServicesSection({
         </Box>
 
         {/* (2,2) Imagen Proveedores */}
-        <Box gridColumn={{ xs: '1', md: '2' }} gridRow={{ xs: '4', md: '2' }}>
+        <Box
+          gridColumn={{ xs: '1', md: '2' }}
+          gridRow={{ xs: '4', md: '2' }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+          }}
+        >
           <Img src={IMAGE_2} />
         </Box>
       </Grid>
