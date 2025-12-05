@@ -127,7 +127,7 @@ export default function ServicesSection({
           >
             <Typography
               sx={{
-                fontSize: '0.875rem',
+                fontSize: 12,
                 fontWeight: 600,
                 color: '#2E52B2',
                 letterSpacing: '0.5px',
@@ -144,6 +144,7 @@ export default function ServicesSection({
               color: '#2E52B2',
               mb: 1,
               textAlign: 'left',
+              fontSize: { xs: '1.6rem', md: 25 },
             }}
           >
             Centraliza y agiliza tus compras B2B en un solo lugar
@@ -154,7 +155,7 @@ export default function ServicesSection({
               display: 'grid',
               gap: 1.25,
               mt: 4,
-              '& *': { fontSize: 17 },
+              '& *': { fontSize: 18 },
             }}
           >
             <Bullet color="#2E52B2">
@@ -177,8 +178,8 @@ export default function ServicesSection({
             sx={{
               px: 3.5,
               py: 1.25,
-              fontSize: '20px',
-              height: 59,
+              fontSize: '17px',
+              height: 50,
               width: '100%',
               mt: 5,
               fontWeight: 700,
@@ -219,7 +220,7 @@ export default function ServicesSection({
           >
             <Typography
               sx={{
-                fontSize: '0.875rem',
+                fontSize: 12,
                 fontWeight: 600,
                 color: '#F59E0B',
                 letterSpacing: '0.5px',
@@ -237,13 +238,14 @@ export default function ServicesSection({
               mb: 1,
               textAlign: 'left',
               lineHeight: 1.2,
+              fontSize: { xs: '1.6rem', md: 25 },
             }}
           >
             Expande tu mercado y potencia tus ventas B2B
           </Typography>
 
           <Box
-            sx={{ display: 'grid', gap: 1.25, mt: 4, '& *': { fontSize: 17 } }}
+            sx={{ display: 'grid', gap: 1.25, mt: 4, '& *': { fontSize: 18 } }}
           >
             <Bullet color="#F59E0B">
               Accede a demanda calificada: Conecta con una red de empresas en
@@ -265,8 +267,8 @@ export default function ServicesSection({
             sx={{
               px: 3.5,
               py: 1.25,
-              fontSize: '20px',
-              height: 59,
+              fontSize: '17px',
+              height: 50,
               width: '100%',
               mt: 5,
               fontWeight: 700,
