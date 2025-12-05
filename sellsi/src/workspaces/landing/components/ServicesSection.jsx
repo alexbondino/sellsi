@@ -34,17 +34,33 @@ export default function ServicesSection({
 
   const Img = ({ src }) => (
     <Box
-      component="img"
-      src={src}
-      alt="Landing Media"
       sx={{
+        position: 'relative',
         width: '100%',
-        height: '{ xs: 220, sm: 260, md: 340, lg: 380 }',
-        objectFit: 'cover',
-        borderRadius: 2,
-        boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
-    />
+    >
+      <Box
+        component="img"
+        src={src}
+        alt="Landing Media"
+        sx={{
+          width: '100%',
+          height: { xs: 280, sm: 320, md: 380, lg: 420 },
+          objectFit: 'cover',
+          borderRadius: 3,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            transform: 'translateY(-8px)',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
+          },
+        }}
+      />
+    </Box>
   );
 
   return (
@@ -66,43 +82,93 @@ export default function ServicesSection({
             xs: 'auto auto auto auto',
             md: 'auto auto',
           },
-          gap: 6,
+          gap: { xs: 6, md: 8 },
+          alignItems: 'center',
         }}
       >
         {/* (1,1) Imagen Compradores */}
-        <Box gridColumn="1" gridRow="1" height="100%">
+        <Box
+          gridColumn={{ xs: '1', md: '1' }}
+          gridRow={{ xs: '2', md: '1' }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+          }}
+        >
           <Img src={IMAGE_1} />
         </Box>
 
         {/* (1,2) Texto Compradores */}
         <Box
           gridColumn={{ xs: '1', md: '2' }}
-          gridRow={{ xs: '2', md: '1' }}
-          height="100%"
+          gridRow={{ xs: '1', md: '1' }}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            height: '100%',
+          }}
         >
+          <Box
+            sx={{
+              display: 'inline-flex',
+              px: 2,
+              py: 0.75,
+              borderRadius: '50px',
+              bgcolor: 'rgba(46, 82, 178, 0.1)',
+              border: '1px solid rgba(46, 82, 178, 0.2)',
+              mb: 2,
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '40%',
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#2E52B2',
+                letterSpacing: '0.5px',
+              }}
+            >
+              PARA COMPRADORES
+            </Typography>
+          </Box>
+
           <Typography
             variant="h2"
             sx={{
               fontWeight: 800,
               color: '#2E52B2',
-              mb: 2,
+              mb: 1,
               textAlign: 'left',
+              fontSize: { xs: '1.6rem', md: 25 },
             }}
           >
-            Simplifica y agiliza tus compras B2B en un solo lugar
+            Centraliza y agiliza tus compras B2B en un solo lugar
           </Typography>
 
-          <Box sx={{ display: 'grid', gap: 1.25, mt: 4 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 1.25,
+              mt: 4,
+              '& *': { fontSize: 18 },
+            }}
+          >
             <Bullet color="#2E52B2">
-              Encuentra proveedores verificados y confiables en minutos.
+              Accede a proveedores verificados: Encuentra socios comerciales
+              confiables en minutos.
             </Bullet>
             <Bullet color="#2E52B2">
-              Ahorra tiempo comparando precios y condiciones en un solo
-              marketplace.
+              Optimiza tus tiempos de compra: Cotiza en línea, negocia volumen y
+              cierra tratos en tiempo récord, sin cadenas de correos.
             </Bullet>
             <Bullet color="#2E52B2">
-              Realiza compras seguras con procesos simples, transparentes y
-              confiables.
+              Simplifica tu gestión: Realiza compras seguras y obtén tus
+              facturas al instante en nuestra plataforma.
             </Bullet>
           </Box>
 
@@ -112,8 +178,8 @@ export default function ServicesSection({
             sx={{
               px: 3.5,
               py: 1.25,
-              fontSize: '20px',
-              height: 59,
+              fontSize: '17px',
+              height: 50,
               width: '100%',
               mt: 5,
               fontWeight: 700,
@@ -128,30 +194,70 @@ export default function ServicesSection({
         </Box>
 
         {/* (2,1) Texto Proveedores */}
-        <Box gridColumn="1" gridRow={{ xs: '3', md: '2' }}>
+        <Box
+          gridColumn="1"
+          gridRow={{ xs: '3', md: '2' }}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            height: '100%',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'inline-flex',
+              px: 2,
+              py: 0.75,
+              borderRadius: '50px',
+              bgcolor: 'rgba(245, 158, 11, 0.1)',
+              border: '1px solid rgba(245, 158, 11, 0.2)',
+              mb: 2,
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '40%',
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#F59E0B',
+                letterSpacing: '0.5px',
+              }}
+            >
+              PARA PROVEEDORES
+            </Typography>
+          </Box>
+
           <Typography
             variant="h2"
             sx={{
               fontWeight: 800,
               color: '#F59E0B',
-              mb: 2,
+              mb: 1,
               textAlign: 'left',
               lineHeight: 1.2,
+              fontSize: { xs: '1.6rem', md: 25 },
             }}
           >
-            Llega a nuevos clientes y aumenta tus ventas
+            Expande tu mercado y potencia tus ventas B2B
           </Typography>
 
-          <Box sx={{ display: 'grid', gap: 1.25, mt: 4 }}>
+          <Box
+            sx={{ display: 'grid', gap: 1.25, mt: 4, '& *': { fontSize: 18 } }}
+          >
             <Bullet color="#F59E0B">
-              Accede a una red creciente de empresas compradoras en Chile.
+              Accede a demanda calificada: Conecta con una red de empresas en
+              Chile listas para comprar, sin salir a prospectar.
             </Bullet>
             <Bullet color="#F59E0B">
-              Destaca tus productos en un marketplace seguro y confiable.
+              Recibe cotizaciones directas: Digitaliza tu catálogo y cierra
+              ventas por volumen con clientes que buscan lo que ofreces.
             </Bullet>
             <Bullet color="#F59E0B">
-              Simplifica la gestión de ventas con herramientas diseñadas para
-              ti.
+              Centraliza tu operación: Gestiona pedidos, negocia precios y emite
+              tus facturas automáticamente en nuestra plataforma.
             </Bullet>
           </Box>
 
@@ -161,8 +267,8 @@ export default function ServicesSection({
             sx={{
               px: 3.5,
               py: 1.25,
-              fontSize: '20px',
-              height: 59,
+              fontSize: '17px',
+              height: 50,
               width: '100%',
               mt: 5,
               fontWeight: 700,
@@ -177,7 +283,16 @@ export default function ServicesSection({
         </Box>
 
         {/* (2,2) Imagen Proveedores */}
-        <Box gridColumn={{ xs: '1', md: '2' }} gridRow={{ xs: '4', md: '2' }}>
+        <Box
+          gridColumn={{ xs: '1', md: '2' }}
+          gridRow={{ xs: '4', md: '2' }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+          }}
+        >
           <Img src={IMAGE_2} />
         </Box>
       </Grid>
