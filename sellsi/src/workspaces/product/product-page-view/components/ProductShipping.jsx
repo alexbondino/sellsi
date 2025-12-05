@@ -66,6 +66,11 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
     }).format(numericValue);
   };
 
+  const formatDeliveryDays = (days) => {
+    if (days === undefined || days === null) return 'N/A';
+    return `${days} ${days === 1 ? 'día' : 'días'}`;
+  };
+
   // Si no hay regiones de despacho o el usuario no está logueado, no mostrar el componente
   if (!isLoggedIn || !shippingRegions || shippingRegions.length === 0) {
     return null;
@@ -229,7 +234,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                           color: 'text.primary'
                         }}
                       >
-                        {region.maxDeliveryDays || region.delivery_days || 'N/A'} días
+                        {formatDeliveryDays(region.maxDeliveryDays ?? region.delivery_days)}
                       </Typography>
                     </TableCell>
                   </TableRow>

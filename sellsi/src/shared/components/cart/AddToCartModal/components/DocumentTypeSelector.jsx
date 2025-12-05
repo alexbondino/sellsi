@@ -1,18 +1,21 @@
 import React from 'react';
 import { Box, Typography, FormControl, RadioGroup, FormControlLabel, Radio } from '@mui/material';
 
+const DEFAULT_TITLE = 'Selecciona el documento tributario a solicitar';
+
 export function DocumentTypeSelector({
   loadingDocumentTypes,
   documentTypesError,
   availableOptions,
   documentType,
   onChange,
+  title = DEFAULT_TITLE,
 }) {
   if (loadingDocumentTypes) {
     return (
       <Box onClick={(e) => e.stopPropagation()}>
         <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-          Tipo de Documento
+          {title}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Cargando opciones...
@@ -25,7 +28,7 @@ export function DocumentTypeSelector({
     return (
       <Box onClick={(e) => e.stopPropagation()}>
         <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-          Tipo de Documento
+          {title}
         </Typography>
         <FormControl component="fieldset">
           <RadioGroup
@@ -47,7 +50,7 @@ export function DocumentTypeSelector({
     return (
       <Box onClick={(e) => e.stopPropagation()}>
         <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-          Tipo de Documento
+          {title}
         </Typography>
         <Typography variant="body2" sx={{ color: 'text.primary' }}>
           Proveedor no ofrece documento tributario
@@ -59,7 +62,7 @@ export function DocumentTypeSelector({
   return (
     <Box onClick={(e) => e.stopPropagation()}>
       <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-        Tipo de Documento
+        {title}
       </Typography>
       <FormControl component="fieldset">
         <RadioGroup

@@ -256,6 +256,36 @@ const PaymentMethodSelector = () => {
         } else {
           throw new Error('Error al crear orden de pago en Khipu');
         }
+      } else if (selectedMethod.id === 'flow') {
+        console.log('[PaymentMethodSelector] Procesando pago con Flow...');
+        const authoritativeTotal = (order && typeof order.total === 'number')
+          ? Math.round(order.total)
+          : orderTotal;
+
+        const paymentResult = await checkoutService.processFlowPayment({
+          orderId: order.id,
+          userId: userId,
+          userEmail: userEmail || '',
+          amount: authoritativeTotal,
+          currency: orderData.currency || 'CLP',
+          items: itemsWithDocType,
+          shippingAddress: orderData.shippingAddress || null,
+          billingAddress: orderData.billingAddress || null,
+        });
+
+        if (paymentResult.success && paymentResult.paymentUrl) {
+          paymentSuccessRef.current = true;
+          console.log(
+            '[PaymentMethodSelector] Redirigiendo a Flow:',
+            paymentResult.paymentUrl
+          );
+          toast.success('Redirigiendo a Flow para completar el pago...');
+          setTimeout(() => {
+            window.location.href = paymentResult.paymentUrl;
+          }, 1500);
+        } else {
+          throw new Error('Error al crear orden de pago en Flow');
+        }
       } else {
         throw new Error('Método de pago no implementado aún');
       }

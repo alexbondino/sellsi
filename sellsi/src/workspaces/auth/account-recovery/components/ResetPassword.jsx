@@ -36,27 +36,67 @@ export default function ResetPassword() {
   useEffect(() => {
     const init = async () => {
       try {
-        // AuthCallback ya verificó el token y estableció la sesión
-        // Solo verificamos que tengamos una sesión activa de recuperación
+        console.log('🔍 ResetPassword - Iniciando verificación...');
+        console.log('🔍 URL completa:', window.location.href);
+
+        // Marcar modo recovery INMEDIATAMENTE al montar este componente
+        // Esto previene que UnifiedAuthProvider redirija
+        localStorage.setItem('recovery_mode', 'true');
+        console.log('🔐 Modo recovery activado');
+
+        // Verificar si venimos directamente desde el email (tokens en hash/query)
+        const hashParams = new URLSearchParams(
+          window.location.hash.replace(/^#/, '')
+        );
+        const searchParams = new URLSearchParams(window.location.search);
+
+        const type = hashParams.get('type') || searchParams.get('type');
+        const access_token =
+          hashParams.get('access_token') || searchParams.get('access_token');
+        const refresh_token =
+          hashParams.get('refresh_token') || searchParams.get('refresh_token');
+        const token_hash =
+          searchParams.get('token_hash') || hashParams.get('token_hash');
+
+        console.log('  URL type:', type);
+        console.log('  Has access_token in URL:', !!access_token);
+        console.log('  Has refresh_token in URL:', !!refresh_token);
+        console.log('  Has token_hash in URL:', !!token_hash);
+
+        // Verificar sesión (Supabase ya la estableció desde el hash)
         const {
           data: { session },
-          error,
+          error: sessionError,
         } = await supabase.auth.getSession();
 
-        if (!session || error) {
+        console.log('  session exists:', !!session);
+        console.log('  session error:', sessionError?.message);
+
+        if (!session || sessionError) {
           throw new Error(
-            'No hay sesión activa para restablecer la contraseña.'
+            'Token de recuperación inválido o expirado. Por favor, solicita un nuevo enlace.'
           );
         }
 
-        console.log('✅ Sesión de recuperación activa');
+        // Guardar user_id para validación
+        localStorage.setItem('recovery_user_id', session.user.id);
+        console.log('✅ Sesión de recovery verificada - mostrando formulario');
         setIsVerifying(false);
       } catch (err) {
-        console.error('Error de verificación:', err);
+        console.error('❌ Error de verificación:', err.message);
         setIsVerifying(false);
-        window.location.replace(
-          `${window.location.origin}/?error=invalid_recovery_link`
-        );
+        setError(err.message || 'Enlace de recuperación inválido o expirado.');
+
+        // Limpiar recovery mode si falla
+        localStorage.removeItem('recovery_mode');
+        localStorage.removeItem('recovery_user_id');
+
+        // Redirigir después de 3 segundos
+        setTimeout(() => {
+          window.location.replace(
+            `${window.location.origin}/?error=invalid_recovery_link`
+          );
+        }, 3000);
       }
     };
 
@@ -85,14 +125,23 @@ export default function ResetPassword() {
 
       setOk(true);
 
-      // Cerrar sesión local
-      await supabase.auth.signOut();
+      console.log('✅ Contraseña actualizada exitosamente');
+      console.log('🔐 Limpiando modo recovery e iniciando sesión...');
 
-      // Redirigir al mismo host con banner
-      const base = window.location.origin;
-      const url = new URL(base);
-      url.searchParams.set('banner', 'reset_success');
-      window.location.replace(url.toString());
+      // Limpiar banderas de recovery para permitir navegación normal
+      localStorage.removeItem('recovery_mode');
+      localStorage.removeItem('recovery_user_id');
+
+      // NO cerrar sesión - mantener al usuario logueado
+      // La sesión ya está activa desde el enlace de recovery
+
+      // Esperar un momento para que los cambios se propaguen
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Redirigir al home (la sesión ya está establecida)
+      // UnifiedAuthProvider se encargará de redirigir al workspace correcto
+      console.log('🏠 Redirigiendo al home...');
+      window.location.href = window.location.origin;
     } catch (err) {
       setError(err?.message ?? 'Ocurrió un error al cambiar la contraseña.');
     } finally {
@@ -104,6 +153,27 @@ export default function ResetPassword() {
     return (
       <Box sx={{ minHeight: '80vh', display: 'grid', placeItems: 'center' }}>
         <Typography>Verificando enlace...</Typography>
+      </Box>
+    );
+  }
+
+  // Si hay error de verificación, mostrar mensaje
+  if (error && !password) {
+    return (
+      <Box
+        sx={{ minHeight: '80vh', display: 'grid', placeItems: 'center', p: 2 }}
+      >
+        <Paper sx={{ p: 3, width: '100%', maxWidth: 420, textAlign: 'center' }}>
+          <Typography variant="h6" color="error" gutterBottom>
+            Enlace inválido o expirado
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {error}
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 2 }} color="text.secondary">
+            Redirigiendo...
+          </Typography>
+        </Paper>
       </Box>
     );
   }

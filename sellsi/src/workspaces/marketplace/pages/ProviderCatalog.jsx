@@ -207,11 +207,21 @@ const ProviderCatalog = () => {
       filtered = filtered.filter(product => product.categoria === categoryFilter);
     }
 
-    // Ordenar por precio
+    // Ordenar por precio (considerando priceTiers)
     if (priceOrder === 'asc') {
-      filtered.sort((a, b) => (a.precio || 0) - (b.precio || 0));
+      // ✅ FIX: Usar minPrice (precio mínimo de priceTiers) para ordenar de menor a mayor
+      filtered.sort((a, b) => {
+        const aPrice = a.minPrice ?? a.precio ?? 0;
+        const bPrice = b.minPrice ?? b.precio ?? 0;
+        return aPrice - bPrice;
+      });
     } else if (priceOrder === 'desc') {
-      filtered.sort((a, b) => (b.precio || 0) - (a.precio || 0));
+      // ✅ FIX: Usar maxPrice (precio máximo de priceTiers) para ordenar de mayor a menor
+      filtered.sort((a, b) => {
+        const aPrice = a.maxPrice ?? a.precio ?? 0;
+        const bPrice = b.maxPrice ?? b.precio ?? 0;
+        return bPrice - aPrice;
+      });
     }
 
     setFilteredProducts(filtered);

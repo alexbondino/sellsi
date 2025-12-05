@@ -11,7 +11,7 @@ export const PAYMENT_METHODS = {
     enabled: true,
     fees: {
       percentage: 0, // Sin comisiones adicionales por parte de Sellsi
-      fixed: 0
+      fixed: 500 // Comisión fija $500 CLP
     },
     minAmount: 10, // Mínimo CLP $10
     maxAmount: 10000000, // Máximo CLP $10M
@@ -24,11 +24,38 @@ export const PAYMENT_METHODS = {
       description: 'Certificado por CMF y protegido con encriptación bancaria'
     },
     features: [
-      'Sin comisiones adicionales',
+      'Comisión fija de $500',
       'Transferencia instantánea',
       'Disponible 24/7',
       'Compatible con todos los bancos',
       'Confirmación inmediata'
+    ]
+  },
+  FLOW: {
+    id: 'flow',
+    name: 'Tarjeta de Crédito/Débito',
+    description: 'Pago con Webpay, Visa, Mastercard y más',
+    icon: '/Checkout/flow.svg',
+    enabled: true,
+    fees: {
+      percentage: 3.19, // 3.19% del total
+      fixed: 0
+    },
+    minAmount: 350, // Flow mínimo ~$350 CLP
+    maxAmount: 10000000,
+    supportedCurrencies: ['CLP'],
+    processingTime: 'Instantáneo',
+    security: {
+      ssl: true,
+      encrypted: true,
+      verified: true,
+      description: 'Procesado por Flow.cl con encriptación SSL'
+    },
+    features: [
+      'Tarjetas de crédito y débito',
+      'Webpay Plus',
+      'Confirmación inmediata',
+      'Múltiples medios de pago'
     ]
   },
   // Métodos futuros

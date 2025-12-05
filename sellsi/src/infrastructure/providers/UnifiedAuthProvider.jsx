@@ -1,7 +1,17 @@
-import React, { createContext, useContext, useEffect, useRef, useState, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+} from 'react';
 import { supabase, invalidateAuthUserCache } from '../../services/supabase';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getUserProfile, invalidateUserProfileCache } from '../../services/user/profileService';
+import {
+  getUserProfile,
+  invalidateUserProfileCache,
+} from '../../services/user/profileService';
 import { onAuthStarted, onAuthCleared } from '../auth/AuthReadyCoordinator';
 // 🧹 Imports para Nuclear Cleanup (Kill Switch - Fase 1)
 import { useOrdersStore } from '../../shared/stores/orders/ordersStore';
@@ -34,46 +44,95 @@ const USER_NAME_STATUS = { PENDING: 'pendiente' };
  */
 const performNuclearCleanup = () => {
   console.warn('☢️ NUCLEAR CLEANUP - Limpiando sesión anterior ☢️');
-  
+
   // 1. Auth Ready Coordinator
-  try { onAuthCleared(); } catch(e) {}
-  
+  try {
+    onAuthCleared();
+  } catch (e) {}
+
   // 2. Stores Zustand (Bugs 12, 13, 14, 15)
-  try { useOrdersStore.getState().clearOrders(); } catch(e) { console.debug('clearOrders:', e); }
-  try { useCartHistory.getState().clearHistory(); } catch(e) { console.debug('clearHistory:', e); }
-  try { useOfferStore.getState().clearOffersCache(); } catch(e) { console.debug('clearOffersCache:', e); }
-  try { useNotificationsStore.getState().reset?.(); } catch(e) { console.debug('notifications reset:', e); }
-  
+  try {
+    useOrdersStore.getState().clearOrders();
+  } catch (e) {
+    console.debug('clearOrders:', e);
+  }
+  try {
+    useCartHistory.getState().clearHistory();
+  } catch (e) {
+    console.debug('clearHistory:', e);
+  }
+  try {
+    useOfferStore.getState().clearOffersCache();
+  } catch (e) {
+    console.debug('clearOffersCache:', e);
+  }
+  try {
+    useNotificationsStore.getState().reset?.();
+  } catch (e) {
+    console.debug('notifications reset:', e);
+  }
+
   // 3. React Query (Bug 20) - Cache de 15-30min
-  try { queryClient.clear(); } catch(e) { console.debug('queryClient.clear:', e); }
-  
+  try {
+    queryClient.clear();
+  } catch (e) {
+    console.debug('queryClient.clear:', e);
+  }
+
   // 4. Realtime Subscriptions (Bugs 17, 18)
-  try { 
+  try {
     delete window.__ordersRealtimeSubscribed;
     useOrdersStore.getState().unsubscribeRealtime?.();
-  } catch(e) {}
-  try { useOfferStore.getState().unsubscribeAll?.(); } catch(e) {}
-  
+  } catch (e) {}
+  try {
+    useOfferStore.getState().unsubscribeAll?.();
+  } catch (e) {}
+
   // 5. Caches de servicio (Bugs 10, 19)
-  try { invalidateUserProfileCache(); } catch(e) {}
-  try { invalidateAuthUserCache(); } catch(e) {}
-  
+  try {
+    invalidateUserProfileCache();
+  } catch (e) {}
+  try {
+    invalidateAuthUserCache();
+  } catch (e) {}
+
   // 6. localStorage (Bugs 14, 16)
-  ['user_id','account_type','supplierid','sellerid','access_token','auth_token',
-   'currentAppRole','sellsi-cart-v3-refactored','notifications_forced_read',
-   'notifications_read_buffer'].forEach(k => { 
-    try { localStorage.removeItem(k); } catch(e) {} 
+  [
+    'user_id',
+    'account_type',
+    'supplierid',
+    'sellerid',
+    'access_token',
+    'auth_token',
+    'currentAppRole',
+    'sellsi-cart-v3-refactored',
+    'notifications_forced_read',
+    'notifications_read_buffer',
+  ].forEach(k => {
+    try {
+      localStorage.removeItem(k);
+    } catch (e) {}
   });
-  
+
   // 7. sessionStorage (Bug 6)
-  try { sessionStorage.clear(); } catch(e) {}
-  
+  try {
+    sessionStorage.clear();
+  } catch (e) {}
+
   // 8. Legacy invalidators (redundancia por seguridad)
-  try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
-  try { window.invalidateTransferInfoCache?.(); } catch(e) {}
-  try { window.invalidateBillingInfoCache?.(); } catch(e) {}
-  try { window.invalidateShippingInfoCache?.(); } catch(e) {}
-  
+  try {
+    window.invalidateUserShippingRegionCache?.();
+  } catch (e) {}
+  try {
+    window.invalidateTransferInfoCache?.();
+  } catch (e) {}
+  try {
+    window.invalidateBillingInfoCache?.();
+  } catch (e) {}
+  try {
+    window.invalidateShippingInfoCache?.();
+  } catch (e) {}
+
   console.log('✅ Nuclear Cleanup Completado');
 };
 
@@ -89,7 +148,7 @@ export const UnifiedAuthProvider = ({ children }) => {
     try {
       const stored = localStorage.getItem('currentAppRole');
       if (stored === 'supplier' || stored === 'buyer') return stored;
-    } catch(e) {}
+    } catch (e) {}
     return null; // null means derive from profile
   });
 
@@ -101,12 +160,14 @@ export const UnifiedAuthProvider = ({ children }) => {
   const [lastMainSupplier, setLastMainSupplier] = useState(null);
 
   // Fetch + profile logic
-  const fetchProfile = async (currentSession) => {
+  const fetchProfile = async currentSession => {
     if (!currentSession?.user) {
       setUserProfile(null);
       setNeedsOnboarding(false);
       setLoadingUserStatus(false);
-      try { localStorage.removeItem('user_id'); } catch(e) {}
+      try {
+        localStorage.removeItem('user_id');
+      } catch (e) {}
       return;
     }
 
@@ -125,7 +186,9 @@ export const UnifiedAuthProvider = ({ children }) => {
     }
 
     lastSessionIdRef.current = userId;
-    try { localStorage.setItem('user_id', userId); } catch(e) {}
+    try {
+      localStorage.setItem('user_id', userId);
+    } catch (e) {}
     fetchingUsersRef.current.add(userId);
 
     try {
@@ -136,18 +199,20 @@ export const UnifiedAuthProvider = ({ children }) => {
       // Incluir user_id para que componentes como WhatsAppWidget puedan
       // mostrar un identificador corto sin caer en 'N/A'. Si fullProfile
       // no contiene user_id, usar el id de sesión (userId) como fallback.
-      const userData = fullProfile ? {
-        user_id: fullProfile.user_id || userId,
-        user_nm: fullProfile.user_nm,
-        main_supplier: fullProfile.main_supplier,
-        logo_url: fullProfile.logo_url,
-        email: fullProfile.email,
-      } : null;
+      const userData = fullProfile
+        ? {
+            user_id: fullProfile.user_id || userId,
+            user_nm: fullProfile.user_nm,
+            main_supplier: fullProfile.main_supplier,
+            logo_url: fullProfile.logo_url,
+            email: fullProfile.email,
+          }
+        : null;
 
       // 🔧 Si el perfil no existe, crearlo automáticamente
       if (error || !userData) {
         console.log('📝 Perfil no encontrado, creando automáticamente...');
-        
+
         const { data: newProfile, error: createError } = await supabase
           .from('users')
           .insert({
@@ -165,7 +230,9 @@ export const UnifiedAuthProvider = ({ children }) => {
           setNeedsOnboarding(true);
           setUserProfile(null);
           setLoadingUserStatus(false);
-          try { localStorage.removeItem('user_id'); } catch(e) {}
+          try {
+            localStorage.removeItem('user_id');
+          } catch (e) {}
           return;
         }
 
@@ -180,7 +247,10 @@ export const UnifiedAuthProvider = ({ children }) => {
       }
 
       // Perfil encontrado exitosamente
-      if (!userData || userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING) {
+      if (
+        !userData ||
+        userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING
+      ) {
         setNeedsOnboarding(true);
         setUserProfile(userData);
       } else {
@@ -194,9 +264,13 @@ export const UnifiedAuthProvider = ({ children }) => {
       setNeedsOnboarding(true);
       setUserProfile(null);
       setLoadingUserStatus(false);
-      try { localStorage.removeItem('user_id'); } catch(e) {}
+      try {
+        localStorage.removeItem('user_id');
+      } catch (e) {}
     } finally {
-      try { fetchingUsersRef.current.delete(userId); } catch (_) {}
+      try {
+        fetchingUsersRef.current.delete(userId);
+      } catch (_) {}
     }
   };
 
@@ -206,59 +280,142 @@ export const UnifiedAuthProvider = ({ children }) => {
     setLoadingUserStatus(true);
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
+
+      // ⚠️ RECOVERY MODE: Detectar tokens de recovery en URL ANTES de procesar
+      const currentUrl = window.location.href;
+      const hashMatch =
+        currentUrl.match(/#.*type=recovery/) ||
+        currentUrl.match(/#.*access_token=.*&.*refresh_token=/);
+      const isRecoveryUrl =
+        hashMatch || currentUrl.includes('/auth/reset-password');
+      const isRecoveryMode = localStorage.getItem('recovery_mode') === 'true';
+
+      if (isRecoveryUrl || isRecoveryMode) {
+        console.log(
+          '🔐 Sesión inicial durante recovery mode - NO fetching profile ni redirigiendo'
+        );
+        console.log('  isRecoveryUrl:', !!isRecoveryUrl);
+        console.log('  isRecoveryMode:', isRecoveryMode);
+        setSession(data.session);
+        setLoadingUserStatus(false);
+        return;
+      }
+
       setSession(data.session);
       // ✅ FIX: Disparar user-changed también cuando se restaura sesión existente (F5)
       // Esto permite que los hooks de billing/transfer/shipping recarguen sus datos
       if (data.session?.user?.id) {
-        try { localStorage.setItem('user_id', data.session.user.id); } catch(e) {}
+        try {
+          localStorage.setItem('user_id', data.session.user.id);
+        } catch (e) {}
         // Delay pequeño para asegurar que los hooks ya están montados y escuchando
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: data.session.user.id } }));
+          window.dispatchEvent(
+            new CustomEvent('user-changed', {
+              detail: { userId: data.session.user.id },
+            })
+          );
         }, 50);
       }
       fetchProfile(data.session);
     });
-    const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
-      if (!mounted) return;
-      if (event === 'SIGNED_IN') {
-        setSession(newSession);
-        if (newSession?.user?.id) {
-          try { localStorage.setItem('user_id', newSession.user.id); } catch(e) {}
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (event, newSession) => {
+        if (!mounted) return;
+        if (event === 'SIGNED_IN') {
+          // ⚠️ RECOVERY MODE: Detectar tokens de recovery en URL o localStorage
+          const currentUrl = window.location.href;
+          const hashMatch =
+            currentUrl.match(/#.*type=recovery/) ||
+            currentUrl.match(/#.*access_token=.*&.*refresh_token=/);
+          const isRecoveryUrl =
+            hashMatch || currentUrl.includes('/auth/reset-password');
+          const isRecoveryMode =
+            localStorage.getItem('recovery_mode') === 'true';
+
+          if (isRecoveryUrl || isRecoveryMode) {
+            console.log(
+              '🔐 SIGNED_IN durante recovery mode - ignorando auto-redirect'
+            );
+            console.log('  isRecoveryUrl:', !!isRecoveryUrl);
+            console.log('  isRecoveryMode:', isRecoveryMode);
+            setSession(newSession);
+            // NO llamar fetchProfile ni redirigir - el usuario está cambiando contraseña
+            return;
+          }
+
+          setSession(newSession);
+          if (newSession?.user?.id) {
+            try {
+              localStorage.setItem('user_id', newSession.user.id);
+            } catch (e) {}
+          }
+          // 🔄 Iniciar coordinación de auth-ready (los caches deben notificar cuando estén listos)
+          try {
+            onAuthStarted();
+          } catch (e) {}
+          try {
+            window.invalidateUserShippingRegionCache?.();
+          } catch (e) {}
+          try {
+            window.invalidateTransferInfoCache?.();
+          } catch (e) {}
+          try {
+            window.invalidateBillingInfoCache?.();
+          } catch (e) {}
+          try {
+            window.invalidateShippingInfoCache?.();
+          } catch (e) {}
+          try {
+            window.globalCache?.clear?.();
+          } catch (e) {}
+          // Dispatch custom event for user change (sin delay para reducir race conditions)
+          window.dispatchEvent(
+            new CustomEvent('user-changed', {
+              detail: { userId: newSession?.user?.id },
+            })
+          );
+          fetchProfile(newSession);
+        } else if (event === 'TOKEN_REFRESHED') {
+          // ✅ FIX Bug 9: TOKEN_REFRESHED NO es logout
+          // Supabase renueva JWT cada ~1 hora, solo actualizar session
+          setSession(newSession);
+          // NO limpiar localStorage, NO invalidar caches, NO disparar user-changed con null
+        } else if (event === 'SIGNED_OUT') {
+          // 🧹 SIGNED_OUT real: Limpieza total con Nuclear Cleanup
+          performNuclearCleanup();
+          setSession(null);
+          setManualRoleOverride(null);
+          window.dispatchEvent(
+            new CustomEvent('user-changed', { detail: { userId: null } })
+          );
+          // fetchProfile(null) no es necesario - ya está todo limpio
+        } else if (event === 'USER_UPDATED') {
+          setSession(newSession);
+          if (newSession?.user?.id) {
+            try {
+              localStorage.setItem('user_id', newSession.user.id);
+            } catch (e) {}
+          }
+          try {
+            window.invalidateUserShippingRegionCache?.();
+          } catch (e) {}
+          try {
+            window.invalidateTransferInfoCache?.();
+          } catch (e) {}
+          try {
+            window.invalidateBillingInfoCache?.();
+          } catch (e) {}
+          try {
+            window.invalidateShippingInfoCache?.();
+          } catch (e) {}
         }
-        // 🔄 Iniciar coordinación de auth-ready (los caches deben notificar cuando estén listos)
-        try { onAuthStarted(); } catch(e) {}
-        try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
-        try { window.invalidateTransferInfoCache?.(); } catch(e) {}
-        try { window.invalidateBillingInfoCache?.(); } catch(e) {}
-        try { window.invalidateShippingInfoCache?.(); } catch(e) {}
-        try { window.globalCache?.clear?.(); } catch(e) {}
-        // Dispatch custom event for user change (sin delay para reducir race conditions)
-        window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: newSession?.user?.id } }));
-        fetchProfile(newSession);
-      } else if (event === 'TOKEN_REFRESHED') {
-        // ✅ FIX Bug 9: TOKEN_REFRESHED NO es logout
-        // Supabase renueva JWT cada ~1 hora, solo actualizar session
-        setSession(newSession);
-        // NO limpiar localStorage, NO invalidar caches, NO disparar user-changed con null
-      } else if (event === 'SIGNED_OUT') {
-        // 🧹 SIGNED_OUT real: Limpieza total con Nuclear Cleanup
-        performNuclearCleanup();
-        setSession(null);
-        setManualRoleOverride(null);
-        window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: null } }));
-        // fetchProfile(null) no es necesario - ya está todo limpio
-      } else if (event === 'USER_UPDATED') {
-        setSession(newSession);
-        if (newSession?.user?.id) {
-          try { localStorage.setItem('user_id', newSession.user.id); } catch(e) {}
-        }
-        try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
-        try { window.invalidateTransferInfoCache?.(); } catch(e) {}
-        try { window.invalidateBillingInfoCache?.(); } catch(e) {}
-        try { window.invalidateShippingInfoCache?.(); } catch(e) {}  
       }
-    });
-    return () => { mounted = false; listener?.subscription?.unsubscribe(); };
+    );
+    return () => {
+      mounted = false;
+      listener?.subscription?.unsubscribe();
+    };
   }, []);
 
   const refreshUserProfile = async () => {
@@ -270,10 +427,10 @@ export const UnifiedAuthProvider = ({ children }) => {
         .eq('user_id', session.user.id)
         .single();
       if (!error && userData) {
-          setUserProfile(userData);
-          setLastMainSupplier(userData.main_supplier);
-        }
-    } catch(e) {}
+        setUserProfile(userData);
+        setLastMainSupplier(userData.main_supplier);
+      }
+    } catch (e) {}
   };
 
   // Derived role (manualOverride > profile > null)
@@ -287,9 +444,9 @@ export const UnifiedAuthProvider = ({ children }) => {
   // Soluciona bug donde TopBar se actualiza pero Sidebar no al navegar con URL directa
   useEffect(() => {
     if (!session) return; // Solo para usuarios logueados
-    
+
     const pathname = location.pathname;
-    
+
     // Detectar navegación a workspace buyer
     if (pathname.startsWith('/buyer/')) {
       if (derivedRole !== 'buyer') {
@@ -297,7 +454,10 @@ export const UnifiedAuthProvider = ({ children }) => {
       }
     }
     // Detectar navegación a workspace supplier
-    else if (pathname.startsWith('/supplier/') || pathname.startsWith('/provider/')) {
+    else if (
+      pathname.startsWith('/supplier/') ||
+      pathname.startsWith('/provider/')
+    ) {
       if (derivedRole !== 'supplier') {
         setManualRoleOverride('supplier');
       }
@@ -307,10 +467,14 @@ export const UnifiedAuthProvider = ({ children }) => {
   // Sync manual override to storage
   useEffect(() => {
     if (manualRoleOverride) {
-      try { localStorage.setItem('currentAppRole', manualRoleOverride); } catch(e) {}
+      try {
+        localStorage.setItem('currentAppRole', manualRoleOverride);
+      } catch (e) {}
     } else {
       // If cleared, remove to allow profile derivation next session
-      try { localStorage.removeItem('currentAppRole'); } catch(e) {}
+      try {
+        localStorage.removeItem('currentAppRole');
+      } catch (e) {}
     }
   }, [manualRoleOverride]);
 
@@ -329,14 +493,19 @@ export const UnifiedAuthProvider = ({ children }) => {
     setManualRoleOverride(newRole);
     if (!skipNavigation) {
       setIsRoleSwitching(true);
-      navigate(newRole === 'supplier' ? '/supplier/home' : '/buyer/marketplace');
+      navigate(
+        newRole === 'supplier' ? '/supplier/home' : '/buyer/marketplace'
+      );
     }
   };
 
   useEffect(() => {
     if (isRoleSwitching) {
-      if ((derivedRole === 'supplier' && location.pathname.startsWith('/supplier')) ||
-          (derivedRole === 'buyer' && location.pathname.startsWith('/buyer'))) {
+      if (
+        (derivedRole === 'supplier' &&
+          location.pathname.startsWith('/supplier')) ||
+        (derivedRole === 'buyer' && location.pathname.startsWith('/buyer'))
+      ) {
         setIsRoleSwitching(false);
       }
     }
@@ -344,14 +513,33 @@ export const UnifiedAuthProvider = ({ children }) => {
 
   // Redirect neutrals to dashboard after auth ready & profile available
   useEffect(() => {
-    const neutral = new Set(['/', '/marketplace', '/catalog', '/terms-and-conditions', '/privacy-policy']);
+    const neutral = new Set([
+      '/',
+      '/marketplace',
+      '/catalog',
+      '/terms-and-conditions',
+      '/privacy-policy',
+    ]);
     if (!loadingUserStatus && session && !needsOnboarding && userProfile) {
-      if (neutral.has(location.pathname) && !['/terms-and-conditions','/privacy-policy'].includes(location.pathname)) {
-        const target = userProfile.main_supplier ? '/supplier/home' : '/buyer/marketplace';
+      if (
+        neutral.has(location.pathname) &&
+        !['/terms-and-conditions', '/privacy-policy'].includes(
+          location.pathname
+        )
+      ) {
+        const target = userProfile.main_supplier
+          ? '/supplier/home'
+          : '/buyer/marketplace';
         if (location.pathname !== target) navigate(target, { replace: true });
       }
     }
-  }, [loadingUserStatus, session, needsOnboarding, userProfile, location.pathname]);
+  }, [
+    loadingUserStatus,
+    session,
+    needsOnboarding,
+    userProfile,
+    location.pathname,
+  ]);
 
   // Redirect onboarding when needed
   useEffect(() => {
@@ -363,49 +551,81 @@ export const UnifiedAuthProvider = ({ children }) => {
   // Redirect after logout away from private routes
   useEffect(() => {
     if (!loadingUserStatus && !session) {
-      const allowed = [ '/', '/marketplace', '/login', '/crear-cuenta', '/onboarding', '/terms-and-conditions', '/privacy-policy' ];
-      const isAllowed = allowed.some(r => location.pathname === r || location.pathname.startsWith('/marketplace/product'));
+      const allowed = [
+        '/',
+        '/marketplace',
+        '/login',
+        '/crear-cuenta',
+        '/onboarding',
+        '/terms-and-conditions',
+        '/privacy-policy',
+      ];
+      const isAllowed = allowed.some(
+        r =>
+          location.pathname === r ||
+          location.pathname.startsWith('/marketplace/product')
+      );
       if (!isAllowed) navigate('/', { replace: true });
     }
   }, [session, loadingUserStatus, location.pathname]);
 
   const isRoleLoading = derivedRole === null && session && !loadingUserStatus;
   const isBuyer = derivedRole === 'buyer';
-  
+
   // Dashboard route detection (controls SideBar/layout adjustments)
   const isDashboardRoute = useMemo(() => {
     const p = location.pathname;
     // Any authenticated buyer/supplier namespace route counts as dashboard layout
-  if (p.startsWith('/buyer/') || p.startsWith('/supplier/')) return true;
-  // Product detail pages under marketplace should also use the dashboard layout
-  // so the SideBar appears when viewing a product (this was previously shown)
-  if (p.startsWith('/marketplace/product')) return true;
-  return false;
+    if (p.startsWith('/buyer/') || p.startsWith('/supplier/')) return true;
+    // Product detail pages under marketplace should also use the dashboard layout
+    // so the SideBar appears when viewing a product (this was previously shown)
+    if (p.startsWith('/marketplace/product')) return true;
+    return false;
   }, [location.pathname]);
 
-  const value = useMemo(() => ({
-    // Auth
-    session,
-    userProfile,
-    loadingUserStatus,
-    needsOnboarding,
-    refreshUserProfile,
-    // Role
-    currentAppRole: derivedRole,
-    isBuyer,
-    isRoleLoading,
-    isRoleSwitching,
-    handleRoleChange,
-    redirectToInitialHome: () => {
-      if (userProfile) {
-        navigate(userProfile.main_supplier ? '/supplier/home' : '/buyer/marketplace', { replace: true });
-      }
-    },
-    // Layout helpers
-    isDashboardRoute,
-    // Backwards compatibility naming
-    role: derivedRole,
-  }), [session, userProfile, loadingUserStatus, needsOnboarding, derivedRole, isBuyer, isRoleLoading, isRoleSwitching, isDashboardRoute]);
+  const value = useMemo(
+    () => ({
+      // Auth
+      session,
+      userProfile,
+      loadingUserStatus,
+      needsOnboarding,
+      refreshUserProfile,
+      // Role
+      currentAppRole: derivedRole,
+      isBuyer,
+      isRoleLoading,
+      isRoleSwitching,
+      handleRoleChange,
+      redirectToInitialHome: () => {
+        if (userProfile) {
+          navigate(
+            userProfile.main_supplier ? '/supplier/home' : '/buyer/marketplace',
+            { replace: true }
+          );
+        }
+      },
+      // Layout helpers
+      isDashboardRoute,
+      // Backwards compatibility naming
+      role: derivedRole,
+    }),
+    [
+      session,
+      userProfile,
+      loadingUserStatus,
+      needsOnboarding,
+      derivedRole,
+      isBuyer,
+      isRoleLoading,
+      isRoleSwitching,
+      isDashboardRoute,
+    ]
+  );
 
-  return <UnifiedAuthContext.Provider value={value}>{children}</UnifiedAuthContext.Provider>;
+  return (
+    <UnifiedAuthContext.Provider value={value}>
+      {children}
+    </UnifiedAuthContext.Provider>
+  );
 };

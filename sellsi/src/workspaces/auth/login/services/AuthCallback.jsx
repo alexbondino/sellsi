@@ -14,20 +14,78 @@ export default function AuthCallback() {
     const handleAuth = async () => {
       try {
         const url = new URL(window.location.href);
-        const token_hash =
-          url.searchParams.get('token_hash') || url.searchParams.get('token');
-        const type = url.searchParams.get('type');
-        const error_description = url.searchParams.get('error_description');
+        const searchParams = url.searchParams;
+        const hashParams = new URLSearchParams(
+          window.location.hash.replace(/^#/, '')
+        );
 
-        // Manejar errores de Supabase
+        console.log('🔍 AuthCallback - URL completa:', window.location.href);
+        console.log('🔍 Query params:', Object.fromEntries(searchParams));
+        console.log('🔍 Hash params:', Object.fromEntries(hashParams));
+
+        const error_description =
+          searchParams.get('error_description') ||
+          hashParams.get('error_description');
+
         if (error_description) {
           console.error('❌ Error de Supabase:', error_description);
           navigate('/?error=auth_failed');
           return;
         }
 
+        // PRIORIDAD 1: Detectar recovery ANTES de que Supabase establezca sesión automática
+        const type = searchParams.get('type') || hashParams.get('type');
+        const access_token =
+          hashParams.get('access_token') || searchParams.get('access_token');
+        const refresh_token =
+          hashParams.get('refresh_token') || searchParams.get('refresh_token');
+        const token_hash =
+          searchParams.get('token_hash') ||
+          searchParams.get('token') ||
+          hashParams.get('token') ||
+          hashParams.get('token_hash');
+
+        console.log('🔍 Type detectado:', type);
+        console.log('🔍 Has access_token:', !!access_token);
+        console.log('🔍 Has refresh_token:', !!refresh_token);
+        console.log('🔍 Has token_hash:', !!token_hash);
+
+        // Detectar flujo de recovery: type=recovery O tiene tokens de sesión en hash
+        const isRecovery =
+          type === 'recovery' ||
+          (access_token &&
+            refresh_token &&
+            type !== 'signup' &&
+            type !== 'invite');
+
+        if (isRecovery) {
+          console.log('🔐 DETECTADO: Flujo de recovery password');
+
+          // Supabase puede haber establecido la sesión automáticamente desde el hash
+          // Necesitamos verificar y marcar esta sesión como "recovery" antes de redirigir
+          const { data: sessionData } = await supabase.auth.getSession();
+
+          if (sessionData?.session) {
+            console.log('⚠️ Sesión de recovery ya establecida por Supabase');
+            // Marcar en localStorage que esta es una sesión de recovery
+            localStorage.setItem('recovery_mode', 'true');
+            localStorage.setItem(
+              'recovery_user_id',
+              sessionData.session.user.id
+            );
+          }
+
+          console.log('🚫 Redirigiendo a página de reset de contraseña...');
+
+          // Redirigir a página de reset SIN tokens en hash (ya están en la sesión de Supabase)
+          window.location.replace(
+            `${window.location.origin}/auth/reset-password`
+          );
+          return;
+        }
+
         // Manejo de OAuth/PKCE (Google, etc.)
-        const hasCode = url.searchParams.get('code');
+        const hasCode = searchParams.get('code') || hashParams.get('code');
         if (hasCode) {
           console.log('🔐 Procesando OAuth/PKCE...');
           const { data, error } = await supabase.auth.exchangeCodeForSession(
@@ -114,8 +172,8 @@ export default function AuthCallback() {
           return;
         }
 
-        // 🔧 NUEVO: Manejo de email verification/signup/recovery
-        if (token_hash && type) {
+        // 🔧 Manejo de email verification/signup (NO recovery, ya se manejó arriba)
+        if (token_hash && type && type !== 'recovery') {
           console.log(`🔐 Verificando token de tipo: ${type}...`);
 
           const { data, error } = await supabase.auth.verifyOtp({
@@ -130,15 +188,6 @@ export default function AuthCallback() {
           }
 
           console.log('✅ Token verificado exitosamente');
-
-          // Manejar recuperación de contraseña - redirigir al formulario de reset
-          if (type === 'recovery') {
-            console.log(
-              '🔐 Token de recuperación verificado, redirigiendo a reset password...'
-            );
-            navigate('/auth/reset-password', { replace: true });
-            return;
-          }
 
           // Crear perfil temporal si no existe (para signup/invite)
           if (data?.user && (type === 'signup' || type === 'invite')) {

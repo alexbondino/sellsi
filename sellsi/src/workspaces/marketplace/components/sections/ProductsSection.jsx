@@ -176,13 +176,13 @@ const ProductsSection = React.memo(
           <>
             <BusinessIcon
               sx={{
-                color: '#1976d2',
+                color: '#2E52B2',
                 verticalAlign: 'middle',
                 fontSize: { xs: 24, md: 32 },
                 mr: 1,
               }}
             />
-            <span style={{ color: '#1976d2' }}>Proveedores Disponibles</span>
+            <span style={{ color: '#2E52B2' }}>Proveedores Disponibles</span>
           </>
         );
       }
