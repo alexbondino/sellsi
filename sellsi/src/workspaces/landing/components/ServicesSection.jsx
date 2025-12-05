@@ -88,8 +88,8 @@ export default function ServicesSection({
       >
         {/* (1,1) Imagen Compradores */}
         <Box
-          gridColumn="1"
-          gridRow="1"
+          gridColumn={{ xs: '1', md: '1' }}
+          gridRow={{ xs: '2', md: '1' }}
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -103,7 +103,7 @@ export default function ServicesSection({
         {/* (1,2) Texto Compradores */}
         <Box
           gridColumn={{ xs: '1', md: '2' }}
-          gridRow={{ xs: '2', md: '1' }}
+          gridRow={{ xs: '1', md: '1' }}
           sx={{
             display: 'flex',
             flexDirection: 'column',
