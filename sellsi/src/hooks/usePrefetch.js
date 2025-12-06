@@ -23,10 +23,7 @@ const CRITICAL_ROUTES = new Map([
     '/crear-cuenta',
     () => import('../workspaces/auth/register/components/Register'),
   ],
-  [
-    '/buyer/marketplace',
-    () => import('../workspaces/buyer/marketplace'),
-  ],
+  ['/buyer/marketplace', () => import('../workspaces/marketplace')],
   [
     '/supplier/home',
     () => import('../workspaces/supplier/home/components/Home'),

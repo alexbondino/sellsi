@@ -95,31 +95,15 @@ const ProductsSection = React.memo(
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno
     const innerContainerStyles = React.useMemo(
       () => ({
-        width: { xs: '100vw', sm: '100vw', md: '100%', lg: '100%', xl: '100%' },
-        maxWidth: {
-          xs: '440px',
-          sm: '600px',
-          md: '960px',
-          lg: '1280px',
-          xl: '1700px',
-        },
-        mx: { xs: 'auto', sm: 'auto', md: 0 },
-        // ✅ AJUSTE CON SIDEBAR: Mover contenido ligeramente cuando el sidebar está abierto
-        // Usamos un valor más pequeño porque el padding del contenedor principal ya compensa
-        ml: isSideBarOpen
-          ? { xs: 'auto', md: '6.5%' }
-          : { xs: 'auto', sm: 'auto', md: 0 },
-        // ✅ Ancho máximo sin cambios (el contenedor principal ya maneja el espacio)
-        maxWidth: {
-          xs: '440px',
-          sm: '600px',
-          md: '960px',
-          lg: '1280px',
-          xl: '1700px',
-        },
+        // ✅ MÁRGENES PERFECTAMENTE SIMÉTRICOS: mx auto centra el contenido
+        mx: 'auto',
+        // ✅ Cuando sidebar abierto: el contenedor principal ya tiene offset por el sidebar
+        // Solo necesitamos ajustar el ancho del contenido para mantener el centrado
+        width: '85%',
+        // ✅ Ancho máximo del contenido (se mantiene consistente)
+        maxWidth: '100%',
         // ✅ Transición suave
-        transition:
-          'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), max-width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        transition: 'width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       }),
       [isSideBarOpen]
     );
