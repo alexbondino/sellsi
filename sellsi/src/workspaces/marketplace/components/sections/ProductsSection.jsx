@@ -95,16 +95,25 @@ const ProductsSection = React.memo(
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno
     const innerContainerStyles = React.useMemo(
       () => ({
-        // ✅ MÁRGENES PERFECTAMENTE SIMÉTRICOS: mx auto centra el contenido
+        // ✅ CENTRADO: mx auto centra el contenido en el espacio disponible
         mx: 'auto',
-        // ✅ Ancho ampliado para permitir 4 tarjetas por fila
+        // ✅ Ancho del contenedor (80% del espacio disponible)
         width: '80%',
-        // ✅ Ancho máximo del contenido (se mantiene consistente)
+        // ✅ Ancho máximo del contenido
         maxWidth: '100%',
+        // ✅ COMPENSACIÓN DEL SIDEBAR: Desplazar el contenido para que esté centrado
+        // en el área visible (sin contar el sidebar)
+        ...(hasSideBar && {
+          // Cuando hay sidebar, ajustamos el margen izquierdo para compensar
+          ml: isSideBarOpen
+            ? { xs: 'auto', md: 'calc((100% - 80%) / 2 + 5%)' } // Sidebar abierto (13%)
+            : { xs: 'auto', md: 'calc((100% - 80%) / 2 + 5.2%)' }, // Sidebar cerrado (~5.2%)
+          mr: 'auto',
+        }),
         // ✅ Transición suave
-        transition: 'width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       }),
-      [isSideBarOpen]
+      [isSideBarOpen, hasSideBar]
     );
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del grid
