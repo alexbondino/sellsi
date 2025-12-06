@@ -25,86 +25,114 @@ const SearchSection = ({
   shouldShowSearchBar, // Solo afecta a este componente
   searchBarProps,
   categoryNavigationProps,
-  hasSideBar = false, // (No se usará para el layout, solo para lógica futura si se requiere)
+  hasSideBar = false,
+  sideBarCollapsed = false, // ✅ Estado del sidebar (false = abierto por defecto)
 }) => {
-    // ✅ OPTIMIZACIÓN: Removed console.count for production performance
-    // ✅ MEJORA DE RENDIMIENTO: Memoización más granular de estilos del contenedor principal
-    const mainContainerStyles = React.useMemo(
-      () => ({
-        mt: 0,
-        py: { xs: 0, sm: 0, md: 1 },
-        px: 0,
-        bgcolor: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(10px)',
-        position: 'fixed',
-        top: { xs: 45, md: 64 },
-        left: 0, // SIEMPRE pegado a la izquierda
-        right: 0,
-        width: { xs: '100vw', sm: '100vw', md: '100vw', lg: '100vw', xl: '100%' }, // 100vw en md/lg, 100% en xl
-        zIndex: 1,
-        display: 'flex',
-        justifyContent: 'center',
-      }),
-      []
-    );
-    // ✅ ANIMACIÓN OPTIMIZADA: Solo transform y opacity para 60fps
-    const dynamicStyles = React.useMemo(
-      () => ({
-        boxShadow: shouldShowSearchBar ? '0 4px 20px rgba(0,0,0,0.15)' : 'none',
-        borderBottom: shouldShowSearchBar ? '1px solid #e2e8f0' : 'none',
-        transform: shouldShowSearchBar
-          ? 'translateY(0) translateZ(0)'
-          : 'translateY(-100%) translateZ(0)', // Usar translateY en vez de top
-        opacity: shouldShowSearchBar ? 1 : 0,
-        transition:
-          'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out, box-shadow 0.3s ease-out',
-        willChange: 'transform, opacity', // Ayuda al navegador a optimizar
-      }),
-      [shouldShowSearchBar]
-    );
+  // ✅ Determinar si el sidebar está visible y abierto
+  const isSideBarOpen = hasSideBar && !sideBarCollapsed;
 
-    // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno - Estáticos
-    const innerContainerStyles = React.useMemo(
-      () => ({
-        width: '100%',
-        maxWidth: {
-          sm: '720px',
-          md: '960px',
-          lg: '1280px',
-          xl: '1700px',
-        },
-        py: { xs: 0.5, md: 1 }, // Padding vertical 0 en mobile, 1 en md+
-      }),
-      []
-    );
+  // ✅ OPTIMIZACIÓN: Removed console.count for production performance
+  // ✅ MEJORA DE RENDIMIENTO: Memoización más granular de estilos del contenedor principal
+  const mainContainerStyles = React.useMemo(
+    () => ({
+      mt: 0,
+      py: { xs: 0, sm: 0, md: 1 },
+      px: 0,
+      bgcolor: 'rgba(255, 255, 255, 0.95)',
+      backdropFilter: 'blur(10px)',
+      position: 'fixed',
+      top: { xs: 45, md: 64 },
+      // ✅ CONTENEDOR SIEMPRE OCUPA TODO EL ANCHO
+      left: 0,
+      right: 0,
+      width: '100vw',
+      zIndex: 1,
+      display: 'flex',
+      justifyContent: 'flex-start', // Contenido alineado a la izquierda
+    }),
+    []
+  );
+  // ✅ ANIMACIÓN OPTIMIZADA: Solo transform y opacity para 60fps
+  const dynamicStyles = React.useMemo(
+    () => ({
+      boxShadow: shouldShowSearchBar ? '0 4px 20px rgba(0,0,0,0.15)' : 'none',
+      borderBottom: shouldShowSearchBar ? '1px solid #e2e8f0' : 'none',
+      transform: shouldShowSearchBar
+        ? 'translateY(0) translateZ(0)'
+        : 'translateY(-100%) translateZ(0)', // Usar translateY en vez de top
+      opacity: shouldShowSearchBar ? 1 : 0,
+      transition:
+        'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out, box-shadow 0.3s ease-out',
+      willChange: 'transform, opacity', // Ayuda al navegador a optimizar
+    }),
+    [shouldShowSearchBar]
+  );
 
-    // ✅ OPTIMIZACIÓN: Combinar estilos finales solo cuando sea necesario
-    const finalContainerStyles = React.useMemo(
-      () => ({
-        ...mainContainerStyles,
-        ...dynamicStyles,
-      }),
-      [mainContainerStyles, dynamicStyles]
-    );
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno
+  const innerContainerStyles = React.useMemo(
+    () => ({
+      width: '100%',
+      py: { xs: 0.5, md: 1 }, // Padding vertical
+      // ✅ AJUSTE DEL CONTENIDO: Solo el contenido interno se mueve según sidebar
+      // Margen left para compensar el sidebar cuando está abierto (13% del viewport)
+      // Si no hay sidebar, ml es 0
+      ml: hasSideBar ? (isSideBarOpen ? { xs: 0, md: '22%' } : '16%') : '9%',
+      // ✅ Transición suave cuando cambia el estado del sidebar
+      transition:
+        'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), max-width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      // ✅ ALINEADO CON PRODUCTOS: Mismo padding según estado del sidebar
+      px: isSideBarOpen
+        ? {
+            xs: 2, // Mobile: margen pequeño
+            sm: 2.5, // Tablet pequeña: margen reducido
+            md: 3, // Tablet: margen moderado
+            lg: 4, // Desktop: margen compacto
+            xl: 6, // Desktop grande: margen medio
+          }
+        : {
+            xs: 2, // Mobile: margen pequeño
+            sm: 3, // Tablet pequeña: margen medio
+            md: 4, // Tablet: margen moderado
+            lg: 6, // Desktop: margen amplio
+            xl: 8, // Desktop grande: margen grande
+          },
+      // ✅ Ancho ajustado para que el contenido no se extienda debajo del sidebar (13% responsive)
+      maxWidth: isSideBarOpen ? { xs: '100%', md: 'calc(100% - 13%)' } : '100%',
+    }),
+    [isSideBarOpen]
+  );
+
+  // ✅ OPTIMIZACIÓN: Combinar estilos finales solo cuando sea necesario
+  const finalContainerStyles = React.useMemo(
+    () => ({
+      ...mainContainerStyles,
+      ...dynamicStyles,
+    }),
+    [mainContainerStyles, dynamicStyles]
+  );
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const hideOnlyInput = isMobile && !searchBarProps?.isProviderView;
 
   // Usar portal para que SearchSection siempre esté pegada al viewport y no se mueva con el layout
-    return ReactDOM.createPortal(
-      <Box sx={finalContainerStyles}>
-        <Box sx={innerContainerStyles}>
-          {/* ✅ USAR SearchBar EXISTENTE - Sin botón de filtros */}
-      <SearchBar {...searchBarProps} hideTextInputOnMobile={hideOnlyInput} showFiltersButton={false} />
-          {/* ✅ USAR CategoryNavigation EXISTENTE */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <CategoryNavigation {...categoryNavigationProps} />
-          </Box>
+  return ReactDOM.createPortal(
+    <Box sx={finalContainerStyles}>
+      <Box sx={innerContainerStyles}>
+        {/* ✅ USAR SearchBar EXISTENTE - Sin botón de filtros */}
+        <SearchBar
+          {...searchBarProps}
+          hideTextInputOnMobile={hideOnlyInput}
+          showFiltersButton={false}
+        />
+        {/* ✅ USAR CategoryNavigation EXISTENTE */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <CategoryNavigation {...categoryNavigationProps} />
         </Box>
-      </Box>,
-      typeof window !== 'undefined' ? document.body : null
-    );
+      </Box>
+    </Box>,
+    typeof window !== 'undefined' ? document.body : null
+  );
 };
 
 // ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging

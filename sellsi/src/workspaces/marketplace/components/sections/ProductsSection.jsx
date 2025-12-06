@@ -63,7 +63,12 @@ const ProductsSection = React.memo(
     userRegion,
     getPriceTiers,
     registerProductNode,
+    hasSideBar = false,
+    sideBarCollapsed = false,
   }) => {
+    // ✅ Determinar si el sidebar está visible y abierto
+    const isSideBarOpen = hasSideBar && !sideBarCollapsed;
+
     // Layout styles
     const mainContainerStyles = React.useMemo(
       () => ({
@@ -88,35 +93,47 @@ const ProductsSection = React.memo(
     );
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno
-    // Static layout objects (memo innecesario -> removido)
-    const innerContainerStyles = {
-      width: { xs: '100vw', sm: '100vw', md: '100%', lg: '100%', xl: '100%' },
-      maxWidth: {
-        xs: '440px',
-        sm: '600px',
-        md: '960px',
-        lg: '1280px',
-        xl: '1700px',
-      },
-      mx: { xs: 'auto', sm: 'auto', md: 0 },
-    };
+    const innerContainerStyles = React.useMemo(
+      () => ({
+        // ✅ CENTRADO: mx auto centra el contenido en el espacio disponible
+        mx: 'auto',
+        // ✅ Ancho del contenedor (80% del espacio disponible)
+        width: '80%',
+        // ✅ Ancho máximo del contenido
+        maxWidth: '100%',
+        // ✅ COMPENSACIÓN DEL SIDEBAR: Desplazar el contenido para que esté centrado
+        // en el área visible (sin contar el sidebar)
+        ...(hasSideBar && {
+          // Cuando hay sidebar, ajustamos el margen izquierdo para compensar
+          ml: isSideBarOpen
+            ? { xs: 'auto', md: 'calc((100% - 80%) / 2 + 5%)' } // Sidebar abierto (13%)
+            : { xs: 'auto', md: 'calc((100% - 80%) / 2 + 5.2%)' }, // Sidebar cerrado (~5.2%)
+          mr: 'auto',
+        }),
+        // ✅ Transición suave
+        transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      }),
+      [isSideBarOpen, hasSideBar]
+    );
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del grid
+    // ✅ RESPONSIVE AUTOMÁTICO: auto-fit + minmax permite que los productos se ajusten automáticamente
+    // Prioridad: 4 productos por fila → 3 → 2 (en móviles)
     const gridStyles = {
       display: 'grid',
       gridTemplateColumns: {
-        xs: `repeat(${productGridColumns.xs}, 1fr)`,
-        sm: `repeat(${productGridColumns.sm}, 1fr)`,
-        md: `repeat(${productGridColumns.md}, 1fr)`,
-        lg: `repeat(${productGridColumns.lg}, 1fr)`,
-        xl: `repeat(${productGridColumns.xl}, 1fr)`,
+        xs: 'repeat(auto-fit, minmax(45%, 1fr))', // Móvil: mínimo 160px, 2 columnas
+        sm: 'repeat(auto-fit, minmax(45%, 1fr))', // Tablet pequeña: mínimo 180px, 2-3 columnas
+        md: 'repeat(auto-fit, minmax(20%, 1fr))', // Tablet: mínimo 200px, 3-4 columnas
+        lg: 'repeat(auto-fit, minmax(20%, 1fr))', // Desktop: mínimo 230px, 4 columnas
+        xl: 'repeat(auto-fit, minmax(20%, 1fr))', // Desktop grande: mínimo 250px, 4-5 columnas
       },
       gap: {
-        xs: productGridGaps.xs,
-        sm: productGridGaps.sm,
-        md: productGridGaps.md,
-        lg: productGridGaps.lg,
-        xl: productGridGaps.xl,
+        xs: 1, // 8px
+        sm: 1.5, // 12px
+        md: 2, // 16px
+        lg: 2.5, // 20px - reducido de 6 (48px)
+        xl: 3, // 24px - reducido de 6 (48px)
       },
       width: '100%',
       justifyItems: 'center',
@@ -125,37 +142,37 @@ const ProductsSection = React.memo(
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos de las tarjetas
     // Valores alineados con ProductCardSkeleton para evitar CLS
     const cardContainerStyles = {
-      width: { xs: 180, sm: 195, md: 220, lg: 300, xl: 320 },
+      width: { xs: '100%' },
     };
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización del título de sección
     const sectionTitle = React.useMemo(() => {
       // Si hay filtro de región activo, mostrar título dinámico
       const activeRegion = filtros?.shippingRegions;
-      
+
       if (activeRegion && !isProviderView) {
         // Mapeo de regiones con números romanos
         const regionLabels = {
           'arica-parinacota': 'XV Región',
-          'tarapaca': 'I Región',
-          'antofagasta': 'II Región',
-          'atacama': 'III Región',
-          'coquimbo': 'IV Región',
-          'valparaiso': 'V Región',
-          'metropolitana': 'Región Metropolitana',
-          'ohiggins': 'VI Región',
-          'maule': 'VII Región',
-          'nuble': 'XVI Región',
-          'biobio': 'VIII Región',
-          'araucania': 'IX Región',
+          tarapaca: 'I Región',
+          antofagasta: 'II Región',
+          atacama: 'III Región',
+          coquimbo: 'IV Región',
+          valparaiso: 'V Región',
+          metropolitana: 'Región Metropolitana',
+          ohiggins: 'VI Región',
+          maule: 'VII Región',
+          nuble: 'XVI Región',
+          biobio: 'VIII Región',
+          araucania: 'IX Región',
           'los-rios': 'XIV Región',
           'los-lagos': 'X Región',
-          'aysen': 'XI Región',
-          'magallanes': 'XII Región',
+          aysen: 'XI Región',
+          magallanes: 'XII Región',
         };
-        
+
         const regionLabel = regionLabels[activeRegion] || activeRegion;
-        
+
         return (
           <>
             <ShoppingBagIcon
@@ -170,7 +187,7 @@ const ProductsSection = React.memo(
           </>
         );
       }
-      
+
       if (isProviderView) {
         return (
           <>
@@ -496,49 +513,51 @@ const ProductsSection = React.memo(
       showNoProductsInRegionBanner,
       userRegion,
     };
-    
+
     // Mapeo de regiones para el banner
-    const getRegionLabel = (regionValue) => {
+    const getRegionLabel = regionValue => {
       const regionLabels = {
         'arica-parinacota': 'la XV Región',
-        'tarapaca': 'la I Región',
-        'antofagasta': 'la II Región',
-        'atacama': 'la III Región',
-        'coquimbo': 'la IV Región',
-        'valparaiso': 'la V Región',
-        'metropolitana': 'la Región Metropolitana',
-        'ohiggins': 'la VI Región',
-        'maule': 'la VII Región',
-        'nuble': 'la XVI Región',
-        'biobio': 'la VIII Región',
-        'araucania': 'la IX Región',
+        tarapaca: 'la I Región',
+        antofagasta: 'la II Región',
+        atacama: 'la III Región',
+        coquimbo: 'la IV Región',
+        valparaiso: 'la V Región',
+        metropolitana: 'la Región Metropolitana',
+        ohiggins: 'la VI Región',
+        maule: 'la VII Región',
+        nuble: 'la XVI Región',
+        biobio: 'la VIII Región',
+        araucania: 'la IX Región',
         'los-rios': 'la XIV Región',
         'los-lagos': 'la X Región',
-        'aysen': 'la XI Región',
-        'magallanes': 'la XII Región',
+        aysen: 'la XI Región',
+        magallanes: 'la XII Región',
       };
       return regionLabels[regionValue] || regionValue;
     };
-    
+
     const components = {
-      NoProductsInRegionBanner: showNoProductsInRegionBanner && userRegion ? (
-        <Alert 
-          severity="info" 
-          icon={<InfoIcon />}
-          sx={{ 
-            mb: 3,
-            borderRadius: 2,
-            '& .MuiAlert-message': {
-              width: '100%'
-            }
-          }}
-        >
-          <Typography variant="body2">
-            No hay productos disponibles para despacho en <strong>{getRegionLabel(userRegion)}</strong>. 
-            Mostrando todos los productos disponibles.
-          </Typography>
-        </Alert>
-      ) : null,
+      NoProductsInRegionBanner:
+        showNoProductsInRegionBanner && userRegion ? (
+          <Alert
+            severity="info"
+            icon={<InfoIcon />}
+            sx={{
+              mb: 3,
+              borderRadius: 2,
+              '& .MuiAlert-message': {
+                width: '100%',
+              },
+            }}
+          >
+            <Typography variant="body2">
+              No hay productos disponibles para despacho en{' '}
+              <strong>{getRegionLabel(userRegion)}</strong>. Mostrando todos los
+              productos disponibles.
+            </Typography>
+          </Alert>
+        ) : null,
       Loading: (
         <Box sx={{ px: { xs: 0, sm: 0, md: 0 } }}>
           <ProductCardSkeletonGrid
