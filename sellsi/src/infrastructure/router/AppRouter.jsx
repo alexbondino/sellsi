@@ -15,11 +15,7 @@ import { useAuth } from '../providers';
 import { Home } from '../../workspaces/landing';
 
 // 📦 RUTAS PRINCIPALES - LAZY LOADING
-const MarketplaceBuyer = React.lazy(() =>
-  import('../../workspaces/buyer/marketplace').then(module => ({
-    default: module.MarketplaceBuyer,
-  }))
-);
+// ✅ UNIFICADO: Marketplace ahora maneja tanto vista pública como buyer con prop hasSideBar
 const Marketplace = React.lazy(() =>
   import('../../workspaces/marketplace').then(module => ({
     default: module.Marketplace,
@@ -70,8 +66,8 @@ const BuyerOrders = React.lazy(() =>
     default: module.BuyerOrders,
   }))
 );
-// BuyerPerformance was removed; reuse MarketplaceBuyer for now to keep route functional
-const BuyerPerformance = MarketplaceBuyer;
+// BuyerPerformance was removed; reuse Marketplace for now to keep route functional
+const BuyerPerformance = Marketplace;
 const BuyerOffers = React.lazy(() =>
   import('../../workspaces/buyer/my-offers').then(module => ({
     default: module.BuyerOffers,
@@ -229,7 +225,7 @@ export const AppRouter = ({ scrollTargets }) => {
               loading={loadingUserStatus}
               redirectTo="/"
             >
-              <MarketplaceBuyer />
+              <Marketplace hasSideBar={true} />
             </PrivateRoute>
           }
         />

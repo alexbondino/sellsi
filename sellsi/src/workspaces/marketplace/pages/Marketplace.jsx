@@ -17,43 +17,34 @@ import SearchSection from '../components/sections/SearchSection.jsx';
 import ProductsSection from '../components/sections/ProductsSection.jsx';
 
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
-const Marketplace = React.memo(() => {
+const Marketplace = React.memo(({ hasSideBar = false }) => {
   // ✅ ELIMINADO: Login modal duplicado - ahora se gestiona centralmente desde TopBar
 
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
   // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
   const marketplaceConfig = React.useMemo(
     () => ({
-      hasSideBar: false, // Indicar que NO hay SideBar
-      // ✅ Valores específicos para Marketplace (mover más a la izquierda)
-      searchBarMarginLeft: {
-        xs: 0,
-        sm: 0,
-        md: -5,
-        lg: 3,
-        xl: 3,
-      },
-      categoryMarginLeft: {
-        xs: 0,
-        sm: 0,
-        md: -5,
-        lg: 2,
-        xl: 2,
-      },
+      hasSideBar, // Parametrizable: con o sin SideBar
+      // ✅ Valores específicos para Marketplace (ajustados según hasSideBar)
+      searchBarMarginLeft: hasSideBar
+        ? { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }
+        : { xs: 0, sm: 0, md: -5, lg: 3, xl: 3 },
+      categoryMarginLeft: hasSideBar
+        ? { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }
+        : { xs: 0, sm: 0, md: -5, lg: 2, xl: 2 },
       // ✅ Nuevo: Margen del título "🛍️ Todos los Productos"
-      titleMarginLeft: {
-        xs: 0,
-        sm: 0,
-        md: 0,
-        lg: 2,
-        xl: 3,
-      },
+      titleMarginLeft: hasSideBar
+        ? { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }
+        : { xs: 0, sm: 0, md: 0, lg: 2, xl: 3 },
     }),
-    []
+    [hasSideBar]
   );
 
   const { searchSectionProps, filterSectionProps, productsSectionProps } =
-    useMarketplaceLogic({ ...marketplaceConfig, clearSearchOnViewToggle: true });
+    useMarketplaceLogic({
+      ...marketplaceConfig,
+      clearSearchOnViewToggle: true,
+    });
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
   // Configuración de botones de navegación (sin botones para Marketplace)
@@ -74,8 +65,19 @@ const Marketplace = React.memo(() => {
       bgcolor: '#f8fafc',
       minHeight: '100vh',
       pt: { xs: 7, md: 8 },
+      // ✅ RESPONSIVIDAD: Márgenes adaptativos según hasSideBar
+      px: hasSideBar
+        ? {
+            xs: 2, // Mobile: margen pequeño
+            sm: 3, // Tablet pequeña: margen medio
+            md: 4, // Tablet: margen moderado
+            lg: 6, // Desktop: margen amplio
+            xl: 20, // Desktop grande: margen máximo
+          }
+        : { xs: 2, sm: 3, md: 4, lg: 6, xl: 8 }, // Sin sidebar: márgenes más pequeños
+      pb: { xs: 3, md: 4 },
     }),
-    []
+    [hasSideBar]
   );
   return (
     <Box>
@@ -84,10 +86,9 @@ const Marketplace = React.memo(() => {
       <Box sx={containerStyles}>
         {/* Sección de búsqueda y navegación */}
         <SearchSection {...searchSectionProps} />
-
         {/* Sección de filtros */}
-        {/* <FilterSection {...filterSectionProps} /> */} {/* Botón de filtros comentado */}
-
+        {/* <FilterSection {...filterSectionProps} /> */}{' '}
+        {/* Botón de filtros comentado */}
         {/* Sección de productos */}
         <ProductsSection {...productsSectionProps} />
       </Box>
