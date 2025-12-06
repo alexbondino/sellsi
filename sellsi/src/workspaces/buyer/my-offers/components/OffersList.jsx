@@ -278,12 +278,12 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
             const product = o.product || { name: o.product_name || 'Producto', thumbnail: null };
             const pid = product.id || product.product_id;
             const thumbRow = thumbnailsQuery.data && pid ? thumbnailsQuery.data[pid] : null;
-            // Prioridad: thumbnails.minithumb -> thumbnail_url transformed -> product.thumbnail -> product.imagen -> null
+            // Prioridad: thumbnails.mobile -> thumbnail_url transformed -> product.thumbnail -> product.imagen -> null
             let avatarSrc = null;
             if (thumbRow) {
               try {
-                if (thumbRow.thumbnails && typeof thumbRow.thumbnails === 'object') avatarSrc = thumbRow.thumbnails.minithumb || null;
-                if (!avatarSrc && thumbRow.thumbnail_url) avatarSrc = thumbRow.thumbnail_url.replace('_desktop_320x260.jpg', '_minithumb_40x40.jpg');
+                if (thumbRow.thumbnails && typeof thumbRow.thumbnails === 'object') avatarSrc = thumbRow.thumbnails.mobile || null;
+                if (!avatarSrc && thumbRow.thumbnail_url) avatarSrc = thumbRow.thumbnail_url.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
               } catch(_) {}
             }
             if (!avatarSrc) avatarSrc = product.thumbnail || product.imagen || product.image || null;

@@ -103,7 +103,7 @@ export const AppShell = ({ children }) => {
             // Pasamos el currentAppRole a la SideBar para que sepa qué menú mostrar
             <SideBar
               role={currentAppRole}
-              width="13%"
+              width={{ md: '13%', lg: '13%', xl: '10%' }}
               onWidthChange={handleSideBarWidthChange}
             />
           )}{' '}
@@ -138,7 +138,14 @@ export const AppShell = ({ children }) => {
                   ? { xs: session ? 10 : 3, md: 3 }
                   : { xs: session ? 10 : 0, md: 0 },
                 width: isDashboardLayout
-                  ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
+                  ? typeof currentSideBarWidth === 'object'
+                    ? { 
+                        xs: '100%', 
+                        md: `calc(100% - ${currentSideBarWidth.md || '13%'})`,
+                        lg: `calc(100% - ${currentSideBarWidth.lg || '13%'})`,
+                        xl: `calc(100% - ${currentSideBarWidth.xl || '10%'})`
+                      }
+                    : { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
                   : '100%',
                 overflowX: 'hidden',
                 ml: isDashboardLayout ? { md: 14, lg: 14, xl: 0 } : 0,

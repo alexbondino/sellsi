@@ -63,7 +63,7 @@ const providerMenuItems = [
  * Determina el rol basándose en la ruta actual, similar al comportamiento del switch.
  * @param {object} props - Las props del componente.
  * @param {'buyer' | 'supplier' | null} props.role - El rol del perfil del usuario (usado como fallback para rutas neutrales).
- * @param {string} [props.width='13%'] - Ancho opcional de la SideBar (en porcentaje para responsividad).
+ * @param {string|object} [props.width='13%'] - Ancho opcional de la SideBar (en porcentaje para responsividad). Puede ser un string o un objeto responsive.
  * @param {function} [props.onWidthChange] - Callback opcional que se llama cuando cambia el ancho de la sidebar.
  */
 const SideBar = ({ role, width = '13%', onWidthChange }) => {
@@ -119,19 +119,43 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
   const effectiveRole = determineEffectiveRole();
 
   // Calcular el ancho colapsado (40% del ancho original)
-  const expandedWidth = width;
-  // ✅ MEJORA: Soporte para porcentajes y píxeles
-  const collapsedWidth = width.includes('%')
-    ? `${parseFloat(width) * 0.4}%`
-    : `${Math.round(parseInt(width.replace('px', '')) * 0.4)}px`;
-  const currentWidth = isCollapsed ? collapsedWidth : expandedWidth;
+  // ✅ MEJORA: Soporte para anchos responsive (objetos con breakpoints)
+  const calculateWidth = (w, collapse = false) => {
+    if (typeof w === 'object') {
+      // Si es un objeto responsive, calcular para cada breakpoint
+      const result = {};
+      Object.keys(w).forEach(bp => {
+        const bpWidth = w[bp];
+        if (collapse) {
+          result[bp] = bpWidth.includes('%')
+            ? `${parseFloat(bpWidth) * 0.4}%`
+            : `${Math.round(parseInt(bpWidth.replace('px', '')) * 0.4)}px`;
+        } else {
+          result[bp] = bpWidth;
+        }
+      });
+      return result;
+    }
+    // Si es un string simple
+    if (collapse) {
+      return w.includes('%')
+        ? `${parseFloat(w) * 0.4}%`
+        : `${Math.round(parseInt(w.replace('px', '')) * 0.4)}px`;
+    }
+    return w;
+  };
+
+  const expandedWidth = React.useMemo(() => calculateWidth(width, false), [width]);
+  const collapsedWidth = React.useMemo(() => calculateWidth(width, true), [width]);
+  const currentWidth = React.useMemo(() => isCollapsed ? collapsedWidth : expandedWidth, [isCollapsed, collapsedWidth, expandedWidth]);
 
   // Notificar cambios de ancho al componente padre si el callback está disponible
   React.useEffect(() => {
     if (onWidthChange) {
       onWidthChange(currentWidth, isCollapsed);
     }
-  }, [currentWidth, isCollapsed, onWidthChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCollapsed, JSON.stringify(currentWidth)]);
 
   // Handler para toggle del colapso
   const handleToggleCollapse = () => {
