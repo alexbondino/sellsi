@@ -10,6 +10,7 @@ import { Box } from '@mui/material';
 // Hook centralizado
 // 🔄 Migrado: usar hook compartido parametrizable
 import { useMarketplaceLogic } from '../../../shared/hooks';
+import { useLayout } from '../../../infrastructure/providers';
 
 // Componentes de secciones
 import SearchSection from '../components/sections/SearchSection.jsx';
@@ -18,6 +19,9 @@ import ProductsSection from '../components/sections/ProductsSection.jsx';
 
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
 const Marketplace = React.memo(({ hasSideBar = false }) => {
+  // ✅ Obtener estado del sidebar desde LayoutProvider
+  const { sideBarCollapsed } = useLayout();
+
   // ✅ ELIMINADO: Login modal duplicado - ahora se gestiona centralmente desde TopBar
 
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
@@ -66,26 +70,41 @@ const Marketplace = React.memo(({ hasSideBar = false }) => {
       minHeight: '100vh',
       pt: { xs: 7, md: 8 },
       // ✅ RESPONSIVIDAD: Márgenes adaptativos según hasSideBar
+      // Con sidebar: márgenes simétricos más reducidos para compensar el espacio ocupado
+      // Sin sidebar: márgenes más amplios ya que hay más espacio disponible
       px: hasSideBar
         ? {
+            xs: 2, // Mobile: margen pequeño
+            sm: 2.5, // Tablet pequeña: margen reducido
+            md: 3, // Tablet: margen moderado
+            lg: 4, // Desktop: margen compacto
+            xl: 6, // Desktop grande: margen medio (reducido de 20 a 6)
+          }
+        : {
             xs: 2, // Mobile: margen pequeño
             sm: 3, // Tablet pequeña: margen medio
             md: 4, // Tablet: margen moderado
             lg: 6, // Desktop: margen amplio
-            xl: 20, // Desktop grande: margen máximo
-          }
-        : { xs: 2, sm: 3, md: 4, lg: 6, xl: 8 }, // Sin sidebar: márgenes más pequeños
+            xl: 8, // Desktop grande: margen grande
+          },
       pb: { xs: 3, md: 4 },
+      // ✅ Asegurar que el contenido use todo el ancho disponible
+      width: '100%',
+      maxWidth: '100%',
     }),
     [hasSideBar]
   );
   return (
     <Box>
       {/* TopBar eliminada, ahora la maneja App.jsx globalmente */}
-      {/* Contenido principal con margen para compensar TopBar fijo (SIN SideBar) */}
+      {/* Contenido principal con margen para compensar TopBar fijo */}
       <Box sx={containerStyles}>
-        {/* Sección de búsqueda y navegación */}
-        <SearchSection {...searchSectionProps} />
+        {/* Sección de búsqueda y navegación - Pasamos hasSideBar y sideBarCollapsed */}
+        <SearchSection
+          {...searchSectionProps}
+          hasSideBar={hasSideBar}
+          sideBarCollapsed={sideBarCollapsed}
+        />
         {/* Sección de filtros */}
         {/* <FilterSection {...filterSectionProps} /> */}{' '}
         {/* Botón de filtros comentado */}
