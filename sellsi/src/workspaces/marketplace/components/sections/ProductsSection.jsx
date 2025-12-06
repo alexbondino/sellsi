@@ -98,7 +98,7 @@ const ProductsSection = React.memo(
         // ✅ MÁRGENES PERFECTAMENTE SIMÉTRICOS: mx auto centra el contenido
         mx: 'auto',
         // ✅ Ancho ampliado para permitir 4 tarjetas por fila
-        width: '100%',
+        width: '80%',
         // ✅ Ancho máximo del contenido (se mantiene consistente)
         maxWidth: '100%',
         // ✅ Transición suave
