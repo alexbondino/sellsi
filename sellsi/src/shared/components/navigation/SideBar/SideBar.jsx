@@ -63,10 +63,10 @@ const providerMenuItems = [
  * Determina el rol basándose en la ruta actual, similar al comportamiento del switch.
  * @param {object} props - Las props del componente.
  * @param {'buyer' | 'supplier' | null} props.role - El rol del perfil del usuario (usado como fallback para rutas neutrales).
- * @param {string} [props.width='16%'] - Ancho opcional de la SideBar (en porcentaje para responsividad).
+ * @param {string} [props.width='13%'] - Ancho opcional de la SideBar (en porcentaje para responsividad).
  * @param {function} [props.onWidthChange] - Callback opcional que se llama cuando cambia el ancho de la sidebar.
  */
-const SideBar = ({ role, width = '16%', onWidthChange }) => {
+const SideBar = ({ role, width = '13%', onWidthChange }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();

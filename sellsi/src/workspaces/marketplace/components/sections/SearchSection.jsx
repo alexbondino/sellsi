@@ -74,8 +74,8 @@ const SearchSection = ({
       width: '100%',
       py: { xs: 0.5, md: 1 }, // Padding vertical
       // ✅ AJUSTE DEL CONTENIDO: Solo el contenido interno se mueve según sidebar
-      // Margen left para compensar el sidebar cuando está abierto (16% del viewport)
-      ml: isSideBarOpen ? { xs: 0, md: '18%' } : '9%',
+      // Margen left para compensar el sidebar cuando está abierto (13% del viewport)
+      ml: isSideBarOpen ? { xs: 0, md: '13%' } : 0,
       // ✅ Transición suave cuando cambia el estado del sidebar
       transition:
         'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), max-width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
@@ -95,8 +95,8 @@ const SearchSection = ({
             lg: 6, // Desktop: margen amplio
             xl: 8, // Desktop grande: margen grande
           },
-      // ✅ Ancho ajustado para que el contenido no se extienda debajo del sidebar (16% responsive)
-      maxWidth: isSideBarOpen ? { xs: '100%', md: 'calc(100% - 16%)' } : '100%',
+      // ✅ Ancho ajustado para que el contenido no se extienda debajo del sidebar (13% responsive)
+      maxWidth: isSideBarOpen ? { xs: '100%', md: 'calc(100% - 13%)' } : '100%',
     }),
     [isSideBarOpen]
   );

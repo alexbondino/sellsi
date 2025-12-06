@@ -103,11 +103,10 @@ export const AppShell = ({ children }) => {
             // Pasamos el currentAppRole a la SideBar para que sepa qué menú mostrar
             <SideBar
               role={currentAppRole}
-              width="16%"
+              width="13%"
               onWidthChange={handleSideBarWidthChange}
             />
-          )}
-
+          )}{' '}
           {/** Memoized main layout styles to avoid recreating large object & function each render (micro optimization) */}
           <Box
             component="main"

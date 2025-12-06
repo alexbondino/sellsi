@@ -107,7 +107,7 @@ const ProductsSection = React.memo(
         // ✅ AJUSTE CON SIDEBAR: Mover contenido ligeramente cuando el sidebar está abierto
         // Usamos un valor más pequeño porque el padding del contenedor principal ya compensa
         ml: isSideBarOpen
-          ? { xs: 'auto', md: '8%' }
+          ? { xs: 'auto', md: '6.5%' }
           : { xs: 'auto', sm: 'auto', md: 0 },
         // ✅ Ancho máximo sin cambios (el contenedor principal ya maneja el espacio)
         maxWidth: {
