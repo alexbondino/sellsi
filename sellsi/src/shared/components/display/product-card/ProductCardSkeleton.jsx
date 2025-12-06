@@ -1,6 +1,6 @@
 // src/shared/components/display/product-card/ProductCardSkeleton.jsx
-import React from 'react'
-import { Card, Box, Skeleton, alpha } from '@mui/material'
+import React from 'react';
+import { Card, Box, Skeleton, alpha } from '@mui/material';
 
 /**
  * ProductCardSkeleton
@@ -14,11 +14,12 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
       height:
         type === 'supplier'
           ? { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 }
-          : { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 },
+          : { xs: 340, sm: 360, md: 340, lg: 420, xl: 440 },
+      // ✅ Buyer: valores reducidos para mostrar 4 tarjetas por fila en desktop
       width:
         type === 'supplier'
           ? { xs: 180, sm: 195, md: 220, lg: 370, xl: 360 }
-          : { xs: 180, sm: 195, md: 220, lg: 300, xl: 320 },
+          : { xs: 160, sm: 180, md: 200, lg: 230, xl: 250 },
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
@@ -29,21 +30,25 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
       transition: 'transform 0.2s ease, box-shadow 0.2s ease',
       '&:hover': {
         transform: 'translateY(-2px)',
-        boxShadow: theme => `0 8px 25px ${alpha(theme.palette.primary.main, 0.08)}`,
+        boxShadow: theme =>
+          `0 8px 25px ${alpha(theme.palette.primary.main, 0.08)}`,
         borderColor: 'primary.main',
       },
     }),
     [type]
-  )
+  );
 
   // Altura del contenedor de imagen/encabezado para cada variante
   const headerHeight = React.useMemo(() => {
     // Alineado a ProductCardImage y ProviderContext
-    return { xs: 142, sm: 154, md: 187.5, lg: 220, xl: 220 }
-  }, [])
+    return { xs: 142, sm: 154, md: 187.5, lg: 220, xl: 220 };
+  }, []);
 
   return (
-    <Card elevation={type === 'buyer' || type === 'provider' ? 2 : 0} sx={cardStyles}>
+    <Card
+      elevation={type === 'buyer' || type === 'provider' ? 2 : 0}
+      sx={cardStyles}
+    >
       {/* Encabezado / Imagen */}
       <Box
         sx={{
@@ -86,14 +91,18 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
             p: 0,
           }}
         >
-          <Skeleton variant="rectangular" height={40} sx={{ borderRadius: 2 }} />
+          <Skeleton
+            variant="rectangular"
+            height={40}
+            sx={{ borderRadius: 2 }}
+          />
         </Box>
       )}
     </Card>
-  )
-})
+  );
+});
 
-ProductCardSkeleton.displayName = 'ProductCardSkeleton'
+ProductCardSkeleton.displayName = 'ProductCardSkeleton';
 
 // ---------- Sub-skeletons por variante ---------- //
 
@@ -105,7 +114,13 @@ const BuyerBodySkeleton = () => (
     </Box>
 
     {/* MOBILE: bloque compacto */}
-    <Box sx={{ display: { xs: 'flex', sm: 'flex', md: 'none' }, flexDirection: 'column', gap: 1 }}>
+    <Box
+      sx={{
+        display: { xs: 'flex', sm: 'flex', md: 'none' },
+        flexDirection: 'column',
+        gap: 1,
+      }}
+    >
       {/* Proveedor */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         <Skeleton variant="circular" width={16} height={16} />
@@ -120,7 +135,14 @@ const BuyerBodySkeleton = () => (
     </Box>
 
     {/* DESKTOP: bloque detallado */}
-    <Box sx={{ display: { xs: 'none', sm: 'none', md: 'flex' }, flexDirection: 'column', gap: 0.75, flex: 1 }}>
+    <Box
+      sx={{
+        display: { xs: 'none', sm: 'none', md: 'flex' },
+        flexDirection: 'column',
+        gap: 0.75,
+        flex: 1,
+      }}
+    >
       {/* Proveedor */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         <Skeleton variant="circular" width={16} height={16} />
@@ -137,12 +159,14 @@ const BuyerBodySkeleton = () => (
       <Skeleton variant="text" width={160} height={18} />
     </Box>
   </Box>
-)
+);
 
 const SupplierBodySkeleton = () => (
   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
     {/* Badges superpuestos */}
-    <Box sx={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 1 }}>
+    <Box
+      sx={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 1 }}
+    >
       <Skeleton variant="rounded" width={60} height={22} />
       <Skeleton variant="rounded" width={48} height={22} />
     </Box>
@@ -167,7 +191,7 @@ const SupplierBodySkeleton = () => (
       <Skeleton variant="text" width={140} height={18} />
     </Box>
   </Box>
-)
+);
 
 const ProviderBodySkeleton = () => (
   <Box
@@ -181,7 +205,15 @@ const ProviderBodySkeleton = () => (
     }}
   >
     {/* Nombre y verificación */}
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center', width: '100%' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        justifyContent: 'center',
+        width: '100%',
+      }}
+    >
       <Skeleton variant="text" width="70%" height={24} />
       <Skeleton variant="circular" width={18} height={18} />
     </Box>
@@ -192,7 +224,7 @@ const ProviderBodySkeleton = () => (
       <Skeleton variant="text" width="75%" height={18} sx={{ mx: 'auto' }} />
     </Box>
   </Box>
-)
+);
 
 /**
  * ProductCardSkeletonGrid
@@ -203,12 +235,21 @@ export const ProductCardSkeletonGrid = React.memo(
     // Fallbacks por si no se pasan estilos del layout real
     const grid = gridStyles || {
       display: 'grid',
-      gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)', xl: 'repeat(5, 1fr)' },
+      gridTemplateColumns: {
+        xs: 'repeat(2, 1fr)',
+        sm: 'repeat(2, 1fr)',
+        md: 'repeat(3, 1fr)',
+        lg: 'repeat(4, 1fr)',
+        xl: 'repeat(5, 1fr)',
+      },
       gap: { xs: 2, sm: 2, md: 3, lg: 3, xl: 3 },
       width: '100%',
       justifyItems: 'center',
-    }
-    const cardWrap = cardContainerStyles || { width: '100%', maxWidth: '240px' }
+    };
+    const cardWrap = cardContainerStyles || {
+      width: '100%',
+      maxWidth: '240px',
+    };
 
     return (
       <Box sx={grid}>
@@ -218,10 +259,10 @@ export const ProductCardSkeletonGrid = React.memo(
           </Box>
         ))}
       </Box>
-    )
+    );
   }
-)
+);
 
-ProductCardSkeletonGrid.displayName = 'ProductCardSkeletonGrid'
+ProductCardSkeletonGrid.displayName = 'ProductCardSkeletonGrid';
 
-export default ProductCardSkeleton
+export default ProductCardSkeleton;

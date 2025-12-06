@@ -97,9 +97,8 @@ const ProductsSection = React.memo(
       () => ({
         // ✅ MÁRGENES PERFECTAMENTE SIMÉTRICOS: mx auto centra el contenido
         mx: 'auto',
-        // ✅ Cuando sidebar abierto: el contenedor principal ya tiene offset por el sidebar
-        // Solo necesitamos ajustar el ancho del contenido para mantener el centrado
-        width: '85%',
+        // ✅ Ancho ampliado para permitir 4 tarjetas por fila
+        width: '100%',
         // ✅ Ancho máximo del contenido (se mantiene consistente)
         maxWidth: '100%',
         // ✅ Transición suave
@@ -114,18 +113,18 @@ const ProductsSection = React.memo(
     const gridStyles = {
       display: 'grid',
       gridTemplateColumns: {
-        xs: 'repeat(auto-fit, minmax(180px, 1fr))', // Móvil: mínimo 180px, se ajusta a 2 columnas
-        sm: 'repeat(auto-fit, minmax(195px, 1fr))', // Tablet pequeña: mínimo 195px, 2-3 columnas
-        md: 'repeat(auto-fit, minmax(220px, 1fr))', // Tablet: mínimo 220px, 3-4 columnas
-        lg: 'repeat(auto-fit, minmax(300px, 1fr))', // Desktop: mínimo 300px, 3-4 columnas
-        xl: 'repeat(auto-fit, minmax(320px, 1fr))', // Desktop grande: mínimo 320px, 4-5 columnas
+        xs: 'repeat(auto-fit, minmax(160px, 1fr))', // Móvil: mínimo 160px, 2 columnas
+        sm: 'repeat(auto-fit, minmax(180px, 1fr))', // Tablet pequeña: mínimo 180px, 2-3 columnas
+        md: 'repeat(auto-fit, minmax(200px, 1fr))', // Tablet: mínimo 200px, 3-4 columnas
+        lg: 'repeat(auto-fit, minmax(230px, 1fr))', // Desktop: mínimo 230px, 4 columnas
+        xl: 'repeat(auto-fit, minmax(250px, 1fr))', // Desktop grande: mínimo 250px, 4-5 columnas
       },
       gap: {
-        xs: productGridGaps.xs,
-        sm: productGridGaps.sm,
-        md: productGridGaps.md,
-        lg: productGridGaps.lg,
-        xl: productGridGaps.xl,
+        xs: 1, // 8px
+        sm: 1.5, // 12px
+        md: 2, // 16px
+        lg: 2.5, // 20px - reducido de 6 (48px)
+        xl: 3, // 24px - reducido de 6 (48px)
       },
       width: '100%',
       justifyItems: 'center',
@@ -134,7 +133,7 @@ const ProductsSection = React.memo(
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos de las tarjetas
     // Valores alineados con ProductCardSkeleton para evitar CLS
     const cardContainerStyles = {
-      width: { xs: 180, sm: 195, md: 220, lg: 300, xl: 320 },
+      width: { xs: 160, sm: 180, md: 200, lg: 230, xl: 250 },
     };
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización del título de sección
