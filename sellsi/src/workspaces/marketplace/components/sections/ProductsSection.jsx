@@ -113,11 +113,11 @@ const ProductsSection = React.memo(
     const gridStyles = {
       display: 'grid',
       gridTemplateColumns: {
-        xs: 'repeat(auto-fit, minmax(160px, 1fr))', // Móvil: mínimo 160px, 2 columnas
-        sm: 'repeat(auto-fit, minmax(180px, 1fr))', // Tablet pequeña: mínimo 180px, 2-3 columnas
-        md: 'repeat(auto-fit, minmax(200px, 1fr))', // Tablet: mínimo 200px, 3-4 columnas
-        lg: 'repeat(auto-fit, minmax(230px, 1fr))', // Desktop: mínimo 230px, 4 columnas
-        xl: 'repeat(auto-fit, minmax(250px, 1fr))', // Desktop grande: mínimo 250px, 4-5 columnas
+        xs: 'repeat(auto-fit, minmax(45%, 1fr))', // Móvil: mínimo 160px, 2 columnas
+        sm: 'repeat(auto-fit, minmax(45%, 1fr))', // Tablet pequeña: mínimo 180px, 2-3 columnas
+        md: 'repeat(auto-fit, minmax(20%, 1fr))', // Tablet: mínimo 200px, 3-4 columnas
+        lg: 'repeat(auto-fit, minmax(20%, 1fr))', // Desktop: mínimo 230px, 4 columnas
+        xl: 'repeat(auto-fit, minmax(20%, 1fr))', // Desktop grande: mínimo 250px, 4-5 columnas
       },
       gap: {
         xs: 1, // 8px
@@ -133,7 +133,7 @@ const ProductsSection = React.memo(
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos de las tarjetas
     // Valores alineados con ProductCardSkeleton para evitar CLS
     const cardContainerStyles = {
-      width: { xs: 160, sm: 180, md: 200, lg: 230, xl: 250 },
+      width: { xs: '100%' },
     };
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización del título de sección

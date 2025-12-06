@@ -12,14 +12,10 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
   const cardStyles = React.useMemo(
     () => ({
       height:
-        type === 'supplier'
-          ? { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 }
-          : { xs: 340, sm: 20 },
+        type === 'supplier' ? { xs: 380, sm: '100%' } : { xs: 340, sm: '100%' },
       // ✅ Buyer: valores reducidos para mostrar 4 tarjetas por fila en desktop
       width:
-        type === 'supplier'
-          ? { xs: 180, sm: 195, md: 220, lg: 370, xl: 360 }
-          : { xs: 160, sm: 180, md: 200, lg: 230, xl: 250 },
+        type === 'supplier' ? { xs: 180, sm: '100%' } : { xs: 160, sm: '100%' },
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
