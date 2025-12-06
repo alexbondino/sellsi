@@ -108,8 +108,12 @@ const Marketplace = React.memo(({ hasSideBar = false }) => {
         {/* Sección de filtros */}
         {/* <FilterSection {...filterSectionProps} /> */}{' '}
         {/* Botón de filtros comentado */}
-        {/* Sección de productos */}
-        <ProductsSection {...productsSectionProps} />
+        {/* Sección de productos - Pasamos hasSideBar y sideBarCollapsed */}
+        <ProductsSection
+          {...productsSectionProps}
+          hasSideBar={hasSideBar}
+          sideBarCollapsed={sideBarCollapsed}
+        />
       </Box>
       {/* ✅ ELIMINADO: Login modal duplicado - ahora se gestiona centralmente desde TopBar */}
     </Box>

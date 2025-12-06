@@ -31,6 +31,7 @@ import {
 } from '../../../../infrastructure/prefetch/prefetch';
 import { useRole } from '../../../../infrastructure/providers';
 import { useAuth } from '../../../../infrastructure/providers';
+import { useLayout } from '../../../../infrastructure/providers';
 
 // Define los ítems de menú para cada rol directamente en este archivo con iconos
 const buyerMenuItems = [
@@ -70,7 +71,9 @@ const SideBar = ({ role, width = '16%', onWidthChange }) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { userProfile, session } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // ✅ Usar estado global del LayoutProvider en lugar de estado local
+  const { sideBarCollapsed, setSideBarCollapsed } = useLayout();
+  const isCollapsed = sideBarCollapsed;
 
   // Never render sidebar if user is not authenticated
   if (!session) return null;
@@ -132,7 +135,7 @@ const SideBar = ({ role, width = '16%', onWidthChange }) => {
 
   // Handler para toggle del colapso
   const handleToggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+    setSideBarCollapsed(!isCollapsed);
   };
 
   // Define el color exacto del fondo de la sidebar

@@ -20,13 +20,9 @@ export const AppShell = ({ children }) => {
   const location = useLocation();
   const { bannerState, hideBanner } = useBanner();
   const { session, userProfile } = useAuth();
-  const { 
-    currentAppRole, 
-    isDashboardRoute, 
-    isBuyer, 
-    handleRoleChange 
-  } = useRole();
-  const { 
+  const { currentAppRole, isDashboardRoute, isBuyer, handleRoleChange } =
+    useRole();
+  const {
     currentSideBarWidth,
     sideBarCollapsed,
     handleSideBarWidthChange,
@@ -87,7 +83,10 @@ export const AppShell = ({ children }) => {
             // topBarHeight is responsive: { xs: '45px', md: '64px' }
             // add 8px gap so banner appears slightly below the TopBar
             typeof topBarHeight === 'object'
-              ? { xs: `calc(${topBarHeight.xs} + 6px)`, md: `calc(${topBarHeight.md} + 6px)` }
+              ? {
+                  xs: `calc(${topBarHeight.xs} + 6px)`,
+                  md: `calc(${topBarHeight.md} + 6px)`,
+                }
               : `calc(${topBarHeight} + 6px)`
           }
         />
@@ -102,9 +101,9 @@ export const AppShell = ({ children }) => {
         >
           {isDashboardLayout && (
             // Pasamos el currentAppRole a la SideBar para que sepa qué menú mostrar
-            <SideBar 
-              role={currentAppRole} 
-              width="210px"
+            <SideBar
+              role={currentAppRole}
+              width="16%"
               onWidthChange={handleSideBarWidthChange}
             />
           )}
@@ -115,22 +114,30 @@ export const AppShell = ({ children }) => {
             sx={React.useMemo(() => {
               // Dependencias que afectan layout
               const fullBleedRoutes = ['/buyer/cart', '/buyer/paymentmethod'];
-              const isFullBleed = !!session || fullBleedRoutes.includes(location.pathname);
-              const isMarketplaceRoute = location.pathname.startsWith('/marketplace');
+              const isFullBleed =
+                !!session || fullBleedRoutes.includes(location.pathname);
+              const isMarketplaceRoute =
+                location.pathname.startsWith('/marketplace');
               return theme => ({
                 flexGrow: 1,
                 pl: isMarketplaceRoute
-                  ? { xs: 0, sm: 0, md: (isDashboardLayout ? 3 : 0) }
+                  ? { xs: 0, sm: 0, md: isDashboardLayout ? 3 : 0 }
                   : isFullBleed
-                  ? { xs: 0.75, sm: 1, md: (isDashboardLayout ? 3 : 0) }
-                  : (isDashboardLayout ? 3 : 0),
+                  ? { xs: 0.75, sm: 1, md: isDashboardLayout ? 3 : 0 }
+                  : isDashboardLayout
+                  ? 3
+                  : 0,
                 pr: isMarketplaceRoute
-                  ? { xs: 0, sm: 0, md: (isDashboardLayout ? 3 : 0) }
+                  ? { xs: 0, sm: 0, md: isDashboardLayout ? 3 : 0 }
                   : isFullBleed
-                  ? { xs: 0.25, sm: 0.25, md: (isDashboardLayout ? 3 : 0) }
-                  : (isDashboardLayout ? 3 : 0),
+                  ? { xs: 0.25, sm: 0.25, md: isDashboardLayout ? 3 : 0 }
+                  : isDashboardLayout
+                  ? 3
+                  : 0,
                 pt: isDashboardLayout ? 3 : 0,
-                pb: isDashboardLayout ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
+                pb: isDashboardLayout
+                  ? { xs: session ? 10 : 3, md: 3 }
+                  : { xs: session ? 10 : 0, md: 0 },
                 width: isDashboardLayout
                   ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
                   : '100%',
@@ -140,23 +147,35 @@ export const AppShell = ({ children }) => {
                 transition: [
                   theme.breakpoints.up('md') && theme.breakpoints.down('lg')
                     ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-                    : 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                    : 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                 ].join(','),
                 transform: {
                   xs: 'none',
                   sm: 'none',
-                  md: isDashboardLayout && sideBarCollapsed ? 'translateX(-80px)' : 'none',
-                  lg: isDashboardLayout && sideBarCollapsed ? 'translateX(-80px)' : 'none',
+                  md:
+                    isDashboardLayout && sideBarCollapsed
+                      ? 'translateX(-80px)'
+                      : 'none',
+                  lg:
+                    isDashboardLayout && sideBarCollapsed
+                      ? 'translateX(-80px)'
+                      : 'none',
                   xl: 'none',
                 },
               });
-            }, [session, location.pathname, isDashboardLayout, sideBarCollapsed, currentSideBarWidth])}
+            }, [
+              session,
+              location.pathname,
+              isDashboardLayout,
+              sideBarCollapsed,
+              currentSideBarWidth,
+            ])}
             data-layout="app-main"
           >
             {children}
           </Box>
         </Box>
-        
+
         {/* BottomBar - Flex shrink: 0 para que mantenga su tamaño */}
         {showBottomBar && (
           <Box sx={{ flexShrink: 0 }}>
@@ -165,16 +184,16 @@ export const AppShell = ({ children }) => {
         )}
 
         {/* MobileBar - Solo se muestra en móviles cuando hay sesión */}
-        <MobileBar 
-          role={currentAppRole} 
+        <MobileBar
+          role={currentAppRole}
           session={session}
           isBuyer={isBuyer}
           logoUrl={logoUrl}
         />
 
         {/* WhatsApp Widget - Con acceso al contexto del Router */}
-        <WhatsAppWidget 
-          isLoggedIn={!!session} 
+        <WhatsAppWidget
+          isLoggedIn={!!session}
           userProfile={userProfile}
           currentPath={location.pathname}
         />

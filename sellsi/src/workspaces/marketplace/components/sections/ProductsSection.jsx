@@ -63,7 +63,12 @@ const ProductsSection = React.memo(
     userRegion,
     getPriceTiers,
     registerProductNode,
+    hasSideBar = false,
+    sideBarCollapsed = false,
   }) => {
+    // ✅ Determinar si el sidebar está visible y abierto
+    const isSideBarOpen = hasSideBar && !sideBarCollapsed;
+
     // Layout styles
     const mainContainerStyles = React.useMemo(
       () => ({
@@ -88,18 +93,43 @@ const ProductsSection = React.memo(
     );
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno
-    // Static layout objects (memo innecesario -> removido)
-    const innerContainerStyles = {
-      width: { xs: '100vw', sm: '100vw', md: '100%', lg: '100%', xl: '100%' },
-      maxWidth: {
-        xs: '440px',
-        sm: '600px',
-        md: '960px',
-        lg: '1280px',
-        xl: '1700px',
-      },
-      mx: { xs: 'auto', sm: 'auto', md: 0 },
-    };
+    const innerContainerStyles = React.useMemo(
+      () => ({
+        width: { xs: '100vw', sm: '100vw', md: '100%', lg: '100%', xl: '100%' },
+        maxWidth: {
+          xs: '440px',
+          sm: '600px',
+          md: '960px',
+          lg: '1280px',
+          xl: '1700px',
+        },
+        mx: { xs: 'auto', sm: 'auto', md: 0 },
+        // ✅ AJUSTE CON SIDEBAR: Mover contenido cuando el sidebar está abierto
+        ml: isSideBarOpen
+          ? { xs: 'auto', md: '16%' }
+          : { xs: 'auto', sm: 'auto', md: 0 },
+        // ✅ Reducir ancho máximo cuando el sidebar está abierto
+        maxWidth: isSideBarOpen
+          ? {
+              xs: '440px',
+              sm: '600px',
+              md: 'calc(960px - 16%)',
+              lg: 'calc(1280px - 16%)',
+              xl: 'calc(1700px - 16%)',
+            }
+          : {
+              xs: '440px',
+              sm: '600px',
+              md: '960px',
+              lg: '1280px',
+              xl: '1700px',
+            },
+        // ✅ Transición suave
+        transition:
+          'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), max-width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      }),
+      [isSideBarOpen]
+    );
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del grid
     const gridStyles = {
@@ -132,30 +162,30 @@ const ProductsSection = React.memo(
     const sectionTitle = React.useMemo(() => {
       // Si hay filtro de región activo, mostrar título dinámico
       const activeRegion = filtros?.shippingRegions;
-      
+
       if (activeRegion && !isProviderView) {
         // Mapeo de regiones con números romanos
         const regionLabels = {
           'arica-parinacota': 'XV Región',
-          'tarapaca': 'I Región',
-          'antofagasta': 'II Región',
-          'atacama': 'III Región',
-          'coquimbo': 'IV Región',
-          'valparaiso': 'V Región',
-          'metropolitana': 'Región Metropolitana',
-          'ohiggins': 'VI Región',
-          'maule': 'VII Región',
-          'nuble': 'XVI Región',
-          'biobio': 'VIII Región',
-          'araucania': 'IX Región',
+          tarapaca: 'I Región',
+          antofagasta: 'II Región',
+          atacama: 'III Región',
+          coquimbo: 'IV Región',
+          valparaiso: 'V Región',
+          metropolitana: 'Región Metropolitana',
+          ohiggins: 'VI Región',
+          maule: 'VII Región',
+          nuble: 'XVI Región',
+          biobio: 'VIII Región',
+          araucania: 'IX Región',
           'los-rios': 'XIV Región',
           'los-lagos': 'X Región',
-          'aysen': 'XI Región',
-          'magallanes': 'XII Región',
+          aysen: 'XI Región',
+          magallanes: 'XII Región',
         };
-        
+
         const regionLabel = regionLabels[activeRegion] || activeRegion;
-        
+
         return (
           <>
             <ShoppingBagIcon
@@ -170,7 +200,7 @@ const ProductsSection = React.memo(
           </>
         );
       }
-      
+
       if (isProviderView) {
         return (
           <>
@@ -496,49 +526,51 @@ const ProductsSection = React.memo(
       showNoProductsInRegionBanner,
       userRegion,
     };
-    
+
     // Mapeo de regiones para el banner
-    const getRegionLabel = (regionValue) => {
+    const getRegionLabel = regionValue => {
       const regionLabels = {
         'arica-parinacota': 'la XV Región',
-        'tarapaca': 'la I Región',
-        'antofagasta': 'la II Región',
-        'atacama': 'la III Región',
-        'coquimbo': 'la IV Región',
-        'valparaiso': 'la V Región',
-        'metropolitana': 'la Región Metropolitana',
-        'ohiggins': 'la VI Región',
-        'maule': 'la VII Región',
-        'nuble': 'la XVI Región',
-        'biobio': 'la VIII Región',
-        'araucania': 'la IX Región',
+        tarapaca: 'la I Región',
+        antofagasta: 'la II Región',
+        atacama: 'la III Región',
+        coquimbo: 'la IV Región',
+        valparaiso: 'la V Región',
+        metropolitana: 'la Región Metropolitana',
+        ohiggins: 'la VI Región',
+        maule: 'la VII Región',
+        nuble: 'la XVI Región',
+        biobio: 'la VIII Región',
+        araucania: 'la IX Región',
         'los-rios': 'la XIV Región',
         'los-lagos': 'la X Región',
-        'aysen': 'la XI Región',
-        'magallanes': 'la XII Región',
+        aysen: 'la XI Región',
+        magallanes: 'la XII Región',
       };
       return regionLabels[regionValue] || regionValue;
     };
-    
+
     const components = {
-      NoProductsInRegionBanner: showNoProductsInRegionBanner && userRegion ? (
-        <Alert 
-          severity="info" 
-          icon={<InfoIcon />}
-          sx={{ 
-            mb: 3,
-            borderRadius: 2,
-            '& .MuiAlert-message': {
-              width: '100%'
-            }
-          }}
-        >
-          <Typography variant="body2">
-            No hay productos disponibles para despacho en <strong>{getRegionLabel(userRegion)}</strong>. 
-            Mostrando todos los productos disponibles.
-          </Typography>
-        </Alert>
-      ) : null,
+      NoProductsInRegionBanner:
+        showNoProductsInRegionBanner && userRegion ? (
+          <Alert
+            severity="info"
+            icon={<InfoIcon />}
+            sx={{
+              mb: 3,
+              borderRadius: 2,
+              '& .MuiAlert-message': {
+                width: '100%',
+              },
+            }}
+          >
+            <Typography variant="body2">
+              No hay productos disponibles para despacho en{' '}
+              <strong>{getRegionLabel(userRegion)}</strong>. Mostrando todos los
+              productos disponibles.
+            </Typography>
+          </Alert>
+        ) : null,
       Loading: (
         <Box sx={{ px: { xs: 0, sm: 0, md: 0 } }}>
           <ProductCardSkeletonGrid
