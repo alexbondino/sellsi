@@ -75,7 +75,7 @@ const SearchSection = ({
       py: { xs: 0.5, md: 1 }, // Padding vertical
       // ✅ AJUSTE DEL CONTENIDO: Solo el contenido interno se mueve según sidebar
       // Margen left para compensar el sidebar cuando está abierto (16% del viewport)
-      ml: isSideBarOpen ? { xs: 0, md: '24%' } : '8%',
+      ml: isSideBarOpen ? { xs: 0, md: '18%' } : '9%',
       // ✅ Transición suave cuando cambia el estado del sidebar
       transition:
         'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), max-width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',

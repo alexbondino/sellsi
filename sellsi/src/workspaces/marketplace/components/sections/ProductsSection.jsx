@@ -104,26 +104,19 @@ const ProductsSection = React.memo(
           xl: '1700px',
         },
         mx: { xs: 'auto', sm: 'auto', md: 0 },
-        // ✅ AJUSTE CON SIDEBAR: Mover contenido cuando el sidebar está abierto
+        // ✅ AJUSTE CON SIDEBAR: Mover contenido ligeramente cuando el sidebar está abierto
+        // Usamos un valor más pequeño porque el padding del contenedor principal ya compensa
         ml: isSideBarOpen
-          ? { xs: 'auto', md: '16%' }
+          ? { xs: 'auto', md: '8%' }
           : { xs: 'auto', sm: 'auto', md: 0 },
-        // ✅ Reducir ancho máximo cuando el sidebar está abierto
-        maxWidth: isSideBarOpen
-          ? {
-              xs: '440px',
-              sm: '600px',
-              md: 'calc(960px - 16%)',
-              lg: 'calc(1280px - 16%)',
-              xl: 'calc(1700px - 16%)',
-            }
-          : {
-              xs: '440px',
-              sm: '600px',
-              md: '960px',
-              lg: '1280px',
-              xl: '1700px',
-            },
+        // ✅ Ancho máximo sin cambios (el contenedor principal ya maneja el espacio)
+        maxWidth: {
+          xs: '440px',
+          sm: '600px',
+          md: '960px',
+          lg: '1280px',
+          xl: '1700px',
+        },
         // ✅ Transición suave
         transition:
           'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), max-width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
