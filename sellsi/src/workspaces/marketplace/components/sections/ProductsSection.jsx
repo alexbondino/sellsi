@@ -109,14 +109,16 @@ const ProductsSection = React.memo(
     );
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del grid
+    // ✅ RESPONSIVE AUTOMÁTICO: auto-fit + minmax permite que los productos se ajusten automáticamente
+    // Prioridad: 4 productos por fila → 3 → 2 (en móviles)
     const gridStyles = {
       display: 'grid',
       gridTemplateColumns: {
-        xs: `repeat(${productGridColumns.xs}, 1fr)`,
-        sm: `repeat(${productGridColumns.sm}, 1fr)`,
-        md: `repeat(${productGridColumns.md}, 1fr)`,
-        lg: `repeat(${productGridColumns.lg}, 1fr)`,
-        xl: `repeat(${productGridColumns.xl}, 1fr)`,
+        xs: 'repeat(auto-fit, minmax(180px, 1fr))', // Móvil: mínimo 180px, se ajusta a 2 columnas
+        sm: 'repeat(auto-fit, minmax(195px, 1fr))', // Tablet pequeña: mínimo 195px, 2-3 columnas
+        md: 'repeat(auto-fit, minmax(220px, 1fr))', // Tablet: mínimo 220px, 3-4 columnas
+        lg: 'repeat(auto-fit, minmax(300px, 1fr))', // Desktop: mínimo 300px, 3-4 columnas
+        xl: 'repeat(auto-fit, minmax(320px, 1fr))', // Desktop grande: mínimo 320px, 4-5 columnas
       },
       gap: {
         xs: productGridGaps.xs,

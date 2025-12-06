@@ -113,6 +113,7 @@ const ProductCard = React.memo(
           type === 'supplier'
             ? { xs: 180, sm: 195, md: 220, lg: 370, xl: 360 }
             : { xs: 180, sm: 195, md: 220, lg: 300, xl: 320 },
+
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
