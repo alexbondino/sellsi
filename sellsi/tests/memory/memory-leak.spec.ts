@@ -39,12 +39,11 @@ test.describe('Memory Leak Detection - Buyer Flow', () => {
       await runner.setup();
 
       // Login (detecta automáticamente si ya hay sesión)
+      // Después del login, la app redirige automáticamente a /buyer/marketplace
       await runner.login();
+      await runner.page.waitForTimeout(CONFIG.waitTime); // Esperar redirección
 
-      // Navegar al marketplace
-      await runner.navigateToMarketplace();
-
-      // Snapshot inicial después de login
+      // Snapshot inicial después de login (ya en marketplace)
       memorySnapshots.push(await getMemoryUsage(runner.cdp, '📍 Inicial (post-login)'));
 
       // Ciclos de navegación

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 import {
   Card,
   CardActionArea,
@@ -30,20 +31,36 @@ const CompactCheckoutSummary = ({
   const [expanded, setExpanded] = useState(false);
   
   const itemCount = orderData.items?.length || 0;
-  const subtotal = orderData.subtotal || 0;
   const shipping = orderData.shipping || 0;
-  
-  // Calcular comisión según método de pago
-  const baseTotal = subtotal + shipping;
-  let paymentFee = 0;
-  if (selectedMethod) {
-    if (selectedMethod.id === 'khipu') {
-      paymentFee = 500;
-    } else if (selectedMethod.id === 'flow') {
-      paymentFee = Math.round(baseTotal * 0.038); // 3.8%
+
+  // Compute prices using tier-aware logic (same as desktop CheckoutSummary)
+  const getItemPrice = item => {
+    if (item.price_tiers && item.price_tiers.length > 0) {
+      const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0;
+      return calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
     }
-  }
-  const total = baseTotal + paymentFee;
+    return item.price || 0;
+  };
+
+  const { subtotalFromItems, baseTotal, paymentFee, total } = useMemo(() => {
+    const totalBruto = (orderData.items || []).reduce((acc, item) => {
+      const unit = getItemPrice(item);
+      return acc + unit * (item.quantity || 0);
+    }, 0);
+
+    const base = Math.trunc(totalBruto) + shipping;
+
+    let fee = 0;
+    if (selectedMethod) {
+      if (selectedMethod.id === 'khipu') {
+        fee = 500;
+      } else if (selectedMethod.id === 'flow') {
+        fee = Math.round(base * 0.038);
+      }
+    }
+
+    return { subtotalFromItems: Math.trunc(totalBruto), baseTotal: base, paymentFee: fee, total: base + fee };
+  }, [orderData.items, shipping, selectedMethod]);
 
   if (variant === 'minimal') {
     return (
@@ -110,7 +127,7 @@ const CompactCheckoutSummary = ({
                     <span style={{ marginLeft: 6 }}>x{item.quantity}</span>
                   </Typography>
                   <Typography variant="caption" fontWeight={600}>
-                    {formatPrice((item.price || 0) * (item.quantity || 1))}
+                    {formatPrice((getItemPrice(item) || 0) * (item.quantity || 1))}
                   </Typography>
                 </Box>
               ))}
@@ -126,7 +143,7 @@ const CompactCheckoutSummary = ({
             <Stack spacing={0.5}>
               <Stack direction="row" justifyContent="space-between">
                 <Typography variant="caption" color="text.secondary">Subtotal</Typography>
-                <Typography variant="caption">{formatPrice(subtotal)}</Typography>
+                <Typography variant="caption">{formatPrice(subtotalFromItems || subtotal)}</Typography>
               </Stack>
               <Stack direction="row" justifyContent="space-between">
                 <Typography variant="caption" color="text.secondary">Envío</Typography>
