@@ -425,7 +425,7 @@ const BuyerOrders = memo(function BuyerOrders() {
                       onClick={openContact}
                       sx={{ textTransform: 'none', fontWeight: 600 }}
                     >
-                      Contactar al proveedor
+                      Contactar con Sellsi
                     </Button>
                   </Box>
 
@@ -462,7 +462,7 @@ const BuyerOrders = memo(function BuyerOrders() {
                                 ml: 0.5,
                               }}
                             >
-                              {isMobile ? 'Contactar al proveedor' : 'Contactarnos'}
+                              {isMobile ? 'Contactar con Sellsi' : 'Contactarnos'}
                             </Button>
                           </Box>
                           {(order.is_virtual_split || order.is_supplier_part) && (
