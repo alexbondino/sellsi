@@ -32,7 +32,7 @@ const CONSTANTS = {
 // ✅ COMMON STYLES
 const commonStyles = {
   link: {
-    color: '#1976d2',
+    color: '#2E52B2',
     fontWeight: 600,
     textDecoration: 'none',
     cursor: 'pointer',

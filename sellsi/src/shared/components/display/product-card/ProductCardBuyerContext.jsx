@@ -1,4 +1,4 @@
-// src/shared/components/display/product-card/ProductCardBuyerContext.jsx
+﻿// src/shared/components/display/product-card/ProductCardBuyerContext.jsx
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -16,7 +16,7 @@ import {
   Verified as VerifiedIcon,
 } from '@mui/icons-material';
 
-// Custom hooks - OPTIMIZADO: Usar hook optimizado con caché global
+// Custom hooks - OPTIMIZADO: Usar hook optimizado con cach├® global
 import { useOptimizedUserShippingRegion } from '../../../../hooks/useOptimizedUserShippingRegion';
 
 // Utility imports (updated paths for shared location)
@@ -41,7 +41,7 @@ const ProductCardBuyerContext = React.memo(
   }) => {
     const navigate = useNavigate();
 
-    // ✅ OPTIMIZADO: Usar hook optimizado con caché global
+    // Ô£à OPTIMIZADO: Usar hook optimizado con cach├® global
     const { userRegion, isLoadingUserRegion } =
       useOptimizedUserShippingRegion();
 
@@ -76,9 +76,11 @@ const ProductCardBuyerContext = React.memo(
     const hasValidBasePrice =
       (Number(effectiveMaxPrice) || 0) > 0 ||
       (Number(effectiveMinPrice) || 0) > 0;
-    // ✅ Mostrar "Cargando precios..." si está cargando O si no hay precio válido (evita mostrar $0)
-    const isPending =
-      loadingTiers || (!hasValidBasePrice && price_tiers.length === 0);
+    
+    // ✅ FIX CRÍTICO: Solo mostrar "Cargando precios..." cuando REALMENTE está cargando
+    // Si tiersStatus es 'loaded' o 'error', nunca mostrar "Cargando..."
+    // Esto evita el bug de "Cargando precios..." infinito
+    const isPending = loadingTiers; // Solo cuando está explícitamente en estado 'loading'
 
     const memoizedPriceContent = useMemo(() => {
       if (isPending) {
@@ -111,13 +113,13 @@ const ProductCardBuyerContext = React.memo(
             minPrice={minPrice}
             showRange={minPrice !== maxPrice}
             variant="h5"
-            color="#1976d2"
+            color="#2E52B2"
             sx={{ lineHeight: 1.1, fontSize: { xs: 14, sm: 16, md: 22 } }}
           />
         );
       }
 
-      // ✅ FIX: Usar minPrice/maxPrice del price summary cuando hay rango (sin necesidad de tiers cargados)
+      // Ô£à FIX: Usar minPrice/maxPrice del price summary cuando hay rango (sin necesidad de tiers cargados)
       const minPriceNum = Number(effectiveMinPrice) || 0;
       const maxPriceNum = Number(effectiveMaxPrice) || 0;
       const hasRange = minPriceNum > 0 && maxPriceNum > 0 && minPriceNum !== maxPriceNum;
@@ -129,7 +131,7 @@ const ProductCardBuyerContext = React.memo(
             minPrice={minPriceNum}
             showRange={true}
             variant="h5"
-            color="#1976d2"
+            color="#2E52B2"
             sx={{ lineHeight: 1.1, fontSize: { xs: 14, sm: 16, md: 22 } }}
           />
         );
@@ -139,12 +141,22 @@ const ProductCardBuyerContext = React.memo(
       const displayPrice = hasValidBasePrice
         ? maxPriceNum || minPriceNum || 0
         : 0;
+      
+      // ✅ Si no hay precio válido y no está cargando, mostrar mensaje informativo
+      if (displayPrice === 0 && !isPending) {
+        return (
+          <Typography variant="body2" color="text.secondary">
+            Consultar precio
+          </Typography>
+        );
+      }
+      
       return (
         <PriceDisplay
           price={displayPrice}
           originalPrice={precioOriginal}
           variant="h5"
-          color="#1976d2"
+          color="#2E52B2"
           sx={{ lineHeight: 1.1, fontSize: { xs: 14, sm: 16, md: 22 } }}
         />
       );
@@ -233,7 +245,7 @@ const ProductCardBuyerContext = React.memo(
                 <VerifiedIcon
                   sx={{
                     fontSize: 16,
-                    color: '#1976d2',
+                    color: '#2E52B2',
                   }}
                 />
               )}
@@ -310,7 +322,7 @@ const ProductCardBuyerContext = React.memo(
                 <VerifiedIcon
                   sx={{
                     fontSize: 16,
-                    color: '#1976d2',
+                    color: '#2E52B2',
                   }}
                 />
               )}

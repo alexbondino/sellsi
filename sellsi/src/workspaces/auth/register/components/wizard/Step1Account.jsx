@@ -319,7 +319,7 @@ const Step1Account = ({
                   openTermsModal();
                 }}
                 sx={{
-                  color: '#1976d2',
+                  color: '#2E52B2',
                   fontWeight: 700,
                   textDecoration: 'underline',
                   cursor: 'pointer',
@@ -342,7 +342,7 @@ const Step1Account = ({
                   openPrivacyModal();
                 }}
                 sx={{
-                  color: '#1976d2',
+                  color: '#2E52B2',
                   fontWeight: 700,
                   textDecoration: 'underline',
                   cursor: 'pointer',

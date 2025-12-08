@@ -86,7 +86,7 @@ export function TopBarView({
                 overflow: 'hidden',
                 outline: 'none',
                 '&:focus-visible': {
-                  boxShadow: '0 0 0 2px #1976d2',
+                  boxShadow: '0 0 0 2px #2E52B2',
                   borderRadius: 4,
                 },
               }}

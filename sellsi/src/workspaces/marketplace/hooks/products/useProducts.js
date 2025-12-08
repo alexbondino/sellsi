@@ -182,23 +182,65 @@ export function useProducts() {
 
     // Si cache fresca, usar directamente pero enriquecer con tiers cacheados
     if (isCacheFresh()) {
-      // ✅ Aplicar tiers del globalTiersCache a productos que aún tienen tiersStatus: 'idle'
-      const enrichedProducts = productsCache.data.map(p => {
-        if (p.tiersStatus !== 'idle') return p
-        const cachedTiers = globalTiersCache.get(String(p.id))
-        if (cachedTiers && (Date.now() - cachedTiers.ts) < TIERS_CACHE_TTL) {
-          const tiers = cachedTiers.data
-          if (tiers.length === 0) {
-            return { ...p, priceTiers: [], tiersStatus: 'loaded' }
+      // ✅ FIX CRÍTICO: Cargar price summaries/tiers en paralelo INCLUSO cuando se usa cache
+      // Esto evita el bug de "Cargando precios..." infinito para productos con basePrice = 0
+      const cachedProducts = productsCache.data
+      const productIds = cachedProducts.map(p => p.id)
+      
+      // Lanzar carga paralela en background
+      Promise.all([
+        fetchPriceSummariesDirect(productIds),
+        fetchAllTiersDirect(productIds)
+      ]).then(([summariesResult, tiersResult]) => {
+        if (!mountedRef.current) return
+        
+        const enrichedProducts = cachedProducts.map(p => {
+          const pid = String(p.id)
+          const summary = summariesResult?.get(pid)
+          const tiers = tiersResult?.get(pid) || []
+          
+          let minPrice = p.minPrice
+          let maxPrice = p.maxPrice
+          let tiersCount = 0
+          let hasVariable = false
+          
+          if (summary) {
+            minPrice = summary.min_price != null ? Number(summary.min_price) : minPrice
+            maxPrice = summary.max_price != null ? Number(summary.max_price) : maxPrice
+            tiersCount = summary.tiers_count != null ? Number(summary.tiers_count) : 0
+            hasVariable = !!summary.has_variable_pricing
           }
-          const precios = tiers.map(t => Number(t.price) || 0).filter(n => n > 0)
-          const minPrice = precios.length ? Math.min(...precios) : p.minPrice
-          const maxPrice = precios.length ? Math.max(...precios) : p.maxPrice
-          return { ...p, priceTiers: tiers, minPrice, maxPrice, tiersStatus: 'loaded' }
-        }
-        return p
+          
+          if (tiers.length > 0) {
+            const precios = tiers.map(t => Number(t.price) || 0).filter(n => n > 0)
+            if (precios.length > 0) {
+              minPrice = Math.min(...precios)
+              maxPrice = Math.max(...precios)
+            }
+          }
+          
+          return {
+            ...p,
+            minPrice,
+            maxPrice,
+            tiers_count: tiersCount,
+            has_variable_pricing: hasVariable,
+            priceTiers: tiers,
+            tiersStatus: 'loaded'
+          }
+        })
+        
+        setProducts(enrichedProducts)
+        // Actualizar cache con productos enriquecidos
+        productsCache.data = enrichedProducts
+      }).catch(e => {
+        console.warn('[useProducts] Error enriqueciendo cache:', e)
+        // Si falla, usar cache como está
+        setProducts(cachedProducts)
       })
-      setProducts(enrichedProducts)
+      
+      // Mientras tanto, mostrar cache actual
+      setProducts(cachedProducts)
       setLoading(false)
     } else {
       refreshProducts(controller, setProducts, setError, true)

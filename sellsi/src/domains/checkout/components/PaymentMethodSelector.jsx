@@ -399,7 +399,7 @@ const PaymentMethodSelector = () => {
               </Tooltip>
               <CreditCardIcon sx={{ color: 'primary.main', fontSize: { xs: 26, md: 32 }, mr: 1 }} />
               <Typography variant={"h4"} fontWeight="bold" sx={{ fontSize: { xs: '1.45rem', sm: '1.55rem', md: '2.125rem' } }}>
-                <span style={{ color: '#1976d2' }}>Método de Pago</span>
+                <span style={{ color: '#2E52B2' }}>Método de Pago</span>
               </Typography>
             </Stack>
 

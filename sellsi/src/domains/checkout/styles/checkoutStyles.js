@@ -24,7 +24,7 @@ export const checkoutStyles = {
   // Tarjeta de método de pago
   paymentCard: {
     selected: {
-      border: '2px solid #1976d2',
+      border: '2px solid #2E52B2',
       borderRadius: 2,
       boxShadow: '0 4px 20px rgba(25, 118, 210, 0.3)',
       background: (theme) => alpha(theme.palette.primary.main, 0.05)
@@ -106,7 +106,7 @@ export const checkoutStyles = {
       }
     },
     '& .MuiStepConnector-active .MuiStepConnector-line': {
-      borderColor: '#1976d2'
+      borderColor: '#2E52B2'
     },
     '& .MuiStepConnector-completed .MuiStepConnector-line': {
       borderColor: '#4caf50'

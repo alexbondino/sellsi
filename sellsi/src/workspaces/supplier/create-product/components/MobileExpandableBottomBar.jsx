@@ -86,7 +86,7 @@ const MobileExpandableBottomBar = ({
           zIndex: 1450, // 🔧 Mayor que MobileBar (1400) pero no excesivo
           borderRadius: '16px 16px 0 0',
           background: 'linear-gradient(135deg, #fff 0%, #f8f9fa 100%)',
-          borderTop: '2px solid #1976d2',
+          borderTop: '2px solid #2E52B2',
           p: 2,
           boxShadow: '0 -8px 32px rgba(0,0,0,0.25)',
         }}
@@ -240,7 +240,7 @@ const MobileExpandableBottomBar = ({
                 p: 2,
                 borderRadius: 3,
                 background: 'white',
-                border: '2px solid #1976d2',
+                border: '2px solid #2E52B2',
               }}
             >
               <Typography
@@ -301,7 +301,7 @@ const MobileExpandableBottomBar = ({
                     display: 'flex',
                     justifyContent: 'space-between',
                     pt: 1,
-                    borderTop: '2px solid #1976d2',
+                    borderTop: '2px solid #2E52B2',
                     mt: 1,
                   }}
                 >

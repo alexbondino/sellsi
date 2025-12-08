@@ -2,7 +2,7 @@ export const categoryNavigationStyles = {
   container: {
     display: 'flex',
     alignItems: 'center',
-    gap: 2,
+    gap: { xs: 0.5, sm: 1, md: 2 }, // Reducir gap en móvil
     flexWrap: 'wrap',
   },
 
@@ -10,7 +10,10 @@ export const categoryNavigationStyles = {
     fontWeight: 700,
     color: '#1e293b',
     textTransform: 'none',
-    fontSize: '1rem',
+    fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' }, // Reducir tamaño de fuente en móvil
+    px: { xs: 1, sm: 1.5, md: 2 }, // Reducir padding horizontal en móvil
+    py: { xs: 0.75, sm: 1, md: 1 }, // Reducir padding vertical en móvil
+    minWidth: 'auto', // Permitir que los botones sean más pequeños
     '&:hover': {
       bgcolor: 'rgba(30, 41, 59, 0.04)',
     },

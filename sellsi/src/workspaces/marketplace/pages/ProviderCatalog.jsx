@@ -126,12 +126,23 @@ const ProviderCatalog = () => {
         const formattedProducts = (productsData || []).map(product => {
           const productQuantityRanges = allQuantityRanges.filter(range => range.product_id === product.productid);
           
-          // Convertir quantity ranges a formato de price tiers para compatibilidad
+          // ✅ FIX: Convertir quantity ranges a formato de price tiers con propiedades correctas
+          // Usar min_quantity y max_quantity (no quantity_from/quantity_to)
           const priceTiers = productQuantityRanges.map(range => ({
-            quantity_from: range.min_quantity,
-            quantity_to: range.max_quantity,
-            price: range.price
+            min_quantity: range.min_quantity,
+            max_quantity: range.max_quantity,
+            price: range.price,
+            id: range.id // Incluir id del rango para key única
           }));
+
+          // ✅ FIX: Calcular minPrice y maxPrice para ordenamiento
+          let minPrice = product.price || 0;
+          let maxPrice = product.price || 0;
+          if (priceTiers.length > 0) {
+            const prices = priceTiers.map(t => t.price);
+            minPrice = Math.min(...prices);
+            maxPrice = Math.max(...prices);
+          }
 
           // Obtener la primera imagen del producto y thumbnail
           let imagenPrincipal = null;
@@ -156,7 +167,10 @@ const ProviderCatalog = () => {
             proveedor: providerData.user_nm,
             descripcion_proveedor: providerData.descripcion_proveedor,
             priceTiers: priceTiers,
-            product_price_tiers: priceTiers, // Para compatibilidad
+            price_tiers: priceTiers, // ✅ FIX: Usar price_tiers (estándar) en lugar de product_price_tiers
+            minPrice: minPrice, // ✅ FIX: Agregar precio mínimo calculado
+            maxPrice: maxPrice, // ✅ FIX: Agregar precio máximo calculado
+            tiersStatus: 'loaded', // ✅ FIX: Marcar tiers como cargados para evitar "Cargando precios..." infinito
             supplier_id: product.supplier_id, // Para getProductImageUrl
             productid: product.productid, // Para getProductImageUrl
             is_active: product.is_active, // ✅ AGREGAR estado activo de BD

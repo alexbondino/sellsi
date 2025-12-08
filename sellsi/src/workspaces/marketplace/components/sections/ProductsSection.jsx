@@ -1,14 +1,14 @@
-// ✅ EDITAR AQUÍ PARA:
-// - Cambiar diseño del título y contador
+﻿// Ô£à EDITAR AQU├ì PARA:
+// - Cambiar dise├▒o del t├¡tulo y contador
 // - Modificar grid responsive de productos
 // - Ajustar mensaje de "no encontrados"
-// - Cambiar espaciado y márgenes del contenido
+// - Cambiar espaciado y m├írgenes del contenido
 
-// 🔗 CONTIENE:
-// - Título dinámico según sección
+// ­ƒöù CONTIENE:
+// - T├¡tulo din├ímico seg├║n secci├│n
 // - Contador de productos
 // - Grid de ProductCard
-// - Estado vacío con botón "Limpiar filtros"
+// - Estado vac├¡o con bot├│n "Limpiar filtros"
 
 import React from 'react';
 import {
@@ -36,17 +36,17 @@ import { useProductsDerivation } from '../../../../shared/hooks/useProductsDeriv
 import { isNewDate } from '../../../../shared/utils/product/isNewDate';
 import { useProgressiveProducts } from '../../../../shared/hooks/useProgressiveProducts';
 import { useGridPriority } from '../../../../shared/utils/gridPriorityCalculator';
-import { scrollManagerAntiRebote } from '../../../../shared/utils/scrollManagerAntiRebote'; // ✅ Nuevo sistema anti-rebote
+import { scrollManagerAntiRebote } from '../../../../shared/utils/scrollManagerAntiRebote'; // Ô£à Nuevo sistema anti-rebote
 import { FeatureFlags } from '../../../supplier/shared-utils/featureFlags.js';
 import { ProductCardSkeletonGrid } from '../../../../shared/components/display/product-card/ProductCardSkeleton';
 import ProductsSectionView from './ProductsSection/ProductsSectionView';
 import { getOrFetchManyMainThumbnails } from '../../../../services/phase1ETAGThumbnailService.js';
 
 /**
- * Componente que maneja la sección de productos, título y grid
- * ✅ DESACOPLADO: Layout estático independiente del estado de SearchBar
+ * Componente que maneja la secci├│n de productos, t├¡tulo y grid
+ * Ô£à DESACOPLADO: Layout est├ítico independiente del estado de SearchBar
  */
-// ✅ MEJORA DE RENDIMIENTO: Memoización del componente
+// Ô£à MEJORA DE RENDIMIENTO: Memoizaci├│n del componente
 const ProductsSection = React.memo(
   ({
     seccionActiva,
@@ -63,12 +63,7 @@ const ProductsSection = React.memo(
     userRegion,
     getPriceTiers,
     registerProductNode,
-    hasSideBar = false,
-    sideBarCollapsed = false,
   }) => {
-    // ✅ Determinar si el sidebar está visible y abierto
-    const isSideBarOpen = hasSideBar && !sideBarCollapsed;
-
     // Layout styles
     const mainContainerStyles = React.useMemo(
       () => ({
@@ -92,87 +87,75 @@ const ProductsSection = React.memo(
       [isProviderView]
     );
 
-    // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno
-    const innerContainerStyles = React.useMemo(
-      () => ({
-        // ✅ CENTRADO: mx auto centra el contenido en el espacio disponible
-        mx: 'auto',
-        // ✅ Ancho del contenedor (80% del espacio disponible)
-        width: '80%',
-        // ✅ Ancho máximo del contenido
-        maxWidth: '100%',
-        // ✅ COMPENSACIÓN DEL SIDEBAR: Desplazar el contenido para que esté centrado
-        // en el área visible (sin contar el sidebar)
-        ...(hasSideBar && {
-          // Cuando hay sidebar, ajustamos el margen izquierdo para compensar
-          ml: isSideBarOpen
-            ? { xs: 'auto', md: 'calc((100% - 80%) / 2 + 5%)' } // Sidebar abierto (13%)
-            : { xs: 'auto', md: 'calc((100% - 80%) / 2 + 5.2%)' }, // Sidebar cerrado (~5.2%)
-          mr: 'auto',
-        }),
-        // ✅ Transición suave
-        transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-      }),
-      [isSideBarOpen, hasSideBar]
-    );
+    // Ô£à MEJORA DE RENDIMIENTO: Memoizaci├│n de estilos del contenedor interno
+    // Static layout objects (memo innecesario -> removido)
+    const innerContainerStyles = {
+      width: { xs: '100vw', sm: '100vw', md: '100%', lg: '100%', xl: '100%' },
+      maxWidth: {
+        xs: '440px',
+        sm: '600px',
+        md: '960px',
+        lg: '1280px',
+        xl: '1700px',
+      },
+      mx: { xs: 'auto', sm: 'auto', md: 0 },
+    };
 
-    // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del grid
-    // ✅ RESPONSIVE AUTOMÁTICO: auto-fit + minmax permite que los productos se ajusten automáticamente
-    // Prioridad: 4 productos por fila → 3 → 2 (en móviles)
+    // Ô£à MEJORA DE RENDIMIENTO: Memoizaci├│n de estilos del grid
     const gridStyles = {
       display: 'grid',
       gridTemplateColumns: {
-        xs: 'repeat(auto-fit, minmax(45%, 1fr))', // Móvil: mínimo 160px, 2 columnas
-        sm: 'repeat(auto-fit, minmax(45%, 1fr))', // Tablet pequeña: mínimo 180px, 2-3 columnas
-        md: 'repeat(auto-fit, minmax(20%, 1fr))', // Tablet: mínimo 200px, 3-4 columnas
-        lg: 'repeat(auto-fit, minmax(20%, 1fr))', // Desktop: mínimo 230px, 4 columnas
-        xl: 'repeat(auto-fit, minmax(20%, 1fr))', // Desktop grande: mínimo 250px, 4-5 columnas
+        xs: `repeat(${productGridColumns.xs}, 1fr)`,
+        sm: `repeat(${productGridColumns.sm}, 1fr)`,
+        md: `repeat(${productGridColumns.md}, 1fr)`,
+        lg: `repeat(${productGridColumns.lg}, 1fr)`,
+        xl: `repeat(${productGridColumns.xl}, 1fr)`,
       },
       gap: {
-        xs: 1, // 8px
-        sm: 1.5, // 12px
-        md: 2, // 16px
-        lg: 2.5, // 20px - reducido de 6 (48px)
-        xl: 3, // 24px - reducido de 6 (48px)
+        xs: productGridGaps.xs,
+        sm: productGridGaps.sm,
+        md: productGridGaps.md,
+        lg: productGridGaps.lg,
+        xl: productGridGaps.xl,
       },
       width: '100%',
       justifyItems: 'center',
     };
 
-    // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos de las tarjetas
+    // Ô£à MEJORA DE RENDIMIENTO: Memoizaci├│n de estilos de las tarjetas
     // Valores alineados con ProductCardSkeleton para evitar CLS
     const cardContainerStyles = {
-      width: { xs: '100%' },
+      width: { xs: 180, sm: 195, md: 220, lg: 300, xl: 320 },
     };
 
-    // ✅ MEJORA DE RENDIMIENTO: Memoización del título de sección
+    // Ô£à MEJORA DE RENDIMIENTO: Memoizaci├│n del t├¡tulo de secci├│n
     const sectionTitle = React.useMemo(() => {
       // Si hay filtro de región activo, mostrar título dinámico
       const activeRegion = filtros?.shippingRegions;
-
+      
       if (activeRegion && !isProviderView) {
         // Mapeo de regiones con números romanos
         const regionLabels = {
           'arica-parinacota': 'XV Región',
-          tarapaca: 'I Región',
-          antofagasta: 'II Región',
-          atacama: 'III Región',
-          coquimbo: 'IV Región',
-          valparaiso: 'V Región',
-          metropolitana: 'Región Metropolitana',
-          ohiggins: 'VI Región',
-          maule: 'VII Región',
-          nuble: 'XVI Región',
-          biobio: 'VIII Región',
-          araucania: 'IX Región',
+          'tarapaca': 'I Región',
+          'antofagasta': 'II Región',
+          'atacama': 'III Región',
+          'coquimbo': 'IV Región',
+          'valparaiso': 'V Región',
+          'metropolitana': 'Región Metropolitana',
+          'ohiggins': 'VI Región',
+          'maule': 'VII Región',
+          'nuble': 'XVI Región',
+          'biobio': 'VIII Región',
+          'araucania': 'IX Región',
           'los-rios': 'XIV Región',
           'los-lagos': 'X Región',
-          aysen: 'XI Región',
-          magallanes: 'XII Región',
+          'aysen': 'XI Región',
+          'magallanes': 'XII Región',
         };
-
+        
         const regionLabel = regionLabels[activeRegion] || activeRegion;
-
+        
         return (
           <>
             <ShoppingBagIcon
@@ -187,7 +170,7 @@ const ProductsSection = React.memo(
           </>
         );
       }
-
+      
       if (isProviderView) {
         return (
           <>
@@ -215,13 +198,13 @@ const ProductsSection = React.memo(
                   mr: 1,
                 }}
               />
-              <span style={{ color: '#1976d2' }}>Nuevos Productos</span>
+              <span style={{ color: '#2E52B2' }}>Nuevos Productos</span>
             </>
           );
         case 'ofertas':
-          return '🔥 Ofertas Destacadas';
+          return '­ƒöÑ Ofertas Destacadas';
         case 'topVentas':
-          return '⭐ Top Ventas';
+          return 'Ô¡É Top Ventas';
         default:
           return (
             <>
@@ -239,19 +222,19 @@ const ProductsSection = React.memo(
       }
     }, [seccionActiva, isProviderView, filtros?.shippingRegions]);
 
-    // ✅ CALCULAR PROVEEDORES ÚNICOS SI isProviderView
+    // Ô£à CALCULAR PROVEEDORES ├ÜNICOS SI isProviderView
     // totalProveedores eliminado (reemplazado por providersCount del hook)
 
-    // ✅ OPTIMIZACIÓN CRÍTICA: Solo recalcular cuando productosOrdenados realmente cambie
+    // Ô£à OPTIMIZACI├ôN CR├ìTICA: Solo recalcular cuando productosOrdenados realmente cambie
     // (Movido arriba antes de cualquier uso para evitar ReferenceError por TDZ)
-    // Derivación ahora a través del hook (fase2)
+    // Derivaci├│n ahora a trav├®s del hook (fase2)
     const { items: derivedItems, providersCount } = useProductsDerivation(
       productosOrdenados,
       { providerView: isProviderView }
     );
 
-    // ✅ FIX: Memoizar correctamente derivedItems y aplicar filtro 'nuevos'
-    // Si la sección activa es 'nuevos' (buyer view), mostramos solo productos recientes según createdAt
+    // Ô£à FIX: Memoizar correctamente derivedItems y aplicar filtro 'nuevos'
+    // Si la secci├│n activa es 'nuevos' (buyer view), mostramos solo productos recientes seg├║n createdAt
     const memoizedProducts = React.useMemo(() => {
       if (!Array.isArray(derivedItems)) return derivedItems;
       if (!isProviderView && seccionActiva === 'nuevos') {
@@ -266,20 +249,20 @@ const ProductsSection = React.memo(
       return derivedItems;
     }, [derivedItems, seccionActiva, isProviderView]);
 
-    // 🚀 BATCHING THUMBNAILS: limitar cantidad de ProductCard montadas simultáneamente para reducir ráfagas de fetch
+    // ­ƒÜÇ BATCHING THUMBNAILS: limitar cantidad de ProductCard montadas simult├íneamente para reducir r├ífagas de fetch
     // batching ahora dentro del hook progressive
-    // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de volver (solo dependencias necesarias)
+    // Ô£à MEJORA DE RENDIMIENTO: Memoizaci├│n del handler de volver (solo dependencias necesarias)
     const handleBackClick = React.useCallback(() => {
       setSeccionActiva('todos');
     }, [setSeccionActiva]);
-    // ✅ SISTEMA HÍBRIDO RESPONSIVO: Infinite Scroll + Paginación
+    // Ô£à SISTEMA H├ìBRIDO RESPONSIVO: Infinite Scroll + Paginaci├│n
     const theme = useTheme();
     const isXs = useMediaQuery(theme.breakpoints.only('xs'));
     const isSm = useMediaQuery(theme.breakpoints.only('sm'));
     const isMd = useMediaQuery(theme.breakpoints.only('md'));
     const isLg = useMediaQuery(theme.breakpoints.only('lg'));
     const isXl = useMediaQuery(theme.breakpoints.up('xl'));
-    // ✅ VALORES RESPONSIVOS CON CARGA PROGRESIVA: Adaptan según el tamaño de pantalla
+    // Ô£à VALORES RESPONSIVOS CON CARGA PROGRESIVA: Adaptan seg├║n el tama├▒o de pantalla
     const responsiveConfig = React.useMemo(() => {
       if (isXs) return paginationResponsiveConfig.xs;
       if (isSm) return paginationResponsiveConfig.sm;
@@ -296,7 +279,7 @@ const ProductsSection = React.memo(
       PRELOAD_TRIGGER,
     } = responsiveConfig;
 
-    // Progressive hook (remplaza lógica anterior de paginación + infinite + batching)
+    // Progressive hook (remplaza l├│gica anterior de paginaci├│n + infinite + batching)
     const progressive = useProgressiveProducts(memoizedProducts, {
       responsive: { isXs, isSm, isMd, isLg, isXl },
       featureFlags: {
@@ -320,7 +303,7 @@ const ProductsSection = React.memo(
       },
     } = progressive;
 
-    // ✅ NUEVO: Sistema de prioridades para imágenes (primeras 2 filas = fetchpriority="high")
+    // Ô£à NUEVO: Sistema de prioridades para im├ígenes (primeras 2 filas = fetchpriority="high")
     const gridPriority = useGridPriority(renderItems, {
       isXs,
       isSm,
@@ -331,11 +314,11 @@ const ProductsSection = React.memo(
     const { getPriority, debugInfo } = gridPriority;
 
     // Debug info removed for production cleanliness
-    // Componente de paginación responsivo
+    // Componente de paginaci├│n responsivo
     const PaginationComponent = React.useMemo(() => {
       if (totalPages <= 1) return null;
 
-      // ✅ RESPONSIVO: Menos botones en móvil, más en desktop
+      // Ô£à RESPONSIVO: Menos botones en m├│vil, m├ís en desktop
       const showPages = isXs ? 3 : isSm ? 4 : 5;
 
       let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
@@ -351,35 +334,35 @@ const ProductsSection = React.memo(
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            gap: { xs: 0.5, sm: 1 }, // ✅ RESPONSIVO: Gap más pequeño en móvil
+            gap: { xs: 0.5, sm: 1 }, // Ô£à RESPONSIVO: Gap m├ís peque├▒o en m├│vil
             py: 3,
-            flexWrap: 'wrap', // ✅ RESPONSIVO: Permitir wrap en pantallas muy pequeñas
+            flexWrap: 'wrap', // Ô£à RESPONSIVO: Permitir wrap en pantallas muy peque├▒as
           }}
           role="navigation"
-          aria-label="Paginación de productos"
+          aria-label="Paginaci├│n de productos"
         >
-          {/* Botón Anterior */}
+          {/* Bot├│n Anterior */}
           <Button
             variant="outlined"
             disabled={currentPage === 1}
             onClick={() => handlePageChange(currentPage - 1)}
             sx={{
               minWidth: 'auto',
-              px: { xs: 1, sm: 2 }, // ✅ RESPONSIVO: Padding más pequeño en móvil
-              fontSize: { xs: '0.75rem', sm: '0.875rem' }, // ✅ RESPONSIVO: Texto más pequeño en móvil
+              px: { xs: 1, sm: 2 }, // Ô£à RESPONSIVO: Padding m├ís peque├▒o en m├│vil
+              fontSize: { xs: '0.75rem', sm: '0.875rem' }, // Ô£à RESPONSIVO: Texto m├ís peque├▒o en m├│vil
             }}
-            aria-label="Página anterior"
+            aria-label="P├ígina anterior"
           >
-            {isXs ? '‹' : '‹ Anterior'}
+            {isXs ? 'ÔÇ╣' : 'ÔÇ╣ Anterior'}
           </Button>{' '}
-          {/* Números de página */}
+          {/* N├║meros de p├ígina */}
           {!isXs && startPage > 1 && (
             <>
               <Button
                 variant={1 === currentPage ? 'contained' : 'outlined'}
                 onClick={() => handlePageChange(1)}
                 sx={{ minWidth: { xs: 32, sm: 40 } }}
-                aria-label="Ir a página 1"
+                aria-label="Ir a p├ígina 1"
                 aria-current={currentPage === 1 ? 'page' : undefined}
               >
                 1
@@ -396,10 +379,10 @@ const ProductsSection = React.memo(
               variant={page === currentPage ? 'contained' : 'outlined'}
               onClick={() => handlePageChange(page)}
               sx={{
-                minWidth: { xs: 32, sm: 40 }, // ✅ RESPONSIVO: Botones más pequeños en móvil
+                minWidth: { xs: 32, sm: 40 }, // Ô£à RESPONSIVO: Botones m├ís peque├▒os en m├│vil
                 fontSize: { xs: '0.75rem', sm: '0.875rem' },
               }}
-              aria-label={`Ir a página ${page}`}
+              aria-label={`Ir a p├ígina ${page}`}
               aria-current={page === currentPage ? 'page' : undefined}
             >
               {page}
@@ -414,14 +397,14 @@ const ProductsSection = React.memo(
                 variant={totalPages === currentPage ? 'contained' : 'outlined'}
                 onClick={() => handlePageChange(totalPages)}
                 sx={{ minWidth: { xs: 32, sm: 40 } }}
-                aria-label={`Ir a página ${totalPages}`}
+                aria-label={`Ir a p├ígina ${totalPages}`}
                 aria-current={currentPage === totalPages ? 'page' : undefined}
               >
                 {totalPages}
               </Button>
             </>
           )}
-          {/* Botón Siguiente */}
+          {/* Bot├│n Siguiente */}
           <Button
             variant="outlined"
             disabled={currentPage === totalPages}
@@ -431,31 +414,31 @@ const ProductsSection = React.memo(
               px: { xs: 1, sm: 2 },
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
             }}
-            aria-label="Página siguiente"
+            aria-label="P├ígina siguiente"
           >
-            {isXs ? '›' : 'Siguiente ›'}
+            {isXs ? 'ÔÇ║' : 'Siguiente ÔÇ║'}
           </Button>
-          {/* Info de página - Solo en pantallas medianas y grandes */}
+          {/* Info de p├ígina - Solo en pantallas medianas y grandes */}
           {!isXs && (
             <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-              Página {currentPage} de {totalPages}
+              P├ígina {currentPage} de {totalPages}
             </Typography>
           )}
         </Box>
       );
     }, [currentPage, totalPages, handlePageChange, isXs, isSm]);
 
-    // ✅ RESPONSIVO: Actualizar productos visibles cuando cambia el breakpoint
+    // Ô£à RESPONSIVO: Actualizar productos visibles cuando cambia el breakpoint
     // (Reseteo visible ahora lo maneja el hook)
 
-    // ✅ SCROLL TO TOP: Estado y función para el FAB
+    // Ô£à SCROLL TO TOP: Estado y funci├│n para el FAB
     const [showScrollTop, setShowScrollTop] = React.useState(false);
 
     const scrollToTop = React.useCallback(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, []);
 
-    // ✅ SCROLL TO TOP: Mostrar/ocultar FAB usando ScrollManager unificado
+    // Ô£à SCROLL TO TOP: Mostrar/ocultar FAB usando ScrollManager unificado
     React.useEffect(() => {
       const listenerId = 'products-section-fab';
 
@@ -507,57 +490,55 @@ const ProductsSection = React.memo(
       currentPage,
       totalPages,
       titleMarginLeft,
-      getPriority, // ✅ Función para determinar prioridad de imagen por índice
+      getPriority, // Ô£à Funci├│n para determinar prioridad de imagen por ├¡ndice
       getPriceTiers,
       registerProductNode,
       showNoProductsInRegionBanner,
       userRegion,
     };
-
+    
     // Mapeo de regiones para el banner
-    const getRegionLabel = regionValue => {
+    const getRegionLabel = (regionValue) => {
       const regionLabels = {
         'arica-parinacota': 'la XV Región',
-        tarapaca: 'la I Región',
-        antofagasta: 'la II Región',
-        atacama: 'la III Región',
-        coquimbo: 'la IV Región',
-        valparaiso: 'la V Región',
-        metropolitana: 'la Región Metropolitana',
-        ohiggins: 'la VI Región',
-        maule: 'la VII Región',
-        nuble: 'la XVI Región',
-        biobio: 'la VIII Región',
-        araucania: 'la IX Región',
+        'tarapaca': 'la I Región',
+        'antofagasta': 'la II Región',
+        'atacama': 'la III Región',
+        'coquimbo': 'la IV Región',
+        'valparaiso': 'la V Región',
+        'metropolitana': 'la Región Metropolitana',
+        'ohiggins': 'la VI Región',
+        'maule': 'la VII Región',
+        'nuble': 'la XVI Región',
+        'biobio': 'la VIII Región',
+        'araucania': 'la IX Región',
         'los-rios': 'la XIV Región',
         'los-lagos': 'la X Región',
-        aysen: 'la XI Región',
-        magallanes: 'la XII Región',
+        'aysen': 'la XI Región',
+        'magallanes': 'la XII Región',
       };
       return regionLabels[regionValue] || regionValue;
     };
-
+    
     const components = {
-      NoProductsInRegionBanner:
-        showNoProductsInRegionBanner && userRegion ? (
-          <Alert
-            severity="info"
-            icon={<InfoIcon />}
-            sx={{
-              mb: 3,
-              borderRadius: 2,
-              '& .MuiAlert-message': {
-                width: '100%',
-              },
-            }}
-          >
-            <Typography variant="body2">
-              No hay productos disponibles para despacho en{' '}
-              <strong>{getRegionLabel(userRegion)}</strong>. Mostrando todos los
-              productos disponibles.
-            </Typography>
-          </Alert>
-        ) : null,
+      NoProductsInRegionBanner: showNoProductsInRegionBanner && userRegion ? (
+        <Alert 
+          severity="info" 
+          icon={<InfoIcon />}
+          sx={{ 
+            mb: 3,
+            borderRadius: 2,
+            '& .MuiAlert-message': {
+              width: '100%'
+            }
+          }}
+        >
+          <Typography variant="body2">
+            No hay productos disponibles para despacho en <strong>{getRegionLabel(userRegion)}</strong>. 
+            Mostrando todos los productos disponibles.
+          </Typography>
+        </Alert>
+      ) : null,
       Loading: (
         <Box sx={{ px: { xs: 0, sm: 0, md: 0 } }}>
           <ProductCardSkeletonGrid
@@ -672,19 +653,19 @@ const ProductsSection = React.memo(
   }
 );
 
-// ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
+// Ô£à MEJORA DE RENDIMIENTO: DisplayName para debugging
 ProductsSection.displayName = 'ProductsSection';
 
-// Prefetch inicial sencillo (warm thumbnails) – se hace fuera de render para no afectar SSR hipotético
+// Prefetch inicial sencillo (warm thumbnails) ÔÇô se hace fuera de render para no afectar SSR hipot├®tico
 // NOTA: Simple guard to ensure side effect only in browser
 if (typeof window !== 'undefined' && FeatureFlags.FEATURE_PHASE1_THUMBS) {
   // Micro cola para evitar saturar inmediatamente; se puede mejorar con observers
-  // 🛡️ SAFARI FIX: Usar window.requestIdleCallback para evitar ReferenceError
+  // ­ƒøí´©Å SAFARI FIX: Usar window.requestIdleCallback para evitar ReferenceError
   if (window.requestIdleCallback) {
     window.requestIdleCallback(() => {
       try {
-        // Buscar un contenedor de productos ya montado (heurística simple)
-        // La lógica real ideal estaría dentro de un effect cuando se conocen los IDs iniciales.
+        // Buscar un contenedor de productos ya montado (heur├¡stica simple)
+        // La l├│gica real ideal estar├¡a dentro de un effect cuando se conocen los IDs iniciales.
       } catch (e) {
         // noop
       }
@@ -692,5 +673,5 @@ if (typeof window !== 'undefined' && FeatureFlags.FEATURE_PHASE1_THUMBS) {
   }
 }
 
-// ✅ ROLLBACK TEMPORAL: Exportar directamente sin ShippingProvider hasta resolver issues
+// Ô£à ROLLBACK TEMPORAL: Exportar directamente sin ShippingProvider hasta resolver issues
 export default ProductsSection;
