@@ -305,13 +305,14 @@ const BuyerOrders = memo(function BuyerOrders() {
       >
         <Container maxWidth={isMobile ? false : "xl"} disableGutters={isMobile ? true : false}>
           {/* Título de la página */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-            <AssignmentIcon sx={{ color: 'primary.main', fontSize: 36, mr: 1 }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, md: 4 } }}>
+            <AssignmentIcon sx={{ color: 'primary.main', fontSize: { xs: 28, md: 36 }, mr: 1 }} />
             <Typography
               variant="h4"
               fontWeight={600}
               color="primary.main"
               gutterBottom
+              sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' }, mb: 0 }}
             >
               Mis Pedidos
             </Typography>
@@ -330,11 +331,12 @@ const BuyerOrders = memo(function BuyerOrders() {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {visibleOrders.map(order => (
                 <Paper
-          key={order.synthetic_id || order.order_id}
+                  key={order.synthetic_id || order.order_id}
                   sx={{
-        p: { xs: 1.5, md: 3 },
+                    p: { xs: 1.5, md: 3 },
                     borderRadius: 2,
                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    border: { xs: '1px solid #BDBDBD', md: 'none' },
                     transition: 'transform 0.2s ease',
                     '&:hover': {
                       transform: 'translateY(-2px)',
@@ -346,43 +348,144 @@ const BuyerOrders = memo(function BuyerOrders() {
                   {renderPaymentStatusBanner(order)}
 
                   {/* Header de la orden */}
-                  <Box sx={{ mb: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="h6" fontWeight="bold">
+                  {/* MOBILE HEADER */}
+                  <Box sx={{ mb: 2, display: { xs: 'block', md: 'none' } }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight="bold">
                           Pedido {formatOrderNumber(order.parent_order_id || order.order_id)}
                         </Typography>
-                        {/* Mensaje de contacto junto al número de pedido */}
-                        <Typography variant="body2" color="text.secondary" sx={{ ml: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            ¿Deseas solicitar alguna condición especial? No dudes en
-                          <Button
-                            variant="text"
-                            size="small"
-                            onClick={openContact}
-                            sx={{
-                              color: 'primary.main',
-                              textTransform: 'none',
-                              fontWeight: 600,
-                              p: 0,
-                              minWidth: 'auto',
-                              ml: 0.5,
-                            }}
-                          >
-                            Contactarnos
-                          </Button>
-                        </Typography>
-                        {(order.is_virtual_split || order.is_supplier_part) && (
-                          <Chip size="small" color="primary" label={order.supplier_name ? `Proveedor: ${order.supplier_name}` : 'Parte de Pedido'} />
+                        {order.parent_order_id && order.parent_order_id !== order.order_id && (
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Orden de Pago {formatOrderNumber(order.parent_order_id)}
+                          </Typography>
                         )}
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                          Fecha de compra: {formatDateUnified(order.created_at)}
+                        </Typography>
                       </Box>
-            {order.parent_order_id && order.parent_order_id !== order.order_id && (
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.2 }}>
-              Orden de Pago {formatOrderNumber(order.parent_order_id)}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                      {(order.is_virtual_split || order.is_supplier_part) && (
+                        <Chip size="small" color="primary" label={order.supplier_name ? `Proveedor: ${order.supplier_name}` : 'Parte de Pedido'} sx={{ fontSize: '0.75rem' }} />
+                      )}
+                      {order.estimated_delivery_date && order.status === 'in_transit' && (
+                        <Typography variant="caption" color="text.secondary">
+                          Entrega estimada: {(() => {
+                            let eta = order.estimated_delivery_date;
+                            let formatted;
+                            try {
+                              if (eta) {
+                                const d = new Date(eta);
+                                formatted = d.toLocaleDateString('es-CL', { timeZone: 'UTC', day: 'numeric', month: 'long' });
+                              }
+                            } catch(_) {}
+                            return formatted || formatDateUnified(eta);
+                          })()}
                         </Typography>
                       )}
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {/* Delete button for expired payment orders */}
+                      {order.status === 'delivered' && (order.delivered_at || order.deliveredAt || order.delivered) && (
+                        <Typography variant="caption" color="text.secondary">
+                          Fecha de entrega: {formatDateUnified(order.delivered_at || order.deliveredAt || order.delivered)}
+                        </Typography>
+                      )}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 2 }}>
+                      <Box>
                         {order.payment_status === 'expired' && (
+                          <Button 
+                            size="small" 
+                            color="error" 
+                            startIcon={<DeleteOutlineIcon />}
+                            onClick={() => handleOpenDeleteDialog(order)}
+                            sx={{ textTransform: 'none', p: 0, minWidth: 'auto' }}
+                          >
+                            Eliminar
+                          </Button>
+                        )}
+                      </Box>
+                      <Box sx={{ textAlign: 'right' }}>
+                        <Typography variant="h6" color="primary.main" fontWeight="bold">
+                          {formatCurrency(order.final_amount || (order.total_amount + getShippingAmount(order)) || order.total_amount)}
+                        </Typography>
+                        { getShippingAmount(order) > 0 && (
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Envío: {formatCurrency(getShippingAmount(order))}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      size="small"
+                      onClick={openContact}
+                      sx={{ textTransform: 'none', fontWeight: 600 }}
+                    >
+                      Contactar al proveedor
+                    </Button>
+                  </Box>
+
+                  {/* DESKTOP HEADER */}
+                  <Box sx={{ mb: 3, display: { xs: 'none', md: 'block' } }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: { xs: 'column', md: 'row' },
+                      justifyContent: 'space-between', 
+                      alignItems: { xs: 'flex-start', md: 'center' }, 
+                      mb: 1,
+                      gap: { xs: 1, md: 0 }
+                    }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                          <Typography variant="h6" fontWeight="bold">
+                            Pedido {formatOrderNumber(order.parent_order_id || order.order_id)}
+                          </Typography>
+                          {/* Mensaje de contacto junto al número de pedido */}
+                          <Box sx={{ ml: { xs: 0, md: 1 }, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', md: 'block' } }}>
+                                ¿Deseas solicitar alguna condición especial? No dudes en
+                            </Typography>
+                            <Button
+                              variant="text"
+                              size="small"
+                              onClick={openContact}
+                              sx={{
+                                color: 'primary.main',
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                p: 0,
+                                minWidth: 'auto',
+                                ml: 0.5,
+                              }}
+                            >
+                              {isMobile ? 'Contactar al proveedor' : 'Contactarnos'}
+                            </Button>
+                          </Box>
+                          {(order.is_virtual_split || order.is_supplier_part) && (
+                            <Chip size="small" color="primary" label={order.supplier_name ? `Proveedor: ${order.supplier_name}` : 'Parte de Pedido'} />
+                          )}
+                        </Box>
+                        {order.parent_order_id && order.parent_order_id !== order.order_id && (
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.2 }}>
+                            Orden de Pago {formatOrderNumber(order.parent_order_id)}
+                          </Typography>
+                        )}
+                      </Box>
+
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 1,
+                        width: { xs: '100%', md: 'auto' },
+                        justifyContent: { xs: 'space-between', md: 'flex-end' },
+                        mt: { xs: 1, md: 0 }
+                      }}>
+                        {/* Delete button for expired payment orders */}
+                        {order.payment_status === 'expired' ? (
                           <Tooltip title="Eliminar pedido de la lista">
                             <IconButton
                               size="small"
@@ -403,7 +506,7 @@ const BuyerOrders = memo(function BuyerOrders() {
                               <DeleteOutlineIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                        )}
+                        ) : <Box />}
                         <Box sx={{ textAlign: 'right' }}>
                           <Typography variant="h6" color="primary.main" fontWeight="bold">
                             {formatCurrency(
@@ -524,14 +627,19 @@ const BuyerOrders = memo(function BuyerOrders() {
                         <Paper
                           key={itemKey}
                           sx={{
-                            p: 2,
+                            p: { xs: 1.5, md: 2 },
                             backgroundColor: 'grey.50',
                             borderRadius: 1,
                             border: '1px solid',
                             borderColor: 'grey.200',
                           }}
                         >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: { xs: 'flex-start', md: 'center' }, 
+                            gap: 2,
+                            flexWrap: { xs: 'wrap', md: 'nowrap' }
+                          }}>
                             {/* Imagen del producto */}
                             <CheckoutSummaryImage
                               product={item.product}
@@ -544,10 +652,10 @@ const BuyerOrders = memo(function BuyerOrders() {
                             />
                             
                             {/* Información del producto */}
-                            <Box sx={{ flex: 1 }}>
+                            <Box sx={{ flex: 1, minWidth: { xs: 'calc(100% - 100px)', md: 0 } }}>
                               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                                 {/* Compact group: product name + small chip immediately to its right */}
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flexWrap: 'wrap' }}>
                                   <Typography
                                     variant="h6"
                                     fontWeight="medium"
@@ -556,7 +664,9 @@ const BuyerOrders = memo(function BuyerOrders() {
                                       whiteSpace: 'normal',
                                       overflow: 'hidden',
                                       textOverflow: 'ellipsis',
-                                      maxWidth: '40ch'
+                                      maxWidth: '40ch',
+                                      fontSize: { xs: '0.95rem', md: '1.25rem' },
+                                      lineHeight: { xs: 1.3, md: 1.5 }
                                     }}
                                   >
                                     {item.product.name}
@@ -588,8 +698,8 @@ const BuyerOrders = memo(function BuyerOrders() {
                                   })()}
                                 </Box>
                               </Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <Typography variant="body2" color="text.secondary" gutterBottom>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                                <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '0.8rem', md: '0.875rem' } }}>
                                   Proveedor: {item.product?.supplier?.name || item.product?.proveedor || 'Proveedor desconocido'}
                                 </Typography>
                                 {(item.product?.supplier?.verified || item.product?.verified || item.product?.supplierVerified) && (
@@ -604,7 +714,7 @@ const BuyerOrders = memo(function BuyerOrders() {
                                     : 0;
                                 const lineTotal = unit * (item.quantity || 0);
                                 return (
-                                  <Typography variant="body1" fontWeight="medium" color="#000000fa">
+                                  <Typography variant="body1" fontWeight="medium" color="#000000fa" sx={{ fontSize: { xs: '0.9rem', md: '1rem' } }}>
                                     {item.quantity} uds a {formatCurrency(unit)} c/u = {formatCurrency(lineTotal)}
                                   </Typography>
                                 );
@@ -618,7 +728,7 @@ const BuyerOrders = memo(function BuyerOrders() {
                                 const hasInvoice = !!(item.invoice_path || item.invoice);
 
                                 return (
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
                                     <Chip
                                       size="small"
                                       label={norm === 'boleta' ? 'Boleta' : norm === 'factura' ? 'Factura' : 'Sin Documento Tributario'}
@@ -640,8 +750,24 @@ const BuyerOrders = memo(function BuyerOrders() {
                             </Box>
                             
                             {/* Chips de estado (incluye Pago Confirmado) */}
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 140 }}>
-                              {getStatusChips(productStatus, order.payment_status, order).map((chip, chipIndex) => {
+                            <Box sx={{ 
+                              display: 'flex', 
+                              flexDirection: { xs: 'row', md: 'column' }, 
+                              gap: 1, 
+                              minWidth: { xs: '100%', md: 140 },
+                              width: { xs: '100%', md: 'auto' },
+                              flexWrap: 'wrap',
+                              mt: { xs: 1, md: 0 }
+                            }}>
+                              {(() => {
+                                const allChips = getStatusChips(productStatus, order.payment_status, order);
+                                // En mobile, solo mostramos el chip activo (o el último si ninguno está activo explícitamente)
+                                // En desktop, mostramos todos
+                                const chipsToRender = isMobile 
+                                  ? [allChips.find(c => c.active) || allChips[allChips.length - 1]]
+                                  : allChips;
+
+                                return chipsToRender.map((chip, chipIndex) => {
                                   // Determine whether each stage was reached historically
                                   const pagoConfirmadoReached = order.payment_status === 'paid' || ['accepted', 'in_transit', 'delivered'].includes(order.status);
                                   const aceptadoReached = ['accepted', 'in_transit', 'delivered'].includes(order.status) && !order.cancelled_at;
@@ -703,7 +829,8 @@ const BuyerOrders = memo(function BuyerOrders() {
                                       />
                                     </Tooltip>
                                   );
-                                })}
+                                });
+                              })()}
                             </Box>
                           </Box>
                         </Paper>

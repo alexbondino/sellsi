@@ -1,6 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Typography, useTheme, useMediaQuery } from '@mui/material';
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 /**
  * Pagination component for buyer orders list.
@@ -13,6 +15,8 @@ const OrdersPagination = ({
   currentPage,
   onPageChange,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   if (!totalItems || totalItems <= itemsPerPage) return null;
@@ -24,6 +28,49 @@ const OrdersPagination = ({
     startPage = Math.max(1, endPage - showPages + 1);
   }
 
+  // Mobile View: Simplified pagination
+  if (isMobile) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          py: 2,
+          width: '100%',
+          px: 1
+        }}
+      >
+        <Button
+          variant="outlined"
+          disabled={currentPage === 1}
+          onClick={() => onPageChange(currentPage - 1)}
+          size="small"
+          startIcon={<NavigateBeforeIcon />}
+          sx={{ textTransform: 'none' }}
+        >
+          Anterior
+        </Button>
+
+        <Typography variant="body2" fontWeight="medium">
+          {currentPage} / {totalPages}
+        </Typography>
+
+        <Button
+          variant="outlined"
+          disabled={currentPage === totalPages}
+          onClick={() => onPageChange(currentPage + 1)}
+          size="small"
+          endIcon={<NavigateNextIcon />}
+          sx={{ textTransform: 'none' }}
+        >
+          Siguiente
+        </Button>
+      </Box>
+    );
+  }
+
+  // Desktop View: Full pagination
   return (
     <Box
       sx={{
