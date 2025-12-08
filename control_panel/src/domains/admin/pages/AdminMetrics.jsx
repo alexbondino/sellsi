@@ -21,7 +21,7 @@ import { ArrowBack, Refresh, QueryStats, Timeline, ErrorOutline, Speed, Insights
 import { LineChart, BarChart } from '@mui/x-charts';
 
 const palette = {
-  primary: '#1976d2',
+  primary: '#2E52B2',
   error: '#d32f2f',
   success: '#2e7d32',
   warning: '#ed6c02',

@@ -298,7 +298,7 @@ const DevolverPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
 
   const renderInfoSolicitud = () => (
     <Box sx={commonStyles.infoCard}>
-      <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+      <Typography variant="h6" gutterBottom sx={{ color: '#2E52B2' }}>
         Solicitud para Devolución
       </Typography>
       
@@ -326,7 +326,7 @@ const DevolverPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
         
         <Grid item xs={6}>
           <Typography variant="body2" color="textSecondary">Monto Original:</Typography>
-          <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+          <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#2E52B2' }}>
             ${solicitud?.venta?.toLocaleString('es-CL')}
           </Typography>
         </Grid>
@@ -552,7 +552,7 @@ const DevolverPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
                    !formData.montoDevolucion || !formData.detallesDevolucion || 
                    comprobantesDevolucion.length === 0}
           startIcon={<Undo />}
-          sx={{ backgroundColor: '#2196f3', '&:hover': { backgroundColor: '#1976d2' } }}
+          sx={{ backgroundColor: '#2196f3', '&:hover': { backgroundColor: '#2E52B2' } }}
         >
           {loading ? 'Procesando...' : 'Procesar Devolución'}
         </PrimaryButton>

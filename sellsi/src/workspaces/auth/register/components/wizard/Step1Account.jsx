@@ -215,7 +215,7 @@ const Step1Account = ({
         align="center"
         sx={{
           mb: { xs: 1, sm: 2, md: 2, lg: 4 },
-          color: theme.palette.mode === 'dark' ? '#fff' : '#222',
+          color: theme.palette.mode === 'dark' ? '#fff' : '#2E52B2',
           fontWeight: 700,
           fontSize: 18,
           fontStyle: 'italic',

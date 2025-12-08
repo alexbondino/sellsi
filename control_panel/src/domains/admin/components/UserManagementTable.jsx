@@ -95,7 +95,7 @@ const commonStyles = {
     overflowX: 'hidden' // Previene scroll horizontal en filtros
   },
   tableHeader: {
-    backgroundColor: '#1976d2',
+    backgroundColor: '#2E52B2',
     color: 'white',
     fontWeight: 'bold'
   },
@@ -663,7 +663,7 @@ const UserManagementTable = memo(() => {
             transition: 'box-shadow 0.2s, background 0.2s',
             boxShadow: 3,
             '&:hover': {
-              background: '#1976d2',
+              background: '#2E52B2',
               boxShadow: 8,
             },
           }}
