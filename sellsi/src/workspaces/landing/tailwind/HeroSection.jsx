@@ -8,11 +8,14 @@ const HeroSection = ({ onExploreClick, onDemoClick }) => {
 
   const handleDemo = () => {
     if (onDemoClick) return onDemoClick();
-    window.location.assign('/?scrollTo=contactModal&t=' + Date.now());
+    const contactSection = document.getElementById('contact');
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   return (
-    <section className="relative w-full bg-gradient-to-br from-gray-900 via-black to-gray-900 py-24 md:py-32 lg:py-40 overflow-hidden">
+    <section className="relative w-full bg-gradient-to-br from-gray-900 via-black to-gray-900 py-24 md:py-32 lg:py-40 xl:py-56 overflow-hidden">
       {/* Grid background with depth */}
       <div className="absolute inset-0 opacity-[0.15]">
         <div className="absolute inset-0" style={{ 
