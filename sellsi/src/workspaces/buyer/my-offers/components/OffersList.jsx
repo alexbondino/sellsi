@@ -27,6 +27,7 @@ import BlockIcon from '@mui/icons-material/Block'
 import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material'
 import MobileOfferCard from '../../../../shared/components/mobile/MobileOfferCard'
 import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion'
+import ConfirmDialog from '../../../../shared/components/modals/ConfirmDialog'
 
 // Mapa canónico de estados visuales
 const STATUS_MAP = {
@@ -126,6 +127,9 @@ const OffersList = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const [statusFilter, setStatusFilter] = React.useState('all')
   const [statusOverrides, setStatusOverrides] = React.useState({}) // { offer_id: 'reserved' | 'paid' | ... }
+  const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false)
+  const [offerToCancel, setOfferToCancel] = React.useState(null)
+  const [cancelLoading, setCancelLoading] = React.useState(false)
 
   // Preparar petición batch de thumbnails para los productos mostrados
   const productIds = React.useMemo(
@@ -175,13 +179,35 @@ const OffersList = ({
   // Debugging: limit noisy logs by counting a few rows only
   const debugCounterRef = React.useRef(0)
 
-  const handleCancelOffer = async (offerId) => {
+  const handleCancelOffer = (offerId) => {
+    const offer = offers.find((o) => o.id === offerId)
+    setOfferToCancel(offer)
+    setCancelDialogOpen(true)
+  }
+
+  const handleConfirmCancel = async () => {
+    if (!offerToCancel) return
+
+    setCancelLoading(true)
     try {
-      if (onCancelOffer)
-        return onCancelOffer(offers.find((o) => o.id === offerId))
-      if (cancelOffer) return await cancelOffer(offerId)
+      if (onCancelOffer) {
+        await onCancelOffer(offerToCancel)
+      } else if (cancelOffer) {
+        await cancelOffer(offerToCancel.id)
+      }
     } catch (error) {
       console.error('Error canceling offer:', error)
+    } finally {
+      setCancelLoading(false)
+      setCancelDialogOpen(false)
+      setOfferToCancel(null)
+    }
+  }
+
+  const handleCloseCancelDialog = () => {
+    if (!cancelLoading) {
+      setCancelDialogOpen(false)
+      setOfferToCancel(null)
     }
   }
 
@@ -203,16 +229,16 @@ const OffersList = ({
   const hasOffers = offers && offers.length > 0
 
   // Handler para acciones desde MobileOfferCard
-  const handleMobileAction = (action, offerData) => {
+  const handleMobileAction = (action, fullOffer) => {
     switch (action) {
       case 'addToCart':
-        handleAddToCart(offerData)
+        handleAddToCart(fullOffer)
         break
       case 'cancel':
-        handleCancelOffer(offerData.id)
+        handleCancelOffer(fullOffer.id)
         break
       case 'delete':
-        handleDeleteOffer(offerData.id)
+        handleDeleteOffer(fullOffer.id)
         break
       default:
         console.warn(`Acción desconocida: ${action}`)
@@ -287,31 +313,230 @@ const OffersList = ({
   // Mobile View: Cards
   if (isMobile) {
     return (
-      <Box sx={{ position: 'relative' }}>
+      <>
+        <Box sx={{ position: 'relative' }}>
+          {loading && hasOffers && (
+            <Box sx={{ position: 'absolute', top: 8, right: 12, zIndex: 10 }}>
+              <Typography variant="caption" color="text.secondary">
+                Actualizando…
+              </Typography>
+            </Box>
+          )}
+
+          <MobileFilterAccordion
+            currentFilter={statusFilter}
+            onFilterChange={setStatusFilter}
+            filterOptions={filterOptions}
+            label="Estado de ofertas"
+          />
+
+          <Box sx={{ px: { xs: 2, sm: 0 } }}>
+            {filtered.length === 0 ? (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  No hay ofertas con este estado
+                </Typography>
+              </Paper>
+            ) : (
+              filtered.map((o) => {
+                const product = o.product || {
+                  name: o.product_name || 'Producto',
+                  thumbnail: null,
+                }
+                const pid = product.id || product.product_id
+                const thumbRow =
+                  thumbnailsQuery.data && pid ? thumbnailsQuery.data[pid] : null
+
+                let avatarSrc = null
+                if (thumbRow) {
+                  try {
+                    if (
+                      thumbRow.thumbnails &&
+                      typeof thumbRow.thumbnails === 'object'
+                    ) {
+                      avatarSrc = thumbRow.thumbnails.mobile || null
+                    }
+                    if (!avatarSrc && thumbRow.thumbnail_url) {
+                      avatarSrc = thumbRow.thumbnail_url.replace(
+                        '_desktop_320x260.jpg',
+                        '_mobile_190x153.jpg'
+                      )
+                    }
+                  } catch (_) {}
+                }
+                if (!avatarSrc) {
+                  avatarSrc =
+                    product.thumbnail || product.imagen || product.image || null
+                }
+
+                return (
+                  <MobileOfferCard
+                    key={o.id}
+                    variant="buyer"
+                    fullOffer={o}
+                    data={{
+                      id: o.id,
+                      product_name: product.name,
+                      thumbnail_url: avatarSrc,
+                      status: o.status,
+                      created_at: o.created_at,
+                      quantity: o.quantity,
+                      offered_price: o.price,
+                      purchase_deadline: o.purchase_deadline,
+                      expires_at: o.expires_at,
+                      product: o.product,
+                      product_id: o.product_id || product.id,
+                      product_image: o.product_image || product.thumbnail,
+                    }}
+                    onAction={handleMobileAction}
+                  />
+                )
+              })
+            )}
+          </Box>
+        </Box>
+
+        {/* Modal de confirmación para cancelar oferta */}
+        <ConfirmDialog
+          open={cancelDialogOpen}
+          title="¿Cancelar esta oferta?"
+          description={`La oferta ${
+            offerToCancel
+              ? `de ${formatPrice(offerToCancel.offered_price)} por ${
+                  offerToCancel.offered_quantity
+                } unidad${offerToCancel.offered_quantity > 1 ? 'es' : ''}`
+              : ''
+          } será cancelada. Esta acción no se puede deshacer.`}
+          confirmText={cancelLoading ? 'Cancelando...' : 'Cancelar oferta'}
+          cancelText="Volver"
+          onConfirm={handleConfirmCancel}
+          onCancel={handleCloseCancelDialog}
+          disabled={cancelLoading}
+        />
+      </>
+    )
+  }
+
+  // Desktop View: Table (original)
+  return (
+    <>
+      <TableContainer
+        component={Paper}
+        sx={{ p: 0, position: 'relative', scrollbarGutter: 'stable' }}
+      >
         {loading && hasOffers && (
-          <Box sx={{ position: 'absolute', top: 8, right: 12, zIndex: 10 }}>
-            <Typography variant="caption" color="text.secondary">
-              Actualizando…
-            </Typography>
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              bgcolor: 'rgba(255,255,255,0.55)',
+              zIndex: 2,
+            }}
+          >
+            <Box sx={{ position: 'absolute', top: 8, right: 12 }}>
+              <Typography variant="caption" color="text.secondary">
+                Actualizando…
+              </Typography>
+            </Box>
           </Box>
         )}
-
-        <MobileFilterAccordion
-          currentFilter={statusFilter}
-          onFilterChange={setStatusFilter}
-          filterOptions={filterOptions}
-          label="Estado de ofertas"
-        />
-
-        <Box sx={{ px: { xs: 2, sm: 0 } }}>
-          {filtered.length === 0 ? (
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                No hay ofertas con este estado
-              </Typography>
-            </Paper>
-          ) : (
-            filtered.map((o) => {
+        <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
+          <Typography fontWeight={600}>Filtrar por estado:</Typography>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel id="offers-filter-label">Estado</InputLabel>
+            <Select
+              labelId="offers-filter-label"
+              value={statusFilter}
+              label="Estado"
+              onChange={(e) => setStatusFilter(e.target.value)}
+              MenuProps={{ disableScrollLock: true }}
+            >
+              <MenuItem value="all">Todos</MenuItem>
+              <MenuItem value="pending">Pendiente</MenuItem>
+              <MenuItem value="approved">Aprobada</MenuItem>
+              <MenuItem value="cancelled">Cancelada</MenuItem>
+              <MenuItem value="rejected">Rechazada</MenuItem>
+              <MenuItem value="expired">Caducada</MenuItem>
+              <MenuItem value="reserved">En Carrito</MenuItem>
+              <MenuItem value="paid">Pagada</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell colSpan={2}>
+                <Typography fontWeight={700}>Producto</Typography>
+              </TableCell>
+              <TableCell>
+                <Typography fontWeight={700}>Tiempo restante</Typography>
+              </TableCell>
+              <TableCell>
+                <Typography fontWeight={700}>Estado</Typography>
+              </TableCell>
+              <TableCell>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography fontWeight={700}>Acciones</Typography>
+                  <Tooltip
+                    placement="right"
+                    componentsProps={{
+                      tooltip: { sx: { maxWidth: 320, p: 1.25 } },
+                    }}
+                    title={
+                      <Box>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ color: 'common.white', fontWeight: 'bold' }}
+                          gutterBottom
+                        >
+                          Cómo usar Acciones
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: 'common.white' }}
+                          display="block"
+                        >
+                          Cuando una oferta es aprobada, la forma de completar
+                          la compra es agregando esa oferta al carrito desde
+                          esta sección. <br /> <br />
+                          Contarás con un máximo de 24 horas para hacer esto
+                          antes de que la oferta caduque.
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: 'common.white', mt: 1 }}
+                          display="block"
+                        >
+                          Para cancelar una oferta (Pendiente o Aprobada),
+                          utiliza la acción "Cancelar Oferta". Una vez
+                          cancelada, la oferta se marcará como "Cancelada" y
+                          podrás limpiarla si lo deseas.
+                        </Typography>
+                      </Box>
+                    }
+                  >
+                    <IconButton
+                      size="small"
+                      aria-label="Información de acciones"
+                    >
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filtered.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} sx={{ textAlign: 'center', py: 6 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No hay ofertas con este estado
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            )}
+            {filtered.map((o) => {
               const product = o.product || {
                 name: o.product_name || 'Producto',
                 thumbnail: null,
@@ -319,288 +544,188 @@ const OffersList = ({
               const pid = product.id || product.product_id
               const thumbRow =
                 thumbnailsQuery.data && pid ? thumbnailsQuery.data[pid] : null
-
+              // Prioridad: thumbnails.mobile -> thumbnail_url transformed -> product.thumbnail -> product.imagen -> null
               let avatarSrc = null
               if (thumbRow) {
                 try {
                   if (
                     thumbRow.thumbnails &&
                     typeof thumbRow.thumbnails === 'object'
-                  ) {
+                  )
                     avatarSrc = thumbRow.thumbnails.mobile || null
-                  }
-                  if (!avatarSrc && thumbRow.thumbnail_url) {
+                  if (!avatarSrc && thumbRow.thumbnail_url)
                     avatarSrc = thumbRow.thumbnail_url.replace(
                       '_desktop_320x260.jpg',
                       '_mobile_190x153.jpg'
                     )
-                  }
                 } catch (_) {}
               }
-              if (!avatarSrc) {
+              if (!avatarSrc)
                 avatarSrc =
                   product.thumbnail || product.imagen || product.image || null
-              }
 
+              // no-op: avatarSrc calculated above
               return (
-                <MobileOfferCard
+                <TableRow
                   key={o.id}
-                  variant="buyer"
-                  data={{
-                    id: o.id,
-                    product_name: product.name,
-                    thumbnail_url: avatarSrc,
-                    status: o.status,
-                    created_at: o.created_at,
-                    quantity: o.quantity,
-                    offered_price: o.price,
-                    purchase_deadline: o.purchase_deadline,
-                    expires_at: o.expires_at,
-                    product: o.product,
-                    product_id: o.product_id || product.id,
-                    product_image: o.product_image || product.thumbnail,
-                  }}
-                  onAction={handleMobileAction}
-                />
-              )
-            })
-          )}
-        </Box>
-      </Box>
-    )
-  }
-
-  // Desktop View: Table (original)
-  return (
-    <TableContainer
-      component={Paper}
-      sx={{ p: 0, position: 'relative', scrollbarGutter: 'stable' }}
-    >
-      {loading && hasOffers && (
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            bgcolor: 'rgba(255,255,255,0.55)',
-            zIndex: 2,
-          }}
-        >
-          <Box sx={{ position: 'absolute', top: 8, right: 12 }}>
-            <Typography variant="caption" color="text.secondary">
-              Actualizando…
-            </Typography>
-          </Box>
-        </Box>
-      )}
-      <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
-        <Typography fontWeight={600}>Filtrar por estado:</Typography>
-        <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel id="offers-filter-label">Estado</InputLabel>
-          <Select
-            labelId="offers-filter-label"
-            value={statusFilter}
-            label="Estado"
-            onChange={(e) => setStatusFilter(e.target.value)}
-            MenuProps={{ disableScrollLock: true }}
-          >
-            <MenuItem value="all">Todos</MenuItem>
-            <MenuItem value="pending">Pendiente</MenuItem>
-            <MenuItem value="approved">Aprobada</MenuItem>
-            <MenuItem value="cancelled">Cancelada</MenuItem>
-            <MenuItem value="rejected">Rechazada</MenuItem>
-            <MenuItem value="expired">Caducada</MenuItem>
-            <MenuItem value="reserved">En Carrito</MenuItem>
-            <MenuItem value="paid">Pagada</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell colSpan={2}>
-              <Typography fontWeight={700}>Producto</Typography>
-            </TableCell>
-            <TableCell>
-              <Typography fontWeight={700}>Tiempo restante</Typography>
-            </TableCell>
-            <TableCell>
-              <Typography fontWeight={700}>Estado</Typography>
-            </TableCell>
-            <TableCell>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Typography fontWeight={700}>Acciones</Typography>
-                <Tooltip
-                  placement="right"
-                  componentsProps={{
-                    tooltip: { sx: { maxWidth: 320, p: 1.25 } },
-                  }}
-                  title={
-                    <Box>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{ color: 'common.white', fontWeight: 'bold' }}
-                        gutterBottom
-                      >
-                        Cómo usar Acciones
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ color: 'common.white' }}
-                        display="block"
-                      >
-                        Cuando una oferta es aprobada, la forma de completar la
-                        compra es agregando esa oferta al carrito desde esta
-                        sección. <br /> <br />
-                        Contarás con un máximo de 24 horas para hacer esto antes
-                        de que la oferta caduque.
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ color: 'common.white', mt: 1 }}
-                        display="block"
-                      >
-                        Para cancelar una oferta (Pendiente o Aprobada), utiliza
-                        la acción "Cancelar Oferta". Una vez cancelada, la
-                        oferta se marcará como "Cancelada" y podrás limpiarla si
-                        lo deseas.
-                      </Typography>
-                    </Box>
-                  }
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
-                  <IconButton size="small" aria-label="Información de acciones">
-                    <InfoOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filtered.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={5} sx={{ textAlign: 'center', py: 6 }}>
-                <Typography variant="body2" color="text.secondary">
-                  No hay ofertas con este estado
-                </Typography>
-              </TableCell>
-            </TableRow>
-          )}
-          {filtered.map((o) => {
-            const product = o.product || {
-              name: o.product_name || 'Producto',
-              thumbnail: null,
-            }
-            const pid = product.id || product.product_id
-            const thumbRow =
-              thumbnailsQuery.data && pid ? thumbnailsQuery.data[pid] : null
-            // Prioridad: thumbnails.mobile -> thumbnail_url transformed -> product.thumbnail -> product.imagen -> null
-            let avatarSrc = null
-            if (thumbRow) {
-              try {
-                if (
-                  thumbRow.thumbnails &&
-                  typeof thumbRow.thumbnails === 'object'
-                )
-                  avatarSrc = thumbRow.thumbnails.mobile || null
-                if (!avatarSrc && thumbRow.thumbnail_url)
-                  avatarSrc = thumbRow.thumbnail_url.replace(
-                    '_desktop_320x260.jpg',
-                    '_mobile_190x153.jpg'
-                  )
-              } catch (_) {}
-            }
-            if (!avatarSrc)
-              avatarSrc =
-                product.thumbnail || product.imagen || product.image || null
-
-            // no-op: avatarSrc calculated above
-            return (
-              <TableRow
-                key={o.id}
-                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-              >
-                <TableCell sx={{ width: 100 }}>
-                  <Avatar
-                    variant="rounded"
-                    src={avatarSrc || undefined}
-                    alt={product.name}
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      bgcolor: avatarSrc ? 'transparent' : 'action.hover',
-                    }}
-                  >
-                    {!avatarSrc && <ShoppingCartIcon />}
-                  </Avatar>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="subtitle1" fontWeight={700}>
-                    {product.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {o.quantity} uds • {formatPrice(o.price)}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  {/* Mostrar tiempo restante para pendientes usando expires_at (si existe) */}
-                  {(() => {
-                    // Fuente primaria para ventana post-aceptación: purchase_deadline
-                    const now = Date.now()
-                    const pdMs = o.purchase_deadline
-                      ? new Date(o.purchase_deadline).getTime()
-                      : null
-                    const expMs = o.expires_at
-                      ? new Date(o.expires_at).getTime()
-                      : null
-                    // Pending: usar expires_at (48h). Mostrar sólo si <48h (coherencia previa) y >0.
-                    if (o.status === 'pending' && expMs != null) {
-                      const remaining = expMs - now
-                      if (remaining <= 0)
-                        return <Typography>Caducada</Typography>
-                      if (remaining < 48 * 60 * 60 * 1000) {
-                        const hrs = Math.floor(remaining / 3600000)
-                        const mins = Math.floor((remaining % 3600000) / 60000)
-                        if (hrs >= 1)
-                          return <Typography>{`${hrs} h ${mins} m`}</Typography>
-                        return <Typography>{`${mins} m`}</Typography>
-                      }
-                      return <Typography color="text.secondary">-</Typography>
-                    }
-                    // Approved: usar purchase_deadline; fallback expires_at si falta.
-                    if (o.status === 'approved') {
-                      const target = pdMs || expMs
-                      if (target != null) {
-                        const remaining = target - now
+                  <TableCell sx={{ width: 100 }}>
+                    <Avatar
+                      variant="rounded"
+                      src={avatarSrc || undefined}
+                      alt={product.name}
+                      sx={{
+                        width: 80,
+                        height: 80,
+                        bgcolor: avatarSrc ? 'transparent' : 'action.hover',
+                      }}
+                    >
+                      {!avatarSrc && <ShoppingCartIcon />}
+                    </Avatar>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      {product.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {o.quantity} uds • {formatPrice(o.price)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {/* Mostrar tiempo restante para pendientes usando expires_at (si existe) */}
+                    {(() => {
+                      // Fuente primaria para ventana post-aceptación: purchase_deadline
+                      const now = Date.now()
+                      const pdMs = o.purchase_deadline
+                        ? new Date(o.purchase_deadline).getTime()
+                        : null
+                      const expMs = o.expires_at
+                        ? new Date(o.expires_at).getTime()
+                        : null
+                      // Pending: usar expires_at (48h). Mostrar sólo si <48h (coherencia previa) y >0.
+                      if (o.status === 'pending' && expMs != null) {
+                        const remaining = expMs - now
                         if (remaining <= 0)
                           return <Typography>Caducada</Typography>
-                        const hrs = Math.floor(remaining / 3600000)
-                        const mins = Math.floor((remaining % 3600000) / 60000)
-                        if (hrs >= 1)
-                          return <Typography>{`${hrs} h ${mins} m`}</Typography>
-                        return <Typography>{`${mins} m`}</Typography>
+                        if (remaining < 48 * 60 * 60 * 1000) {
+                          const hrs = Math.floor(remaining / 3600000)
+                          const mins = Math.floor((remaining % 3600000) / 60000)
+                          if (hrs >= 1)
+                            return (
+                              <Typography>{`${hrs} h ${mins} m`}</Typography>
+                            )
+                          return <Typography>{`${mins} m`}</Typography>
+                        }
+                        return <Typography color="text.secondary">-</Typography>
                       }
-                      return <Typography>Menos de 24 horas</Typography>
-                    }
-                    return <Typography color="text.secondary">-</Typography>
-                  })()}
-                </TableCell>
-                <TableCell>
-                  <SafeChip
-                    label={(STATUS_MAP[o.status] || STATUS_MAP.pending).label}
-                    color={(STATUS_MAP[o.status] || STATUS_MAP.pending).color}
-                  />
-                </TableCell>
-                <TableCell>
-                  {/* Actions grouped so buttons stay on the same row and aligned */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {/* Add to cart action for approved offers */}
-                    {o.status === 'approved' && (
-                      <Tooltip title="Agregar al carrito">
-                        {onAddToCart ? (
+                      // Approved: usar purchase_deadline; fallback expires_at si falta.
+                      if (o.status === 'approved') {
+                        const target = pdMs || expMs
+                        if (target != null) {
+                          const remaining = target - now
+                          if (remaining <= 0)
+                            return <Typography>Caducada</Typography>
+                          const hrs = Math.floor(remaining / 3600000)
+                          const mins = Math.floor((remaining % 3600000) / 60000)
+                          if (hrs >= 1)
+                            return (
+                              <Typography>{`${hrs} h ${mins} m`}</Typography>
+                            )
+                          return <Typography>{`${mins} m`}</Typography>
+                        }
+                        return <Typography>Menos de 24 horas</Typography>
+                      }
+                      return <Typography color="text.secondary">-</Typography>
+                    })()}
+                  </TableCell>
+                  <TableCell>
+                    <SafeChip
+                      label={(STATUS_MAP[o.status] || STATUS_MAP.pending).label}
+                      color={(STATUS_MAP[o.status] || STATUS_MAP.pending).color}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {/* Actions grouped so buttons stay on the same row and aligned */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {/* Add to cart action for approved offers */}
+                      {o.status === 'approved' && (
+                        <Tooltip title="Agregar al carrito">
+                          {onAddToCart ? (
+                            <IconButton
+                              size="small"
+                              aria-label="Agregar al carrito"
+                              onClick={() => handleAddToCart(o)}
+                              sx={{
+                                bgcolor: 'transparent',
+                                p: 0.5,
+                                '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
+                                '&:focus': {
+                                  boxShadow: 'none',
+                                  outline: 'none',
+                                },
+                                '&.Mui-focusVisible': {
+                                  boxShadow: 'none',
+                                  outline: 'none',
+                                },
+                              }}
+                            >
+                              <ShoppingCartIcon
+                                sx={{ color: 'primary.main' }}
+                              />
+                            </IconButton>
+                          ) : (
+                            <AddToCart
+                              product={
+                                o.product || {
+                                  id: o.product_id,
+                                  name: o.product_name,
+                                  thumbnail: o.product_image,
+                                }
+                              }
+                              variant="icon"
+                              size="small"
+                              color="primary"
+                              sx={{ p: 0.5 }}
+                              offer={o}
+                            />
+                          )}
+                        </Tooltip>
+                      )}
+
+                      {/* Cancel action for pending or approved offers (next to add-to-cart) */}
+                      {(o.status === 'pending' || o.status === 'approved') && (
+                        <Tooltip title="Cancelar Oferta">
                           <IconButton
                             size="small"
-                            aria-label="Agregar al carrito"
-                            onClick={() => handleAddToCart(o)}
+                            aria-label="Cancelar Oferta"
+                            onClick={() => handleCancelOffer(o.id)}
+                            sx={{
+                              bgcolor: 'transparent',
+                              p: 0.5,
+                              color: 'error.main',
+                              '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
+                              '&:focus': { boxShadow: 'none', outline: 'none' },
+                              '&.Mui-focusVisible': {
+                                boxShadow: 'none',
+                                outline: 'none',
+                              },
+                            }}
+                          >
+                            <BlockIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+
+                      {/* Cleanup (delete) action for rejected, cancelled, expired, or paid offers */}
+                      {(o.status === 'rejected' ||
+                        o.status === 'cancelled' ||
+                        o.status === 'expired' ||
+                        o.status === 'paid') && (
+                        <Tooltip title="Limpiar esta oferta">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteOffer(o.id)}
                             sx={{
                               bgcolor: 'transparent',
                               p: 0.5,
@@ -612,83 +737,37 @@ const OffersList = ({
                               },
                             }}
                           >
-                            <ShoppingCartIcon sx={{ color: 'primary.main' }} />
+                            <DeleteIcon />
                           </IconButton>
-                        ) : (
-                          <AddToCart
-                            product={
-                              o.product || {
-                                id: o.product_id,
-                                name: o.product_name,
-                                thumbnail: o.product_image,
-                              }
-                            }
-                            variant="icon"
-                            size="small"
-                            color="primary"
-                            sx={{ p: 0.5 }}
-                            offer={o}
-                          />
-                        )}
-                      </Tooltip>
-                    )}
+                        </Tooltip>
+                      )}
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-                    {/* Cancel action for pending or approved offers (next to add-to-cart) */}
-                    {(o.status === 'pending' || o.status === 'approved') && (
-                      <Tooltip title="Cancelar Oferta">
-                        <IconButton
-                          size="small"
-                          aria-label="Cancelar Oferta"
-                          onClick={() => handleCancelOffer(o.id)}
-                          sx={{
-                            bgcolor: 'transparent',
-                            p: 0.5,
-                            color: 'error.main',
-                            '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
-                            '&:focus': { boxShadow: 'none', outline: 'none' },
-                            '&.Mui-focusVisible': {
-                              boxShadow: 'none',
-                              outline: 'none',
-                            },
-                          }}
-                        >
-                          <BlockIcon />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-
-                    {/* Cleanup (delete) action for rejected, cancelled, expired, or paid offers */}
-                    {(o.status === 'rejected' ||
-                      o.status === 'cancelled' ||
-                      o.status === 'expired' ||
-                      o.status === 'paid') && (
-                      <Tooltip title="Limpiar esta oferta">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteOffer(o.id)}
-                          sx={{
-                            bgcolor: 'transparent',
-                            p: 0.5,
-                            '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
-                            '&:focus': { boxShadow: 'none', outline: 'none' },
-                            '&.Mui-focusVisible': {
-                              boxShadow: 'none',
-                              outline: 'none',
-                            },
-                          }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </Box>
-                </TableCell>
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
-    </TableContainer>
+      {/* Modal de confirmación para cancelar oferta */}
+      <ConfirmDialog
+        open={cancelDialogOpen}
+        title="¿Cancelar esta oferta?"
+        description={`La oferta ${
+          offerToCancel
+            ? `de ${formatPrice(offerToCancel.offered_price)} por ${
+                offerToCancel.offered_quantity
+              } unidad${offerToCancel.offered_quantity > 1 ? 'es' : ''}`
+            : ''
+        } será cancelada. Esta acción no se puede deshacer.`}
+        confirmText={cancelLoading ? 'Cancelando...' : 'Cancelar oferta'}
+        cancelText="Volver"
+        onConfirm={handleConfirmCancel}
+        onCancel={handleCloseCancelDialog}
+        disabled={cancelLoading}
+      />
+    </>
   )
 }
 

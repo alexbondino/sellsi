@@ -28,8 +28,11 @@ import AddToCart from '../cart/AddToCart'
  * - 'buyer': Ofertas del comprador (BuyerOffers)
  * - 'supplier': Ofertas recibidas del proveedor (SupplierOffers)
  * - 'order': Pedidos del proveedor (MyOrdersPage)
+ *
+ * @param {Object} data - Datos parciales para renderizar la card (UI)
+ * @param {Object} fullOffer - Objeto completo de oferta (para handlers y modales)
  */
-const MobileOfferCard = ({ variant, data, onAction, isMobile }) => {
+const MobileOfferCard = ({ variant, data, fullOffer, onAction, isMobile }) => {
   // Validación de variant
   const validVariants = ['buyer', 'supplier', 'order']
   if (!validVariants.includes(variant)) {
@@ -57,19 +60,47 @@ const MobileOfferCard = ({ variant, data, onAction, isMobile }) => {
     product_image,
   } = data
 
-  // Mapeo de estados a colores y etiquetas (DEBE COINCIDIR CON OffersList.jsx)
-  const STATUS_CONFIG = {
-    pending: { color: 'warning', label: 'Pendiente' },
-    approved: { color: 'success', label: 'Aprobada' },
-    rejected: { color: 'error', label: 'Rechazada' },
-    expired: { color: 'error', label: 'Caducada' },
-    cancelled: { color: 'error', label: 'Cancelada' },
-    reserved: { color: 'info', label: 'En Carrito' },
-    paid: { color: 'success', label: 'Pagada' },
-    accepted: { color: 'success', label: 'Aceptado' },
-    dispatched: { color: 'info', label: 'En Tránsito' },
-    delivered: { color: 'success', label: 'Entregado' },
+  // Mapeo de estados a colores y etiquetas según variante
+  const getStatusConfig = () => {
+    // Configuración base
+    const base = {
+      pending: { color: 'warning', label: 'Pendiente' },
+      rejected: { color: 'error', label: 'Rechazada' },
+      expired: { color: 'error', label: 'Caducada' },
+      cancelled: { color: 'error', label: 'Cancelada' },
+    }
+
+    // Configuración específica por variante
+    if (variant === 'buyer') {
+      return {
+        ...base,
+        approved: { color: 'success', label: 'Aprobada' },
+        reserved: { color: 'info', label: 'En Carrito' },
+        paid: { color: 'success', label: 'Pagada' },
+      }
+    }
+
+    if (variant === 'supplier') {
+      return {
+        ...base,
+        approved: { color: 'success', label: 'Aceptada' }, // Desktop: Aceptada
+        paid: { color: 'success', label: 'Aceptada' }, // Desktop: Aceptada
+      }
+    }
+
+    if (variant === 'order') {
+      return {
+        ...base,
+        accepted: { color: 'success', label: 'Aceptado' },
+        dispatched: { color: 'info', label: 'En Tránsito' },
+        delivered: { color: 'success', label: 'Entregado' },
+      }
+    }
+
+    return base
   }
+
+  const STATUS_CONFIG = getStatusConfig()
 
   const statusInfo = STATUS_CONFIG[status] || {
     color: 'default',
@@ -131,46 +162,73 @@ const MobileOfferCard = ({ variant, data, onAction, isMobile }) => {
       return (
         <>
           {status === 'approved' && (
-            <AddToCart
-              product={
-                product || {
-                  id: product_id,
-                  name: product_name,
-                  thumbnail: product_image || thumbnail_url,
+            <>
+              <AddToCart
+                product={
+                  product || {
+                    id: product_id,
+                    name: product_name,
+                    thumbnail: product_image || thumbnail_url,
+                  }
                 }
-              }
-              variant="button"
-              size="large"
-              fullWidth
-              offer={data}
-              sx={{ minHeight: 44 }}
-            />
+                variant="button"
+                size="large"
+                fullWidth
+                offer={fullOffer || data}
+                sx={{ minHeight: 44 }}
+              />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ textAlign: 'center', display: 'block', mt: 0.5 }}
+              >
+                Añade al carrito para completar el pago
+              </Typography>
+            </>
           )}
           {(status === 'pending' || status === 'approved') && (
-            <Button
-              variant="outlined"
-              color="error"
-              fullWidth
-              size="large"
-              sx={{ minHeight: 44 }}
-              startIcon={<CancelIcon />}
-              onClick={() => onAction('cancel', data)}
-            >
-              Cancelar Oferta
-            </Button>
+            <>
+              <Button
+                variant="outlined"
+                color="error"
+                fullWidth
+                size="large"
+                sx={{ minHeight: 44 }}
+                startIcon={<CancelIcon />}
+                onClick={() => onAction('cancel', fullOffer || data)}
+              >
+                Cancelar Oferta
+              </Button>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ textAlign: 'center', display: 'block', mt: 0.5 }}
+              >
+                Cancela tu oferta antes de que sea aceptada
+              </Typography>
+            </>
           )}
           {(status === 'rejected' ||
             status === 'cancelled' ||
             status === 'expired' ||
             status === 'paid') && (
-            <IconButton
-              color="error"
-              sx={{ minWidth: 44, minHeight: 44 }}
-              onClick={() => onAction('delete', data)}
-              aria-label="Eliminar oferta"
-            >
-              <DeleteIcon />
-            </IconButton>
+            <Box sx={{ textAlign: 'center' }}>
+              <IconButton
+                color="error"
+                sx={{ minWidth: 44, minHeight: 44 }}
+                onClick={() => onAction('delete', fullOffer || data)}
+                aria-label="Eliminar oferta"
+              >
+                <DeleteIcon />
+              </IconButton>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+              >
+                Eliminar de tu historial
+              </Typography>
+            </Box>
           )}
         </>
       )
@@ -188,33 +246,56 @@ const MobileOfferCard = ({ variant, data, onAction, isMobile }) => {
                 size="large"
                 sx={{ minHeight: 44 }}
                 startIcon={<CheckCircleIcon />}
-                onClick={() => onAction('accept', data)}
+                onClick={() => onAction('accept', fullOffer || data)}
               >
                 Aceptar
               </Button>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ textAlign: 'center', display: 'block', mt: 0.5 }}
+              >
+                Reserva inventario y notifica al comprador
+              </Typography>
               <Button
                 variant="outlined"
                 color="error"
                 fullWidth
                 size="large"
-                sx={{ minHeight: 44 }}
-                onClick={() => onAction('reject', data)}
+                sx={{ minHeight: 44, mt: 1 }}
+                onClick={() => onAction('reject', fullOffer || data)}
               >
                 Rechazar
               </Button>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ textAlign: 'center', display: 'block', mt: 0.5 }}
+              >
+                Rechaza y notifica al ofertante
+              </Typography>
             </>
           )}
           {(status === 'approved' ||
             status === 'rejected' ||
             status === 'paid') && (
-            <IconButton
-              color="error"
-              sx={{ minWidth: 44, minHeight: 44 }}
-              onClick={() => onAction('delete', data)}
-              aria-label="Eliminar oferta"
-            >
-              <DeleteIcon />
-            </IconButton>
+            <Box sx={{ textAlign: 'center' }}>
+              <IconButton
+                color="error"
+                sx={{ minWidth: 44, minHeight: 44 }}
+                onClick={() => onAction('delete', fullOffer || data)}
+                aria-label="Eliminar oferta"
+              >
+                <DeleteIcon />
+              </IconButton>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+              >
+                Eliminar de tu historial
+              </Typography>
+            </Box>
           )}
         </>
       )
@@ -429,6 +510,7 @@ const MobileOfferCard = ({ variant, data, onAction, isMobile }) => {
 
 MobileOfferCard.propTypes = {
   variant: PropTypes.oneOf(['buyer', 'supplier', 'order']).isRequired,
+  fullOffer: PropTypes.object, // Objeto completo de oferta (para handlers y modales)
   data: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     product_name: PropTypes.string.isRequired,

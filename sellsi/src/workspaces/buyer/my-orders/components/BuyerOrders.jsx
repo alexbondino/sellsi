@@ -84,6 +84,8 @@ const BuyerOrders = memo(function BuyerOrders() {
     orders,
     loading,
     error,
+    totalCount,
+    fetchOrders,
     hideExpiredOrder,
     getProductImage,
     getStatusDisplayName,
@@ -177,14 +179,35 @@ const BuyerOrders = memo(function BuyerOrders() {
   }, [orderToDelete, hideExpiredOrder, handleCloseDeleteDialog])
 
   // ============================================================================
-  // PAGINACIÓN (5 órdenes por página)
+  // PAGINACIÓN BACKEND (20 órdenes por página)
   // ============================================================================
-  const ORDERS_PER_PAGE = 5
+  const ORDERS_PER_PAGE = 20
   const [currentPage, setCurrentPage] = React.useState(1)
+  const fetchTriggeredRef = React.useRef(false)
 
+  // Calcular total de páginas basado en totalCount o fallback a orders en memoria
   const totalPages = React.useMemo(() => {
+    // Si tenemos totalCount del backend, usarlo
+    if (totalCount > 0) {
+      return Math.max(1, Math.ceil(totalCount / ORDERS_PER_PAGE))
+    }
+    // Fallback: si paginación backend no está lista, usar cliente
+    // Esto permite que funcione incluso si totalCount no se implementa
     return Math.max(1, Math.ceil((orders?.length || 0) / ORDERS_PER_PAGE))
-  }, [orders])
+  }, [orders, totalCount])
+
+  // Fetch orders cuando cambia la página o buyerId
+  React.useEffect(() => {
+    if (!buyerId || !authResolved) return
+
+    const offset = (currentPage - 1) * ORDERS_PER_PAGE
+
+    // Llamar fetchOrders directamente, no incluirlo en deps para evitar loops
+    fetchOrders({ limit: ORDERS_PER_PAGE, offset })
+    fetchTriggeredRef.current = true
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, buyerId, authResolved])
 
   // Asegura que currentPage esté dentro de rango cuando cambian las órdenes
   React.useEffect(() => {
@@ -202,11 +225,8 @@ const BuyerOrders = memo(function BuyerOrders() {
     [totalPages]
   )
 
-  const startIndex = (currentPage - 1) * ORDERS_PER_PAGE
-  const endIndex = startIndex + ORDERS_PER_PAGE
-  const visibleOrders = React.useMemo(() => {
-    return (orders || []).slice(startIndex, endIndex)
-  }, [orders, startIndex, endIndex])
+  // Mostrar todas las órdenes cargadas (ya vienen paginadas del backend)
+  const visibleOrders = orders || []
 
   // DEBUG DIAGNOSTICS disabled for production
   const DEBUG_BUYER_ORDERS_UI = false
@@ -324,7 +344,7 @@ const BuyerOrders = memo(function BuyerOrders() {
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 4.5, md: 5 },
-          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
+          ml: { xs: 0, md: 10, lg: 14, xl: 14 },
           px: { xs: 0, md: 3 },
           pb: SPACING_BOTTOM_MAIN,
         }}
@@ -358,9 +378,9 @@ const BuyerOrders = memo(function BuyerOrders() {
           {/* Lista de pedidos */}
           {orders.length > 0 ? (
             <>
-              {/* Paginación superior */}
+              {/* Paginación superior - usa totalCount si está disponible */}
               <OrdersPagination
-                totalItems={orders?.length || 0}
+                totalItems={totalCount > 0 ? totalCount : orders?.length || 0}
                 itemsPerPage={ORDERS_PER_PAGE}
                 currentPage={currentPage}
                 onPageChange={handlePageChange}
@@ -1283,9 +1303,9 @@ const BuyerOrders = memo(function BuyerOrders() {
                   disabled={deleteLoading}
                 />
               </Box>
-              {/* Paginación inferior */}
+              {/* Paginación inferior - usa totalCount si está disponible */}
               <OrdersPagination
-                totalItems={orders?.length || 0}
+                totalItems={totalCount > 0 ? totalCount : orders?.length || 0}
                 itemsPerPage={ORDERS_PER_PAGE}
                 currentPage={currentPage}
                 onPageChange={handlePageChange}

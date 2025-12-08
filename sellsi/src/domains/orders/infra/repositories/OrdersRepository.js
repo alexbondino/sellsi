@@ -1,11 +1,12 @@
-import { supabase } from '../../../../services/supabase';
+import { supabase } from '../../../../services/supabase'
 
 // Encapsula queries a tabla 'orders'
 export class OrdersRepository {
   async listByBuyer(buyerId, { limit, offset } = {}) {
     let query = supabase
       .from('orders')
-      .select(`
+      .select(
+        `
           id,
           cart_id,
           user_id,
@@ -25,21 +26,23 @@ export class OrdersRepository {
           updated_at,
           supplier_parts_meta,
           hidden_by_buyer
-        `)
+        `,
+        { count: 'exact' }
+      ) // Agregamos count para paginación
       .eq('user_id', buyerId)
       .in('payment_status', ['paid', 'pending', 'expired'])
       // Filter out orders hidden by buyer (soft-delete for expired orders)
       .or('hidden_by_buyer.is.null,hidden_by_buyer.eq.false')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
     if (typeof limit === 'number') {
       if (typeof offset === 'number') {
-        const to = offset + limit - 1;
-        query = query.range(offset, to);
+        const to = offset + limit - 1
+        query = query.range(offset, to)
       } else {
-        query = query.limit(limit);
+        query = query.limit(limit)
       }
     }
-    return query;
+    return query
   }
 
   async updateStatus(orderId, updateData) {
@@ -48,7 +51,7 @@ export class OrdersRepository {
       .update(updateData)
       .eq('id', orderId)
       .select('*')
-      .single();
+      .single()
   }
 
   async getMinimalStatuses(buyerId) {
@@ -57,7 +60,7 @@ export class OrdersRepository {
       .select('id, payment_status, status, updated_at')
       .eq('user_id', buyerId)
       .in('payment_status', ['paid', 'pending', 'expired'])
-      .order('updated_at', { ascending: false });
+      .order('updated_at', { ascending: false })
   }
 
   async getPaymentStatus(orderId) {
@@ -65,8 +68,8 @@ export class OrdersRepository {
       .from('orders')
       .select('id, payment_status')
       .eq('id', orderId)
-      .maybeSingle();
+      .maybeSingle()
   }
 }
 
-export const ordersRepository = new OrdersRepository();
+export const ordersRepository = new OrdersRepository()
