@@ -53,7 +53,7 @@ const Logo = memo(() => (
     <Typography
       variant="h6"
       sx={{
-        color: '#222',
+        color: '#2E52B2',
         fontWeight: 700,
         fontSize: 18,
         fontStyle: 'italic',
@@ -66,46 +66,13 @@ const Logo = memo(() => (
 
 // ✅ LOGIN FORM COMPONENT
 const LoginForm = memo(({ state, dispatch, onSubmit, onGoogleLogin }) => (
-  <Paper
-    elevation={3}
+  <Box
     sx={{
       p: 3,
       width: CONSTANTS.FORM_WIDTH,
-      maxWidth: '90%',
-      mt: 3,
-      mb: 3,
-      borderRadius: 2,
+      maxWidth: '100%',
     }}
   >
-    {/* Botón de Google */}
-    <Button
-      fullWidth
-      variant="outlined"
-      startIcon={<GoogleIcon />}
-      onClick={onGoogleLogin}
-      sx={{
-        mb: 2,
-        py: 1.2,
-        borderColor: '#dadce0',
-        color: '#3c4043',
-        textTransform: 'none',
-        fontSize: 14,
-        fontWeight: 500,
-        '&:hover': {
-          borderColor: '#d2d3d4',
-          backgroundColor: '#f8f9fa',
-        },
-      }}
-    >
-      Continuar con Google
-    </Button>
-
-    <Divider sx={{ my: 2 }}>
-      <Typography variant="body2" color="text.secondary">
-        o
-      </Typography>
-    </Divider>
-
     <form onSubmit={onSubmit}>
       <Box display="flex" flexDirection="column" gap={1.5}>
         <TextField
@@ -158,19 +125,48 @@ const LoginForm = memo(({ state, dispatch, onSubmit, onGoogleLogin }) => (
           <PrimaryButton
             type="submit"
             sx={{
-              width: '40%',
-              minWidth: 120,
+              width: '60%',
+              minWidth: 180,
               height: 40,
               fontSize: 16,
               fontWeight: 700,
             }}
           >
-            Aceptar
+            Iniciar Sesión
           </PrimaryButton>
         </Box>
       </Box>
     </form>
-  </Paper>
+
+    <Divider sx={{ my: 2 }}>
+      <Typography variant="body2" color="text.secondary">
+        o
+      </Typography>
+    </Divider>
+
+    {/* Botón de Google */}
+    <Button
+      fullWidth
+      variant="outlined"
+      startIcon={<GoogleIcon />}
+      onClick={onGoogleLogin}
+      sx={{
+        mb: 2,
+        py: 1.2,
+        borderColor: '#dadce0',
+        color: '#3c4043',
+        textTransform: 'none',
+        fontSize: 14,
+        fontWeight: 500,
+        '&:hover': {
+          borderColor: '#d2d3d4',
+          backgroundColor: '#f8f9fa',
+        },
+      }}
+    >
+      Continuar con Google
+    </Button>
+  </Box>
 ));
 
 // ✅ FOOTER LINKS COMPONENT
@@ -339,7 +335,7 @@ export default function Login({ open, onClose, onOpenRegister }) {
               display="flex"
               flexDirection="column"
               alignItems="center"
-              sx={{ p: 3 }}
+              sx={{ p: 0, py: 4 }}
             >
               <Logo />
               <LoginForm
