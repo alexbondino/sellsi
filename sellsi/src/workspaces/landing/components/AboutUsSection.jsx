@@ -34,70 +34,40 @@ const AboutUsSection = ({ quienesSomosRef }) => {
           textAlign: { xs: 'center', md: 'left' },
         }}
       >
-        ¿Quiénes Somos?
+        Somos Sellsi
       </Typography>
 
-      {/* Párrafo 1 */}
+      {/* Subtítulo */}
+      <Typography
+        variant="h3"
+        sx={{
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: 600,
+          color: 'primary.main',
+          mb: 3,
+          textAlign: { xs: 'center', md: 'left' },
+        }}
+      >
+        Simplificamos el comercio entre empresas
+      </Typography>
+
+      {/* Texto */}
       <Typography
         variant="h3"
         sx={{
           lineHeight: 1.7,
           color: 'text.primary',
           maxWidth: '100%',
-          mb: 3,
         }}
       >
-        En{' '}
+        En un mercado altamente complejo,{' '}
         <Box component="span" sx={{ fontWeight: 800, color: 'primary.main' }}>
           Sellsi
         </Box>{' '}
-        ayudamos a
-        <Box component="span" sx={{ fontWeight: 700, color: 'primary.main' }}>
-          {' '}
-          empresas compradoras
-        </Box>{' '}
-        a encontrar
-        <Box component="span" sx={{ fontWeight: 700, color: 'primary.main' }}>
-          {' '}
-          proveedores confiables
-        </Box>{' '}
-        y gestionar sus compras en un
-        <Box component="span" sx={{ fontWeight: 700, color: 'primary.main' }}>
-          {' '}
-          marketplace B2B
-        </Box>{' '}
-        simple, seguro y transparente.
-      </Typography>
-
-      {/* Párrafo 2 */}
-      <Typography
-        variant="h3"
-        sx={{
-          lineHeight: 1.7,
-          color: 'text.primary',
-          maxWidth: '100%',
-        }}
-      >
-        Para{' '}
-        <Box component="span" sx={{ fontWeight: 700, color: 'primary.main' }}>
-          proveedores
+        aporta claridad. Desarrollamos tecnología para transformar la manera en que las empresas interactúan.{' '}
+        <Box component="span" sx={{ color: 'primary.main', fontWeight: 600 }}>
+          Simple. Seguro. Transparente.
         </Box>
-        , ofrecemos un canal digital para
-        <Box component="span" sx={{ fontWeight: 700, color: 'primary.main' }}>
-          {' '}
-          aumentar la visibilidad
-        </Box>
-        ,
-        <Box component="span" sx={{ fontWeight: 700, color: 'primary.main' }}>
-          {' '}
-          llegar a nuevos clientes
-        </Box>{' '}
-        y
-        <Box component="span" sx={{ fontWeight: 700, color: 'primary.main' }}>
-          {' '}
-          vender con control
-        </Box>{' '}
-        sobre precios y stock.
       </Typography>
     </Box>
   );

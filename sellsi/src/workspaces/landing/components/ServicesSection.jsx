@@ -159,16 +159,13 @@ export default function ServicesSection({
             }}
           >
             <Bullet color="#2E52B2">
-              Accede a proveedores verificados: Encuentra socios comerciales
-              confiables en minutos.
+              Accede a proveedores verificados, encuentra socios comerciales confiables en minutos.
             </Bullet>
             <Bullet color="#2E52B2">
-              Optimiza tus tiempos de compra: Cotiza en línea, negocia volumen y
-              cierra tratos en tiempo récord, sin cadenas de correos.
+              Optimiza tus tiempos de compra cotizando en línea, negocia volumen y cierra tratos en tiempo récord, sin cadenas de correos.
             </Bullet>
             <Bullet color="#2E52B2">
-              Simplifica tu gestión: Realiza compras seguras y obtén tus
-              facturas al instante en nuestra plataforma.
+              Simplifica tu gestión realizando compras seguras y obtén tus facturas al instante en nuestra plataforma.
             </Bullet>
           </Box>
 
@@ -248,16 +245,13 @@ export default function ServicesSection({
             sx={{ display: 'grid', gap: 1.25, mt: 4, '& *': { fontSize: 18 } }}
           >
             <Bullet color="#F59E0B">
-              Accede a demanda calificada: Conecta con una red de empresas en
-              Chile listas para comprar, sin salir a prospectar.
+              Accede a demanda calificada conectando con una red de empresas en Chile listas para comprar, sin salir a prospectar.
             </Bullet>
             <Bullet color="#F59E0B">
-              Recibe cotizaciones directas: Digitaliza tu catálogo y cierra
-              ventas por volumen con clientes que buscan lo que ofreces.
+              Recibe cotizaciones directas, digitaliza tu catálogo y cierra ventas por volumen con clientes que buscan lo que ofreces.
             </Bullet>
             <Bullet color="#F59E0B">
-              Centraliza tu operación: Gestiona pedidos, negocia precios y emite
-              tus facturas automáticamente en nuestra plataforma.
+              Centraliza tu operación gestionando pedidos, negociando precios y emitiendo tus facturas automáticamente en nuestra plataforma.
             </Bullet>
           </Box>
 

@@ -22,7 +22,8 @@ function AppContent() {
     location.pathname === '/' ||
     location.pathname.startsWith('/marketplace') ||
     location.pathname === '/login' ||
-    location.pathname === '/crear-cuenta';
+    location.pathname === '/crear-cuenta' ||
+    location.pathname === '/tailwind';
 
   if (loadingUserStatus && !isPublicRoute) {
     return (

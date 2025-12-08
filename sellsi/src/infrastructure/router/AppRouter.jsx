@@ -13,6 +13,7 @@ import { useAuth } from '../providers';
 
 // Landing Page (carga inmediata para primera impresión)
 import { Home } from '../../workspaces/landing';
+import LandingPageTailwind from '../../workspaces/landing/tailwind/LandingPage';
 
 // 📦 RUTAS PRINCIPALES - LAZY LOADING
 // ✅ UNIFICADO: Marketplace ahora maneja tanto vista pública como buyer con prop hasSideBar
@@ -164,6 +165,7 @@ export const AppRouter = ({ scrollTargets }) => {
           element={<RegionDictionary />}
         />
         {/* Rutas Públicas / Generales */}
+        <Route path="/tailwind" element={<LandingPageTailwind />} />
         <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route
