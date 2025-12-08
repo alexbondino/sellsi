@@ -55,14 +55,14 @@ const ServicesSection = ({ serviciosRef, onExploreClick, onBecomeSupplierClick }
               : 'opacity-0 translate-y-8'
           }`}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-orange-50 rounded-full mb-6">
-            <div className="w-2 h-2 bg-gradient-to-r from-[#2E52B2] to-[#F59E0B] rounded-full animate-pulse"></div>
-            <span className="text-sm font-bold bg-gradient-to-r from-[#2E52B2] to-[#F59E0B] bg-clip-text text-transparent tracking-wide uppercase">Nuestros Servicios</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full mb-6">
+            <div className="w-2 h-2 bg-gradient-to-r from-[#2E52B2] to-purple-600 rounded-full animate-pulse"></div>
+            <span className="text-sm font-bold bg-gradient-to-r from-[#2E52B2] to-purple-600 bg-clip-text text-transparent tracking-wide uppercase">Nuestros Servicios</span>
           </div>
 
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-6">
             Soluciones para cada{' '}
-            <span className="bg-gradient-to-r from-[#2E52B2] to-[#F59E0B] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#2E52B2] to-purple-600 bg-clip-text text-transparent">
               necesidad
             </span>
           </h2>

@@ -32,9 +32,9 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               : 'opacity-0 translate-y-8'
           }`}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-6">
-            <div className="w-2 h-2 bg-[#2E52B2] rounded-full"></div>
-            <span className="text-sm font-bold text-[#2E52B2] tracking-wide uppercase">Quiénes Somos</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full mb-6">
+            <div className="w-2 h-2 bg-gradient-to-r from-[#2E52B2] to-purple-600 rounded-full animate-pulse"></div>
+            <span className="text-sm font-bold bg-gradient-to-r from-[#2E52B2] to-purple-600 bg-clip-text text-transparent tracking-wide uppercase">Quiénes Somos</span>
           </div>
 
           <h2 className="text-5xl md:text-6xl lg:text-7xl font-black text-gray-900 mb-6 leading-tight">
