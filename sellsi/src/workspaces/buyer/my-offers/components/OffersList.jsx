@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 import {
   Paper,
   Box,
@@ -17,12 +17,16 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-} from '@mui/material';
-import { AddToCart } from '../../../../shared/components';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import DeleteIcon from '@mui/icons-material/Delete';
-import BlockIcon from '@mui/icons-material/Block';
-import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
+  useMediaQuery,
+  useTheme,
+} from '@mui/material'
+import { AddToCart } from '../../../../shared/components'
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
+import DeleteIcon from '@mui/icons-material/Delete'
+import BlockIcon from '@mui/icons-material/Block'
+import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material'
+import MobileOfferCard from '../../../../shared/components/mobile/MobileOfferCard'
+import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion'
 
 // Mapa canónico de estados visuales
 const STATUS_MAP = {
@@ -41,46 +45,46 @@ const STATUS_MAP = {
  * Una oferta "pending" caduca si expires_at ya pasó.
  */
 const isOfferExpiredByDeadline = (offer) => {
-  if (!offer) return false;
-  const now = Date.now();
-  const status = String(offer.status || '').toLowerCase();
-  
+  if (!offer) return false
+  const now = Date.now()
+  const status = String(offer.status || '').toLowerCase()
+
   // Para ofertas approved/accepted: verificar purchase_deadline (fallback expires_at)
   if (status === 'approved' || status === 'accepted') {
-    const deadline = offer.purchase_deadline || offer.expires_at;
+    const deadline = offer.purchase_deadline || offer.expires_at
     if (deadline) {
-      const deadlineMs = new Date(deadline).getTime();
+      const deadlineMs = new Date(deadline).getTime()
       if (!Number.isNaN(deadlineMs) && deadlineMs < now) {
-        return true;
+        return true
       }
     }
   }
-  
+
   // Para ofertas pending: verificar expires_at
   if (status === 'pending') {
-    const expiresAt = offer.expires_at;
+    const expiresAt = offer.expires_at
     if (expiresAt) {
-      const expiresMs = new Date(expiresAt).getTime();
+      const expiresMs = new Date(expiresAt).getTime()
       if (!Number.isNaN(expiresMs) && expiresMs < now) {
-        return true;
+        return true
       }
     }
   }
-  
-  return false;
-};
+
+  return false
+}
 
 // Normalización (backend puede enviar "accepted" u otros legacy)
 // AHORA también considera si la oferta caducó temporalmente
 const normalizeStatus = (raw, offer = null) => {
   if (!raw) return 'pending'
   const s = String(raw).toLowerCase()
-  
+
   // Si la oferta está temporalmente caducada, retornar 'expired'
   if (offer && isOfferExpiredByDeadline({ ...offer, status: s })) {
-    return 'expired';
+    return 'expired'
   }
-  
+
   if (s === 'accepted') return 'approved'
   if (s === 'success') return 'paid'
   // fallback
@@ -89,113 +93,302 @@ const normalizeStatus = (raw, offer = null) => {
 
 // Wrapper that ensures onClick is a function before passing it to MUI Chip
 const SafeChip = (props) => {
-  const { onClick, ...rest } = props;
-  const safeOnClick = typeof onClick === 'function' ? onClick : undefined;
-  return <Chip {...rest} onClick={safeOnClick} />;
-};
+  const { onClick, ...rest } = props
+  const safeOnClick = typeof onClick === 'function' ? onClick : undefined
+  return <Chip {...rest} onClick={safeOnClick} />
+}
 
 // Formatea números como moneda con separador de miles y prefijo $ (ej: $1.234)
 const formatPrice = (value) => {
-  if (value == null) return '';
-  const num = typeof value === 'number' ? value : Number(String(value).replace(/[^0-9.-]+/g, ''));
-  if (Number.isNaN(num)) return String(value);
-  return '$' + new Intl.NumberFormat('es-CL').format(Math.round(num));
-};
+  if (value == null) return ''
+  const num =
+    typeof value === 'number'
+      ? value
+      : Number(String(value).replace(/[^0-9.-]+/g, ''))
+  if (Number.isNaN(num)) return String(value)
+  return '$' + new Intl.NumberFormat('es-CL').format(Math.round(num))
+}
 
-import { useThumbnailsBatch } from '../../../../hooks/useThumbnailQueries';
-import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
+import { useThumbnailsBatch } from '../../../../hooks/useThumbnailQueries'
+import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton'
 
-const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, deleteOffer, onCancelOffer, onDeleteOffer, onAddToCart }) => {
-  const [statusFilter, setStatusFilter] = React.useState('all');
-  const [statusOverrides, setStatusOverrides] = React.useState({}); // { offer_id: 'reserved' | 'paid' | ... }
+const OffersList = ({
+  offers = [],
+  loading = false,
+  error = null,
+  cancelOffer,
+  deleteOffer,
+  onCancelOffer,
+  onDeleteOffer,
+  onAddToCart,
+}) => {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const [statusFilter, setStatusFilter] = React.useState('all')
+  const [statusOverrides, setStatusOverrides] = React.useState({}) // { offer_id: 'reserved' | 'paid' | ... }
 
   // Preparar petición batch de thumbnails para los productos mostrados
-  const productIds = React.useMemo(() => (offers || []).map(o => (o.product?.id || o.product_id)).filter(Boolean), [offers]);
-  const thumbnailsQuery = useThumbnailsBatch(productIds);
+  const productIds = React.useMemo(
+    () =>
+      (offers || []).map((o) => o.product?.id || o.product_id).filter(Boolean),
+    [offers]
+  )
+  const thumbnailsQuery = useThumbnailsBatch(productIds)
 
   // thumbnailsQuery is used below to resolve product thumbnails in batch
 
   const filtered = React.useMemo(() => {
     if (!offers) return []
-    const normalized = offers.map(o => {
-      const override = statusOverrides[o.id];
-      const rawStatus = override || o.status;
+    const normalized = offers.map((o) => {
+      const override = statusOverrides[o.id]
+      const rawStatus = override || o.status
       // Pasar el objeto completo para que normalizeStatus pueda validar expiración
-      return { ...o, status: normalizeStatus(rawStatus, o) };
+      return { ...o, status: normalizeStatus(rawStatus, o) }
     })
     if (statusFilter === 'all') return normalized
-    return normalized.filter(o => o.status === statusFilter)
+    return normalized.filter((o) => o.status === statusFilter)
   }, [offers, statusFilter, statusOverrides])
 
   // Listener para mutaciones optimistas emitidas desde AddToCart
   React.useEffect(() => {
     const handler = (ev) => {
       try {
-        const detail = ev.detail || {};
-        if (!detail.offer_id || !detail.status) return;
+        const detail = ev.detail || {}
+        if (!detail.offer_id || !detail.status) return
         // Sólo aplicar si la oferta está presente actualmente
-        const exists = (offers || []).some(o => String(o.id) === String(detail.offer_id));
-        if (!exists) return;
-        setStatusOverrides(prev => {
+        const exists = (offers || []).some(
+          (o) => String(o.id) === String(detail.offer_id)
+        )
+        if (!exists) return
+        setStatusOverrides((prev) => {
           // Evitar override si ya está en un estado final (paid) y el nuevo no lo supera
-          const current = prev[detail.offer_id];
-            if (current === 'paid') return prev;
-          return { ...prev, [detail.offer_id]: detail.status };
-        });
-      } catch(_) {}
-    };
-    window.addEventListener('offer-status-optimistic', handler);
-    return () => window.removeEventListener('offer-status-optimistic', handler);
-  }, [offers]);
+          const current = prev[detail.offer_id]
+          if (current === 'paid') return prev
+          return { ...prev, [detail.offer_id]: detail.status }
+        })
+      } catch (_) {}
+    }
+    window.addEventListener('offer-status-optimistic', handler)
+    return () => window.removeEventListener('offer-status-optimistic', handler)
+  }, [offers])
 
   // Debugging: limit noisy logs by counting a few rows only
-  const debugCounterRef = React.useRef(0);
+  const debugCounterRef = React.useRef(0)
 
   const handleCancelOffer = async (offerId) => {
     try {
-      if (onCancelOffer) return onCancelOffer(offers.find(o=>o.id===offerId));
-      if (cancelOffer) return await cancelOffer(offerId);
+      if (onCancelOffer)
+        return onCancelOffer(offers.find((o) => o.id === offerId))
+      if (cancelOffer) return await cancelOffer(offerId)
     } catch (error) {
-      console.error('Error canceling offer:', error);
-    }
-  };
-
-  const handleDeleteOffer = async (offerId) => {
-    try {
-      if (onDeleteOffer) return onDeleteOffer(offers.find(o=>o.id===offerId));
-      if (deleteOffer) return await deleteOffer(offerId, 'buyer');
-    } catch (error) {
-      console.error('Error deleting offer:', error);
-    }
-  };
-
-  const handleAddToCart = (offer) => {
-    if (onAddToCart) return onAddToCart(offer);
-    console.log('Add to cart:', offer);
-  };
-
-  const hasOffers = (offers && offers.length > 0);
-
-  if (!hasOffers) {
-    if (loading) return <TableSkeleton rows={6} columns={4} withAvatar />;
-    if (!error) {
-      return (
-        <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
-          <Typography variant="h6" color="text.secondary">No has enviado ofertas</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Envía ofertas a proveedores desde la ficha de producto. Aquí verás el estado de cada propuesta.
-          </Typography>
-        </Paper>
-      );
+      console.error('Error canceling offer:', error)
     }
   }
 
+  const handleDeleteOffer = async (offerId) => {
+    try {
+      if (onDeleteOffer)
+        return onDeleteOffer(offers.find((o) => o.id === offerId))
+      if (deleteOffer) return await deleteOffer(offerId, 'buyer')
+    } catch (error) {
+      console.error('Error deleting offer:', error)
+    }
+  }
+
+  const handleAddToCart = (offer) => {
+    if (onAddToCart) return onAddToCart(offer)
+    console.log('Add to cart:', offer)
+  }
+
+  const hasOffers = offers && offers.length > 0
+
+  // Handler para acciones desde MobileOfferCard
+  const handleMobileAction = (action, offerData) => {
+    switch (action) {
+      case 'addToCart':
+        handleAddToCart(offerData)
+        break
+      case 'cancel':
+        handleCancelOffer(offerData.id)
+        break
+      case 'delete':
+        handleDeleteOffer(offerData.id)
+        break
+      default:
+        console.warn(`Acción desconocida: ${action}`)
+    }
+  }
+
+  // Calcular contadores para filtros mobile
+  const filterCounts = React.useMemo(() => {
+    if (!offers) return {}
+    const normalized = offers.map((o) => {
+      const override = statusOverrides[o.id]
+      const rawStatus = override || o.status
+      return { ...o, status: normalizeStatus(rawStatus, o) }
+    })
+
+    const counts = {
+      all: normalized.length,
+      pending: 0,
+      approved: 0,
+      cancelled: 0,
+      rejected: 0,
+      expired: 0,
+      reserved: 0,
+      paid: 0,
+    }
+
+    normalized.forEach((o) => {
+      if (counts[o.status] !== undefined) {
+        counts[o.status]++
+      }
+    })
+
+    return counts
+  }, [offers, statusOverrides])
+
+  const filterOptions = [
+    { value: 'all', label: 'Todas', count: filterCounts.all },
+    { value: 'pending', label: 'Pendiente', count: filterCounts.pending },
+    { value: 'approved', label: 'Aprobada', count: filterCounts.approved },
+    { value: 'cancelled', label: 'Cancelada', count: filterCounts.cancelled },
+    { value: 'rejected', label: 'Rechazada', count: filterCounts.rejected },
+    { value: 'expired', label: 'Caducada', count: filterCounts.expired },
+    { value: 'reserved', label: 'En Carrito', count: filterCounts.reserved },
+    { value: 'paid', label: 'Pagada', count: filterCounts.paid },
+  ]
+
+  if (!hasOffers) {
+    if (loading)
+      return (
+        <TableSkeleton
+          rows={6}
+          columns={4}
+          withAvatar
+          variant={isMobile ? 'card' : 'table'}
+        />
+      )
+    if (!error) {
+      return (
+        <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
+          <Typography variant="h6" color="text.secondary">
+            No has enviado ofertas
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Envía ofertas a proveedores desde la ficha de producto. Aquí verás
+            el estado de cada propuesta.
+          </Typography>
+        </Paper>
+      )
+    }
+  }
+
+  // Mobile View: Cards
+  if (isMobile) {
+    return (
+      <Box sx={{ position: 'relative' }}>
+        {loading && hasOffers && (
+          <Box sx={{ position: 'absolute', top: 8, right: 12, zIndex: 10 }}>
+            <Typography variant="caption" color="text.secondary">
+              Actualizando…
+            </Typography>
+          </Box>
+        )}
+
+        <MobileFilterAccordion
+          currentFilter={statusFilter}
+          onFilterChange={setStatusFilter}
+          filterOptions={filterOptions}
+          label="Estado de ofertas"
+        />
+
+        <Box sx={{ px: { xs: 2, sm: 0 } }}>
+          {filtered.length === 0 ? (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                No hay ofertas con este estado
+              </Typography>
+            </Paper>
+          ) : (
+            filtered.map((o) => {
+              const product = o.product || {
+                name: o.product_name || 'Producto',
+                thumbnail: null,
+              }
+              const pid = product.id || product.product_id
+              const thumbRow =
+                thumbnailsQuery.data && pid ? thumbnailsQuery.data[pid] : null
+
+              let avatarSrc = null
+              if (thumbRow) {
+                try {
+                  if (
+                    thumbRow.thumbnails &&
+                    typeof thumbRow.thumbnails === 'object'
+                  ) {
+                    avatarSrc = thumbRow.thumbnails.mobile || null
+                  }
+                  if (!avatarSrc && thumbRow.thumbnail_url) {
+                    avatarSrc = thumbRow.thumbnail_url.replace(
+                      '_desktop_320x260.jpg',
+                      '_mobile_190x153.jpg'
+                    )
+                  }
+                } catch (_) {}
+              }
+              if (!avatarSrc) {
+                avatarSrc =
+                  product.thumbnail || product.imagen || product.image || null
+              }
+
+              return (
+                <MobileOfferCard
+                  key={o.id}
+                  variant="buyer"
+                  data={{
+                    id: o.id,
+                    product_name: product.name,
+                    thumbnail_url: avatarSrc,
+                    status: o.status,
+                    created_at: o.created_at,
+                    quantity: o.quantity,
+                    offered_price: o.price,
+                    purchase_deadline: o.purchase_deadline,
+                    expires_at: o.expires_at,
+                    product: o.product,
+                    product_id: o.product_id || product.id,
+                    product_image: o.product_image || product.thumbnail,
+                  }}
+                  onAction={handleMobileAction}
+                />
+              )
+            })
+          )}
+        </Box>
+      </Box>
+    )
+  }
+
+  // Desktop View: Table (original)
   return (
-    <TableContainer component={Paper} sx={{ p: 0, position: 'relative', scrollbarGutter: 'stable' }}>
+    <TableContainer
+      component={Paper}
+      sx={{ p: 0, position: 'relative', scrollbarGutter: 'stable' }}
+    >
       {loading && hasOffers && (
-        <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(255,255,255,0.55)', zIndex: 2 }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            bgcolor: 'rgba(255,255,255,0.55)',
+            zIndex: 2,
+          }}
+        >
           <Box sx={{ position: 'absolute', top: 8, right: 12 }}>
-            <Typography variant="caption" color="text.secondary">Actualizando…</Typography>
+            <Typography variant="caption" color="text.secondary">
+              Actualizando…
+            </Typography>
           </Box>
         </Box>
       )}
@@ -243,18 +436,34 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
                   }}
                   title={
                     <Box>
-                      <Typography variant="subtitle2" sx={{ color: 'common.white', fontWeight: 'bold' }} gutterBottom>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ color: 'common.white', fontWeight: 'bold' }}
+                        gutterBottom
+                      >
                         Cómo usar Acciones
                       </Typography>
-                        <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
-                          Cuando una oferta es aprobada, la forma de completar la compra es
-                          agregando esa oferta al carrito desde esta sección. <br /> <br />
-                          Contarás con un máximo de 24 horas para hacer esto antes de que la oferta caduque.
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'common.white', mt: 1 }} display="block">
-                          Para cancelar una oferta (Pendiente o Aprobada), utiliza la acción "Cancelar Oferta". Una vez cancelada,
-                          la oferta se marcará como "Cancelada" y podrás limpiarla si lo deseas.
-                        </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: 'common.white' }}
+                        display="block"
+                      >
+                        Cuando una oferta es aprobada, la forma de completar la
+                        compra es agregando esa oferta al carrito desde esta
+                        sección. <br /> <br />
+                        Contarás con un máximo de 24 horas para hacer esto antes
+                        de que la oferta caduque.
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: 'common.white', mt: 1 }}
+                        display="block"
+                      >
+                        Para cancelar una oferta (Pendiente o Aprobada), utiliza
+                        la acción "Cancelar Oferta". Una vez cancelada, la
+                        oferta se marcará como "Cancelada" y podrás limpiarla si
+                        lo deseas.
+                      </Typography>
                     </Box>
                   }
                 >
@@ -270,161 +479,217 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
           {filtered.length === 0 && (
             <TableRow>
               <TableCell colSpan={5} sx={{ textAlign: 'center', py: 6 }}>
-                <Typography variant="body2" color="text.secondary">No hay ofertas con este estado</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  No hay ofertas con este estado
+                </Typography>
               </TableCell>
             </TableRow>
           )}
           {filtered.map((o) => {
-            const product = o.product || { name: o.product_name || 'Producto', thumbnail: null };
-            const pid = product.id || product.product_id;
-            const thumbRow = thumbnailsQuery.data && pid ? thumbnailsQuery.data[pid] : null;
+            const product = o.product || {
+              name: o.product_name || 'Producto',
+              thumbnail: null,
+            }
+            const pid = product.id || product.product_id
+            const thumbRow =
+              thumbnailsQuery.data && pid ? thumbnailsQuery.data[pid] : null
             // Prioridad: thumbnails.mobile -> thumbnail_url transformed -> product.thumbnail -> product.imagen -> null
-            let avatarSrc = null;
+            let avatarSrc = null
             if (thumbRow) {
               try {
-                if (thumbRow.thumbnails && typeof thumbRow.thumbnails === 'object') avatarSrc = thumbRow.thumbnails.mobile || null;
-                if (!avatarSrc && thumbRow.thumbnail_url) avatarSrc = thumbRow.thumbnail_url.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
-              } catch(_) {}
+                if (
+                  thumbRow.thumbnails &&
+                  typeof thumbRow.thumbnails === 'object'
+                )
+                  avatarSrc = thumbRow.thumbnails.mobile || null
+                if (!avatarSrc && thumbRow.thumbnail_url)
+                  avatarSrc = thumbRow.thumbnail_url.replace(
+                    '_desktop_320x260.jpg',
+                    '_mobile_190x153.jpg'
+                  )
+              } catch (_) {}
             }
-            if (!avatarSrc) avatarSrc = product.thumbnail || product.imagen || product.image || null;
+            if (!avatarSrc)
+              avatarSrc =
+                product.thumbnail || product.imagen || product.image || null
 
             // no-op: avatarSrc calculated above
             return (
-            <TableRow key={o.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-              <TableCell sx={{ width: 100 }}>
-                <Avatar
-                  variant="rounded"
-                  src={avatarSrc || undefined}
-                  alt={product.name}
-                  sx={{ width: 80, height: 80, bgcolor: avatarSrc ? 'transparent' : 'action.hover' }}
-                >
-                  {!avatarSrc && <ShoppingCartIcon />}
-                </Avatar>
-              </TableCell>
-              <TableCell>
-                <Typography variant="subtitle1" fontWeight={700}>{product.name}</Typography>
-                <Typography variant="body2" color="text.secondary">{o.quantity} uds • {formatPrice(o.price)}</Typography>
-              </TableCell>
-              <TableCell>
-                {/* Mostrar tiempo restante para pendientes usando expires_at (si existe) */}
-                {(() => {
-                  // Fuente primaria para ventana post-aceptación: purchase_deadline
-                  const now = Date.now();
-                  const pdMs = o.purchase_deadline ? new Date(o.purchase_deadline).getTime() : null;
-                  const expMs = o.expires_at ? new Date(o.expires_at).getTime() : null;
-                  // Pending: usar expires_at (48h). Mostrar sólo si <48h (coherencia previa) y >0.
-                  if (o.status === 'pending' && expMs != null) {
-                    const remaining = expMs - now;
-                    if (remaining <= 0) return <Typography>Caducada</Typography>;
-                    if (remaining < 48 * 60 * 60 * 1000) {
-                      const hrs = Math.floor(remaining / 3600000);
-                      const mins = Math.floor((remaining % 3600000) / 60000);
-                      if (hrs >= 1) return <Typography>{`${hrs} h ${mins} m`}</Typography>;
-                      return <Typography>{`${mins} m`}</Typography>;
+              <TableRow
+                key={o.id}
+                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+              >
+                <TableCell sx={{ width: 100 }}>
+                  <Avatar
+                    variant="rounded"
+                    src={avatarSrc || undefined}
+                    alt={product.name}
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      bgcolor: avatarSrc ? 'transparent' : 'action.hover',
+                    }}
+                  >
+                    {!avatarSrc && <ShoppingCartIcon />}
+                  </Avatar>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    {product.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {o.quantity} uds • {formatPrice(o.price)}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  {/* Mostrar tiempo restante para pendientes usando expires_at (si existe) */}
+                  {(() => {
+                    // Fuente primaria para ventana post-aceptación: purchase_deadline
+                    const now = Date.now()
+                    const pdMs = o.purchase_deadline
+                      ? new Date(o.purchase_deadline).getTime()
+                      : null
+                    const expMs = o.expires_at
+                      ? new Date(o.expires_at).getTime()
+                      : null
+                    // Pending: usar expires_at (48h). Mostrar sólo si <48h (coherencia previa) y >0.
+                    if (o.status === 'pending' && expMs != null) {
+                      const remaining = expMs - now
+                      if (remaining <= 0)
+                        return <Typography>Caducada</Typography>
+                      if (remaining < 48 * 60 * 60 * 1000) {
+                        const hrs = Math.floor(remaining / 3600000)
+                        const mins = Math.floor((remaining % 3600000) / 60000)
+                        if (hrs >= 1)
+                          return <Typography>{`${hrs} h ${mins} m`}</Typography>
+                        return <Typography>{`${mins} m`}</Typography>
+                      }
+                      return <Typography color="text.secondary">-</Typography>
                     }
-                    return <Typography color="text.secondary">-</Typography>;
-                  }
-                  // Approved: usar purchase_deadline; fallback expires_at si falta.
-                  if (o.status === 'approved') {
-                    const target = pdMs || expMs;
-                    if (target != null) {
-                      const remaining = target - now;
-                      if (remaining <= 0) return <Typography>Caducada</Typography>;
-                      const hrs = Math.floor(remaining / 3600000);
-                      const mins = Math.floor((remaining % 3600000) / 60000);
-                      if (hrs >= 1) return <Typography>{`${hrs} h ${mins} m`}</Typography>;
-                      return <Typography>{`${mins} m`}</Typography>;
+                    // Approved: usar purchase_deadline; fallback expires_at si falta.
+                    if (o.status === 'approved') {
+                      const target = pdMs || expMs
+                      if (target != null) {
+                        const remaining = target - now
+                        if (remaining <= 0)
+                          return <Typography>Caducada</Typography>
+                        const hrs = Math.floor(remaining / 3600000)
+                        const mins = Math.floor((remaining % 3600000) / 60000)
+                        if (hrs >= 1)
+                          return <Typography>{`${hrs} h ${mins} m`}</Typography>
+                        return <Typography>{`${mins} m`}</Typography>
+                      }
+                      return <Typography>Menos de 24 horas</Typography>
                     }
-                    return <Typography>Menos de 24 horas</Typography>;
-                  }
-                  return <Typography color="text.secondary">-</Typography>;
-                })()}
-              </TableCell>
-              <TableCell>
-                <SafeChip label={(STATUS_MAP[o.status] || STATUS_MAP.pending).label} color={(STATUS_MAP[o.status] || STATUS_MAP.pending).color} />
-              </TableCell>
-              <TableCell>
-                {/* Actions grouped so buttons stay on the same row and aligned */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {/* Add to cart action for approved offers */}
-                  {o.status === 'approved' && (
-                    <Tooltip title="Agregar al carrito">
-                      {onAddToCart ? (
+                    return <Typography color="text.secondary">-</Typography>
+                  })()}
+                </TableCell>
+                <TableCell>
+                  <SafeChip
+                    label={(STATUS_MAP[o.status] || STATUS_MAP.pending).label}
+                    color={(STATUS_MAP[o.status] || STATUS_MAP.pending).color}
+                  />
+                </TableCell>
+                <TableCell>
+                  {/* Actions grouped so buttons stay on the same row and aligned */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {/* Add to cart action for approved offers */}
+                    {o.status === 'approved' && (
+                      <Tooltip title="Agregar al carrito">
+                        {onAddToCart ? (
+                          <IconButton
+                            size="small"
+                            aria-label="Agregar al carrito"
+                            onClick={() => handleAddToCart(o)}
+                            sx={{
+                              bgcolor: 'transparent',
+                              p: 0.5,
+                              '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
+                              '&:focus': { boxShadow: 'none', outline: 'none' },
+                              '&.Mui-focusVisible': {
+                                boxShadow: 'none',
+                                outline: 'none',
+                              },
+                            }}
+                          >
+                            <ShoppingCartIcon sx={{ color: 'primary.main' }} />
+                          </IconButton>
+                        ) : (
+                          <AddToCart
+                            product={
+                              o.product || {
+                                id: o.product_id,
+                                name: o.product_name,
+                                thumbnail: o.product_image,
+                              }
+                            }
+                            variant="icon"
+                            size="small"
+                            color="primary"
+                            sx={{ p: 0.5 }}
+                            offer={o}
+                          />
+                        )}
+                      </Tooltip>
+                    )}
+
+                    {/* Cancel action for pending or approved offers (next to add-to-cart) */}
+                    {(o.status === 'pending' || o.status === 'approved') && (
+                      <Tooltip title="Cancelar Oferta">
                         <IconButton
                           size="small"
-                          aria-label="Agregar al carrito"
-                          onClick={() => handleAddToCart(o)}
+                          aria-label="Cancelar Oferta"
+                          onClick={() => handleCancelOffer(o.id)}
+                          sx={{
+                            bgcolor: 'transparent',
+                            p: 0.5,
+                            color: 'error.main',
+                            '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
+                            '&:focus': { boxShadow: 'none', outline: 'none' },
+                            '&.Mui-focusVisible': {
+                              boxShadow: 'none',
+                              outline: 'none',
+                            },
+                          }}
+                        >
+                          <BlockIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+
+                    {/* Cleanup (delete) action for rejected, cancelled, expired, or paid offers */}
+                    {(o.status === 'rejected' ||
+                      o.status === 'cancelled' ||
+                      o.status === 'expired' ||
+                      o.status === 'paid') && (
+                      <Tooltip title="Limpiar esta oferta">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteOffer(o.id)}
                           sx={{
                             bgcolor: 'transparent',
                             p: 0.5,
                             '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
                             '&:focus': { boxShadow: 'none', outline: 'none' },
-                            '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
+                            '&.Mui-focusVisible': {
+                              boxShadow: 'none',
+                              outline: 'none',
+                            },
                           }}
                         >
-                          <ShoppingCartIcon sx={{ color: 'primary.main' }} />
+                          <DeleteIcon />
                         </IconButton>
-                      ) : (
-                        <AddToCart
-                          product={o.product || { id: o.product_id, name: o.product_name, thumbnail: o.product_image }}
-                          variant="icon"
-                          size="small"
-                          color="primary"
-                          sx={{ p: 0.5 }}
-                          offer={o}
-                        />
-                      )}
-                    </Tooltip>
-                  )}
-
-                  {/* Cancel action for pending or approved offers (next to add-to-cart) */}
-                  {(o.status === 'pending' || o.status === 'approved') && (
-                    <Tooltip title="Cancelar Oferta">
-                      <IconButton
-                        size="small"
-                        aria-label="Cancelar Oferta"
-                        onClick={() => handleCancelOffer(o.id)}
-                        sx={{
-                          bgcolor: 'transparent',
-                          p: 0.5,
-                          color: 'error.main',
-                          '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
-                          '&:focus': { boxShadow: 'none', outline: 'none' },
-                          '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
-                        }}
-                      >
-                        <BlockIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-
-                  {/* Cleanup (delete) action for rejected, cancelled, expired, or paid offers */}
-                  {(o.status === 'rejected' || o.status === 'cancelled' || o.status === 'expired' || o.status === 'paid') && (
-                    <Tooltip title="Limpiar esta oferta">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteOffer(o.id)}
-                        sx={{
-                          bgcolor: 'transparent',
-                          p: 0.5,
-                          '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
-                          '&:focus': { boxShadow: 'none', outline: 'none' },
-                          '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
-                        }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                </Box>
-              </TableCell>
-            </TableRow>
-            );
+                      </Tooltip>
+                    )}
+                  </Box>
+                </TableCell>
+              </TableRow>
+            )
           })}
         </TableBody>
       </Table>
     </TableContainer>
-  );
-};
+  )
+}
 
-export default OffersList;
+export default OffersList
