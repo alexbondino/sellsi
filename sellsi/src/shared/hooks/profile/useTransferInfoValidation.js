@@ -230,7 +230,13 @@ export const useTransferInfoValidation = (userId = null) => {
           error: authError,
         } = await supabase.auth.getUser();
         if (authError || !user) {
-          throw new Error('Usuario no autenticado');
+          // Si no hay usuario autenticado, simplemente limpiar el estado sin mostrar error
+          globalTransferInfoCache.isLoading = false;
+          setState(TRANSFER_INFO_STATES.INCOMPLETE);
+          setTransferInfo(null);
+          setMissingFields([]);
+          setError(null);
+          return null;
         }
 
         // ✅ Bug 8 - Pasar {force} a getUserProfile para evitar cache de 60s

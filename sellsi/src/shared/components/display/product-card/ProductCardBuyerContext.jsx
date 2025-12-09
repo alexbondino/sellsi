@@ -76,11 +76,9 @@ const ProductCardBuyerContext = React.memo(
     const hasValidBasePrice =
       (Number(effectiveMaxPrice) || 0) > 0 ||
       (Number(effectiveMinPrice) || 0) > 0;
-    
-    // ✅ FIX CRÍTICO: Solo mostrar "Cargando precios..." cuando REALMENTE está cargando
-    // Si tiersStatus es 'loaded' o 'error', nunca mostrar "Cargando..."
-    // Esto evita el bug de "Cargando precios..." infinito
-    const isPending = loadingTiers; // Solo cuando está explícitamente en estado 'loading'
+    // ✓ Mostrar "Cargando precios..." si está cargando O si no hay precio válido (evita mostrar $0)
+    const isPending =
+      loadingTiers || (!hasValidBasePrice && price_tiers.length === 0);
 
     const memoizedPriceContent = useMemo(() => {
       if (isPending) {
@@ -141,16 +139,6 @@ const ProductCardBuyerContext = React.memo(
       const displayPrice = hasValidBasePrice
         ? maxPriceNum || minPriceNum || 0
         : 0;
-      
-      // ✅ Si no hay precio válido y no está cargando, mostrar mensaje informativo
-      if (displayPrice === 0 && !isPending) {
-        return (
-          <Typography variant="body2" color="text.secondary">
-            Consultar precio
-          </Typography>
-        );
-      }
-      
       return (
         <PriceDisplay
           price={displayPrice}
