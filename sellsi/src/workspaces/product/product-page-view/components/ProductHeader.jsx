@@ -691,6 +691,22 @@ const ProductHeader = React.memo(
         <ContactModal
           open={isContactModalOpen}
           onClose={handleCloseContactModal}
+          context={{
+            source: 'product_inquiry',
+            product: {
+              id: product.id,
+              name: product.nombre || product.name,
+              price: (finalTiers && finalTiers.length > 0) 
+                ? finalTiers[0].price 
+                : (product.precio || product.price),
+              has_tiers: !!(finalTiers && finalTiers.length > 0),
+              tiers_count: finalTiers?.length || 0,
+              supplier_id: product.supplier_id || product.supplierId,
+              supplier_name: product.supplier?.name || product.proveedor,
+              supplier: product.supplier,
+              slug: product.slug || product.productSlug
+            }
+          }}
         />
       </Box>
     );

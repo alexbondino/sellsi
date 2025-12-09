@@ -8,7 +8,6 @@ import { BottomBar } from './BottomBar';
 import { MobileBar } from '../navigation/MobileBar';
 import { SideBar } from '../navigation/SideBar';
 import Banner from '../display/banners/Banner';
-import WhatsAppWidget from '../../../components/WhatsAppWidget';
 import { useBanner } from '../display/banners/BannerContext';
 
 import { useAuth } from '../../../infrastructure/providers';
@@ -170,13 +169,6 @@ export const AppShell = ({ children }) => {
           session={session}
           isBuyer={isBuyer}
           logoUrl={logoUrl}
-        />
-
-        {/* WhatsApp Widget - Con acceso al contexto del Router */}
-        <WhatsAppWidget 
-          isLoggedIn={!!session} 
-          userProfile={userProfile}
-          currentPath={location.pathname}
         />
       </Box>
     </>

@@ -47,6 +47,17 @@ const Rows = ({ order, onActionClick }) => {
 
   const openContact = () => setIsContactOpen(true);
   const closeContact = () => setIsContactOpen(false);
+  
+  // Preparar contexto para ContactModal
+  const contactContext = {
+    source: 'table_row_support',
+    order: {
+      order_id: order?.order_id,
+      status: order?.status,
+      payment_status: order?.payment_status,
+      supplier_id: order?.supplier_id
+    }
+  };
 
   const handleOpenId = event => setIdAnchor(event.currentTarget);
   const handleCloseId = () => {
@@ -848,7 +859,11 @@ const Rows = ({ order, onActionClick }) => {
         <Box sx={{ display: 'flex', gap: 0.5 }}>{renderActions()}</Box>
       </TableCell>
   {/* Contact Modal abierto desde el icono de ayuda */}
-  <ContactModal open={isContactOpen} onClose={closeContact} />
+  <ContactModal 
+    open={isContactOpen} 
+    onClose={closeContact}
+    context={contactContext}
+  />
     </TableRow>
   );
 };

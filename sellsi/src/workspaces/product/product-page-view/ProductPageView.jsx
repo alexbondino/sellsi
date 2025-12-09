@@ -51,7 +51,7 @@ const PurchaseActions = React.lazy(() =>
   }))
 );
 const ProductHeader = React.lazy(() =>
-  import('./components/ProductHeader').catch(() => ({
+  import('./components/ProductHeader/index').catch(() => ({
     default: () => <div>Error al cargar header</div>,
   }))
 );

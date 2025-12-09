@@ -1,5 +1,6 @@
 import React, { useImperativeHandle, forwardRef, useEffect } from 'react';
-import { Box, Paper, Alert, Typography, TextField } from '@mui/material';
+import { Box, Paper, Alert, Typography, TextField, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { useTheme } from '@mui/material/styles';
 import { PrimaryButton } from '../../../../shared/components';
 import { useRecuperarForm } from '../hooks/useRecuperarForm';
@@ -53,21 +54,19 @@ const AccountRecovery = forwardRef(function AccountRecovery(props, ref) {
             textAlign: 'center',
           }}
         >
-          <PrimaryButton
-            variant="text"
+          <IconButton
             onClick={handleCerrarTotal}
             sx={{
               position: 'absolute',
-              top: 8,
-              right: 8,
-              color: 'primary.main',
-              fontSize: 14,
-              fontWeight: 600,
-              '&:hover': { backgroundColor: 'transparent', opacity: 0.8 },
+              right: 16,
+              top: 16,
+              color: '#666',
+              backgroundColor: 'rgba(0,0,0,0.05)',
+              '&:hover': { backgroundColor: 'rgba(0,0,0,0.1)' },
             }}
           >
-            CERRAR
-          </PrimaryButton>
+            <CloseIcon />
+          </IconButton>
 
           {!mensaje ? (
             <form onSubmit={handleSubmit}>

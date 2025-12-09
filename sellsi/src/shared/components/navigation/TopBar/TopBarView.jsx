@@ -98,14 +98,13 @@ export function TopBarView({
             >
               <Box
                 component="img"
-                src="/logodark.svg"
+                src="/Logos/sellsiwhite_logo_transparent.webp"
                 alt="Sellsi Logo"
                 sx={{
-                  height: { xs: 110, sm: 110, md: 110 },
-                  width: { xs: 116, sm: 116, md: 140 },
-                  maxWidth: { xs: 90, sm: 90, md: 140 },
+                  height: { xs: 25, sm: 25, md: 38 },
+                  width: { xs: 90, sm: 90, md: 137 },
                   display: 'block',
-                  objectFit: { xs: 'contain', sm: 'contain', md: 'contain' },
+                  objectFit: 'contain',
                   p: 0,
                   m: 0,
                   lineHeight: 0,

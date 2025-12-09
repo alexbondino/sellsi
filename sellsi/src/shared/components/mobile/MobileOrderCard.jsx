@@ -45,6 +45,17 @@ const MobileOrderCard = ({ order, onAction }) => {
   const copyTimer = useRef(null)
   const productsCopyTimer = useRef(null)
   const addressCopyTimer = useRef(null)
+  
+  // Preparar contexto para ContactModal
+  const contactContext = {
+    source: 'table_row_support',
+    order: {
+      order_id: order?.order_id,
+      status: order?.status,
+      payment_status: order?.payment_status,
+      supplier_id: order?.supplier_id
+    }
+  };
 
   // Status config para pedidos (colores exactos como desktop)
   const getStatusConfig = (status) => {
@@ -838,6 +849,7 @@ const MobileOrderCard = ({ order, onAction }) => {
       <ContactModal
         open={contactModalOpen}
         onClose={() => setContactModalOpen(false)}
+        context={contactContext}
       />
     </Card>
   )

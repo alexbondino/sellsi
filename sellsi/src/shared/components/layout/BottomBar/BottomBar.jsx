@@ -47,10 +47,10 @@ const BottomBar = () => {
             }}
           >
             <Box sx={{ flex: '0 0 auto', maxWidth: 230, px: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: 120 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0, height: 85, overflow: 'hidden' }}>
-                <img src="/logodark.svg" alt="SELLSI Logo" style={{ height: 230, maxWidth: '100%' }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0 }}>
+                <img src="/Logos/sellsiwhite_logo_transparent.webp" alt="SELLSI Logo" style={{ height: '75px', width: '270px', objectFit: 'contain' }} />
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem', mt: 1, textAlign: 'center' }}>Crece. Conecta. Vende.</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem', mt: 1, textAlign: 'center' }}>Conecta. Vende. Crece.</Typography>
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4, justifyContent: 'flex-start', alignItems: 'flex-start', flex: 1 }}>
@@ -89,10 +89,10 @@ const BottomBar = () => {
           {/* Mobile layout: centered logo + collapsible Soporte (only Terms & Privacy) */}
           <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', alignItems: 'center', gap: 3, mb: 6 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0, height: 60, overflow: 'hidden' }}>
-                <img src="/logodark.svg" alt="SELLSI Logo" style={{ height: 150, maxWidth: '100%', display: 'block' }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0 }}>
+                <img src="/Logos/sellsiwhite_logo_transparent.webp" alt="SELLSI Logo" style={{ height: '60px', width: '216px', objectFit: 'contain', display: 'block' }} />
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem', mt: 1, textAlign: 'center' }}>Crece. Conecta. Vende.</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem', mt: 1, textAlign: 'center' }}>Conecta. Vende. Crece.</Typography>
             </Box>
 
             <Box sx={{ width: '100%', maxWidth: 420, mx: 'auto' }}>

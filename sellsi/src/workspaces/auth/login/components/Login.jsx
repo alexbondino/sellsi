@@ -16,6 +16,7 @@ import {
   Divider,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
 import GoogleIcon from '@mui/icons-material/Google';
 
 import { PrimaryButton } from '../../../../shared/components';
@@ -44,19 +45,29 @@ const commonStyles = {
 
 // ✅ LOGO COMPONENT
 const Logo = memo(() => (
-  <Box sx={{ textAlign: 'center', mb: 2 }}>
+  <Box 
+    sx={{ 
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      mb: 2,
+      width: '100%'
+    }}
+  >
     <img
-      src="/logo.svg"
+      src="/Logos/sellsi_logo_transparent.webp"
       alt="SELLSI Logo"
-      style={{ width: 160, marginBottom: 8 }}
+      style={{ width: 160, marginBottom: 8, display: 'block' }}
     />
     <Typography
       variant="h6"
       sx={{
-        color: '#2E52B2',
+        color: '#0772D2', //Azul Logo Sellsi
         fontWeight: 700,
         fontSize: 18,
         fontStyle: 'italic',
+        textAlign: 'center'
       }}
     >
       Conecta. Vende. Crece.
@@ -283,7 +294,21 @@ export default function Login({ open, onClose, onOpenRegister }) {
           },
         }}
       >
-        <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+        <DialogContent sx={{ p: 0, overflow: 'hidden', position: 'relative' }}>
+          <IconButton
+            onClick={onClose}
+            sx={{
+              position: 'absolute',
+              right: 16,
+              top: 16,
+              color: '#666',
+              zIndex: 1,
+              backgroundColor: 'rgba(0,0,0,0.05)',
+              '&:hover': { backgroundColor: 'rgba(0,0,0,0.1)' },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
           {state.cuentaNoVerificada ? (
             <Box
               display="flex"

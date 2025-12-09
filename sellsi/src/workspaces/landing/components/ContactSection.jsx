@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useScrollReveal } from './hooks/useScrollReveal';
 
-const ContactSection = ({ contactRef, onSubmit }) => {
+// ✅ URL de la función de Supabase para envío de emails
+  const supabaseFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/contact-form`;const ContactSection = ({ contactRef, onSubmit }) => {
   const [headerRef, headerVisible] = useScrollReveal({ threshold: 0.2 });
   const [formRef, formVisible] = useScrollReveal({ threshold: 0.1 });
 
@@ -27,11 +28,29 @@ const ContactSection = ({ contactRef, onSubmit }) => {
     setLoading(true);
     setStatus(null);
     try {
+      // Si se pasa onSubmit como prop, usarlo (retrocompatibilidad)
       if (onSubmit) {
         await onSubmit({ nombre, email, mensaje });
       } else {
-        await new Promise((r) => setTimeout(r, 600));
+        // ✅ Llamada directa a la función de Supabase
+        const response = await fetch(supabaseFunctionUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            name: nombre,
+            email: email,
+            message: `[AGENDAR DEMO]\n\n${mensaje}`,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al enviar el mensaje');
+        }
       }
+      
       setStatus('ok');
       setNombre('');
       setEmail('');

@@ -1,6 +1,9 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const HeroSection = ({ onExploreClick, onDemoClick }) => {
+  const navigate = useNavigate()
+  
   const handleExplore = () => {
     if (onExploreClick) return onExploreClick()
     window.location.assign('/marketplace')
@@ -8,10 +11,9 @@ const HeroSection = ({ onExploreClick, onDemoClick }) => {
 
   const handleDemo = () => {
     if (onDemoClick) return onDemoClick()
-    const contactSection = document.getElementById('contact')
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    // Navigate with contactModal query param to trigger modal opening
+    const search = `?scrollTo=${encodeURIComponent('contactModal')}&t=${Date.now()}`;
+    navigate(`/${search}`);
   }
 
   return (

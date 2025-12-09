@@ -1,7 +1,8 @@
 // 📁 domains/auth/components/Register.jsx
 // Migrado de features/register/Register.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, Box } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, Box, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { useTheme } from '@mui/material/styles';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -273,32 +274,20 @@ export default function Register({ open, onClose }) {
           },
         }}
       >
-        <DialogTitle sx={{ p: 0, pb: 1 }}>
-          <Box
-            component="button"
+        <DialogTitle sx={{ p: 0, pb: 1, position: 'relative', zIndex: 2 }}>
+          <IconButton
             onClick={onClose}
             sx={{
               position: 'absolute',
-              top: 8,
-              right: 8,
-              fontSize: 16,
-              textTransform: 'uppercase',
-              minWidth: 'auto',
-              padding: '4px 8px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              color: 'primary.main',
-              fontWeight: 700,
-              cursor: 'pointer',
-              borderRadius: 1,
-              fontFamily: 'inherit',
-              '&:hover': {
-                backgroundColor: 'rgba(65, 182, 230, 0.08)',
-              },
+              right: 16,
+              top: 16,
+              color: '#666',
+              backgroundColor: 'rgba(0,0,0,0.05)',
+              '&:hover': { backgroundColor: 'rgba(0,0,0,0.1)' },
             }}
           >
-            CERRAR
-          </Box>
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
         <DialogContent
           sx={{ overflowX: 'hidden', px: { xs: 2, sm: 3 }, pt: 1 }}

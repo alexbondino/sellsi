@@ -126,8 +126,66 @@ const BuyerOrders = memo(function BuyerOrders() {
 
   // Contact modal state (abre desde varios lugares, aquí para el buyer orders)
   const [openContactModal, setOpenContactModal] = React.useState(false)
-  const openContact = React.useCallback(() => setOpenContactModal(true), [])
-  const closeContact = React.useCallback(() => setOpenContactModal(false), [])
+  const [selectedOrderContext, setSelectedOrderContext] = React.useState(null)
+  
+  const openContact = React.useCallback((order = null) => {
+    if (order) {
+      // Extraer información de proveedores y productos
+      const suppliers = [];
+      const productsInfo = [];
+      
+      if (Array.isArray(order.items)) {
+        const suppliersMap = new Map();
+        
+        order.items.forEach(item => {
+          // Extraer proveedor
+          const supplierId = item.product?.supplier?.id || item.product?.supplier_id || item.supplier_id;
+          const supplierName = item.product?.supplier?.name || item.product?.proveedor;
+          const verified = item.product?.supplier?.verified || item.product?.verified || false;
+          
+          if (supplierId && !suppliersMap.has(supplierId)) {
+            suppliersMap.set(supplierId, {
+              id: supplierId,
+              name: supplierName || 'Proveedor desconocido',
+              verified: verified
+            });
+          }
+          
+          // Extraer producto
+          productsInfo.push({
+            name: item.product?.name || 'Producto',
+            quantity: item.quantity || 0,
+            price: item.price_at_addition || item.product?.price || 0
+          });
+        });
+        
+        suppliers.push(...Array.from(suppliersMap.values()));
+      }
+      
+      setSelectedOrderContext({
+        source: 'buyer_order_support',
+        order: {
+          order_id: order.order_id,
+          parent_order_id: order.parent_order_id,
+          status: order.status,
+          payment_status: order.payment_status,
+          is_multi_supplier: order.is_supplier_part,
+          supplier_id: order.supplier_id,
+          suppliers: suppliers,
+          products: productsInfo,
+          total: order.final_amount || order.total_amount || 0
+        }
+      });
+    } else {
+      setSelectedOrderContext(null);
+    }
+    setOpenContactModal(true);
+  }, [])
+  
+  const closeContact = React.useCallback(() => {
+    setOpenContactModal(false);
+    setSelectedOrderContext(null);
+  }, [])
 
   // Mark related notifications as read on mount
   const { markContext } =
@@ -568,7 +626,7 @@ const BuyerOrders = memo(function BuyerOrders() {
                         variant="outlined"
                         fullWidth
                         size="small"
-                        onClick={openContact}
+                        onClick={() => openContact(order)}
                         sx={{ textTransform: 'none', fontWeight: 600 }}
                       >
                         Contactar con Sellsi
@@ -628,7 +686,7 @@ const BuyerOrders = memo(function BuyerOrders() {
                               <Button
                                 variant="text"
                                 size="small"
-                                onClick={openContact}
+                                onClick={() => openContact(order)}
                                 sx={{
                                   color: 'primary.main',
                                   textTransform: 'none',
@@ -1282,7 +1340,11 @@ const BuyerOrders = memo(function BuyerOrders() {
                 ))}
 
                 {/* Contact modal global para esta página */}
-                <ContactModal open={openContactModal} onClose={closeContact} />
+                <ContactModal 
+                  open={openContactModal} 
+                  onClose={closeContact}
+                  context={selectedOrderContext}
+                />
 
                 {/* Delete confirmation dialog for expired orders */}
                 <ConfirmDialog

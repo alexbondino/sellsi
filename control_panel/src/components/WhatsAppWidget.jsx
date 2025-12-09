@@ -87,7 +87,7 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
         onMouseLeave={() => setHover(false)}
       >
         <img
-          src="/wsplogo.webp"
+          src="/Logos/wsplogo.webp"
           alt="WhatsApp"
           style={{
             width: 36,

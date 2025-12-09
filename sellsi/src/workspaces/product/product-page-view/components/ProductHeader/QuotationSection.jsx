@@ -18,6 +18,26 @@ const QuotationSection = ({
   onCloseContactModal,
   quotationDefaults,
 }) => {
+  // Preparar contexto para ContactModal
+  const contactContext = product ? {
+    source: 'product_inquiry',
+    product: {
+      id: product.id,
+      name: product.name || product.nombre,
+      // Si hay tiers, usar el precio más bajo (primer tier)
+      // Si no hay tiers, usar el precio base del producto
+      price: (tiers && tiers.length > 0) 
+        ? tiers[0].price 
+        : (product.precio || product.price),
+      has_tiers: !!(tiers && tiers.length > 0),
+      tiers_count: tiers?.length || 0,
+      supplier_id: product.supplier_id || product.supplierId,
+      supplier_name: product.supplier?.name || product.proveedor,
+      supplier: product.supplier,
+      slug: product.slug || product.productSlug
+    }
+  } : null;
+  
   return (
     <>
       {/* Modal de Cotización */}
@@ -34,6 +54,7 @@ const QuotationSection = ({
       <ContactModal
         open={isContactModalOpen}
         onClose={onCloseContactModal}
+        context={contactContext}
       />
     </>
   );
