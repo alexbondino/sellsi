@@ -34,8 +34,9 @@ const SupplierOffers = () => {
         }}
       >
         <Container
-          maxWidth={isMobile ? false : 'xl'}
+          maxWidth={false}
           disableGutters={isMobile ? true : false}
+          sx={{ width: '100%' }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
             <LocalOfferIcon

@@ -553,7 +553,8 @@ const AddProduct = () => {
       /* noop */
     }
     updateField('imagenes', images);
-    setImageError('');
+    // ⚠️ NO borrar el error aquí - solo se borra cuando las imágenes son válidas
+    // El ImageUploader ya maneja cuándo limpiar el error llamando a onError(null)
   };
 
   // Handler cambio de pricing type (Unidad / Tramos)
@@ -731,8 +732,9 @@ const AddProduct = () => {
             }}
           >
             <Container
-              maxWidth={isMobile ? false : 'xl'}
+              maxWidth={false}
               disableGutters={isMobile ? true : false}
+              sx={{ width: '100%' }}
             >
               {/* Header */}
               <Box

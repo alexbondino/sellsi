@@ -108,11 +108,11 @@ const ProductCard = React.memo(
           type === 'supplier'
             ? { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 }
             : { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 },
-        // Ancho: valores fijos alineados con ProductCardSkeleton
+        // Ancho: 100% en xs/sm para adaptarse al grid, valores fijos en md+
         width:
           type === 'supplier'
-            ? { xs: 180, sm: 195, md: 220, lg: 370, xl: 360 }
-            : { xs: 180, sm: 195, md: 220, lg: 300, xl: 320 },
+            ? { xs: '100%', sm: '100%', md: 220, lg: 370, xl: 360 }
+            : { xs: '100%', sm: '100%', md: 220, lg: 300, xl: 320 },
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',

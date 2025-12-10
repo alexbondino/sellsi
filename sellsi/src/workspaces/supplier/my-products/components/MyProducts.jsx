@@ -47,6 +47,7 @@ import {
   TransferInfoValidationModal,
   useTransferInfoModal,
 } from '../../../../shared/components/validation';
+import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion';
 
 // ✅ OPTIMIZACIÓN: Lazy load de MassiveProductImport (437 KB)
 const MassiveProductImport = lazy(() =>
@@ -323,7 +324,7 @@ const MyProducts = () => {
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 4.5, md: 5 },
-            px: 3,
+            px: { xs: 0, md: 3 },
             pb: SPACING_BOTTOM_MAIN,
             ml: { xs: 0, md: 10, lg: 14, xl: 24 },
           }}
@@ -364,8 +365,9 @@ const MyProducts = () => {
                 <Box
                   sx={{
                     display: 'flex',
-                    flexDirection: { xs: 'column', sm: 'row' },
+                    flexDirection: 'row',
                     gap: 1,
+                    width: { xs: '100%', sm: 'auto' },
                   }}
                 >
                   <Button
@@ -378,10 +380,12 @@ const MyProducts = () => {
                       borderRadius: 2,
                       textTransform: 'none',
                       fontWeight: 600,
-                      px: 3,
+                      px: { xs: 2, sm: 3 },
+                      flex: { xs: 1, sm: '0 1 auto' },
+                      minWidth: 0,
                     }}
                   >
-                    Agregar Producto
+                    {isMobile ? 'Agregar' : 'Agregar Producto'}
                   </Button>
                   <Button
                     variant="outlined"
@@ -391,7 +395,9 @@ const MyProducts = () => {
                       borderRadius: 2,
                       textTransform: 'none',
                       fontWeight: 'bold',
-                      px: 3,
+                      px: { xs: 2, sm: 3 },
+                      flex: { xs: 1, sm: '0 1 auto' },
+                      minWidth: 0,
                     }}
                   >
                     Carga Masiva
@@ -430,34 +436,38 @@ const MyProducts = () => {
                     }}
                   >
                     <Grid container columns={12} justifyContent="center">
-                      <Grid item xs={12} sm={4} width={'31%'}>
+                      {/* Primera fila mobile: Total productos (50%) + Productos activos (50%) */}
+                      <Grid item xs={6} sm={4} width={{ xs: '50%', sm: '31%' }}>
                         <Box
                           sx={{
                             p: 2,
-                            borderRight: { sm: '1px solid' },
-                            borderColor: { sm: 'divider' },
+                            borderRight: '1px solid',
+                            borderColor: 'divider',
                             borderBottom: { xs: '1px solid', sm: 'none' },
                             borderBottomColor: { xs: 'divider' },
+                            minHeight: { xs: '110px', sm: 'auto' },
                           }}
                         >
                           <Box
                             sx={{
                               display: 'flex',
-                              alignItems: 'center',
-                              gap: 1.5,
+                              flexDirection: { xs: 'column', sm: 'row' },
+                              alignItems: { xs: 'flex-start', sm: 'center' },
+                              gap: { xs: 0.5, sm: 1.5 },
                             }}
                           >
                             <InventoryIcon
                               color="primary"
-                              sx={{ fontSize: 40 }}
+                              sx={{ fontSize: { xs: 32, sm: 40 } }}
                             />
                             <Box>
-                              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                 {stats.total}
                               </Typography>
                               <Typography
                                 variant="body2"
                                 color="text.secondary"
+                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                               >
                                 Total de productos
                               </Typography>
@@ -466,7 +476,7 @@ const MyProducts = () => {
                         </Box>
                       </Grid>
 
-                      <Grid item xs={12} sm={4} width={'31%'}>
+                      <Grid item xs={6} sm={4} width={{ xs: '50%', sm: '31%' }}>
                         <Box
                           sx={{
                             p: 2,
@@ -474,32 +484,40 @@ const MyProducts = () => {
                             borderColor: { sm: 'divider' },
                             borderBottom: { xs: '1px solid', sm: 'none' },
                             borderBottomColor: { xs: 'divider' },
+                            minHeight: { xs: '110px', sm: 'auto' },
                           }}
                         >
                           <Box
                             sx={{
                               display: 'flex',
-                              gap: 1.5,
+                              flexDirection: { xs: 'column', sm: 'row' },
+                              alignItems: { xs: 'flex-start', sm: 'center' },
+                              gap: { xs: 0.5, sm: 1.5 },
                             }}
                           >
                             <Box
                               sx={{
                                 color: 'success.main',
-                                fontSize: 40,
+                                fontSize: { xs: '32px', sm: '40px' },
                                 fontWeight: 'bold',
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyContent: 'center',
+                                width: { xs: '32px', sm: '40px' },
+                                height: { xs: '32px', sm: '40px' },
+                                lineHeight: 1,
                               }}
                             >
                               ✓
                             </Box>
                             <Box>
-                              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                 {stats.active}
                               </Typography>
                               <Typography
                                 variant="body2"
                                 color="text.secondary"
+                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                               >
                                 Productos activos
                               </Typography>
@@ -508,8 +526,9 @@ const MyProducts = () => {
                         </Box>
                       </Grid>
 
-                      <Grid item xs={12} sm={4} width={'31%'}>
-                        <Box sx={{ p: 2, width: '100%' }}>
+                      {/* Segunda fila mobile: Valor inventario (100%) */}
+                      <Grid item xs={12} sm={4} width={{ xs: '100%', sm: '31%' }}>
+                        <Box sx={{ p: 2, width: '100%', minHeight: { xs: '90px', sm: 'auto' } }}>
                           <Box
                             sx={{
                               display: 'flex',
@@ -519,10 +538,10 @@ const MyProducts = () => {
                           >
                             <AttachMoneyIcon
                               color="success"
-                              sx={{ fontSize: 40 }}
+                              sx={{ fontSize: { xs: 32, sm: 40 } }}
                             />
                             <Box>
-                              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                 {stats.inventoryRange &&
                                 stats.inventoryRange.min !==
                                   stats.inventoryRange.max
@@ -541,6 +560,7 @@ const MyProducts = () => {
                               <Typography
                                 variant="body2"
                                 color="text.secondary"
+                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                               >
                                 Valor del inventario
                               </Typography>
@@ -575,9 +595,11 @@ const MyProducts = () => {
             )}
 
             {/* Filtros y búsqueda */}
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Grid container columns={12} spacing={2} alignItems="center">
-                <Grid item xs={12} sm={6} md={4}>
+            {isMobile ? (
+              /* 📱 MOBILE: Diseño optimizado con Accordions */
+              <Box sx={{ mb: 3 }}>
+                {/* Búsqueda siempre visible en mobile */}
+                <Paper sx={{ p: 2, mb: 2 }}>
                   <TextField
                     fullWidth
                     placeholder="Buscar productos..."
@@ -593,94 +615,186 @@ const MyProducts = () => {
                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                     autoComplete="off"
                     autoCorrect="off"
+                    size="small"
                   />
-                </Grid>
+                </Paper>
 
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth>
-                    <InputLabel>Categoría</InputLabel>
-                    <Select
-                      value={categoryFilter}
-                      onChange={e => setCategoryFilter(e.target.value)}
-                      label="Categoría"
-                      sx={{
-                        borderRadius: 2,
-                        '& .MuiSelect-select': {},
-                      }}
-                      MenuProps={{
-                        disableScrollLock: true,
-                      }}
-                    >
-                      {CATEGORIES.map(category => (
-                        <MenuItem key={category.value} value={category.value}>
-                          {category.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
+                {/* Categoría como Accordion */}
+                <MobileFilterAccordion
+                  currentFilter={categoryFilter}
+                  onFilterChange={setCategoryFilter}
+                  filterOptions={CATEGORIES.map(cat => ({
+                    value: cat.value,
+                    label: cat.label,
+                    count: cat.value === 'all' ? stats.total : undefined,
+                  }))}
+                  label="Categoría de productos"
+                />
 
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth>
-                    <InputLabel>Ordenar por</InputLabel>
-                    <Select
-                      value={sortBy}
-                      onChange={handleSortChange}
-                      label="Ordenar por"
-                      sx={{
-                        borderRadius: 2,
-                      }}
-                      MenuProps={{
-                        disableScrollLock: true,
-                      }}
-                    >
-                      {SORT_OPTIONS.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
+                {/* Ordenar por como Accordion */}
+                <MobileFilterAccordion
+                  currentFilter={sortBy}
+                  onFilterChange={handleSortChange}
+                  filterOptions={SORT_OPTIONS.map(opt => ({
+                    value: opt.value,
+                    label: opt.label,
+                  }))}
+                  label="Ordenar productos"
+                />
 
-                <Grid item xs={12} sm={6} md={2}>
-                  <Stack direction="row" spacing={1}>
+                {/* Botón limpiar filtros - solo si hay filtros activos */}
+                {(searchTerm || categoryFilter !== 'all' || sortBy !== 'updatedAt') && (
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={handleClearFilters}
+                    startIcon={<ClearIcon />}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      py: 1.5,
+                    }}
+                  >
+                    Limpiar todos los filtros
+                  </Button>
+                )}
+
+                {/* Chips de filtros activos */}
+                {(searchTerm || categoryFilter !== 'all') && (
+                  <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {searchTerm && (
+                      <Chip
+                        label={`"${searchTerm}"`}
+                        onDelete={() => setSearchTerm('')}
+                        size="small"
+                        color="primary"
+                      />
+                    )}
+                    {categoryFilter !== 'all' && (
+                      <Chip
+                        label={CATEGORIES.find(c => c.value === categoryFilter)?.label}
+                        onDelete={() => setCategoryFilter('all')}
+                        size="small"
+                        color="primary"
+                      />
+                    )}
+                  </Box>
+                )}
+              </Box>
+            ) : (
+              /* 🖥️ DESKTOP: Diseño horizontal tradicional */
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Grid container columns={12} spacing={2} alignItems="center">
+                  {/* Búsqueda */}
+                  <Grid item xs={12} sm={6} md={4}>
+                    <TextField
+                      fullWidth
+                      placeholder="Buscar productos..."
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon color="action" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                      autoComplete="off"
+                      autoCorrect="off"
+                    />
+                  </Grid>
+
+                  {/* Categoría */}
+                  <Grid item xs={12} sm={6} md={3}>
+                    <FormControl fullWidth>
+                      <InputLabel>Categoría</InputLabel>
+                      <Select
+                        value={categoryFilter}
+                        onChange={e => setCategoryFilter(e.target.value)}
+                        label="Categoría"
+                        sx={{
+                          borderRadius: 2,
+                          '& .MuiSelect-select': {},
+                        }}
+                        MenuProps={{
+                          disableScrollLock: true,
+                        }}
+                      >
+                        {CATEGORIES.map(category => (
+                          <MenuItem key={category.value} value={category.value}>
+                            {category.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  {/* Ordenar por */}
+                  <Grid item xs={12} sm={6} md={3}>
+                    <FormControl fullWidth>
+                      <InputLabel>Ordenar por</InputLabel>
+                      <Select
+                        value={sortBy}
+                        onChange={handleSortChange}
+                        label="Ordenar por"
+                        sx={{
+                          borderRadius: 2,
+                        }}
+                        MenuProps={{
+                          disableScrollLock: true,
+                        }}
+                      >
+                        {SORT_OPTIONS.map(option => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  {/* Botón limpiar */}
+                  <Grid item xs={12} sm={6} md={2}>
                     <Button
+                      fullWidth
                       variant="outlined"
                       onClick={handleClearFilters}
                       sx={{ borderRadius: 2, px: 2 }}
                     >
-                      <ClearIcon />
+                      <ClearIcon sx={{ mr: 1 }} /> Limpiar
                     </Button>
-                  </Stack>
+                  </Grid>
                 </Grid>
-              </Grid>
 
-              {(searchTerm || categoryFilter !== 'all') && (
-                <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  {searchTerm && (
-                    <Chip
-                      label={`Búsqueda: "${searchTerm}"`}
-                      onDelete={() => setSearchTerm('')}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  )}
-                  {categoryFilter !== 'all' && (
-                    <Chip
-                      label={`Categoría: ${
-                        CATEGORIES.find(c => c.value === categoryFilter)?.label
-                      }`}
-                      onDelete={() => setCategoryFilter('all')}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  )}
-                </Box>
-              )}
-            </Paper>
+                {/* Chips de filtros activos */}
+                {(searchTerm || categoryFilter !== 'all') && (
+                  <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {searchTerm && (
+                      <Chip
+                        label={`Búsqueda: "${searchTerm}"`}
+                        onDelete={() => setSearchTerm('')}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                    )}
+                    {categoryFilter !== 'all' && (
+                      <Chip
+                        label={`Categoría: ${
+                          CATEGORIES.find(c => c.value === categoryFilter)?.label
+                        }`}
+                        onDelete={() => setCategoryFilter('all')}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                    )}
+                  </Box>
+                )}
+              </Paper>
+            )}
 
             {/* Grid de productos */}
             <Box sx={{ mb: 40 }}>
@@ -733,13 +847,13 @@ const MyProducts = () => {
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: {
-                        xs: '1fr',
+                        xs: '1fr 1fr',
                         sm: '1fr 1fr',
                         md: '1fr 1fr 1fr',
                         lg: '1fr 1fr 1fr 1fr',
                         xl: '1fr 1fr 1fr 1fr 1fr',
                       },
-                      gap: { xs: 2, sm: 3, md: 4, lg: 2 },
+                      gap: { xs: 1.5, sm: 3, md: 4, lg: 2 },
                       width: '100%',
                     }}
                   >

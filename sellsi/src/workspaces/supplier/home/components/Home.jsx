@@ -169,8 +169,9 @@ const ProviderHome = () => {
           }}
         >
           <Container
-            maxWidth={isMobile ? false : 'xl'}
+            maxWidth={false}
             disableGutters={isMobile ? true : false}
+            sx={{ width: '100%' }}
           >
             <Grid container spacing={3}>
               <Grid size={12}>

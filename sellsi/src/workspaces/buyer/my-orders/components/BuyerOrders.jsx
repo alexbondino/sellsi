@@ -308,8 +308,9 @@ const BuyerOrders = memo(function BuyerOrders() {
           }}
         >
           <Container
-            maxWidth={isMobile ? false : 'xl'}
+            maxWidth={false}
             disableGutters={isMobile ? true : false}
+            sx={{ width: '100%' }}
           >
             {/* Header: siempre visible, fuera del skeleton */}
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
@@ -349,8 +350,9 @@ const BuyerOrders = memo(function BuyerOrders() {
           }}
         >
           <Container
-            maxWidth={isMobile ? false : 'xl'}
+            maxWidth={false}
             disableGutters={isMobile ? true : false}
+            sx={{ width: '100%' }}
           >
             <Alert severity="error" sx={{ mt: 2 }}>
               {error}
@@ -408,8 +410,9 @@ const BuyerOrders = memo(function BuyerOrders() {
         }}
       >
         <Container
-          maxWidth={isMobile ? false : 'xl'}
+          maxWidth={false}
           disableGutters={isMobile ? true : false}
+          sx={{ width: '100%' }}
         >
           {/* Título de la página */}
           <Box

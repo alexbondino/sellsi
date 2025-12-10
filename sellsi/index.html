@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/Logos/sellsi_minilogo.webp" />
+    <link rel="icon" type="image/webp" href="/Logos/sellsi_minilogo.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <!-- Primary meta description for the site (used by search engines) -->
       <meta name="description" content="Plataforma de abastecimiento empresarial que conecta compradores y proveedores, agiliza compras y asegura transacciones con proveedores verificados." />
@@ -13,7 +13,7 @@
   <meta property="og:url" content="https://sellsi.cl/" />
   <meta property="og:image" content="/Logos/sellsi_minilogo.webp" />
   <meta property="og:image:secure_url" content="/Logos/sellsi_minilogo.webp" />
-  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:type" content="image/webp" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="628" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -35,8 +35,8 @@
   
   <!-- Critical CSS: Loader inline para First Paint -->
   <style>
-    /* Loader container visible inmediatamente */
-    #root {
+    /* Loader container visible SOLO cuando no hay contenido renderizado */
+    #root:empty {
       min-height: 100vh;
       display: flex;
       align-items: center;

@@ -112,7 +112,7 @@ const ProductsSection = React.memo(
         xl: `repeat(${productGridColumns.xl}, 1fr)`,
       },
       gap: {
-        xs: productGridGaps.xs,
+        xs: 1.5, // Reducido para mobile (12px)
         sm: productGridGaps.sm,
         md: productGridGaps.md,
         lg: productGridGaps.lg,
@@ -123,9 +123,9 @@ const ProductsSection = React.memo(
     };
 
     // Ô£à MEJORA DE RENDIMIENTO: Memoizaci├│n de estilos de las tarjetas
-    // Valores alineados con ProductCardSkeleton para evitar CLS
+    // Cards ocupan 100% en mobile (xs/sm) para adaptarse al grid
     const cardContainerStyles = {
-      width: { xs: 180, sm: 195, md: 220, lg: 300, xl: 320 },
+      width: { xs: '100%', sm: '100%', md: 220, lg: 300, xl: 320 },
     };
 
     // Ô£à MEJORA DE RENDIMIENTO: Memoizaci├│n del t├¡tulo de secci├│n

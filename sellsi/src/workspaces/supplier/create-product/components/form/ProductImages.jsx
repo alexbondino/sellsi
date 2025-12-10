@@ -50,10 +50,7 @@ const ProductImages = ({
           onImagesChange={onImagesChange}
           maxImages={5}
           onError={onImageError}
-          error={
-            (touched.imagenes || triedSubmit) &&
-            (errors.imagenes || localErrors.imagenes || imageError)
-          }
+          error={imageError || errors.imagenes || localErrors.imagenes}
         />
       </Box>
     </ImageUploadErrorBoundary>

@@ -400,6 +400,7 @@ const ShippingRegionsModal = ({
             overflowY: 'auto',
             overflowX: 'hidden',
             width: '100%',
+            pb: isMobile ? 2 : 0,
             // Scroll solo vertical
             '&::-webkit-scrollbar': {
               height: isMobile ? 8 : 6,
@@ -428,16 +429,15 @@ const ShippingRegionsModal = ({
                   sx={{
                     fontWeight: 600,
                     bgcolor: 'grey.50',
-                    width: 50,
-                    minWidth: 40,
-                    maxWidth: 60,
-                    p: isMobile ? 1 : 2,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
+                    width: isMobile ? '12%' : 60,
+                    minWidth: isMobile ? 0 : 50,
+                    maxWidth: isMobile ? 'none' : 70,
+                    p: isMobile ? 0.5 : 2,
+                    textAlign: 'center',
                   }}
                 >
                   <Checkbox
-                    size={isMobile ? 'small' : 'medium'}
+                    size="medium"
                     checked={
                       regionsConfig.length > 0 &&
                       regionsConfig.every(config => config.enabled)
@@ -465,10 +465,10 @@ const ShippingRegionsModal = ({
                   sx={{
                     fontWeight: 600,
                     bgcolor: 'grey.50',
-                    width: '30%',
-                    minWidth: 80,
-                    maxWidth: 200,
-                    p: isMobile ? 1 : 2,
+                    width: isMobile ? '33%' : 250,
+                    minWidth: isMobile ? 0 : 200,
+                    maxWidth: isMobile ? 'none' : 300,
+                    p: isMobile ? 0.75 : 2,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}
@@ -484,10 +484,10 @@ const ShippingRegionsModal = ({
                   sx={{
                     fontWeight: 600,
                     bgcolor: 'grey.50',
-                    width: '25%',
-                    minWidth: 80,
-                    maxWidth: 180,
-                    p: isMobile ? 1 : 2,
+                    width: isMobile ? '30%' : 180,
+                    minWidth: isMobile ? 0 : 140,
+                    maxWidth: isMobile ? 'none' : 200,
+                    p: isMobile ? 0.75 : 2,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}
@@ -503,10 +503,10 @@ const ShippingRegionsModal = ({
                   sx={{
                     fontWeight: 600,
                     bgcolor: 'grey.50',
-                    width: '20%',
-                    minWidth: 60,
-                    maxWidth: 160,
-                    p: isMobile ? 1 : 2,
+                    width: isMobile ? '25%' : 150,
+                    minWidth: isMobile ? 0 : 120,
+                    maxWidth: isMobile ? 'none' : 180,
+                    p: isMobile ? 0.75 : 2,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}
@@ -523,9 +523,9 @@ const ShippingRegionsModal = ({
             <TableBody>
               {regionsConfig.map(config => (
                 <TableRow key={config.region}>
-                  <TableCell sx={{ p: isMobile ? 1 : 2 }}>
+                  <TableCell sx={{ p: isMobile ? 0.5 : 2 }}>
                     <Checkbox
-                      size={isMobile ? 'small' : 'medium'}
+                      size="medium"
                       checked={config.enabled}
                       onChange={e =>
                         handleCheckboxChange(config.region, e.target.checked)

@@ -28,6 +28,7 @@ import BlockIcon from '@mui/icons-material/Block'
 import DeleteIcon from '@mui/icons-material/Delete'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import MobileOfferCard from '../../../../shared/components/mobile/MobileOfferCard'
+import MobileOffersSkeleton from '../../../../shared/components/display/skeletons/MobileOffersSkeleton'
 import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion'
 import { useThumbnailsBatch } from '../../../../hooks/useThumbnailQueries'
 
@@ -270,14 +271,17 @@ const SupplierOffersList = ({
 
   const hasOffers = offers && offers.length > 0
   if (!hasOffers) {
-    if (initializing || loading)
-      return (
+    if (initializing || loading) {
+      return isMobile ? (
+        <MobileOffersSkeleton rows={3} />
+      ) : (
         <TableSkeleton
           rows={6}
           columns={5}
-          variant={isMobile ? 'card' : 'table'}
+          variant="table"
         />
       )
+    }
     return (
       <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
         <Typography variant="h6" color="text.secondary">
