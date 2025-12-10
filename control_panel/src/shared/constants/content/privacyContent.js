@@ -138,9 +138,8 @@ Los cambios entrarán en vigor 30 días después de la notificación, dando tiem
 
 **10.1. Información de Contacto**
 Para consultas sobre esta Política de Privacidad o ejercer tus derechos:
-10.1.1. Email de privacidad: privacidad@sellsi.cl
-10.1.2. Email de soporte: soporte@sellsi.cl
-10.1.3. Teléfono: +56 9 6310 9664
+10.1.1. Email de soporte: contacto@sellsi.cl
+10.1.2. Teléfono: +56 9 6310 9664
 
 **10.2. Tiempo de Respuesta**
 Nos comprometemos a responder solicitudes relacionadas con privacidad dentro de 15 días hábiles.

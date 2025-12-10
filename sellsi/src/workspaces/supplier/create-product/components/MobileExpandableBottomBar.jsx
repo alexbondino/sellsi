@@ -280,7 +280,7 @@ const MobileExpandableBottomBar = ({
                     color="text.secondary"
                     sx={{ fontSize: '0.75rem' }}
                   >
-                    Tarifa por Servicio (2%):
+                    Tarifa por Servicio (3%):
                   </Typography>
                   <Typography
                     variant="body1"

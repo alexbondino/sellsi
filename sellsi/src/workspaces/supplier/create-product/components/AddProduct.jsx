@@ -4,6 +4,8 @@ import React, {
   useCallback,
   useMemo,
   useRef,
+  lazy,
+  Suspense,
 } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -22,6 +24,7 @@ import {
   Stack,
   IconButton,
   Tooltip,
+  CircularProgress,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -29,7 +32,9 @@ import {
   CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 import BigModal from '../../../../shared/components/modals/BigModal/BigModal';
-import MassiveProductImport from './MassiveProductImport';
+// ✅ OPTIMIZACIÓN: Lazy load de MassiveProductImport (437 KB)
+// Solo se carga cuando el usuario abre el modal de importación masiva
+const MassiveProductImport = lazy(() => import('./MassiveProductImport'));
 import { ThemeProvider } from '@mui/material/styles';
 import {
   showValidationError,
@@ -930,11 +935,24 @@ const AddProduct = () => {
           onClose={handleCloseMassiveImport}
           title="Importar productos desde Excel"
         >
-          <MassiveProductImport
-            open={massiveImportOpen}
-            onClose={handleCloseMassiveImport}
-            onSuccess={handleMassiveImportSuccess}
-          />
+          <Suspense
+            fallback={
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                minHeight="400px"
+              >
+                <CircularProgress />
+              </Box>
+            }
+          >
+            <MassiveProductImport
+              open={massiveImportOpen}
+              onClose={handleCloseMassiveImport}
+              onSuccess={handleMassiveImportSuccess}
+            />
+          </Suspense>
         </BigModal>
       </ThemeProvider>
     </SupplierErrorBoundary>

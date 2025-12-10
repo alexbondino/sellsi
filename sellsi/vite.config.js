@@ -34,16 +34,88 @@ export default defineConfig({
 
     rollupOptions: {
       output: {
-        // Restaurado manualChunks tras experimento
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'mui-core': ['@mui/material', '@emotion/react', '@emotion/styled'],
-          'mui-icons': ['@mui/icons-material'],
-          'mui-extras': ['@mui/lab', '@mui/x-charts'],
-          router: ['react-router-dom'],
-          supabase: ['@supabase/supabase-js'],
-          animation: ['framer-motion', 'react-confetti'],
-          utils: ['lodash.debounce', 'react-hot-toast', 'zustand', 'immer'],
+        // ✅ OPTIMIZACIÓN: Chunking por flujo de usuario (buyer vs supplier)
+        manualChunks(id) {
+          // 1️⃣ VENDORS (compartidos por todos)
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('@mui/material') || id.includes('@emotion')) {
+              return 'mui-core';
+            }
+            if (id.includes('@mui/icons-material')) {
+              return 'mui-icons';
+            }
+            if (id.includes('@mui/lab') || id.includes('@mui/x-charts')) {
+              return 'mui-extras';
+            }
+            if (id.includes('react-router-dom')) {
+              return 'router';
+            }
+            if (id.includes('@supabase/supabase-js')) {
+              return 'supabase';
+            }
+            if (id.includes('framer-motion') || id.includes('react-confetti')) {
+              return 'animation';
+            }
+            if (id.includes('lodash.debounce') || id.includes('react-hot-toast') || 
+                id.includes('zustand') || id.includes('immer')) {
+              return 'utils';
+            }
+          }
+
+          // 2️⃣ SEPARACIÓN BUYER vs SUPPLIER (nunca se usan juntos)
+          if (id.includes('workspaces/buyer') || id.includes('domains/buyer')) {
+            // Marketplace tiene uso dual (público + buyer autenticado)
+            if (id.includes('workspaces/marketplace')) {
+              return 'marketplace-shared';
+            }
+            // Ofertas buyer menos frecuente
+            if (id.includes('buyer/my-offers')) {
+              return 'buyer-offers';
+            }
+            // Core buyer (marketplace autenticado, orders)
+            return 'buyer-workspace';
+          }
+
+          if (id.includes('workspaces/supplier') || id.includes('domains/supplier')) {
+            // Ofertas supplier menos frecuente
+            if (id.includes('supplier/my-offers')) {
+              return 'supplier-offers';
+            }
+            // Core supplier (home, products, orders)
+            return 'supplier-workspace';
+          }
+
+          // 3️⃣ CHECKOUT FLOW (Cart + Payment siempre juntos)
+          if (id.includes('domains/checkout') || id.includes('buyer/pages/BuyerCart')) {
+            return 'checkout-flow';
+          }
+
+          // 4️⃣ PRODUCT DETAIL (separado, usado por anónimos y autenticados)
+          if (id.includes('product/product-page-view')) {
+            return 'product-detail';
+          }
+
+          // 5️⃣ PROFILE (separado, usado por ambos roles pero no frecuente)
+          if (id.includes('domains/profile')) {
+            return 'profile';
+          }
+
+          // 6️⃣ AUTH (solo al inicio)
+          if (id.includes('workspaces/auth')) {
+            return 'auth';
+          }
+
+          // 7️⃣ SHARED COMPONENTS - REMOVIDO
+          // El chunk shared-ui era demasiado grande (928 KB) y creaba dependencias circulares
+          // Dejamos que Vite maneje automáticamente los componentes compartidos
+          // if (id.includes('shared/components') || id.includes('ui-components')) {
+          //   return 'shared-ui';
+          // }
+
+          // Default: dejar que Vite decida (code splitting automático para shared)
         },
 
         // Optimizar nombres de archivos

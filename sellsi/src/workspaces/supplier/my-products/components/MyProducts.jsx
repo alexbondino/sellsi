@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -20,6 +20,7 @@ import {
   useTheme,
   useMediaQuery,
   Grow,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -47,8 +48,10 @@ import {
   useTransferInfoModal,
 } from '../../../../shared/components/validation';
 
-// 🆕 Massive import
-import MassiveProductImport from '../../create-product/components/MassiveProductImport';
+// ✅ OPTIMIZACIÓN: Lazy load de MassiveProductImport (437 KB)
+const MassiveProductImport = lazy(() =>
+  import('../../create-product/components/MassiveProductImport')
+);
 
 // Error Boundaries
 import { SupplierErrorBoundary } from '../../error-boundary';
@@ -869,19 +872,32 @@ const MyProducts = () => {
           onClose={handleCloseMassiveImport}
           title="Importar productos desde Excel"
         >
-          <MassiveProductImport
-            open={massiveImportOpen}
-            onClose={handleCloseMassiveImport}
-            onSuccess={() => {
-              showSuccessToast('Productos importados correctamente', {
-                icon: '📥',
-              });
-              handleCloseMassiveImport();
-              if (supplierId) {
-                loadProducts(supplierId);
-              }
-            }}
-          />
+          <Suspense
+            fallback={
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                minHeight="400px"
+              >
+                <CircularProgress />
+              </Box>
+            }
+          >
+            <MassiveProductImport
+              open={massiveImportOpen}
+              onClose={handleCloseMassiveImport}
+              onSuccess={() => {
+                showSuccessToast('Productos importados correctamente', {
+                  icon: '📥',
+                });
+                handleCloseMassiveImport();
+                if (supplierId) {
+                  loadProducts(supplierId);
+                }
+              }}
+            />
+          </Suspense>
         </BigModal>
 
         {/* Modal validación bancaria */}

@@ -27,6 +27,9 @@ const PrivacyPolicyModal = ({ open, onClose }) => {
       maxWidth="md"
       fullWidth
       scroll="paper"
+      sx={{
+        zIndex: 1500, // Mayor que el modal de Register (1400)
+      }}
       PaperProps={{
         sx: {
           borderRadius: 3,

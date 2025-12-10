@@ -1,10 +1,10 @@
 /**
  * 🔒 Security Services
  * 
- * Servicios de seguridad (baneos, tracking de IPs)
+ * Servicios de seguridad (tracking de IPs)
  */
 
-export { default as banService } from './banService';
+// banService eliminado - no se usa en el control panel
 export * from './ipTrackingService';
 
 export default {};
