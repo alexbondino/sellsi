@@ -19,7 +19,6 @@ const BUYER_ROUTES = [
   '/buyer/marketplace',
   '/buyer/offers',
   '/buyer/orders',
-  '/buyer/performance',
   '/buyer/cart',
   '/buyer/paymentmethod',
   '/buyer/profile',

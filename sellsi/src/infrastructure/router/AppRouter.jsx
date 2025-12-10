@@ -66,8 +66,6 @@ const BuyerOrders = React.lazy(() =>
     default: module.BuyerOrders,
   }))
 );
-// BuyerPerformance was removed; reuse Marketplace for now to keep route functional
-const BuyerPerformance = Marketplace;
 const BuyerOffers = React.lazy(() =>
   import('../../workspaces/buyer/my-offers').then(module => ({
     default: module.BuyerOffers,
@@ -239,19 +237,6 @@ export const AppRouter = ({ scrollTargets }) => {
               redirectTo="/"
             >
               <BuyerOrders />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/buyer/performance"
-          element={
-            <PrivateRoute
-              isAuthenticated={!!session}
-              needsOnboarding={needsOnboarding}
-              loading={loadingUserStatus}
-              redirectTo="/"
-            >
-              <BuyerPerformance />
             </PrivateRoute>
           }
         />

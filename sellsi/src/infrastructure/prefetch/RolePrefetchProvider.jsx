@@ -14,7 +14,7 @@ export const RolePrefetchProvider = ({ children, buyerDelay = 1500, supplierDela
 
   useEffect(() => {
     if (loadingUserStatus || !session || !currentAppRole) return;
-    const buyerRoutes = ['/buyer/marketplace','/buyer/cart','/buyer/orders','/buyer/performance'];
+    const buyerRoutes = ['/buyer/marketplace','/buyer/cart','/buyer/orders'];
     const supplierRoutes = ['/supplier/home','/supplier/myproducts','/supplier/addproduct','/supplier/my-orders'];
     const routes = currentAppRole === 'buyer' ? buyerRoutes : supplierRoutes;
     const delay = currentAppRole === 'buyer' ? buyerDelay : supplierDelay;
