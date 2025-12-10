@@ -76,7 +76,7 @@ const TextFormatter = ({ text, sx = {} }) => {
           <Typography
             key={index}
             sx={{
-              color: '#1976D2',
+              color: '#2E52B2',
               fontWeight: 600,
               mb: 0.8,
               fontSize: { xs: '0.95rem', md: '1rem' },
@@ -97,7 +97,7 @@ const TextFormatter = ({ text, sx = {} }) => {
             variant="subtitle1"
             sx={{
               fontWeight: 700,
-              color: '#1976D2',
+              color: '#2E52B2',
               mb: 1.2,
               mt: 1.5,
               fontSize: { xs: '1rem', md: '1.1rem' },
@@ -126,7 +126,7 @@ const TextFormatter = ({ text, sx = {} }) => {
                 content: '"•"',
                 position: 'absolute',
                 left: '-16px',
-                color: '#1976D2',
+                color: '#2E52B2',
                 fontWeight: 'bold',
               },
               ...sx.listItem,

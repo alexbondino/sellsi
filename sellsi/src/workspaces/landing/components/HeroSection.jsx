@@ -1,170 +1,158 @@
-// 📁 workspaces/landing/components/HeroSection.jsx
-import React from 'react';
-import { Box, Typography, Button } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
 
-export default function HeroSection({
-  illustrationSrc = '/assets/hero-illustration.webp',
-  illustrationAlt = 'Presentación de Sellsi',
-  onExploreClick,
-  onDemoClick,
-}) {
-  const navigate = useNavigate();
-
-  const handleExplore = () =>
-    onExploreClick ? onExploreClick() : window.location.assign('/marketplace');
+const HeroSection = ({ onExploreClick, onDemoClick }) => {
+  const navigate = useNavigate()
+  
+  const handleExplore = () => {
+    if (onExploreClick) return onExploreClick()
+    window.location.assign('/marketplace')
+  }
 
   const handleDemo = () => {
-    if (onDemoClick) return onDemoClick();
-    const search = `?scrollTo=${encodeURIComponent(
-      'contactModal'
-    )}&t=${Date.now()}`;
+    if (onDemoClick) return onDemoClick()
+    // Navigate with contactModal query param to trigger modal opening
+    const search = `?scrollTo=${encodeURIComponent('contactModal')}&t=${Date.now()}`;
     navigate(`/${search}`);
-  };
+  }
 
   return (
-    <Box
-      component="section"
-      sx={{
-        width: '100%',
-        minHeight: { xs: 900, md: 600 },
-        bgcolor: '#000',
-        display: 'grid',
-        gridTemplateColumns: {
-          xs: '1fr',
-          md: '1fr 1fr',
-        },
-        alignItems: 'center',
-        gap: { xs: 4, md: 6 },
-        // 🔥 MISMOS MÁRGENES LATERALES QUE EL CONTENEDOR DE HOME
-        px: {
-          xs: 'max(25px, env(safe-area-inset-left))', // Teléfonos chicos
-          sm: 'max(30px, env(safe-area-inset-left))', // Teléfonos grandes
-          mac: '180px', // Mac M1
-          lg: '250px', // 1080p
-          xl: '250px', // 2K
-        },
-        py: { xs: 6, md: 8 },
-      }}
-    >
-      {/* =================== COLUMNA 1: TEXTO + BOTONES =================== */}
-      <Box
-        sx={{
-          gridColumn: 1,
-          color: '#fff',
-          width: '100%',
-          zIndex: 2,
-          maxWidth: { xs: '100%' },
-        }}
-      >
-        <Typography
-          variant="h1"
-          sx={{
-            color: '#fff',
-            letterSpacing: '-0.5px',
-            textShadow: '0 2px 8px rgba(0,0,0,0.18)',
-            textAlign: 'left',
+    <section className="relative w-full bg-gradient-to-br from-gray-900 via-black to-gray-900 py-24 md:py-32 lg:py-28 xl:py-36 overflow-hidden">
+      {/* Grid background with depth */}
+      <div className="absolute inset-0 opacity-[0.15]">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+            linear-gradient(to right, rgba(59, 130, 246, 0.08) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(59, 130, 246, 0.08) 1px, transparent 1px)
+          `,
+            backgroundSize: '50px 50px',
           }}
+        ></div>
+      </div>
+
+      {/* Animated background gradients */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-1/2 -left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div
+          className="absolute top-1/3 -right-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: '1s' }}
+        ></div>
+        <div
+          className="absolute bottom-0 left-1/3 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: '2s' }}
+        ></div>
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+        {/* Left Column - Text */}
+        <div className="text-left space-y-8 animate-fade-in-up">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.1] tracking-tight">
+            Conectamos{' '}
+            <span className="bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 bg-clip-text text-transparent">
+              Compradores
+            </span>{' '}
+            con{' '}
+            <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">
+              Proveedores
+            </span>
+          </h1>
+
+          <p className="text-xl text-gray-400 leading-relaxed max-w-2xl">
+            <span className="font-bold text-white">Sellsi</span> es la
+            plataforma que revoluciona el comercio B2B en Chile. Conecta
+            directamente, negocia sin fricciones y cierra negocios a cualquier
+            escala.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 pt-8">
+            <button
+              onClick={handleExplore}
+              className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl text-base transition-all duration-300 shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_40px_rgba(59,130,246,0.5)] hover:scale-105 overflow-hidden"
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                Explorar Marketplace
+                <svg
+                  className="w-5 h-5 group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                  />
+                </svg>
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            </button>
+            <button
+              onClick={handleDemo}
+              className="group px-8 py-4 bg-white/5 backdrop-blur-sm border-2 border-orange-500/50 text-orange-400 hover:bg-orange-500 hover:text-white hover:border-orange-500 font-bold rounded-xl text-base transition-all duration-300 hover:scale-105"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+                </svg>
+                Agendar Demo
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Right Column - Image with floating elements */}
+        <div
+          className="relative flex items-center justify-center lg:justify-end animate-fade-in-up"
+          style={{ animationDelay: '0.2s' }}
         >
-          Conectamos{' '}
-          <Box component="span" sx={{ color: '#3f6ce9ff' }}>
-            Compradores
-          </Box>{' '}
-          con{' '}
-          <Box component="span" sx={{ color: '#F59E0B' }}>
-            Proveedores
-          </Box>{' '}
-          en todo Chile
-        </Typography>
+          <div className="relative max-w-md lg:max-w-lg w-full group">
+            <div className="relative">
+              <img
+                src="/assets/hero-illustration.webp"
+                alt="Presentación de Sellsi"
+                className="w-full h-auto object-contain drop-shadow-2xl transform group-hover:scale-[1.02] transition-transform duration-700 ease-out"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <Typography
-          variant="h3"
-          sx={{
-            mt: 2.5,
-            color: '#FFFFFF',
-            maxWidth: 820,
-            textAlign: 'left',
-          }}
-        >
-          <Box component="span" sx={{ fontWeight: 700, display: 'inline' }}>
-            Sellsi
-          </Box>{' '}
-          es tu mejor aliado para centralizar tus compras y ventas corporativas. Accede directamente a empresas, negocia sin intermediarios y cierra negocios de cualquier tamaño.
-        </Typography>
-
-        <Box
-          sx={{
-            mt: 4,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 2,
-          }}
-        >
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleExplore}
-            sx={{
-              px: 3.5,
-              py: 1.25,
-              fontSize: '20px',
-              height: 59,
-              width: { xs: '100%', md: '45%' },
-              fontWeight: 700,
-              borderRadius: 2,
-              bgcolor: '#2E52B2',
-              boxShadow: '0 6px 18px rgba(33,150,243,0.28)',
-            }}
-          >
-            Explorar Marketplace
-          </Button>
-
-          <Button
-            variant="contained"
-            onClick={handleDemo}
-            sx={{
-              px: 3.5,
-              py: 1.25,
-              fontSize: '20px',
-              height: 59,
-              width: { xs: '100%', md: '45%' },
-              fontWeight: 700,
-              borderRadius: 2,
-              bgcolor: '#F59E0B',
-              color: '#fff',
-              '&:hover': { bgcolor: '#FFA000' },
-            }}
-          >
-            Agendar Demo
-          </Button>
-        </Box>
-      </Box>
-
-      {/* =================== COLUMNA 2: SOLO IMAGEN =================== */}
-      <Box
-        sx={{
-          gridColumn: { xs: 1, md: 2 },
-          justifySelf: { xs: 'center', md: 'end' },
-        }}
-      >
-        <Box
-          component="img"
-          src={illustrationSrc}
-          alt={illustrationAlt}
-          loading="eager"
-          decoding="async"
-          fetchPriority="high"
-          sx={{
-            width: { xs: 'min(90vw, 420px)', md: '100%' },
-            height: '100%',
-            objectFit: 'contain',
-            borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-            userSelect: 'none',
-            pointerEvents: 'none',
-          }}
-        />
-      </Box>
-    </Box>
-  );
+      <style>{`
+        @keyframes fade-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
+        }
+        .animate-fade-in-up {
+          animation: fade-in-up 0.8s ease-out forwards;
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+      `}</style>
+    </section>
+  )
 }
+
+export default HeroSection

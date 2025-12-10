@@ -41,7 +41,7 @@ const Step4Verification = ({ email, onBack }) => {
         sx={{
           fontSize: 14,
           color: '#888',
-          '&:hover': { color: '#1976d2', background: 'transparent' },
+          '&:hover': { color: '#2E52B2', background: 'transparent' },
           height: { md: '32px' },
         }}
       >

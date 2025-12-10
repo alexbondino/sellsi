@@ -225,7 +225,7 @@ const CartItem = ({
                 size="small"
                 sx={{
                   '&.Mui-checked': {
-                    color: '#1976d2',
+                    color: '#2E52B2',
                   },
                   '&:hover': {
                     transform: 'scale(1.1)',                  },
@@ -446,7 +446,7 @@ const CartItem = ({
                     fontWeight: 'bold',
                     textAlign: 'center',
                     color: 'success.main',
-                    background: '#1976d2',
+                    background: '#2E52B2',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     opacity: isSelectionMode ? 0.5 : 1,

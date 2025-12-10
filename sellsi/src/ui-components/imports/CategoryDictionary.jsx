@@ -24,7 +24,7 @@ const CategoryDictionary = () => (
       <Typography
         variant="h4"
         gutterBottom
-        sx={{ fontWeight: 'bold', color: '#1976d2' }}
+        sx={{ fontWeight: 'bold', color: '#2E52B2' }}
       >
         Diccionario de Categorías
       </Typography>

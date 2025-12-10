@@ -58,7 +58,7 @@ const TOAST_VARIANTS = {
     style: {
       ...BASE_TOAST_CONFIG.style,
       background: '#e3f2fd',
-      color: '#1976d2',
+      color: '#2E52B2',
       border: '1px solid #2196f3'
     },
     iconTheme: {

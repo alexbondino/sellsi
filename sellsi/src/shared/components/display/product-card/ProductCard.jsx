@@ -37,7 +37,7 @@ const ProductCard = React.memo(
   ({
     product,
     type,
-    imagePriority = false, // ✅ Nueva prop para controlar prioridad de imagen
+    imagePriority = false, // Ô£à Nueva prop para controlar prioridad de imagen
     onEdit,
     onDelete,
     onViewStats,
@@ -50,7 +50,7 @@ const ProductCard = React.memo(
     const navigate = useNavigate();
     const rootRef = React.useRef(null);
 
-    // Estado para controlar si el modal AddToCart está abierto
+    // Estado para controlar si el modal AddToCart est├í abierto
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     // --- Common Product Data Extraction ---
@@ -78,7 +78,7 @@ const ProductCard = React.memo(
 
     // --- Memoized common elements ---
     const memoizedImage = useMemo(() => {
-      // Fallback: si es provider y no hay imagen base pero sí logo_url, usarlo como imagen
+      // Fallback: si es provider y no hay imagen base pero s├¡ logo_url, usarlo como imagen
       let productForImage = product;
       if (type === 'provider') {
         const hasAnyImage =
@@ -94,11 +94,11 @@ const ProductCard = React.memo(
         <ProductCardImage
           product={productForImage}
           type={type}
-          priority={imagePriority} // ✅ Pasar prioridad dinámica a la imagen
+          priority={imagePriority} // Ô£à Pasar prioridad din├ímica a la imagen
           alt={nombre}
         />
       );
-    }, [product, type, nombre, imagePriority]); // ✅ Añadir imagePriority a dependencias
+    }, [product, type, nombre, imagePriority]); // Ô£à A├▒adir imagePriority a dependencias
 
     // --- Common Card Styles (can be adjusted per type if needed) ---
     const cardStyles = useMemo(
@@ -146,7 +146,7 @@ const ProductCard = React.memo(
     );
 
     // Function to generate product URL
-    // Genera la URL pública o privada según el contexto
+    // Genera la URL p├║blica o privada seg├║n el contexto
     const generateProductUrl = useCallback(product => {
       return generateUnifiedProductUrl(product);
     }, []);
@@ -154,7 +154,7 @@ const ProductCard = React.memo(
     // Function for card navigation (works for both buyer and supplier types)
     const handleProductClick = useCallback(
       e => {
-        // Si el modal AddToCart está abierto, no permitir navegación
+        // Si el modal AddToCart est├í abierto, no permitir navegaci├│n
         if (isModalOpen) return;
 
         // Prevent navigation when clicking interactive elements inside the card
@@ -196,7 +196,7 @@ const ProductCard = React.memo(
         sx={cardStyles}
       >
         {/* registerProductNode effect handled by the useEffect above (no inline effects in JSX) */}
-        {/* ✅ Ocultar imagen de producto en tarjetas de proveedor (Option A) */}
+        {/* Ô£à Ocultar imagen de producto en tarjetas de proveedor (Option A) */}
         {type !== 'provider' && memoizedImage}
         {type === 'supplier' && (
           <ProductCardSupplierContext

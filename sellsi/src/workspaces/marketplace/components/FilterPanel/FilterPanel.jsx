@@ -91,7 +91,7 @@ const FilterPanel = React.memo((props) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <FilterListIcon
               sx={{
-                color: '#1976D2',
+                color: '#2E52B2',
                 fontSize: 24,
               }}
             />
@@ -112,7 +112,7 @@ const FilterPanel = React.memo((props) => {
               size="small"
               aria-label="Cerrar filtros"
               sx={{
-                color: '#1976D2',
+                color: '#2E52B2',
                 border: '1px solid #e0e0e0',
                 borderRadius: 2,
                 ml: 1,
@@ -130,7 +130,7 @@ const FilterPanel = React.memo((props) => {
             startIcon={<ClearAllIcon sx={{ fontSize: 18 }} />}
             sx={{
               display: { xs: 'none', sm: 'none', md: 'flex' },
-              color: '#1976D2',
+              color: '#2E52B2',
               textTransform: 'none',
               fontWeight: 600,
               fontSize: '0.875rem',

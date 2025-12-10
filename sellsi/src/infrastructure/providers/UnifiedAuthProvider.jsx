@@ -559,6 +559,7 @@ export const UnifiedAuthProvider = ({ children }) => {
         '/onboarding',
         '/terms-and-conditions',
         '/privacy-policy',
+        '/tailwind',
       ];
       const isAllowed = allowed.some(
         r =>

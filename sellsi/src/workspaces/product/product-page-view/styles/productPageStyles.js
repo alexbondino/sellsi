@@ -12,7 +12,7 @@
 // =============================================================================
 export const COLORS = {
   // Colores principales
-  primary: '#1976d2', // MUI primary default
+  primary: '#2E52B2', // MUI primary default
   primaryLight: '#42a5f5',
   primaryDark: '#1565c0',
 
@@ -37,7 +37,7 @@ export const COLORS = {
 
   // Chips
   chipBackground: '#EEF2FF',
-  chipText: '#1976d2',
+  chipText: '#2E52B2',
 
   // Botones hover
   buttonHoverBg: 'rgba(25, 118, 210, 0.04)',

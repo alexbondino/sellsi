@@ -49,7 +49,7 @@ const PaymentMethodCard = ({
     >
       <Card
         sx={{
-          border: isSelected ? '2px solid #1976d2' : '1px solid #e0e0e0',
+          border: isSelected ? '2px solid #2E52B2' : '1px solid #e0e0e0',
           borderRadius: 2,
           boxShadow: isSelected 
             ? '0 4px 20px rgba(25, 118, 210, 0.3)' 
@@ -62,7 +62,7 @@ const PaymentMethodCard = ({
             transform: 'translateY(-2px)'
           } : {},
           background: isSelected 
-            ? alpha('#1976d2', 0.05)
+            ? alpha('#2E52B2', 0.05)
             : 'background.paper'
         }}
       >
@@ -155,7 +155,7 @@ const PaymentMethodCard = ({
                   mt: 2, 
                   pt: 2, 
                   borderTop: '1px solid #e0e0e0',
-                  backgroundColor: alpha('#1976d2', 0.05),
+                  backgroundColor: alpha('#2E52B2', 0.05),
                   borderRadius: 1,
                   mx: -1,
                   px: 1

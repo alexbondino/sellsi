@@ -1,4 +1,5 @@
 import React from 'react';
+import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 import { Stack, Box } from '@mui/material';
 import { AnimatePresence } from 'framer-motion';
 
@@ -33,6 +34,29 @@ const MobilePaymentLayout = ({
   })(currentStep);
   const selectedMethod = availableMethods.find(m => m.id === selectedMethodId);
   const canContinue = !!selectedMethodId && !!selectedMethod && !isProcessing;
+
+  // Ensure bottom bar total reflects selected payment method fee (same logic as CompactCheckoutSummary)
+  const computedTotal = (() => {
+    const items = orderData?.items || [];
+    // Use tier-aware price calculation
+    const totalBruto = items.reduce((acc, item) => {
+      const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0;
+      const unit = item.price_tiers && item.price_tiers.length > 0
+        ? calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice)
+        : (item.price || 0);
+      return acc + unit * (item.quantity || 0);
+    }, 0);
+
+    const base = Math.trunc(totalBruto) + (orderData?.shipping || 0);
+
+    let fee = 0;
+    if (selectedMethod) {
+      if (selectedMethod.id === 'khipu') fee = 500;
+      else if (selectedMethod.id === 'flow') fee = Math.round(base * 0.038);
+    }
+
+    return base + fee;
+  })();
 
   return (
     <>
@@ -74,7 +98,7 @@ const MobilePaymentLayout = ({
       
       {/* Unified bottom bar */}
       <MobileCheckoutBar
-        total={orderData.total || 0}
+        total={computedTotal || orderData.total || 0}
         itemCount={orderData.items?.length || 0}
         onCheckout={onContinue}
         isLoading={isProcessing}

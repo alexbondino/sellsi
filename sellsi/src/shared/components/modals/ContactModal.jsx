@@ -24,16 +24,18 @@ import {
 } from '@mui/icons-material';
 import { useBanner } from '../display/banners/BannerContext';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { useAuth } from '../../../infrastructure/providers';
+import { buildEnrichedContactMessage } from './helpers/buildEnrichedContactMessage';
 
-// ✅ 1. Definimos la URL de tu función de Supabase como una constante
-const supabaseFunctionUrl =
-  'https://pvtmkfckdaeiqrfjskrq.supabase.co/functions/v1/contact-form';
+// ✅ 1. Definimos la URL de tu función de Supabase desde variable de entorno
+const supabaseFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/contact-form`;
 
-const ContactModal = ({ open, onClose }) => {
+const ContactModal = ({ open, onClose, context = null }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const location = useLocation();
   const { showBanner } = useBanner();
+  const { session, userProfile } = useAuth();
 
   // ✅ Bloquear scroll del body cuando el modal está abierto
   useBodyScrollLock(open);
@@ -47,12 +49,15 @@ const ContactModal = ({ open, onClose }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialPath, setInitialPath] = useState(null);
+  const [invokedFrom, setInvokedFrom] = useState(null);
 
   useEffect(() => {
     if (open) {
       setInitialPath(location.pathname);
+      // Capturar desde dónde se invocó el modal
+      setInvokedFrom(location.pathname + (location.search || ''));
     }
-  }, [open, location.pathname]);
+  }, [open, location.pathname, location.search]);
 
   useEffect(() => {
     if (open && initialPath && location.pathname !== initialPath) {
@@ -99,18 +104,34 @@ const ContactModal = ({ open, onClose }) => {
     setIsSubmitting(true);
 
     try {
+      // ✅ Construir información de contexto usando el helper
+      const userId = session?.user?.id || 'NO_AUTH';
+      const userEmail = session?.user?.email || formData.email;
+      const userName = userProfile?.user_nm || formData.nombre;
+      
+      // Construir mensaje enriquecido con contexto usando helper
+      const enrichedMessage = buildEnrichedContactMessage({
+        originalMessage: formData.mensaje,
+        invokedFrom: invokedFrom || 'Desconocido',
+        userId: userId,
+        userEmail: userEmail,
+        userProfile: userProfile,
+        context: context // Contexto específico (orden, producto, etc.)
+      });
+
       // Hacemos la llamada real a la API de Supabase
       const response = await fetch(supabaseFunctionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         // Mapeamos los nombres del estado del formulario a los que espera la API
         // (nombre -> name, mensaje -> message)
         body: JSON.stringify({
-          name: formData.nombre,
-          email: formData.email,
-          message: formData.mensaje,
+          name: userName,
+          email: userEmail,
+          message: enrichedMessage,
         }),
       });
 

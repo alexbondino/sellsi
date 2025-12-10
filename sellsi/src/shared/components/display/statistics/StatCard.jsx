@@ -81,7 +81,7 @@ export default function StatCard({
     if (title.toLowerCase().includes('sin stock')) {
       displayColor = '#f44336'; // rojo para productos sin stock
     } else if (title.toLowerCase().includes('solicitud') || title.toLowerCase().includes('semanal')) {
-      displayColor = '#1976d2'; // azul para solicitudes semanales
+      displayColor = '#2E52B2'; // azul para solicitudes semanales
     }
   }
   return (

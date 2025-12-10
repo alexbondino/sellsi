@@ -92,7 +92,10 @@ test.describe('🌐 Network Metrics - Análisis de Red', () => {
         // ─────────────────────────────────────────────────────────────────────
         console.log(`\n📍 [C${cycle}] Marketplace...`);
         networkCollector.reset();
-        await runner.navigateToMarketplace();
+        // Ciclo 1: Ya estamos en marketplace post-login, ciclos 2+: navegar
+        if (cycle > 1) {
+          await runner.navigateToMarketplace();
+        }
         await runner.page.waitForTimeout(2000);
         pageMetrics.push(networkCollector.getPageMetrics(`[C${cycle}] Marketplace`, runner.page.url()));
         printNetworkPageSummary(pageMetrics[pageMetrics.length - 1]);

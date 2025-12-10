@@ -103,7 +103,7 @@ const TermsAndConditionsModal = ({ open, onClose }) => {
             fontSize: '1rem',
             textTransform: 'none',
             '&:hover': {
-              bgcolor: '#1976d2',
+              bgcolor: '#2E52B2',
             },
           }}
         >

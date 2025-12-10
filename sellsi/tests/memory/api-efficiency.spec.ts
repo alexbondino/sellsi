@@ -776,9 +776,9 @@ test.describe('API Efficiency - Deep Analysis', () => {
       
       console.log('\n');
       console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-      console.log('║      📊 API EFFICIENCY TEST - ANÁLISIS PROFUNDO (1 CICLO)                     ║');
+      console.log('║      📊 API EFFICIENCY TEST - ANÁLISIS PROFUNDO (1 CICLO COMPLETO)            ║');
       console.log('╠═══════════════════════════════════════════════════════════════════════════════╣');
-      console.log('║  Flujo: Login → MP(scroll) → Pedidos → Ofertas → MP → Product → MP           ║');
+      console.log('║  Flujo: Login → MP → Pedidos → Ofertas → MP → Product → Carrito → Payment    ║');
       console.log('║  Detecta: N+1, slow queries, duplicados, payloads grandes                    ║');
       console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
       
@@ -797,11 +797,12 @@ test.describe('API Efficiency - Deep Analysis', () => {
       }
       
       // ========================================================================
-      // PASO 2: MARKETPLACE + SCROLL
+      // PASO 2: MARKETPLACE + SCROLL (ya estamos aquí post-login)
       // ========================================================================
-      console.log('\n📍 PASO 2: Marketplace + Scroll...');
+      console.log('\n📍 PASO 2: Marketplace + Scroll (ya en marketplace post-login)...');
       collector.reset();
-      await runner.navigateToMarketplace();
+      // No navegamos, ya estamos en marketplace después del login
+      await page.waitForTimeout(1000); // Esperar que se asiente
       await runner.scrollToBottom();
       await page.waitForTimeout(1500);
       
@@ -868,16 +869,83 @@ test.describe('API Efficiency - Deep Analysis', () => {
       }
       
       // ========================================================================
-      // PASO 7: MARKETPLACE (fin ciclo)
+      // PASO 7: AGREGAR PRODUCTO AL CARRITO
       // ========================================================================
-      console.log('\n📍 PASO 7: Marketplace (fin ciclo)...');
+      console.log('\n📍 PASO 7: Agregar producto al carrito...');
+      collector.reset();
+      await runner.navigateToMarketplace();
+      await page.waitForTimeout(1000);
+      
+      const addedProduct = await runner.addProductFromSupplierToCart();
+      if (addedProduct) {
+        console.log(`   📦 Producto: "${addedProduct.productName}" de "${addedProduct.supplierName}"`);
+        await runner.confirmAddToCart();
+      }
+      await page.waitForTimeout(2000);
+      
+      calls = collector.getCalls();
+      if (calls.length > 0) {
+        analyses.push(analyzePage('7. Agregar al Carrito', calls));
+        console.log(`   ✅ ${calls.length} API calls capturadas`);
+      }
+      
+      // ========================================================================
+      // PASO 8: IR AL CARRITO
+      // ========================================================================
+      console.log('\n📍 PASO 8: Carrito...');
+      collector.reset();
+      await runner.navigateToCart();
+      await page.waitForTimeout(2000);
+      
+      calls = collector.getCalls();
+      if (calls.length > 0) {
+        analyses.push(analyzePage('8. Carrito', calls));
+        console.log(`   ✅ ${calls.length} API calls capturadas`);
+      }
+      
+      // ========================================================================
+      // PASO 9: CONTINUAR AL PAGO (PAYMENT METHOD)
+      // ========================================================================
+      console.log('\n📍 PASO 9: Payment Method...');
+      collector.reset();
+      const wentToPayment = await runner.clickContinueToPayment();
+      if (wentToPayment) {
+        await page.waitForTimeout(2000);
+      }
+      
+      calls = collector.getCalls();
+      if (calls.length > 0) {
+        analyses.push(analyzePage('9. Payment Method', calls));
+        console.log(`   ✅ ${calls.length} API calls capturadas`);
+      }
+      
+      // ========================================================================
+      // PASO 10: VOLVER AL CARRITO Y ELIMINAR ITEM
+      // ========================================================================
+      console.log('\n📍 PASO 10: Eliminar del carrito...');
+      collector.reset();
+      await runner.navigateToCart();
+      await page.waitForTimeout(1000);
+      await runner.removeItemFromCart();
+      await page.waitForTimeout(2000);
+      
+      calls = collector.getCalls();
+      if (calls.length > 0) {
+        analyses.push(analyzePage('10. Eliminar del Carrito', calls));
+        console.log(`   ✅ ${calls.length} API calls capturadas`);
+      }
+      
+      // ========================================================================
+      // PASO 11: MARKETPLACE (fin ciclo)
+      // ========================================================================
+      console.log('\n📍 PASO 11: Marketplace (fin ciclo)...');
       collector.reset();
       await runner.navigateToMarketplace();
       await page.waitForTimeout(2000);
       
       calls = collector.getCalls();
       if (calls.length > 0) {
-        analyses.push(analyzePage('7. Marketplace (fin)', calls));
+        analyses.push(analyzePage('11. Marketplace (fin)', calls));
         console.log(`   ✅ ${calls.length} API calls capturadas`);
       }
       

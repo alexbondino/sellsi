@@ -128,7 +128,7 @@ const CartHeader = ({
                 <ShoppingCartIcon
                   sx={{
                     fontSize: { xs: 32, md: 40 },
-                    color: '#1976d2',
+                    color: '#2E52B2',
                     mr: 1
                   }}
                 />

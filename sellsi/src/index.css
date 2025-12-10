@@ -4,6 +4,10 @@
    ============================================= */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   /* Self-hosted Inter (Option B). Falls back gracefully. */
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -99,4 +103,36 @@ html::-webkit-scrollbar-track, body::-webkit-scrollbar-track, #root::-webkit-scr
 html, body, #root, * {
   scrollbar-color: #2E52B2 #000;
   scrollbar-width: thin;
+}
+
+/* ===== Custom animations for Contact Form ===== */
+@keyframes scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes expand-width {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-expand-width {
+  animation: expand-width 0.3s ease-out forwards;
 }

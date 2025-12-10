@@ -42,8 +42,9 @@ export const LayoutProvider = ({ children }) => {
   };
 
   // Determinar qué barras mostrar
-  const isAdminRoute = location.pathname.startsWith('/admin-login') || 
-                       location.pathname.startsWith('/admin-panel');
+  const isAdminRoute =
+    location.pathname.startsWith('/admin-login') ||
+    location.pathname.startsWith('/admin-panel');
 
   const showBottomBar = !isAdminRoute && location.pathname !== '/onboarding';
   const showTopBar = !isAdminRoute;
@@ -55,13 +56,14 @@ export const LayoutProvider = ({ children }) => {
     // SideBar state
     currentSideBarWidth,
     sideBarCollapsed,
+    setSideBarCollapsed, // ✅ Exportar el setter para que SideBar pueda actualizar el estado
     handleSideBarWidthChange,
     SideBarWidth,
-    
+
     // Logo state
     logoUrl: logoUrl ? `${logoUrl}?cb=${logoCacheBuster}` : null,
     logoCacheBuster,
-    
+
     // Layout flags
     showBottomBar,
     showTopBar,
@@ -70,8 +72,6 @@ export const LayoutProvider = ({ children }) => {
   };
 
   return (
-    <LayoutContext.Provider value={value}>
-      {children}
-    </LayoutContext.Provider>
+    <LayoutContext.Provider value={value}>{children}</LayoutContext.Provider>
   );
 };

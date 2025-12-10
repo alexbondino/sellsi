@@ -63,13 +63,11 @@ test.describe('📊 Performance Avanzado - Diagnóstico de Lags', () => {
       console.log('║    • Recursos render-blocking                                                 ║');
       console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
 
-      // Login
+      // Login (después del login, la app redirige automáticamente a /buyer/marketplace)
       await runner.login();
+      await runner.page.waitForTimeout(CONFIG.waitTime); // Esperar redirección
 
-      // Navegar al marketplace
-      await runner.navigateToMarketplace();
-
-      // Reset métricas CDP después del login
+      // Reset métricas CDP después del login (ya en marketplace)
       await setPreviousCDPMetrics(runner.cdp);
 
       // Medición inicial

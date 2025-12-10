@@ -164,7 +164,12 @@ const ProductSummary = React.memo(function ProductSummary({
           >
             <Typography
               variant="body1"
-              sx={{ fontWeight: 600, flex: 1, pointerEvents: 'none' }}
+              sx={{ 
+                fontWeight: 600, 
+                flex: 1, 
+                pointerEvents: 'none',
+                fontSize: { xs: '0.8rem', sm: '1rem' }
+              }}
             >
               {productData.name}
             </Typography>

@@ -194,7 +194,7 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
                     width: 40,
                     height: 40,
                     border: '3px solid #f3f3f3',
-                    borderTop: '3px solid #1976d2',
+                    borderTop: '3px solid #2E52B2',
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite',
                     mx: 'auto',

@@ -264,11 +264,7 @@ const CategoryNavigation = React.memo(({
               <Button
                 endIcon={sectionsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                 onClick={toggleSectionsExpanded}
-                sx={{
-                  ...styles.categoriesButton,
-                  fontSize: '0.9rem',
-                  px: 2,
-                }}
+                sx={styles.categoriesButton}
               >
                 Secciones
               </Button>
@@ -287,7 +283,9 @@ const CategoryNavigation = React.memo(({
                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                     position: 'absolute',
                     zIndex: 1000,
-                    minWidth: '200px',
+                    // Centrar en móvil con desplazamiento a la izquierda
+                    left: '45%',
+                    transform: 'translateX(-50%)',
                   }}
                 >
                   {Object.entries(SECTIONS)

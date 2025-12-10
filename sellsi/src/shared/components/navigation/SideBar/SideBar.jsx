@@ -25,13 +25,21 @@ import {
   LocalOffer as OffersIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { prefetchOnHover, prefetchForPath } from '../../../../infrastructure/prefetch/prefetch';
+import {
+  prefetchOnHover,
+  prefetchForPath,
+} from '../../../../infrastructure/prefetch/prefetch';
 import { useRole } from '../../../../infrastructure/providers';
 import { useAuth } from '../../../../infrastructure/providers';
+import { useLayout } from '../../../../infrastructure/providers';
 
 // Define los ítems de menú para cada rol directamente en este archivo con iconos
 const buyerMenuItems = [
-  { text: 'Marketplace', path: '/buyer/marketplace', icon: <MarketplaceIcon /> },
+  {
+    text: 'Marketplace',
+    path: '/buyer/marketplace',
+    icon: <MarketplaceIcon />,
+  },
   { text: 'Mis Ofertas', path: '/buyer/offers', icon: <OffersIcon /> },
   { text: 'Mis Pedidos', path: '/buyer/orders', icon: <OrdersIcon /> },
   // { text: 'Mi Performance', path: '/buyer/performance', icon: <PerformanceIcon /> }, // Eliminado
@@ -40,7 +48,11 @@ const buyerMenuItems = [
 const providerMenuItems = [
   { text: 'Inicio', path: '/supplier/home', icon: <HomeIcon /> },
   { text: 'Mis Ofertas', path: '/supplier/offers', icon: <OffersIcon /> },
-  { text: 'Mis Productos', path: '/supplier/myproducts', icon: <ProductsIcon /> },
+  {
+    text: 'Mis Productos',
+    path: '/supplier/myproducts',
+    icon: <ProductsIcon />,
+  },
   { text: 'Mis Pedidos', path: '/supplier/my-orders', icon: <OrdersIcon /> },
   // { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> }, // Eliminado
   // Marketplace oculto para supplier
@@ -51,15 +63,17 @@ const providerMenuItems = [
  * Determina el rol basándose en la ruta actual, similar al comportamiento del switch.
  * @param {object} props - Las props del componente.
  * @param {'buyer' | 'supplier' | null} props.role - El rol del perfil del usuario (usado como fallback para rutas neutrales).
- * @param {string} [props.width='210px'] - Ancho opcional de la SideBar.
+ * @param {string|object} [props.width='13%'] - Ancho opcional de la SideBar (en porcentaje para responsividad). Puede ser un string o un objeto responsive.
  * @param {function} [props.onWidthChange] - Callback opcional que se llama cuando cambia el ancho de la sidebar.
  */
-const SideBar = ({ role, width = '210px', onWidthChange }) => {
+const SideBar = ({ role, width = '13%', onWidthChange }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
   const { userProfile, session } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // ✅ Usar estado global del LayoutProvider en lugar de estado local
+  const { sideBarCollapsed, setSideBarCollapsed } = useLayout();
+  const isCollapsed = sideBarCollapsed;
 
   // Never render sidebar if user is not authenticated
   if (!session) return null;
@@ -88,7 +102,8 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
 
     // 3) route-based detection (includes /provider and marketplace product paths)
     const p = location.pathname;
-    if (p.startsWith('/supplier/') || p.startsWith('/provider/')) return 'supplier';
+    if (p.startsWith('/supplier/') || p.startsWith('/provider/'))
+      return 'supplier';
     if (p.startsWith('/buyer/')) return 'buyer';
     // product detail under marketplace should keep current profile role if available
     if (p.startsWith('/marketplace/product')) {
@@ -104,20 +119,47 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
   const effectiveRole = determineEffectiveRole();
 
   // Calcular el ancho colapsado (40% del ancho original)
-  const expandedWidth = width;
-  const collapsedWidth = `${Math.round(parseInt(width.replace('px', '')) * 0.4)}px`;
-  const currentWidth = isCollapsed ? collapsedWidth : expandedWidth;
+  // ✅ MEJORA: Soporte para anchos responsive (objetos con breakpoints)
+  const calculateWidth = (w, collapse = false) => {
+    if (typeof w === 'object') {
+      // Si es un objeto responsive, calcular para cada breakpoint
+      const result = {};
+      Object.keys(w).forEach(bp => {
+        const bpWidth = w[bp];
+        if (collapse) {
+          result[bp] = bpWidth.includes('%')
+            ? `${parseFloat(bpWidth) * 0.4}%`
+            : `${Math.round(parseInt(bpWidth.replace('px', '')) * 0.4)}px`;
+        } else {
+          result[bp] = bpWidth;
+        }
+      });
+      return result;
+    }
+    // Si es un string simple
+    if (collapse) {
+      return w.includes('%')
+        ? `${parseFloat(w) * 0.4}%`
+        : `${Math.round(parseInt(w.replace('px', '')) * 0.4)}px`;
+    }
+    return w;
+  };
+
+  const expandedWidth = React.useMemo(() => calculateWidth(width, false), [width]);
+  const collapsedWidth = React.useMemo(() => calculateWidth(width, true), [width]);
+  const currentWidth = React.useMemo(() => isCollapsed ? collapsedWidth : expandedWidth, [isCollapsed, collapsedWidth, expandedWidth]);
 
   // Notificar cambios de ancho al componente padre si el callback está disponible
   React.useEffect(() => {
     if (onWidthChange) {
       onWidthChange(currentWidth, isCollapsed);
     }
-  }, [currentWidth, isCollapsed, onWidthChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCollapsed, JSON.stringify(currentWidth)]);
 
   // Handler para toggle del colapso
   const handleToggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+    setSideBarCollapsed(!isCollapsed);
   };
 
   // Define el color exacto del fondo de la sidebar
@@ -126,7 +168,6 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
   const hoverBackgroundColor = 'rgba(255, 255, 255, 0.15)'; // White with 15% opacity for hover
   // Define el color de fondo para el elemento activo (un tono ligeramente más claro o distinto que el fondo general)
   const activeBackgroundColor = '#4d4d4d'; // A slightly lighter grey for the active item
-
 
   let menuItemsToDisplay = [];
 
@@ -143,10 +184,14 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
   try {
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     if (isDesktop && menuItemsToDisplay && menuItemsToDisplay.length > 0) {
-      const offersItems = menuItemsToDisplay.filter(item => item.path && item.path.includes('/offers'));
+      const offersItems = menuItemsToDisplay.filter(
+        item => item.path && item.path.includes('/offers')
+      );
       if (offersItems.length > 0) {
         // Filtrar los items que no son ofertas y luego anexar las ofertas al final
-        menuItemsToDisplay = menuItemsToDisplay.filter(item => !(item.path && item.path.includes('/offers')));
+        menuItemsToDisplay = menuItemsToDisplay.filter(
+          item => !(item.path && item.path.includes('/offers'))
+        );
         menuItemsToDisplay = [...menuItemsToDisplay, ...offersItems];
       }
     }
@@ -191,7 +236,8 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
           margin: '4px 8px',
           width: 'calc(100% - 16px)',
           opacity: 1,
-          transition: 'padding-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), padding-right 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 0.2s ease',
+          transition:
+            'padding-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), padding-right 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 0.2s ease',
           justifyContent: isCollapsed ? 'center' : 'flex-start',
           alignItems: 'center',
           display: 'flex',
@@ -246,12 +292,13 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
           marginBottom: '12px',
           height: '56px',
           alignItems: 'center',
-          transition: 'justify-content 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          transition:
+            'justify-content 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
         }}
       >
         <Tooltip
           key={isCollapsed ? 'collapsed' : 'expanded'}
-          title={isCollapsed ? "Expandir menú" : "Contraer menú"}
+          title={isCollapsed ? 'Expandir menú' : 'Contraer menú'}
           placement="right"
           arrow
           componentsProps={{
@@ -260,13 +307,13 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
                 fontSize: '1.2rem',
                 padding: '8px 12px',
                 maxWidth: 'none',
-              }
-            }
+              },
+            },
           }}
         >
           <IconButton
             onClick={handleToggleCollapse}
-            aria-label={isCollapsed ? "Expandir menú" : "Contraer menú"}
+            aria-label={isCollapsed ? 'Expandir menú' : 'Contraer menú'}
             sx={{
               color: '#FFFFFF',
               width: '40px',
@@ -288,7 +335,10 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
             const isActive = location.pathname === item.path;
             const isFirstItem = index === 0;
             // attach hover prefetch for known heavy routes (use mapping to concrete imports)
-            const hoverHandlers = prefetchOnHover(() => prefetchForPath(item.path), item.path);
+            const hoverHandlers = prefetchOnHover(
+              () => prefetchForPath(item.path),
+              item.path
+            );
 
             return (
               <ListItem
@@ -302,8 +352,12 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
                 }}
               >
                 <Tooltip
-                  key={isCollapsed ? `collapsed-${item.text}` : `expanded-${item.text}`}
-                  title={isCollapsed ? item.text : ""}
+                  key={
+                    isCollapsed
+                      ? `collapsed-${item.text}`
+                      : `expanded-${item.text}`
+                  }
+                  title={isCollapsed ? item.text : ''}
                   placement="right"
                   arrow
                   disableHoverListener={!isCollapsed}
@@ -314,8 +368,8 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
                         padding: '8px 12px',
                         maxWidth: 'none',
                         whiteSpace: 'nowrap',
-                      }
-                    }
+                      },
+                    },
                   }}
                 >
                   <ListItemButton
@@ -327,9 +381,11 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
                         }, 100);
                       }
                     }}
-                    onMouseEnter={(e) => { hoverHandlers.onMouseEnter(e); }}
-                    onMouseLeave={(e) => hoverHandlers.onMouseLeave(e)}
-                    onFocus={(e) => hoverHandlers.onFocus(e)}
+                    onMouseEnter={e => {
+                      hoverHandlers.onMouseEnter(e);
+                    }}
+                    onMouseLeave={e => hoverHandlers.onMouseLeave(e)}
+                    onFocus={e => hoverHandlers.onFocus(e)}
                     disabled={isActive}
                     sx={{
                       height: '48px',
@@ -355,7 +411,7 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
-                          }
+                          },
                         }}
                       />
                     )}
@@ -375,11 +431,11 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
 // ============================================================================
 // 🎯 REFACTORIZACIÓN COMPLETA: ARQUITECTURA PROFESIONAL
 // ============================================================================
-// 
+//
 // ✅ ELIMINADO: SideBarProvider redundante
 // ✅ CENTRALIZADO: Control único desde AppShell
 // ✅ OPTIMIZADO: Sin duplicaciones de renderizado
-// 
+//
 // El AppShell es ahora el único responsable de renderizar la SideBar,
 // eliminando todas las instancias redundantes en componentes individuales.
 // ============================================================================

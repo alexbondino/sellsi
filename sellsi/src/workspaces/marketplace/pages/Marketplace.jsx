@@ -10,6 +10,7 @@ import { Box } from '@mui/material';
 // Hook centralizado
 // 🔄 Migrado: usar hook compartido parametrizable
 import { useMarketplaceLogic } from '../../../shared/hooks';
+import { useLayout } from '../../../infrastructure/providers';
 
 // Componentes de secciones
 import SearchSection from '../components/sections/SearchSection.jsx';
@@ -17,43 +18,37 @@ import SearchSection from '../components/sections/SearchSection.jsx';
 import ProductsSection from '../components/sections/ProductsSection.jsx';
 
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
-const Marketplace = React.memo(() => {
+const Marketplace = React.memo(({ hasSideBar = false }) => {
+  // ✅ Obtener estado del sidebar desde LayoutProvider
+  const { sideBarCollapsed } = useLayout();
+
   // ✅ ELIMINADO: Login modal duplicado - ahora se gestiona centralmente desde TopBar
 
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
   // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
   const marketplaceConfig = React.useMemo(
     () => ({
-      hasSideBar: false, // Indicar que NO hay SideBar
-      // ✅ Valores específicos para Marketplace (mover más a la izquierda)
-      searchBarMarginLeft: {
-        xs: 0,
-        sm: 0,
-        md: -5,
-        lg: 3,
-        xl: 3,
-      },
-      categoryMarginLeft: {
-        xs: 0,
-        sm: 0,
-        md: -5,
-        lg: 2,
-        xl: 2,
-      },
+      hasSideBar, // Parametrizable: con o sin SideBar
+      // ✅ Valores específicos para Marketplace (ajustados según hasSideBar)
+      searchBarMarginLeft: hasSideBar
+        ? { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }
+        : { xs: 0, sm: 0, md: -5, lg: 3, xl: 3 },
+      categoryMarginLeft: hasSideBar
+        ? { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }
+        : { xs: 0, sm: 0, md: -5, lg: 2, xl: 2 },
       // ✅ Nuevo: Margen del título "🛍️ Todos los Productos"
-      titleMarginLeft: {
-        xs: 0,
-        sm: 0,
-        md: 0,
-        lg: 2,
-        xl: 3,
-      },
+      titleMarginLeft: hasSideBar
+        ? { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }
+        : { xs: 0, sm: 0, md: 0, lg: 2, xl: 3 },
     }),
-    []
+    [hasSideBar]
   );
 
   const { searchSectionProps, filterSectionProps, productsSectionProps } =
-    useMarketplaceLogic({ ...marketplaceConfig, clearSearchOnViewToggle: true });
+    useMarketplaceLogic({
+      ...marketplaceConfig,
+      clearSearchOnViewToggle: true,
+    });
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
   // Configuración de botones de navegación (sin botones para Marketplace)
@@ -74,22 +69,51 @@ const Marketplace = React.memo(() => {
       bgcolor: '#f8fafc',
       minHeight: '100vh',
       pt: { xs: 7, md: 8 },
+      // ✅ RESPONSIVIDAD: Márgenes adaptativos según hasSideBar
+      // Con sidebar: márgenes simétricos más reducidos para compensar el espacio ocupado
+      // Sin sidebar: márgenes más amplios ya que hay más espacio disponible
+      px: hasSideBar
+        ? {
+            xs: 2, // Mobile: margen pequeño
+            sm: 2.5, // Tablet pequeña: margen reducido
+            md: 3, // Tablet: margen moderado
+            lg: 4, // Desktop: margen compacto
+            xl: 6, // Desktop grande: margen medio (reducido de 20 a 6)
+          }
+        : {
+            xs: 2, // Mobile: margen pequeño
+            sm: 3, // Tablet pequeña: margen medio
+            md: 4, // Tablet: margen moderado
+            lg: 6, // Desktop: margen amplio
+            xl: 8, // Desktop grande: margen grande
+          },
+      pb: { xs: 3, md: 4 },
+      // ✅ Asegurar que el contenido use todo el ancho disponible
+      width: '100%',
+      maxWidth: '100%',
     }),
-    []
+    [hasSideBar]
   );
   return (
     <Box>
       {/* TopBar eliminada, ahora la maneja App.jsx globalmente */}
-      {/* Contenido principal con margen para compensar TopBar fijo (SIN SideBar) */}
+      {/* Contenido principal con margen para compensar TopBar fijo */}
       <Box sx={containerStyles}>
-        {/* Sección de búsqueda y navegación */}
-        <SearchSection {...searchSectionProps} />
-
+        {/* Sección de búsqueda y navegación - Pasamos hasSideBar y sideBarCollapsed */}
+        <SearchSection
+          {...searchSectionProps}
+          hasSideBar={hasSideBar}
+          sideBarCollapsed={sideBarCollapsed}
+        />
         {/* Sección de filtros */}
-        {/* <FilterSection {...filterSectionProps} /> */} {/* Botón de filtros comentado */}
-
-        {/* Sección de productos */}
-        <ProductsSection {...productsSectionProps} />
+        {/* <FilterSection {...filterSectionProps} /> */}{' '}
+        {/* Botón de filtros comentado */}
+        {/* Sección de productos - Pasamos hasSideBar y sideBarCollapsed */}
+        <ProductsSection
+          {...productsSectionProps}
+          hasSideBar={hasSideBar}
+          sideBarCollapsed={sideBarCollapsed}
+        />
       </Box>
       {/* ✅ ELIMINADO: Login modal duplicado - ahora se gestiona centralmente desde TopBar */}
     </Box>

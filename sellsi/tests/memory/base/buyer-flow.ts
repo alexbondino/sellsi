@@ -35,6 +35,16 @@ export interface FlowOptions {
   enableCDP?: boolean;
 }
 
+/**
+ * Información del producto agregado al carrito (para tracking)
+ */
+export interface AddedProductInfo {
+  productName: string;
+  supplierName: string;
+  cardIndex: number;
+  timestamp: number;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // BUYER FLOW RUNNER
 // ═══════════════════════════════════════════════════════════════════════════
@@ -44,6 +54,12 @@ export class BuyerFlowRunner {
   private _page: Page | null = null;
   private _cdp: CDPSession | null = null;
   private options: FlowOptions;
+  
+  /**
+   * Tracking del último producto agregado al carrito
+   * Se usa para poder eliminarlo específicamente después
+   */
+  private _lastAddedProduct: AddedProductInfo | null = null;
 
   constructor(options: FlowOptions = {}) {
     this.options = {
@@ -65,6 +81,10 @@ export class BuyerFlowRunner {
   get cdp(): CDPSession {
     if (!this._cdp) throw new Error('CDP not initialized. Call setup() first.');
     return this._cdp;
+  }
+
+  get lastAddedProduct(): AddedProductInfo | null {
+    return this._lastAddedProduct;
   }
 
   // =========================================================================
@@ -249,6 +269,367 @@ export class BuyerFlowRunner {
     await this.waitForPageLoad();
   }
 
+  async navigateToPaymentMethod(): Promise<void> {
+    console.log('  → Método de Pago');
+    await this.page.goto(`${CONFIG.baseUrl}${ROUTES.buyer.paymentMethod}`);
+    await this.waitForPageLoad();
+  }
+
+  /**
+   * Busca productos de un proveedor en el batch actual del DOM
+   * @returns Array de productos encontrados con su información
+   */
+  private async _findProductsFromSupplierInCurrentBatch(supplierName: string): Promise<Array<{
+    index: number;
+    productName: string;
+    card: ReturnType<ReturnType<Page['locator']>['nth']>;
+  }>> {
+    const productCards = this.page.locator(SELECTORS.productCard);
+    const cardCount = await productCards.count();
+    
+    const matchedProducts: Array<{
+      index: number;
+      productName: string;
+      card: ReturnType<typeof productCards.nth>;
+    }> = [];
+    
+    for (let i = 0; i < cardCount; i++) {
+      const card = productCards.nth(i);
+      
+      // Buscar en todo el contenido de texto de la card
+      const cardText = await card.textContent().catch(() => '');
+      const hasSupplierInCard = cardText?.toLowerCase().includes(supplierName.toLowerCase());
+      
+      if (hasSupplierInCard) {
+        const productName = await card
+          .locator('h6, [class*="MuiTypography-h6"]')
+          .first()
+          .textContent()
+          .catch(() => 'Producto desconocido');
+        
+        matchedProducts.push({
+          index: i,
+          productName: productName?.trim() || 'Producto desconocido',
+          card,
+        });
+      }
+    }
+    
+    return matchedProducts;
+  }
+
+  /**
+   * Agrega un producto al carrito, con búsqueda robusta que incluye scroll.
+   * 
+   * ESTRATEGIA:
+   * 1. Si hay proveedor preferido configurado → Buscarlo en batch actual
+   * 2. Si no está → Hacer scroll y buscar en siguientes batches (hasta maxScrolls)
+   * 3. Si después de todos los scrolls no lo encuentra → Usar cualquier producto
+   * 4. Si no hay proveedor preferido → Usar cualquier producto al azar
+   * 
+   * @param supplierName - Proveedor a buscar (opcional, usa CONFIG.cart.preferredSupplier si no se especifica)
+   * @returns AddedProductInfo si encontró y clickeó, null si no
+   */
+  async addProductFromSupplierToCart(supplierName?: string): Promise<AddedProductInfo | null> {
+    const targetSupplier = supplierName || CONFIG.cart.preferredSupplier;
+    const maxScrolls = CONFIG.cart.maxScrollsToFindSupplier;
+    const scrollWaitTime = CONFIG.cart.scrollWaitTime;
+    
+    // =========================================================================
+    // CASO 1: Si hay proveedor específico, buscarlo con scroll si es necesario
+    // =========================================================================
+    if (targetSupplier) {
+      console.log(`  → Buscando producto del proveedor "${targetSupplier}"...`);
+      
+      let scrollAttempts = 0;
+      let previousCardCount = 0;
+      
+      while (scrollAttempts <= maxScrolls) {
+        const productCards = this.page.locator(SELECTORS.productCard);
+        const currentCardCount = await productCards.count();
+        
+        console.log(`    📊 Batch ${scrollAttempts}: ${currentCardCount} ProductCards en DOM`);
+        
+        // Buscar productos del proveedor en el batch actual
+        const matchedProducts = await this._findProductsFromSupplierInCurrentBatch(targetSupplier);
+        
+        if (matchedProducts.length > 0) {
+          console.log(`    ✅ Encontrados ${matchedProducts.length} productos de "${targetSupplier}"`);
+          
+          // Elegir uno al azar
+          const randomIndex = Math.floor(Math.random() * matchedProducts.length);
+          const selected = matchedProducts[randomIndex];
+          
+          console.log(`    🎲 Seleccionado al azar: "${selected.productName}" (${randomIndex + 1}/${matchedProducts.length})`);
+          
+          // Hacer clic en el botón "AGREGAR"
+          const addButton = selected.card.locator(SELECTORS.addToCartButton).first();
+          const isVisible = await addButton.isVisible().catch(() => false);
+          
+          if (isVisible) {
+            await addButton.click();
+            console.log('    ✅ Click en botón "AGREGAR"');
+            await this.page.waitForTimeout(CONFIG.modalAnimationDelay);
+            
+            this._lastAddedProduct = {
+              productName: selected.productName,
+              supplierName: targetSupplier,
+              cardIndex: selected.index,
+              timestamp: Date.now(),
+            };
+            
+            console.log(`    📦 Producto trackeado: "${this._lastAddedProduct.productName}"`);
+            return this._lastAddedProduct;
+          }
+        }
+        
+        // Si no encontramos y podemos hacer más scroll
+        if (scrollAttempts < maxScrolls) {
+          // Verificar si hay más contenido (el count cambió)
+          if (currentCardCount === previousCardCount && scrollAttempts > 0) {
+            console.log(`    📍 No hay más productos para cargar (count estable: ${currentCardCount})`);
+            break;
+          }
+          
+          console.log(`    🔄 Scroll #${scrollAttempts + 1} para buscar más productos...`);
+          await this.scrollToBottom();
+          await this.page.waitForTimeout(scrollWaitTime);
+          previousCardCount = currentCardCount;
+        }
+        
+        scrollAttempts++;
+      }
+      
+      console.log(`    ⚠️ Proveedor "${targetSupplier}" no encontrado después de ${scrollAttempts} intentos`);
+    }
+    
+    // =========================================================================
+    // CASO 2: Fallback - Usar cualquier producto disponible al azar
+    // =========================================================================
+    console.log('    📌 Usando fallback: producto aleatorio de cualquier proveedor');
+    
+    // Volver arriba para tener productos frescos
+    await this.page.evaluate(() => window.scrollTo(0, 0));
+    await this.page.waitForTimeout(1000);
+    
+    const productCards = this.page.locator(SELECTORS.productCard);
+    const cardCount = await productCards.count();
+    
+    if (cardCount === 0) {
+      console.log('    ❌ No hay productos disponibles en el marketplace');
+      this._lastAddedProduct = null;
+      return null;
+    }
+    
+    // Elegir un producto al azar
+    const randomCardIndex = Math.floor(Math.random() * cardCount);
+    const randomCard = productCards.nth(randomCardIndex);
+    
+    // Extraer información del producto
+    const productName = await randomCard
+      .locator('h6, [class*="MuiTypography-h6"]')
+      .first()
+      .textContent()
+      .catch(() => 'Producto aleatorio');
+    
+    // Intentar extraer el nombre del proveedor
+    const cardText = await randomCard.textContent().catch(() => '');
+    const porMatch = cardText?.match(/por\s+(\w+)/i);
+    const extractedSupplier = porMatch ? porMatch[1] : 'desconocido';
+    
+    console.log(`    🎲 Seleccionado: "${productName}" de "${extractedSupplier}" (tarjeta ${randomCardIndex + 1}/${cardCount})`);
+    
+    const addButton = randomCard.locator(SELECTORS.addToCartButton).first();
+    const isVisible = await addButton.isVisible().catch(() => false);
+    
+    if (isVisible) {
+      await addButton.click();
+      console.log('    ✅ Click en botón "AGREGAR"');
+      await this.page.waitForTimeout(CONFIG.modalAnimationDelay);
+      
+      this._lastAddedProduct = {
+        productName: productName?.trim() || 'Producto aleatorio',
+        supplierName: extractedSupplier,
+        cardIndex: randomCardIndex,
+        timestamp: Date.now(),
+      };
+      
+      console.log(`    📦 Producto trackeado: "${this._lastAddedProduct.productName}"`);
+      return this._lastAddedProduct;
+    }
+    
+    console.log('    ❌ No se pudo hacer clic en ningún producto');
+    this._lastAddedProduct = null;
+    return null;
+  }
+
+  /**
+   * Confirma el agregado al carrito en el modal AddToCartModal
+   */
+  async confirmAddToCart(): Promise<boolean> {
+    console.log('  → Confirmando agregar al carrito en modal...');
+    
+    // Esperar a que el modal esté visible
+    const modal = this.page.locator(SELECTORS.addToCartModal);
+    const modalVisible = await modal.isVisible().catch(() => false);
+    
+    if (!modalVisible) {
+      console.log('    ⚠️ Modal AddToCart no visible');
+      return false;
+    }
+
+    // Buscar y hacer clic en el botón "Agregar al Carrito"
+    const confirmButton = this.page.locator(SELECTORS.addToCartModalButton).first();
+    const buttonVisible = await confirmButton.isVisible().catch(() => false);
+    
+    if (buttonVisible) {
+      // Esperar a que el botón esté habilitado (puede estar deshabilitado mientras carga)
+      await this.page.waitForTimeout(1000);
+      const isDisabled = await confirmButton.isDisabled().catch(() => true);
+      
+      if (!isDisabled) {
+        await confirmButton.click();
+        console.log('    ✅ Click en "Agregar al Carrito"');
+        await this.page.waitForTimeout(CONFIG.waitTime);
+        return true;
+      } else {
+        console.log('    ⚠️ Botón "Agregar al Carrito" está deshabilitado');
+      }
+    } else {
+      console.log('    ⚠️ Botón "Agregar al Carrito" no visible');
+    }
+
+    return false;
+  }
+
+  /**
+   * Hace clic en "Continuar al Pago" en OrderSummary
+   */
+  async clickContinueToPayment(): Promise<boolean> {
+    console.log('  → Continuar al Pago...');
+    
+    const button = this.page.locator(SELECTORS.continueToPaymentButton).first();
+    const isVisible = await button.isVisible().catch(() => false);
+    
+    if (isVisible) {
+      const isDisabled = await button.isDisabled().catch(() => true);
+      
+      if (!isDisabled) {
+        await button.click();
+        console.log('    ✅ Click en "Continuar al pago"');
+        await this.waitForPageLoad();
+        return true;
+      } else {
+        console.log('    ⚠️ Botón "Continuar al pago" está deshabilitado');
+      }
+    } else {
+      console.log('    ⚠️ Botón "Continuar al pago" no visible');
+    }
+
+    return false;
+  }
+
+  /**
+   * Elimina un item del carrito (abre modal y confirma)
+   * Si se agregó un producto con addProductFromSupplierToCart, busca ese específicamente
+   * Si no, elimina el primer item disponible
+   * 
+   * @returns true si se eliminó correctamente
+   */
+  async removeItemFromCart(): Promise<boolean> {
+    console.log('  → Eliminando item del carrito...');
+    
+    // Obtener información del producto que queremos eliminar
+    const targetProduct = this._lastAddedProduct;
+    
+    if (targetProduct) {
+      console.log(`    🎯 Buscando producto específico: "${targetProduct.productName}"`);
+      
+      // Buscar todos los CartItems (Paper elements con la estructura del cart)
+      // CartItem usa Paper con ciertos estilos específicos
+      const cartItems = this.page.locator('[class*="MuiPaper"]:has(button:has(svg[data-testid="DeleteIcon"]))');
+      const itemCount = await cartItems.count();
+      console.log(`    📊 Items en carrito: ${itemCount}`);
+      
+      // Buscar el item que coincide con el producto que agregamos
+      for (let i = 0; i < itemCount; i++) {
+        const item = cartItems.nth(i);
+        const itemText = await item.textContent().catch(() => '');
+        
+        // Verificar si este item contiene el nombre del producto
+        if (itemText?.includes(targetProduct.productName)) {
+          console.log(`    ✅ Encontrado item: "${targetProduct.productName}" (posición ${i + 1})`);
+          
+          // Buscar el botón de eliminar dentro de este item específico
+          const deleteButton = item.locator('button:has(svg[data-testid="DeleteIcon"])').first();
+          const isVisible = await deleteButton.isVisible().catch(() => false);
+          
+          if (isVisible) {
+            await deleteButton.click();
+            console.log('    ✅ Click en botón eliminar');
+            await this.page.waitForTimeout(CONFIG.modalAnimationDelay);
+            
+            // Confirmar en el modal
+            const confirmed = await this._confirmDeleteModal();
+            if (confirmed) {
+              // Limpiar el tracking del producto
+              this._lastAddedProduct = null;
+            }
+            return confirmed;
+          }
+        }
+      }
+      
+      console.log(`    ⚠️ No se encontró "${targetProduct.productName}" en el carrito`);
+    }
+    
+    // Fallback: eliminar el primer item si no encontramos el específico
+    console.log('    📌 Usando fallback: eliminar primer item disponible');
+    const deleteButton = this.page.locator(SELECTORS.deleteCartItemButton).first();
+    const isVisible = await deleteButton.isVisible().catch(() => false);
+    
+    if (!isVisible) {
+      console.log('    ⚠️ Botón eliminar no visible');
+      return false;
+    }
+
+    // Click en el botón de eliminar para abrir el modal
+    await deleteButton.click();
+    console.log('    ✅ Click en botón eliminar (fallback)');
+    await this.page.waitForTimeout(CONFIG.modalAnimationDelay);
+
+    return await this._confirmDeleteModal();
+  }
+
+  /**
+   * Helper: Confirma la eliminación en el modal
+   */
+  private async _confirmDeleteModal(): Promise<boolean> {
+    // Esperar el modal de confirmación
+    const confirmModal = this.page.locator(SELECTORS.deleteConfirmModal);
+    const modalVisible = await confirmModal.isVisible().catch(() => false);
+    
+    if (!modalVisible) {
+      console.log('    ⚠️ Modal de confirmación no apareció');
+      return false;
+    }
+
+    // Buscar y hacer clic en el botón "Eliminar" del modal
+    const confirmButton = this.page.locator(SELECTORS.deleteConfirmButton).first();
+    const confirmVisible = await confirmButton.isVisible().catch(() => false);
+    
+    if (confirmVisible) {
+      await confirmButton.click();
+      console.log('    ✅ Click en "Eliminar" - Item eliminado del carrito');
+      await this.page.waitForTimeout(CONFIG.waitTime);
+      return true;
+    } else {
+      console.log('    ⚠️ Botón "Eliminar" no visible en el modal');
+    }
+
+    return false;
+  }
+
   /**
    * Alias para close() - para compatibilidad
    */
@@ -257,11 +638,141 @@ export class BuyerFlowRunner {
   }
 
   // =========================================================================
-  // CICLO COMPLETO
+  // FLUJO DE PAGO (Payment Flow)
+  // =========================================================================
+  
+  /**
+   * Selecciona el método de pago "Tarjeta de Crédito/Débito" (Flow)
+   */
+  async selectFlowPaymentMethod(): Promise<boolean> {
+    console.log('  → Seleccionando método de pago: Tarjeta de Crédito/Débito...');
+    
+    const flowOption = this.page.locator(SELECTORS.flowPaymentOption).first();
+    const isVisible = await flowOption.isVisible().catch(() => false);
+    
+    if (isVisible) {
+      await flowOption.click();
+      console.log('    ✅ Seleccionado: Tarjeta de Crédito/Débito (Flow)');
+      await this.page.waitForTimeout(1000);
+      return true;
+    } else {
+      console.log('    ⚠️ Opción de pago Flow no visible');
+      return false;
+    }
+  }
+
+  /**
+   * Hace clic en "Confirmar y pagar" en CheckoutSummary
+   * Esto iniciará la redirección a Flow
+   */
+  async clickConfirmPayment(): Promise<boolean> {
+    console.log('  → Click en "Confirmar y pagar"...');
+    
+    const confirmButton = this.page.locator(SELECTORS.confirmPaymentButton).first();
+    const isVisible = await confirmButton.isVisible().catch(() => false);
+    
+    if (isVisible) {
+      const isDisabled = await confirmButton.isDisabled().catch(() => true);
+      
+      if (!isDisabled) {
+        await confirmButton.click();
+        console.log('    ✅ Click en "Confirmar y pagar"');
+        console.log('    ⏳ Esperando redirección a Flow...');
+        await this.page.waitForTimeout(CONFIG.waitTime);
+        return true;
+      } else {
+        console.log('    ⚠️ Botón "Confirmar y pagar" está deshabilitado');
+      }
+    } else {
+      console.log('    ⚠️ Botón "Confirmar y pagar" no visible');
+    }
+    
+    return false;
+  }
+
+  /**
+   * Ejecuta el ciclo de pago completo (hasta llegar a Flow)
+   * Login → Marketplace → Agregar al Carro → Cart → PaymentMethod → Flow
+   * 
+   * Este ciclo se detiene en Flow para permitir interacción manual o
+   * automatización adicional de la pasarela de pagos.
+   * 
+   * @returns URL actual después de hacer click en "Confirmar y pagar"
+   */
+  async runPaymentCycle(): Promise<string> {
+    console.log('\n💳 === CICLO DE PAGO E2E ===\n');
+
+    // 1. Ya estamos en marketplace post-login
+    console.log('1️⃣ Marketplace (post-login)');
+    await this.page.waitForTimeout(2000);
+
+    // 2. Agregar producto al carrito
+    console.log('\n2️⃣ Agregar producto al carrito');
+    const addedProduct = await this.addProductFromSupplierToCart();
+    
+    if (!addedProduct) {
+      console.log('    ❌ No se pudo agregar producto al carrito');
+      return this.page.url();
+    }
+    
+    console.log(`    📦 Producto: "${addedProduct.productName}" de "${addedProduct.supplierName}"`);
+
+    // 3. Confirmar en modal AddToCart
+    console.log('\n3️⃣ Confirmar en modal AddToCart');
+    const confirmed = await this.confirmAddToCart();
+    if (!confirmed) {
+      console.log('    ⚠️ No se pudo confirmar agregar al carrito');
+    }
+
+    // 4. Ir al carrito
+    console.log('\n4️⃣ Ir al Carrito');
+    await this.navigateToCart();
+
+    // 5. Continuar al pago
+    console.log('\n5️⃣ Continuar al pago');
+    const wentToPayment = await this.clickContinueToPayment();
+    if (!wentToPayment) {
+      console.log('    ⚠️ No se pudo continuar al pago');
+      return this.page.url();
+    }
+
+    // Esperar a estar en /buyer/paymentmethod
+    await this.page.waitForURL(`**${ROUTES.buyer.paymentMethod}*`, { timeout: 10000 }).catch(() => {});
+    await this.page.waitForTimeout(2000);
+
+    // 6. Seleccionar método de pago (Flow)
+    console.log('\n6️⃣ Seleccionar método de pago');
+    const selectedFlow = await this.selectFlowPaymentMethod();
+    if (!selectedFlow) {
+      console.log('    ⚠️ No se pudo seleccionar Flow');
+      return this.page.url();
+    }
+
+    // 7. Confirmar y pagar
+    console.log('\n7️⃣ Confirmar y pagar');
+    const clickedConfirm = await this.clickConfirmPayment();
+    if (!clickedConfirm) {
+      console.log('    ⚠️ No se pudo hacer click en Confirmar y pagar');
+      return this.page.url();
+    }
+
+    // Esperar un momento para la redirección
+    await this.page.waitForTimeout(5000);
+
+    const currentUrl = this.page.url();
+    console.log(`\n✅ URL actual: ${currentUrl}`);
+    console.log('🔄 Ahora deberías estar en Flow (o redirigiendo)...');
+
+    return currentUrl;
+  }
+
+  // =========================================================================
+  // CICLO COMPLETO (NAVEGACIÓN)
   // =========================================================================
   /**
    * Ejecuta un ciclo completo de navegación buyer:
-   * Marketplace (scroll) → Pedidos → Ofertas → Marketplace → ProductPage → Marketplace
+   * Marketplace (scroll) → Pedidos → Ofertas → Marketplace → ProductPage → 
+   * Marketplace → Agregar al Carro → Cart → Payment Method → Cart → Eliminar Item
    * 
    * @param cycleNumber - Número del ciclo actual (para logging)
    * @param onStepComplete - Callback opcional después de cada paso (para métricas)
@@ -272,10 +783,18 @@ export class BuyerFlowRunner {
   ): Promise<void> {
     console.log(`\n🔄 === CICLO ${cycleNumber} ===`);
 
-    // Marketplace con scroll
-    console.log('  → Marketplace (con scroll)');
-    await this.page.goto(`${CONFIG.baseUrl}${ROUTES.buyer.marketplace}`);
-    await this.waitForPageLoad();
+    // =========================================================================
+    // MARKETPLACE INICIAL
+    // Ciclo 1: Ya estamos en marketplace después del login, solo hacer scroll
+    // Ciclos 2+: Navegamos explícitamente al marketplace
+    // =========================================================================
+    if (cycleNumber === 1) {
+      console.log('  → Marketplace (ya estamos aquí post-login, haciendo scroll)');
+    } else {
+      console.log('  → Marketplace (navegando)');
+      await this.page.goto(`${CONFIG.baseUrl}${ROUTES.buyer.marketplace}`);
+      await this.waitForPageLoad();
+    }
 
     const sidebarVisible = await this.page
       .locator('[role="button"]:has-text("Marketplace")')
@@ -286,6 +805,7 @@ export class BuyerFlowRunner {
 
     await this.scrollToBottom();
     if (onStepComplete) await onStepComplete(`Ciclo ${cycleNumber}: Marketplace (scroll)`);
+    await this.page.waitForTimeout(1000); // Pequeña espera para que se asienten las cards
 
     // Mis Pedidos
     await this.navigateToOrders();
@@ -301,11 +821,56 @@ export class BuyerFlowRunner {
     await this.waitForPageLoad();
     if (onStepComplete) await onStepComplete(`Ciclo ${cycleNumber}: Marketplace (vuelta)`);
 
-    // Product Page
+    // Product Page (Ficha Técnica)
     await this.clickProductCard();
-    if (onStepComplete) await onStepComplete(`Ciclo ${cycleNumber}: Product Page`);
+    if (onStepComplete) await onStepComplete(`Ciclo ${cycleNumber}: Ficha Técnica`);
 
-    // Fin de ciclo
+    // =========================================================================
+    // NUEVO FLUJO: Agregar al Carro → Cart → Payment → Cart → Eliminar
+    // =========================================================================
+    
+    // Volver a Marketplace para agregar producto al carro
+    console.log('  → Marketplace (para agregar al carro)');
+    await this.page.goto(`${CONFIG.baseUrl}${ROUTES.buyer.marketplace}`);
+    await this.waitForPageLoad();
+    if (onStepComplete) await onStepComplete(`Ciclo ${cycleNumber}: Marketplace (pre-carrito)`);
+
+    // Agregar producto al carrito (usa proveedor de CONFIG.cart.preferredSupplier con fallback)
+    const addedProduct = await this.addProductFromSupplierToCart();
+    if (addedProduct) {
+      console.log(`    📦 Producto agregado: "${addedProduct.productName}" de "${addedProduct.supplierName}"`);
+      // Confirmar en el modal AddToCart
+      const confirmed = await this.confirmAddToCart();
+      if (onStepComplete) await onStepComplete(`Ciclo ${cycleNumber}: Agregar al Carro (${confirmed ? 'OK' : 'FAIL'})`);
+    } else {
+      if (onStepComplete) await onStepComplete(`Ciclo ${cycleNumber}: Agregar al Carro (No encontrado)`);
+    }
+
+    // Navegar al Carrito
+    await this.navigateToCart();
+    if (onStepComplete) await onStepComplete(`Ciclo ${cycleNumber}: Carrito`);
+
+    // Click en "Continuar al Pago" → navega a /buyer/paymentmethod
+    const wentToPayment = await this.clickContinueToPayment();
+    if (wentToPayment) {
+      // Verificar que estamos en payment method
+      await this.page.waitForURL(`**${ROUTES.buyer.paymentMethod}*`, { timeout: 5000 }).catch(() => {});
+      if (onStepComplete) await onStepComplete(`Ciclo ${cycleNumber}: Payment Method`);
+    } else {
+      if (onStepComplete) await onStepComplete(`Ciclo ${cycleNumber}: Payment Method (SKIP)`);
+    }
+
+    // Volver al Carrito
+    console.log('  → Volver al Carrito');
+    await this.page.goto(`${CONFIG.baseUrl}${ROUTES.buyer.cart}`);
+    await this.waitForPageLoad();
+    if (onStepComplete) await onStepComplete(`Ciclo ${cycleNumber}: Carrito (vuelta)`);
+
+    // Eliminar el item que agregamos
+    const removed = await this.removeItemFromCart();
+    if (onStepComplete) await onStepComplete(`Ciclo ${cycleNumber}: Eliminar Item (${removed ? 'OK' : 'FAIL'})`);
+
+    // Fin de ciclo - Volver a Marketplace
     console.log('  → Marketplace (fin ciclo)');
     await this.page.goto(`${CONFIG.baseUrl}${ROUTES.buyer.marketplace}`);
     await this.waitForPageLoad();

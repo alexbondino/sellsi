@@ -35,7 +35,7 @@ export default function StatCard({
   let displayColor = trendColors[trend];
 
   if (title?.toLowerCase().includes('sin stock')) displayColor = '#f44336';
-  if (title?.toLowerCase().includes('solicitud')) displayColor = '#1976d2';
+  if (title?.toLowerCase().includes('solicitud')) displayColor = '#2E52B2';
 
   return (
     <Card variant="outlined" sx={{ height: '100%', flexGrow: 1 }}>

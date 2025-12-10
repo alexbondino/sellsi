@@ -40,7 +40,13 @@ export function PriceTiersDisplay({ productData, priceTiers, quantity }) {
       <Stack spacing={0.5} sx={tiersContainerSx}>
         {priceTiers.map((tier, index) => {
           const minQty = tier.min_quantity || 1;
-          const maxQty = tier.max_quantity;
+          // ✅ FIX: Calcular max_quantity implícito basado en el siguiente tier
+          // Solo el último tier puede tener max_quantity = null (infinito)
+          const isLastTier = index === priceTiers.length - 1;
+          const nextTier = isLastTier ? null : priceTiers[index + 1];
+          const maxQty = tier.max_quantity ?? (nextTier ? nextTier.min_quantity - 1 : null);
+          
+          // ✅ FIX: Lógica correcta - solo un tier debe estar activo
           const isActive = quantity >= minQty && (maxQty == null || quantity <= maxQty);
           const rangeText = maxQty ? `${minQty} - ${maxQty}` : `${minQty}+`;
           return (

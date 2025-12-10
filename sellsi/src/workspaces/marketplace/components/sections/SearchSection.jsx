@@ -47,27 +47,28 @@ const SearchSection = ({
       }),
       []
     );
-    // ✅ ANIMACIÓN OPTIMIZADA: Solo transform y opacity para 60fps
-    const dynamicStyles = React.useMemo(
-      () => ({
-        boxShadow: shouldShowSearchBar ? '0 4px 20px rgba(0,0,0,0.15)' : 'none',
-        borderBottom: shouldShowSearchBar ? '1px solid #e2e8f0' : 'none',
-        transform: shouldShowSearchBar
-          ? 'translateY(0) translateZ(0)'
-          : 'translateY(-100%) translateZ(0)', // Usar translateY en vez de top
-        opacity: shouldShowSearchBar ? 1 : 0,
-        transition:
-          'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out, box-shadow 0.3s ease-out',
-        willChange: 'transform, opacity', // Ayuda al navegador a optimizar
-      }),
-      [shouldShowSearchBar]
-    );
+  // ✅ ANIMACIÓN OPTIMIZADA: Solo transform y opacity para 60fps
+  const dynamicStyles = React.useMemo(
+    () => ({
+      boxShadow: shouldShowSearchBar ? '0 4px 20px rgba(0,0,0,0.15)' : 'none',
+      borderBottom: shouldShowSearchBar ? '1px solid #e2e8f0' : 'none',
+      transform: shouldShowSearchBar
+        ? 'translateY(0) translateZ(0)'
+        : 'translateY(-100%) translateZ(0)', // Usar translateY en vez de top
+      opacity: shouldShowSearchBar ? 1 : 0,
+      transition:
+        'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out, box-shadow 0.3s ease-out',
+      willChange: 'transform, opacity', // Ayuda al navegador a optimizar
+    }),
+    [shouldShowSearchBar]
+  );
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno - Estáticos
     const innerContainerStyles = React.useMemo(
       () => ({
         width: '100%',
         maxWidth: {
+          xs: '100%', // Mobile ocupa todo el ancho
           sm: '720px',
           md: '960px',
           lg: '1280px',

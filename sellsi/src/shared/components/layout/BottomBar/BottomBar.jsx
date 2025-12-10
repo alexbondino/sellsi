@@ -6,6 +6,7 @@ import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import PhoneIcon from '@mui/icons-material/Phone';
+import EmailIcon from '@mui/icons-material/Email';
 import SupportIcon from '@mui/icons-material/Support';
 
 const BottomBar = () => {
@@ -46,10 +47,10 @@ const BottomBar = () => {
             }}
           >
             <Box sx={{ flex: '0 0 auto', maxWidth: 230, px: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: 120 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0, height: 85, overflow: 'hidden' }}>
-                <img src="/logodark.svg" alt="SELLSI Logo" style={{ height: 230, maxWidth: '100%' }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0 }}>
+                <img src="/Logos/sellsiwhite_logo_transparent.webp" alt="SELLSI Logo" style={{ height: '75px', width: '270px', objectFit: 'contain' }} />
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem', mt: 1, textAlign: 'center' }}>Crece. Conecta. Vende.</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem', mt: 1, textAlign: 'center' }}>Conecta. Vende. Crece.</Typography>
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4, justifyContent: 'flex-start', alignItems: 'flex-start', flex: 1 }}>
@@ -69,11 +70,17 @@ const BottomBar = () => {
                   <SocialIcon href="https://wa.me/56963109664" icon={<WhatsAppIcon />} hoverColor="#25d366" label="WhatsApp" />
                 </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, justifyContent: 'center' }}>
-                  <IconButton href="tel:+56963109664" sx={{ color: '#b0b0b0', mr: 1, p: 0.5, '&:hover': { color: '#25d366', backgroundColor: 'rgba(255,255,255,0.1)' } }} aria-label="Llamar">
-                    <PhoneIcon />
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, justifyContent: 'flex-start' }}>
+                  <IconButton href="tel:+56963109664" sx={{ color: '#b0b0b0', mr: 1, p: 0.5, width: 40, minWidth: 40, display: 'flex', justifyContent: 'center', '&:hover': { color: '#25d366', backgroundColor: 'rgba(255,255,255,0.1)' } }} aria-label="Llamar">
+                    <PhoneIcon sx={{ fontSize: 20 }} />
                   </IconButton>
                   <Typography variant="body2" component="a" href="tel:+56963109664" sx={{ color: '#b0b0b0', textDecoration: 'none', fontWeight: 500, '&:hover': { color: '#25d366', textDecoration: 'underline' } }}>+56 9 6310 9664</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, justifyContent: 'flex-start' }}>
+                  <IconButton href="mailto:contacto@sellsi.cl" sx={{ color: '#b0b0b0', mr: 1, p: 0.5, width: 40, minWidth: 40, display: 'flex', justifyContent: 'center', '&:hover': { color: '#25d366', backgroundColor: 'rgba(255,255,255,0.1)' } }} aria-label="Email">
+                    <EmailIcon sx={{ fontSize: 20 }} />
+                  </IconButton>
+                  <Typography variant="body2" component="a" href="mailto:contacto@sellsi.cl" sx={{ color: '#b0b0b0', textDecoration: 'none', fontWeight: 500, '&:hover': { color: '#25d366', textDecoration: 'underline' } }}>contacto@sellsi.cl</Typography>
                 </Box>
               </Box>
             </Box>
@@ -82,10 +89,10 @@ const BottomBar = () => {
           {/* Mobile layout: centered logo + collapsible Soporte (only Terms & Privacy) */}
           <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', alignItems: 'center', gap: 3, mb: 6 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0, height: 60, overflow: 'hidden' }}>
-                <img src="/logodark.svg" alt="SELLSI Logo" style={{ height: 150, maxWidth: '100%', display: 'block' }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0 }}>
+                <img src="/Logos/sellsiwhite_logo_transparent.webp" alt="SELLSI Logo" style={{ height: '60px', width: '216px', objectFit: 'contain', display: 'block' }} />
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem', mt: 1, textAlign: 'center' }}>Crece. Conecta. Vende.</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem', mt: 1, textAlign: 'center' }}>Conecta. Vende. Crece.</Typography>
             </Box>
 
             <Box sx={{ width: '100%', maxWidth: 420, mx: 'auto' }}>
@@ -105,10 +112,16 @@ const BottomBar = () => {
                 <SocialIcon href="https://wa.me/56963109664" icon={<WhatsAppIcon />} hoverColor="#25d366" label="WhatsApp" />
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 0, justifyContent: 'center', width: '100%' }}>
-                <IconButton href="tel:+56963109664" sx={{ color: '#b0b0b0', mr: 1, p: 0, '&:hover': { color: '#25d366', backgroundColor: 'rgba(255,255,255,0.1)' } }} aria-label="Llamar">
-                  <PhoneIcon />
+                <IconButton href="tel:+56963109664" sx={{ color: '#b0b0b0', mr: 1, p: 0.5, width: 40, minWidth: 40, display: 'flex', justifyContent: 'center', '&:hover': { color: '#25d366', backgroundColor: 'rgba(255,255,255,0.1)' } }} aria-label="Llamar">
+                  <PhoneIcon sx={{ fontSize: 20 }} />
                 </IconButton>
                 <Typography variant="body2" component="a" href="tel:+56963109664" sx={{ color: '#b0b0b0', textDecoration: 'none', fontWeight: 500, '&:hover': { color: '#25d366', textDecoration: 'underline' } }}>+56 9 6310 9664</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, justifyContent: 'center', width: '100%' }}>
+                <IconButton href="mailto:contacto@sellsi.cl" sx={{ color: '#b0b0b0', mr: 1, p: 0.5, width: 40, minWidth: 40, display: 'flex', justifyContent: 'center', '&:hover': { color: '#25d366', backgroundColor: 'rgba(255,255,255,0.1)' } }} aria-label="Email">
+                  <EmailIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+                <Typography variant="body2" component="a" href="mailto:contacto@sellsi.cl" sx={{ color: '#b0b0b0', textDecoration: 'none', fontWeight: 500, '&:hover': { color: '#25d366', textDecoration: 'underline' } }}>contacto@sellsi.cl</Typography>
               </Box>
             </Box>
           </Box>

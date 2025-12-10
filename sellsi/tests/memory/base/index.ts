@@ -13,7 +13,7 @@ export type { TestConfig, AppRoutes, DOMSelectors } from './config';
 
 // Buyer Flow
 export { BuyerFlowRunner, createBuyerFlowRunner } from './buyer-flow';
-export type { BrowserSetup, FlowOptions } from './buyer-flow';
+export type { BrowserSetup, FlowOptions, AddedProductInfo } from './buyer-flow';
 
 // Metrics
 export {

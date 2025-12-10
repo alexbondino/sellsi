@@ -28,6 +28,15 @@ export const CONFIG = {
     memory: 5,       // Ciclos para test de memoria
     performance: 2,  // Ciclos para test de performance
   },
+  // Configuración del flujo de carrito
+  cart: {
+    // Proveedor preferido para agregar productos (puede ser null para cualquiera)
+    preferredSupplier: 'ealvarezvaccaro',
+    // Máximo de scrolls para buscar el proveedor antes de usar fallback
+    maxScrollsToFindSupplier: 3,
+    // Tiempo de espera después de cada scroll para que cargue el nuevo batch
+    scrollWaitTime: 2000,
+  },
   // Umbrales
   thresholds: {
     memoryGrowthMB: 30,     // Máximo crecimiento de memoria permitido
@@ -99,6 +108,36 @@ export const SELECTORS = {
   // PRODUCT CARD (ProductCard.jsx)
   // -------------------------------------------------------------------------
   productCard: '.MuiCard-root',
+  // Botón "AGREGAR" en ProductCardBuyerContext (usa AddToCart component)
+  addToCartButton: 'button:has-text("AGREGAR")',
+
+  // -------------------------------------------------------------------------
+  // ADD TO CART MODAL (AddToCartModal.jsx)
+  // -------------------------------------------------------------------------
+  // El modal es un Drawer que aparece desde la derecha
+  addToCartModal: '.MuiDrawer-root',
+  addToCartModalButton: 'button:has-text("Agregar al Carrito")',
+  addToCartModalCloseButton: 'button:has(svg[data-testid="CloseIcon"])',
+
+  // -------------------------------------------------------------------------
+  // CART PAGE (Cart, CartItem, OrderSummary)
+  // -------------------------------------------------------------------------
+  // Botón "Continuar al pago" en OrderSummary
+  continueToPaymentButton: 'button:has-text("Continuar al pago")',
+  // Botón eliminar del carrito (icono de basura)
+  deleteCartItemButton: 'button:has(svg[data-testid="DeleteIcon"])',
+  // Modal de confirmación de eliminación
+  deleteConfirmModal: '.MuiDialog-root',
+  deleteConfirmButton: 'button:has-text("Eliminar")',
+  cancelDeleteButton: 'button:has-text("Cancelar")',
+
+  // -------------------------------------------------------------------------
+  // PAYMENT METHOD PAGE (/buyer/paymentmethod)
+  // -------------------------------------------------------------------------
+  // Tarjeta de Crédito/Débito (Flow) - CardContent con el texto específico
+  flowPaymentOption: '.MuiCardContent-root:has(h6:has-text("Tarjeta de Crédito/Débito"))',
+  // Botón "Confirmar y pagar" en CheckoutSummary
+  confirmPaymentButton: 'button:has-text("Confirmar y pagar")',
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

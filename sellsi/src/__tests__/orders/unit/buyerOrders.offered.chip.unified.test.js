@@ -46,7 +46,7 @@ const MockBuyerOrdersComponent = ({ orders }) => {
                 {(() => {
                   const isOffered = item.isOffered || item.metadata?.isOffered || !!item.offer_id || !!item.offered_price;
                   if (!isOffered) return null;
-                  return <span style={{ marginLeft: '4px', color: '#1976d2' }}>Precio OFERTADO fijo</span>;
+                  return <span style={{ marginLeft: '4px', color: '#2E52B2' }}>Precio OFERTADO fijo</span>;
                 })()}
               </div>
             </div>

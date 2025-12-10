@@ -89,7 +89,7 @@ const commonStyles = {
     mb: 3
   },
   tableHeader: {
-    backgroundColor: '#1976d2',
+    backgroundColor: '#2E52B2',
     color: 'white',
     fontWeight: 'bold'
   },

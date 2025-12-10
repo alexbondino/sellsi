@@ -1,32 +1,28 @@
-import React from 'react';
-import { Box } from '@mui/material';
-import { useLocation } from 'react-router-dom';
+import React from 'react'
+import { Box } from '@mui/material'
+import { useLocation } from 'react-router-dom'
 
 // Import directo para evitar barrels que generen ciclos
-import { TopBar } from '../navigation/TopBar';
-import { BottomBar } from './BottomBar';
-import { MobileBar } from '../navigation/MobileBar';
-import { SideBar } from '../navigation/SideBar';
-import Banner from '../display/banners/Banner';
-import WhatsAppWidget from '../../../components/WhatsAppWidget';
-import { useBanner } from '../display/banners/BannerContext';
+import { TopBar } from '../navigation/TopBar'
+import { BottomBar } from './BottomBar'
+import { MobileBar } from '../navigation/MobileBar'
+import { SideBar } from '../navigation/SideBar'
+import Banner from '../display/banners/Banner'
+import WhatsAppWidget from '../../../components/WhatsAppWidget'
+import { useBanner } from '../display/banners/BannerContext'
 
-import { useAuth } from '../../../infrastructure/providers';
-import { useRole } from '../../../infrastructure/providers';
-import { useLayout } from '../../../infrastructure/providers/LayoutProvider';
-import { useAppInitialization } from '../../hooks/useAppInitialization';
+import { useAuth } from '../../../infrastructure/providers'
+import { useRole } from '../../../infrastructure/providers'
+import { useLayout } from '../../../infrastructure/providers/LayoutProvider'
+import { useAppInitialization } from '../../hooks/useAppInitialization'
 
 export const AppShell = ({ children }) => {
-  const location = useLocation();
-  const { bannerState, hideBanner } = useBanner();
-  const { session, userProfile } = useAuth();
-  const { 
-    currentAppRole, 
-    isDashboardRoute, 
-    isBuyer, 
-    handleRoleChange 
-  } = useRole();
-  const { 
+  const location = useLocation()
+  const { bannerState, hideBanner } = useBanner()
+  const { session, userProfile } = useAuth()
+  const { currentAppRole, isDashboardRoute, isBuyer, handleRoleChange } =
+    useRole()
+  const {
     currentSideBarWidth,
     sideBarCollapsed,
     handleSideBarWidthChange,
@@ -34,24 +30,24 @@ export const AppShell = ({ children }) => {
     showBottomBar,
     showTopBar,
     topBarHeight,
-  } = useLayout();
+  } = useLayout()
 
   // ✅ MOVER AQUÍ: Inicialización de la app donde todos los contextos están disponibles
-  const { isInitialized } = useAppInitialization();
+  const { isInitialized } = useAppInitialization()
 
   // Sidebar and dashboard layout must never appear without an active session
-  const isDashboardLayout = !!session && isDashboardRoute;
+  const isDashboardLayout = !!session && isDashboardRoute
 
   const handleScrollTo = (refName, scrollTargets) => {
-    const element = scrollTargets.current[refName]?.current;
+    const element = scrollTargets.current[refName]?.current
     if (element) {
-      const topBarHeight = 64; // Altura de tu TopBar
+      const topBarHeight = 64 // Altura de tu TopBar
       const elementPosition =
-        element.getBoundingClientRect().top + window.pageYOffset;
-      const offsetPosition = elementPosition - topBarHeight;
-      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+        element.getBoundingClientRect().top + window.pageYOffset
+      const offsetPosition = elementPosition - topBarHeight
+      window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
     }
-  };
+  }
 
   return (
     <>
@@ -87,7 +83,10 @@ export const AppShell = ({ children }) => {
             // topBarHeight is responsive: { xs: '45px', md: '64px' }
             // add 8px gap so banner appears slightly below the TopBar
             typeof topBarHeight === 'object'
-              ? { xs: `calc(${topBarHeight.xs} + 6px)`, md: `calc(${topBarHeight.md} + 6px)` }
+              ? {
+                  xs: `calc(${topBarHeight.xs} + 6px)`,
+                  md: `calc(${topBarHeight.md} + 6px)`,
+                }
               : `calc(${topBarHeight} + 6px)`
           }
         />
@@ -102,37 +101,51 @@ export const AppShell = ({ children }) => {
         >
           {isDashboardLayout && (
             // Pasamos el currentAppRole a la SideBar para que sepa qué menú mostrar
-            <SideBar 
-              role={currentAppRole} 
-              width="210px"
+            <SideBar
+              role={currentAppRole}
+              width={{ md: '13%', lg: '13%', xl: '9%' }}
               onWidthChange={handleSideBarWidthChange}
             />
-          )}
-
+          )}{' '}
           {/** Memoized main layout styles to avoid recreating large object & function each render (micro optimization) */}
           <Box
             component="main"
             sx={React.useMemo(() => {
               // Dependencias que afectan layout
-              const fullBleedRoutes = ['/buyer/cart', '/buyer/paymentmethod'];
-              const isFullBleed = !!session || fullBleedRoutes.includes(location.pathname);
-              const isMarketplaceRoute = location.pathname.startsWith('/marketplace');
-              return theme => ({
+              const fullBleedRoutes = ['/buyer/cart', '/buyer/paymentmethod']
+              const isFullBleed =
+                !!session || fullBleedRoutes.includes(location.pathname)
+              const isMarketplaceRoute =
+                location.pathname.startsWith('/marketplace')
+              return (theme) => ({
                 flexGrow: 1,
                 pl: isMarketplaceRoute
-                  ? { xs: 0, sm: 0, md: (isDashboardLayout ? 3 : 0) }
+                  ? { xs: 0, sm: 0, md: isDashboardLayout ? 3 : 0 }
                   : isFullBleed
-                  ? { xs: 0.75, sm: 1, md: (isDashboardLayout ? 3 : 0) }
-                  : (isDashboardLayout ? 3 : 0),
+                  ? { xs: 0.75, sm: 1, md: isDashboardLayout ? 3 : 0 }
+                  : isDashboardLayout
+                  ? 3
+                  : 0,
                 pr: isMarketplaceRoute
-                  ? { xs: 0, sm: 0, md: (isDashboardLayout ? 3 : 0) }
+                  ? { xs: 0, sm: 0, md: isDashboardLayout ? 3 : 0 }
                   : isFullBleed
-                  ? { xs: 0.25, sm: 0.25, md: (isDashboardLayout ? 3 : 0) }
-                  : (isDashboardLayout ? 3 : 0),
+                  ? { xs: 0.25, sm: 0.25, md: isDashboardLayout ? 3 : 0 }
+                  : isDashboardLayout
+                  ? 3
+                  : 0,
                 pt: isDashboardLayout ? 3 : 0,
-                pb: isDashboardLayout ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
+                pb: isDashboardLayout
+                  ? { xs: session ? 10 : 3, md: 3 }
+                  : { xs: session ? 10 : 0, md: 0 },
                 width: isDashboardLayout
-                  ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
+                  ? typeof currentSideBarWidth === 'object'
+                    ? {
+                        xs: '100%',
+                        md: `calc(100% - ${currentSideBarWidth.md || '13%'})`,
+                        lg: `calc(100% - ${currentSideBarWidth.lg || '13%'})`,
+                        xl: `calc(100% - ${currentSideBarWidth.xl || '10%'})`,
+                      }
+                    : { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
                   : '100%',
                 overflowX: 'hidden',
                 ml: isDashboardLayout ? { md: 14, lg: 14, xl: 0 } : 0,
@@ -140,23 +153,35 @@ export const AppShell = ({ children }) => {
                 transition: [
                   theme.breakpoints.up('md') && theme.breakpoints.down('lg')
                     ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-                    : 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                    : 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                 ].join(','),
                 transform: {
                   xs: 'none',
                   sm: 'none',
-                  md: isDashboardLayout && sideBarCollapsed ? 'translateX(-80px)' : 'none',
-                  lg: isDashboardLayout && sideBarCollapsed ? 'translateX(-80px)' : 'none',
+                  md:
+                    isDashboardLayout && sideBarCollapsed
+                      ? 'translateX(-80px)'
+                      : 'none',
+                  lg:
+                    isDashboardLayout && sideBarCollapsed
+                      ? 'translateX(-80px)'
+                      : 'none',
                   xl: 'none',
                 },
-              });
-            }, [session, location.pathname, isDashboardLayout, sideBarCollapsed, currentSideBarWidth])}
+              })
+            }, [
+              session,
+              location.pathname,
+              isDashboardLayout,
+              sideBarCollapsed,
+              currentSideBarWidth,
+            ])}
             data-layout="app-main"
           >
             {children}
           </Box>
         </Box>
-        
+
         {/* BottomBar - Flex shrink: 0 para que mantenga su tamaño */}
         {showBottomBar && (
           <Box sx={{ flexShrink: 0 }}>
@@ -165,20 +190,20 @@ export const AppShell = ({ children }) => {
         )}
 
         {/* MobileBar - Solo se muestra en móviles cuando hay sesión */}
-        <MobileBar 
-          role={currentAppRole} 
+        <MobileBar
+          role={currentAppRole}
           session={session}
           isBuyer={isBuyer}
           logoUrl={logoUrl}
         />
 
         {/* WhatsApp Widget - Con acceso al contexto del Router */}
-        <WhatsAppWidget 
-          isLoggedIn={!!session} 
+        <WhatsAppWidget
+          isLoggedIn={!!session}
           userProfile={userProfile}
           currentPath={location.pathname}
         />
       </Box>
     </>
-  );
-};
+  )
+}

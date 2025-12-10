@@ -202,7 +202,7 @@ const Step1Account = ({
     >
       {' '}
       <img
-        src="/logo.svg"
+        src="/Logos/sellsi_logo_transparent.webp"
         alt="SELLSI Logo"
         style={{
           width:
@@ -215,7 +215,7 @@ const Step1Account = ({
         align="center"
         sx={{
           mb: { xs: 1, sm: 2, md: 2, lg: 4 },
-          color: theme.palette.mode === 'dark' ? '#fff' : '#222',
+          color: theme.palette.mode === 'dark' ? '#fff' : '#0772D2', //Azul Logo Sellsi
           fontWeight: 700,
           fontSize: 18,
           fontStyle: 'italic',
@@ -319,7 +319,7 @@ const Step1Account = ({
                   openTermsModal();
                 }}
                 sx={{
-                  color: '#1976d2',
+                  color: '#2E52B2',
                   fontWeight: 700,
                   textDecoration: 'underline',
                   cursor: 'pointer',
@@ -342,7 +342,7 @@ const Step1Account = ({
                   openPrivacyModal();
                 }}
                 sx={{
-                  color: '#1976d2',
+                  color: '#2E52B2',
                   fontWeight: 700,
                   textDecoration: 'underline',
                   cursor: 'pointer',

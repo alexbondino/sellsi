@@ -17,7 +17,7 @@ const CRITICAL_ASSETS = [
   '/assets/js/react-vendor-',
   '/assets/js/mui-core-',
   '/assets/css/index-',
-  '/minilogo.webp',
+  '/Logos/sellsi_minilogoLoader.webp',
   '/logo.svg'
 ];
 

@@ -40,7 +40,7 @@ export function ProductsSectionView({
     currentPage,
     totalPages,
     titleMarginLeft,
-    getPriority, // ✅ Función para determinar prioridad de imagen
+    getPriority, // Ô£à Función para determinar prioridad de imagen
   getPriceTiers,
   registerProductNode,
   } = data;
@@ -52,23 +52,40 @@ export function ProductsSectionView({
         {/* Banner informativo cuando no hay productos en región del usuario */}
         {components.NoProductsInRegionBanner}
         
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 2, md: 8 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: titleMarginLeft, width: { xs: '100%', sm: '100%' }, flex: 1, minWidth: 0 }}>
-            {seccionActiva !== 'todos' && (
-              <IconButton onClick={handleBackClick} sx={{ bgcolor: '#f1f5f9', color: 'primary.main', '&:hover': { bgcolor: 'primary.main', color: 'white' }, transition: 'all 0.2s ease' }} aria-label="Volver a todos los productos">
-                <ArrowBackIcon />
-              </IconButton>
-            )}
-            <Typography variant="h5" fontWeight={600} noWrap sx={{ color: seccionActiva === 'todos' ? 'primary.main' : '#1e293b', fontSize: { xs: '1.25rem', sm: '1.3rem', md: '2rem' }, lineHeight: 1.2, whiteSpace: { xs: 'normal', sm: 'nowrap', md: 'nowrap' }, overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', maxWidth: '100%' }}>
-              {sectionTitle}
-            </Typography>
+        {/* Header: Mobile layout con contador debajo del título */}
+        <Box sx={{ mb: { xs: 2, md: 8 } }}>
+          {/* Fila 1: Título y botón back */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 1, md: 0 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: titleMarginLeft, width: { xs: '100%', sm: '100%' }, flex: 1, minWidth: 0 }}>
+              {seccionActiva !== 'todos' && (
+                <IconButton onClick={handleBackClick} sx={{ bgcolor: '#f1f5f9', color: 'primary.main', '&:hover': { bgcolor: 'primary.main', color: 'white' }, transition: 'all 0.2s ease' }} aria-label="Volver a todos los productos">
+                  <ArrowBackIcon />
+                </IconButton>
+              )}
+              <Typography variant="h5" fontWeight={600} noWrap sx={{ color: seccionActiva === 'todos' ? 'primary.main' : '#1e293b', fontSize: { xs: '1.25rem', sm: '1.3rem', md: '2rem' }, lineHeight: 1.2, whiteSpace: { xs: 'normal', sm: 'nowrap', md: 'nowrap' }, overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', maxWidth: '100%' }}>
+                {sectionTitle}
+              </Typography>
+            </Box>
+            {/* Desktop: mostrar contador a la derecha */}
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, flexDirection: 'column', gap: 1, minWidth: 180, alignItems: 'flex-end', flexShrink: 0 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '1rem', textAlign: 'left' }}>
+                {isProviderView ? `${providersCount} proveedores disponibles` : `${totalProductos} productos encontrados`}
+              </Typography>
+              {totalPages > 1 && (
+                <Typography variant="body2" color="primary.main" sx={{ fontSize: '0.875rem', textAlign: 'left' }}>
+                  Mostrando {startIndex + 1}-{Math.min(endIndex, totalProductos)} | Página {currentPage} de {totalPages}
+                </Typography>
+              )}
+            </Box>
           </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: { xs: 'auto', sm: 'auto', md: 180 }, maxWidth: { xs: '120px', sm: '140px', md: 'none' }, alignItems: { xs: 'flex-end', sm: 'flex-end', md: 'flex-end' }, flexShrink: 0 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '1rem' }, textAlign: { xs: 'right', sm: 'right', md: 'left' } }}>
+          
+          {/* Fila 2: Mobile - Contador debajo del título */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 0.5, ml: titleMarginLeft }}>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
               {isProviderView ? `${providersCount} proveedores disponibles` : `${totalProductos} productos encontrados`}
             </Typography>
             {totalPages > 1 && (
-              <Typography variant="body2" color="primary.main" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' }, textAlign: { xs: 'right', sm: 'right', md: 'left' } }}>
+              <Typography variant="body2" color="primary.main" sx={{ fontSize: '0.75rem' }}>
                 Mostrando {startIndex + 1}-{Math.min(endIndex, totalProductos)} | Página {currentPage} de {totalPages}
               </Typography>
             )}
@@ -91,7 +108,7 @@ export function ProductsSectionView({
                     <ProductCard 
                       product={producto} 
                       type={isProviderView ? 'provider' : 'buyer'} 
-                      imagePriority={getPriority ? getPriority(index) : false} // ✅ Prioridad dinámica por posición
+                      imagePriority={getPriority ? getPriority(index) : false} // ✓ Prioridad dinámica por posición
                       // Optional prefetch wiring from useProducts hook
                       registerProductNode={registerProductNode}
                     />

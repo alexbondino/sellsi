@@ -16,6 +16,7 @@ import {
   Divider,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
 import GoogleIcon from '@mui/icons-material/Google';
 
 import { PrimaryButton } from '../../../../shared/components';
@@ -32,7 +33,7 @@ const CONSTANTS = {
 // ✅ COMMON STYLES
 const commonStyles = {
   link: {
-    color: '#1976d2',
+    color: '#2E52B2',
     fontWeight: 600,
     textDecoration: 'none',
     cursor: 'pointer',
@@ -44,19 +45,29 @@ const commonStyles = {
 
 // ✅ LOGO COMPONENT
 const Logo = memo(() => (
-  <Box sx={{ textAlign: 'center', mb: 2 }}>
+  <Box 
+    sx={{ 
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      mb: 2,
+      width: '100%'
+    }}
+  >
     <img
-      src="/logo.svg"
+      src="/Logos/sellsi_logo_transparent.webp"
       alt="SELLSI Logo"
-      style={{ width: 160, marginBottom: 8 }}
+      style={{ width: 160, marginBottom: 8, display: 'block' }}
     />
     <Typography
       variant="h6"
       sx={{
-        color: '#222',
+        color: '#0772D2', //Azul Logo Sellsi
         fontWeight: 700,
         fontSize: 18,
         fontStyle: 'italic',
+        textAlign: 'center'
       }}
     >
       Conecta. Vende. Crece.
@@ -66,46 +77,13 @@ const Logo = memo(() => (
 
 // ✅ LOGIN FORM COMPONENT
 const LoginForm = memo(({ state, dispatch, onSubmit, onGoogleLogin }) => (
-  <Paper
-    elevation={3}
+  <Box
     sx={{
       p: 3,
       width: CONSTANTS.FORM_WIDTH,
-      maxWidth: '90%',
-      mt: 3,
-      mb: 3,
-      borderRadius: 2,
+      maxWidth: '100%',
     }}
   >
-    {/* Botón de Google */}
-    <Button
-      fullWidth
-      variant="outlined"
-      startIcon={<GoogleIcon />}
-      onClick={onGoogleLogin}
-      sx={{
-        mb: 2,
-        py: 1.2,
-        borderColor: '#dadce0',
-        color: '#3c4043',
-        textTransform: 'none',
-        fontSize: 14,
-        fontWeight: 500,
-        '&:hover': {
-          borderColor: '#d2d3d4',
-          backgroundColor: '#f8f9fa',
-        },
-      }}
-    >
-      Continuar con Google
-    </Button>
-
-    <Divider sx={{ my: 2 }}>
-      <Typography variant="body2" color="text.secondary">
-        o
-      </Typography>
-    </Divider>
-
     <form onSubmit={onSubmit}>
       <Box display="flex" flexDirection="column" gap={1.5}>
         <TextField
@@ -158,19 +136,48 @@ const LoginForm = memo(({ state, dispatch, onSubmit, onGoogleLogin }) => (
           <PrimaryButton
             type="submit"
             sx={{
-              width: '40%',
-              minWidth: 120,
+              width: '60%',
+              minWidth: 180,
               height: 40,
               fontSize: 16,
               fontWeight: 700,
             }}
           >
-            Aceptar
+            Iniciar Sesión
           </PrimaryButton>
         </Box>
       </Box>
     </form>
-  </Paper>
+
+    <Divider sx={{ my: 2 }}>
+      <Typography variant="body2" color="text.secondary">
+        o
+      </Typography>
+    </Divider>
+
+    {/* Botón de Google */}
+    <Button
+      fullWidth
+      variant="outlined"
+      startIcon={<GoogleIcon />}
+      onClick={onGoogleLogin}
+      sx={{
+        mb: 2,
+        py: 1.2,
+        borderColor: '#dadce0',
+        color: '#3c4043',
+        textTransform: 'none',
+        fontSize: 14,
+        fontWeight: 500,
+        '&:hover': {
+          borderColor: '#d2d3d4',
+          backgroundColor: '#f8f9fa',
+        },
+      }}
+    >
+      Continuar con Google
+    </Button>
+  </Box>
 ));
 
 // ✅ FOOTER LINKS COMPONENT
@@ -287,7 +294,21 @@ export default function Login({ open, onClose, onOpenRegister }) {
           },
         }}
       >
-        <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+        <DialogContent sx={{ p: 0, overflow: 'hidden', position: 'relative' }}>
+          <IconButton
+            onClick={onClose}
+            sx={{
+              position: 'absolute',
+              right: 16,
+              top: 16,
+              color: '#666',
+              zIndex: 1,
+              backgroundColor: 'rgba(0,0,0,0.05)',
+              '&:hover': { backgroundColor: 'rgba(0,0,0,0.1)' },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
           {state.cuentaNoVerificada ? (
             <Box
               display="flex"
@@ -339,7 +360,7 @@ export default function Login({ open, onClose, onOpenRegister }) {
               display="flex"
               flexDirection="column"
               alignItems="center"
-              sx={{ p: 3 }}
+              sx={{ p: 0, py: 4 }}
             >
               <Logo />
               <LoginForm

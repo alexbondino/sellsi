@@ -206,9 +206,7 @@ const mockDefault = id => ({
   default: () => <div>{id}</div>,
 });
 
-jest.mock('../../workspaces/buyer/marketplace/components/MarketplaceBuyer', () =>
-  mockDefault('MARKETPLACE_BUYER')
-);
+// ✅ UNIFICADO: MarketplaceBuyer ahora usa Marketplace con hasSideBar prop
 jest.mock('../../workspaces/marketplace/pages/Marketplace', () =>
   mockDefault('MARKETPLACE')
 );
@@ -265,8 +263,9 @@ jest.mock('../../workspaces/product/product-page-view/ProductPageWrapper', () =>
 jest.mock('../../workspaces/auth/onboarding/components/Onboarding', () =>
   mockDefault('ONBOARDING')
 );
-jest.mock('../../workspaces/auth/account-recovery/components/ResetPassword', () =>
-  mockDefault('RESET_PASSWORD')
+jest.mock(
+  '../../workspaces/auth/account-recovery/components/ResetPassword',
+  () => mockDefault('RESET_PASSWORD')
 );
 jest.mock('../../shared/components/layout/NotFound', () =>
   mockDefault('NOT_FOUND')
