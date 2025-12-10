@@ -11,8 +11,8 @@
   <meta property="og:description" content="Sellsi es el Marketplace que te permitirá conectar, cotizar, negociar y administrar tus compras y ventas en línea" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://sellsi.cl/" />
-  <meta property="og:image" content="/assets/social/twitter-card.png" />
-  <meta property="og:image:secure_url" content="/assets/social/twitter-card.png" />
+  <meta property="og:image" content="/Logos/sellsi_minilogo.webp" />
+  <meta property="og:image:secure_url" content="/Logos/sellsi_minilogo.webp" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="628" />
@@ -22,15 +22,66 @@
   <meta name="twitter:creator" content="@tu_cuenta_twitter" />
   <meta name="twitter:title" content="Sellsi — El hub de negocios para mayoristas y minoristas de Chile" />
   <meta name="twitter:description" content="Sellsi es el Marketplace que te permitirá conectar, cotizar, negociar y administrar tus compras y ventas en línea" />
-  <meta name="twitter:image" content="/assets/social/twitter-card.png" />
+  <meta name="twitter:image" content="/Logos/sellsi_minilogo.webp" />
   <meta name="twitter:image:alt" content="Logotipo de Sellsi con el lema 'Conecta. Vende. Crece.'" />
       <link rel="canonical" href="https://sellsi.cl/" />
-  <!-- Performance: Preconnect ONLY to Supabase (Option B self-host fonts) -->
+  <!-- Performance: Preconnect to Supabase only -->
   <link rel="preconnect" href="https://clbngnjetipglkikondm.supabase.co" crossorigin>
-  <!-- Self-hosted font preloads (ensure files exist in /public/fonts) -->
+  
+  <!-- Preload self-hosted fonts (critical performance) -->
   <link rel="preload" as="font" type="font/woff2" href="/fonts/inter-400.woff2" crossorigin>
   <link rel="preload" as="font" type="font/woff2" href="/fonts/inter-600.woff2" crossorigin>
   <link rel="preload" as="font" type="font/woff2" href="/fonts/inter-700.woff2" crossorigin>
+  
+  <!-- Critical CSS: Loader inline para First Paint -->
+  <style>
+    /* Loader container visible inmediatamente */
+    #root {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #ffffff;
+    }
+    
+    /* Loader animation fallback (antes de que cargue MUI) */
+    .loader-fallback {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .loader-fallback img {
+      width: 48px;
+      height: 48px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      object-fit: contain;
+    }
+    
+    /* Simple spinner CSS (fallback antes de MUI) */
+    .loader-fallback::after {
+      content: '';
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border: 4.5px solid #e0e0e0;
+      border-top-color: #2E52B2;
+      border-radius: 50%;
+      animation: spin 1.4s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+  
       <!-- Structured data to help search engines find site navigation (increases chance of sitelinks) -->
       <script type="application/ld+json">
       {

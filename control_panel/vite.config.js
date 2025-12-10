@@ -58,62 +58,23 @@ export default defineConfig(({ mode }) => {
       } : undefined,
       rollupOptions: {
         output: {
-          // ⚡ OPTIMIZACIÓN AVANZADA: Code splitting inteligente
-          manualChunks(id) {
-            // Vendor chunks específicos
-            if (id.includes('node_modules')) {
-              // React ecosystem
-              if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-                return 'react-vendor'
-              }
-              
-              // MUI Material (core)
-              if (id.includes('@mui/material')) {
-                return 'mui-material'
-              }
-              
-              // MUI Icons
-              if (id.includes('@mui/icons-material')) {
-                return 'mui-icons'
-              }
-              
-              // MUI Data Grid
-              if (id.includes('@mui/x-data-grid')) {
-                return 'mui-datagrid'
-              }
-              
-              // MUI Charts
-              if (id.includes('@mui/x-charts')) {
-                return 'mui-charts'
-              }
-              
-              // React Query
-              if (id.includes('@tanstack/react-query')) {
-                return 'react-query'
-              }
-              
-              // Supabase
-              if (id.includes('@supabase')) {
-                return 'supabase'
-              }
-              
-              // Otros vendors pequeños
-              return 'vendor'
-            }
-            
-            // App chunks - separar por dominio
-            if (id.includes('src/domains/admin/components')) {
-              return 'admin-components'
-            }
-            if (id.includes('src/domains/admin/modals')) {
-              return 'admin-modals'
-            }
-            if (id.includes('src/domains/admin/pages')) {
-              return 'admin-pages'
-            }
-            if (id.includes('src/shared')) {
-              return 'shared'
-            }
+          // ✅ Code splitting conservador (evita dependencias circulares)
+          manualChunks: {
+            // Vendors básicos juntos (evita circular refs)
+            'vendor': [
+              'react',
+              'react-dom',
+              'react-router-dom'
+            ],
+            'mui-core': [
+              '@mui/material',
+              '@emotion/react',
+              '@emotion/styled'
+            ],
+            'mui-icons': ['@mui/icons-material'],
+            'mui-datagrid': ['@mui/x-data-grid'],
+            'supabase': ['@supabase/supabase-js'],
+            'react-query': ['@tanstack/react-query']
           },
           // ⚡ Nombres de chunks consistentes para mejor caching
           chunkFileNames: 'assets/[name]-[hash].js',
