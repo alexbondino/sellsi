@@ -1,0 +1,99 @@
+﻿import { sentryVitePlugin } from '@sentry/vite-plugin';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [
+    react(),
+    sentryVitePlugin({
+      org: 'sellsi',
+      project: 'sellsi',
+    }),
+  ],
+  server: {
+    port: 3000,
+  },
+  build: {
+    // Configuraci├│n de chunking optimizada y estable
+    chunkSizeWarningLimit: 1000,
+    // Generar manifest para an├ílisis comparativo de chunks
+    manifest: true,
+
+    // Minificaci├│n optimizada
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        // ­ƒöì DEBUG TEMPORAL: desactivar drop_console para diagnosticar bug de price tiers
+        drop_console: false, // TODO: volver a true despu├®s del debug
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug'],
+      },
+    },
+
+    rollupOptions: {
+      output: {
+        // Ô£à OPTIMIZACI├ôN: Chunking simplificado para evitar dependencias circulares
+        manualChunks: {
+          // Vendors base (siempre juntos para evitar problemas de orden)
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'mui-core': ['@mui/material', '@emotion/react', '@emotion/styled'],
+          'mui-icons': ['@mui/icons-material'],
+          'mui-extras': ['@mui/lab', '@mui/x-charts'],
+          'supabase': ['@supabase/supabase-js'],
+          'animation': ['framer-motion', 'react-confetti'],
+          'utils': ['lodash.debounce', 'react-hot-toast', 'zustand', 'immer'],
+        },
+
+        // Optimizar nombres de archivos
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
+      },
+
+      // Tree shaking optimizado
+      treeshake: {
+        moduleSideEffects: false,
+      },
+    },
+
+    // Sourcemaps (eval├║a desactivar en prod p├║blica)
+    sourcemap: true,
+
+    // Target moderno para mejor optimizaci├│n
+    target: 'es2020',
+  },
+
+  // Configuraci├│n de resoluci├│n para compatibilidad del navegador
+  define: {
+    global: 'globalThis',
+  },
+
+  // Optimizaci├│n de dependencias
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      '@mui/material',
+      'react-router-dom',
+      'zustand',
+    ],
+    exclude: [
+      '@react-pdf/renderer', // Excluir PDF renderer del pre-bundling
+    ],
+  },
+
+  // Resoluci├│n de m├│dulos para el navegador
+  resolve: {
+    alias: {
+      // Polyfills para Node.js modules en el navegador
+      crypto: 'crypto-browserify',
+      stream: 'stream-browserify',
+      util: 'util',
+      url: 'url',
+      buffer: 'buffer',
+      '@shared-components': '/src/shared-components',
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+});

@@ -32,7 +32,7 @@ const supabaseFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/c
 
 const ContactModal = ({ open, onClose, context = null }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const location = useLocation();
   const { showBanner } = useBanner();
   const { session, userProfile } = useAuth();
@@ -173,32 +173,21 @@ const ContactModal = ({ open, onClose, context = null }) => {
       TransitionComponent={Fade}
       disableScrollLock={true}
       disableRestoreFocus={true}
-      sx={{ zIndex: 1401 }}
+      sx={{ zIndex: 1500 }}
       PaperProps={{
         elevation: 0,
         sx: {
           borderRadius: isMobile ? 0 : 3,
           overflow: 'hidden',
           background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-          position: 'fixed',
-          width: {
-            xs: '95%',
-            sm: '90%',
-            md: '80%',
-            lg: '30%',
-            xl: '20%',
-          },
-          height: {
-            xs: '85%',
-            sm: '75%',
-            md: '85%',
-            lg: 'auto',
-            xl: 'auto',
-          },
-          maxWidth: '90vw',
-          maxHeight: '90vh',
-          minWidth: '300px',
-          minHeight: '400px',
+          ...(!isMobile && {
+            width: {
+              sm: '90%',
+              md: '600px',
+            },
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+          }),
         },
       }}
     >
@@ -208,8 +197,8 @@ const ContactModal = ({ open, onClose, context = null }) => {
           position: 'relative',
           backgroundColor: '#2E52B2',
           color: 'white',
-          py: { xs: 0.5, sm: 1.5, md: 3, lg: 4, xl: 4 },
-          px: 3,
+          py: { xs: 2, sm: 2.5, md: 3 },
+          px: { xs: 2, sm: 3 },
           textAlign: 'center',
         }}
       >
@@ -217,14 +206,16 @@ const ContactModal = ({ open, onClose, context = null }) => {
           onClick={handleClose}
           sx={{
             position: 'absolute',
-            right: 16,
-            top: 16,
+            right: { xs: 8, sm: 16 },
+            top: '50%',
+            transform: 'translateY(-50%)',
             color: 'white',
             backgroundColor: alpha('#ffffff', 0.1),
+            p: { xs: 0.75, sm: 1 },
             '&:hover': { backgroundColor: alpha('#ffffff', 0.2) },
           }}
         >
-          <CloseIcon />
+          <CloseIcon sx={{ fontSize: { xs: '1.5rem', sm: '1.5rem' } }} />
         </IconButton>
         <Typography
           variant="h4"
@@ -232,11 +223,9 @@ const ContactModal = ({ open, onClose, context = null }) => {
           gutterBottom
           sx={{
             fontSize: {
-              xs: '1.5rem',
+              xs: '1.35rem',
               sm: '1.75rem',
               md: '2rem',
-              lg: '2.125rem',
-              xl: '2.125rem',
             },
           }}
         >
@@ -247,11 +236,9 @@ const ContactModal = ({ open, onClose, context = null }) => {
           sx={{
             opacity: 0.9,
             fontSize: {
-              xs: '0.875rem',
+              xs: '0.8125rem',
               sm: '0.9rem',
               md: '1rem',
-              lg: '1rem',
-              xl: '1rem',
             },
           }}
         >
@@ -263,19 +250,23 @@ const ContactModal = ({ open, onClose, context = null }) => {
         <Box
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.03),
-            py: 3,
-            px: 4,
+            py: { xs: 2, sm: 2.5, md: 3 },
+            px: { xs: 2, sm: 3, md: 4 },
           }}
         >
           <Stack
             direction={isMobile ? 'column' : 'row'}
-            spacing={3}
+            spacing={{ xs: 2, sm: 3 }}
             justifyContent="center"
             alignItems="center"
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <EmailIcon color="primary" />
-              <Typography variant="body2" fontWeight="500">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1 } }}>
+              <EmailIcon color="primary" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
+              <Typography 
+                variant="body2" 
+                fontWeight="500"
+                sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+              >
                 contacto@sellsi.cl {/* Corregí el dominio a .cl */}
               </Typography>
             </Box>
@@ -284,9 +275,13 @@ const ContactModal = ({ open, onClose, context = null }) => {
               flexItem
               sx={{ display: isMobile ? 'none' : 'block' }}
             />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PhoneIcon color="primary" />
-              <Typography variant="body2" fontWeight="500">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1 } }}>
+              <PhoneIcon color="primary" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
+              <Typography 
+                variant="body2" 
+                fontWeight="500"
+                sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+              >
                 +(56) 963109664
               </Typography>
             </Box>
@@ -296,9 +291,9 @@ const ContactModal = ({ open, onClose, context = null }) => {
         <Box
           component="form"
           onSubmit={handleSubmit}
-          sx={{ p: { xs: 1, sm: 3, md: 4, lg: 4, xl: 4 } }}
+          sx={{ p: { xs: 2, sm: 3, md: 4 } }}
         >
-          <Stack spacing={3}>
+          <Stack spacing={{ xs: 2.5, sm: 3 }}>
             <TextField
               fullWidth
               label="Nombre"
@@ -307,6 +302,15 @@ const ContactModal = ({ open, onClose, context = null }) => {
               error={!!errors.nombre}
               helperText={errors.nombre}
               variant="outlined"
+              InputLabelProps={{
+                sx: { fontSize: { xs: '0.875rem', sm: '1rem' } }
+              }}
+              InputProps={{
+                sx: { fontSize: { xs: '0.875rem', sm: '1rem' } }
+              }}
+              FormHelperTextProps={{
+                sx: { fontSize: { xs: '0.75rem', sm: '0.75rem' } }
+              }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
@@ -326,6 +330,15 @@ const ContactModal = ({ open, onClose, context = null }) => {
               error={!!errors.email}
               helperText={errors.email}
               variant="outlined"
+              InputLabelProps={{
+                sx: { fontSize: { xs: '0.875rem', sm: '1rem' } }
+              }}
+              InputProps={{
+                sx: { fontSize: { xs: '0.875rem', sm: '1rem' } }
+              }}
+              FormHelperTextProps={{
+                sx: { fontSize: { xs: '0.75rem', sm: '0.75rem' } }
+              }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
@@ -340,13 +353,22 @@ const ContactModal = ({ open, onClose, context = null }) => {
               fullWidth
               label="Mensaje"
               multiline
-              rows={4}
+              rows={10}
               value={formData.mensaje}
               onChange={handleChange('mensaje')}
               error={!!errors.mensaje}
               helperText={errors.mensaje}
               placeholder="Cuéntanos cómo podemos ayudarte..."
               variant="outlined"
+              InputLabelProps={{
+                sx: { fontSize: { xs: '0.875rem', sm: '1rem' } }
+              }}
+              InputProps={{
+                sx: { fontSize: { xs: '0.875rem', sm: '1rem' } }
+              }}
+              FormHelperTextProps={{
+                sx: { fontSize: { xs: '0.75rem', sm: '0.75rem' } }
+              }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
@@ -362,13 +384,13 @@ const ContactModal = ({ open, onClose, context = null }) => {
               variant="contained"
               size="large"
               disabled={isSubmitting}
-              startIcon={<SendIcon />}
+              startIcon={<SendIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }} />}
               sx={{
-                mt: 2,
-                py: 1.5,
+                mt: { xs: 1, sm: 2 },
+                py: { xs: 1.25, sm: 1.5 },
                 borderRadius: 2,
                 textTransform: 'none',
-                fontSize: '1rem',
+                fontSize: { xs: '0.9rem', sm: '1rem' },
                 fontWeight: '600',
                 backgroundColor: '#2E52B2',
                 boxShadow: '0 4px 14px rgba(46, 82, 178, 0.25)',

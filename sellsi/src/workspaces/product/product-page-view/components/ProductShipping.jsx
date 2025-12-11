@@ -87,7 +87,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
         elevation={2}
         sx={{
           // Reduce internal padding on mobile to reduce lateral spacing
-          p: { xs: 0,md: 5 },
+          p: { xs: 1, md: 5 },
           borderRadius: 3,
           width: { xs: '100%', md: '70%' },
           maxWidth: '900px',
@@ -104,8 +104,8 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
           sx={{
             fontWeight: 700,
             color: 'black',
-            mb: 3,
-            fontSize: { xs: '1.4rem', sm: '1.4rem', md: '1.4rem' },
+            mb: { xs: 2, md: 3 },
+            fontSize: { xs: '1.15rem', sm: '1.3rem', md: '1.4rem' },
             position: 'relative',
             display: 'flex',
             alignItems: 'center',
@@ -130,7 +130,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
           </span>
         </Typography>
 
-        <Box sx={{ mt: 3 }}>
+        <Box sx={{ mt: { xs: 2, md: 3 }, px: { xs: 0, md: 0 } }}>
           <TableContainer 
             component={Paper} 
             elevation={0}
@@ -148,7 +148,9 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                     sx={{ 
                       fontWeight: 600, 
                       py: { xs: 1, md: 1.5 },
-                      fontSize: '1rem'
+                      px: { xs: 0.5, md: 2 },
+                      fontSize: { xs: '0.875rem', md: '1rem' },
+                      textAlign: 'center'
                     }}
                   >
                     Región
@@ -157,7 +159,9 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                     sx={{ 
                       fontWeight: 600, 
                       py: { xs: 1, md: 1.5 },
-                      fontSize: '1rem'
+                      px: { xs: 0.5, md: 2 },
+                      fontSize: { xs: '0.875rem', md: '1rem' },
+                      textAlign: 'center'
                     }}
                   >
                     Precio
@@ -166,7 +170,9 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                     sx={{ 
                       fontWeight: 600, 
                       py: { xs: 1, md: 1.5 },
-                      fontSize: '1rem'
+                      px: { xs: 0.5, md: 2 },
+                      fontSize: { xs: '0.875rem', md: '1rem' },
+                      textAlign: 'center'
                     }}
                   >
                     Tiempo despacho
@@ -182,12 +188,13 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                       '&:last-child td': { border: 0 }
                     }}
                   >
-                    <TableCell sx={{ py: { xs: 1, md: 1.5 } }}>
+                    <TableCell sx={{ py: { xs: 1, md: 1.5 }, px: { xs: 0.5, md: 2 }, textAlign: 'center' }}>
                       <Box sx={{ 
                         display: 'flex', 
                         alignItems: 'center', 
                         gap: { xs: 0.5, md: 1 },
-                        flexDirection: { xs: 'column', sm: 'row' }
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        justifyContent: 'center'
                       }}>
                         <Typography 
                           variant="body2" 
@@ -196,7 +203,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                             color: 'primary.main',
                             minWidth: '32px',
                             textAlign: 'center',
-                            fontSize: '1rem'
+                            fontSize: { xs: '0.875rem', md: '1rem' }
                           }}
                         >
                           {getRegionRomanNumber(region.region)}
@@ -205,7 +212,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                           variant="body2" 
                           sx={{ 
                             fontWeight: 500,
-                            fontSize: '1rem',
+                            fontSize: { xs: '0.875rem', md: '1rem' },
                             textAlign: { xs: 'center', sm: 'left' }
                           }}
                         >
@@ -213,24 +220,24 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                         </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell sx={{ py: { xs: 1, md: 1.5 } }}>
+                    <TableCell sx={{ py: { xs: 1, md: 1.5 }, px: { xs: 0.5, md: 2 }, textAlign: 'center' }}>
                       <Typography 
                         variant="body2" 
                         sx={{ 
                           fontWeight: 500,
-                          fontSize: '1rem',
+                          fontSize: { xs: '0.875rem', md: '1rem' },
                           color: (region.shippingValue || region.price) === 0 ? 'success.main' : 'black'
                         }}
                       >
                         {formatCurrency(region.shippingValue || region.price)}
                       </Typography>
                     </TableCell>
-                    <TableCell sx={{ py: { xs: 1, md: 1.5 } }}>
+                    <TableCell sx={{ py: { xs: 1, md: 1.5 }, px: { xs: 0.5, md: 2 }, textAlign: 'center' }}>
                       <Typography 
                         variant="body2" 
                         sx={{ 
                           fontWeight: 500,
-                          fontSize: '1rem',
+                          fontSize: { xs: '0.875rem', md: '1rem' },
                           color: 'text.primary'
                         }}
                       >
@@ -248,7 +255,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
         <Typography 
           variant="body2" 
           sx={{ 
-            mt: 3,
+            mt: { xs: 2, md: 3 },
             color: 'text.secondary',
             fontSize: '0.85rem',
             textAlign: 'center'

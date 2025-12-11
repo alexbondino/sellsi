@@ -1,5 +1,5 @@
 import React, { memo, useState, useEffect, useCallback } from 'react';
-import { Box, Button, Tooltip } from '@mui/material';
+import { Box, Button, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { Gavel as GavelIcon } from '@mui/icons-material';
 import { AddToCart } from '../../../../shared/components';
 import OfferModal from './OfferModal';
@@ -16,6 +16,9 @@ const PurchaseActions = ({
   const [isOfferOpen, setIsOfferOpen] = React.useState(false);
   const [limitsValidation, setLimitsValidation] = useState(null);
   const [checkingLimits, setCheckingLimits] = useState(false);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const { validateOfferLimits } = useOfferStore();
   // Prefetched limits for passing into OfferModal (avoid double RPC)
@@ -91,23 +94,29 @@ const PurchaseActions = ({
           display: 'flex',
           width: '100%',
           alignItems: 'center',
-          columnGap: { xs: 2, md: 3 },
+          columnGap: { xs: 1, md: 3 },
         }}
       >
         {isLoggedIn && (
-          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+          <Box sx={{ 
+            flex: isMobile ? 1 : 1, 
+            display: 'flex', 
+            justifyContent: isMobile ? 'center' : 'flex-start',
+            width: isMobile ? '50%' : 'auto'
+          }}>
             <Tooltip title={getOfferTooltip()} arrow>
-              <span>
+              <span style={{ width: isMobile ? '100%' : 'auto' }}>
                 {' '}
                 {/* Necesario para que el tooltip funcione con botón deshabilitado */}
                 <Button
                   variant="contained"
                   startIcon={<GavelIcon />}
                   size="large"
+                  fullWidth={isMobile}
                   disabled={!isLoggedIn || isOfferDisabled}
                   onClick={openOffer}
                   sx={theme => ({
-                    minWidth: { xs: 140, sm: 160, md: 180 },
+                    minWidth: isMobile ? 'auto' : { xs: 140, sm: 160, md: 180 },
                     whiteSpace: 'nowrap',
                     py: 1.5,
                     fontSize: '1.1rem',
@@ -150,7 +159,12 @@ const PurchaseActions = ({
           </Box>
         )}
 
-        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+        <Box sx={{ 
+          flex: isMobile ? 1 : 1, 
+          display: 'flex', 
+          justifyContent: 'center',
+          width: isMobile ? '50%' : 'auto'
+        }}>
           <AddToCart
             product={product}
             variant="button"
@@ -159,7 +173,8 @@ const PurchaseActions = ({
             userRegion={userRegion}
             isLoadingUserProfile={isLoadingUserProfile}
             sx={{
-              minWidth: { xs: 120, sm: 160, md: 180 },
+              minWidth: isMobile ? 'auto' : { xs: 120, sm: 160, md: 180 },
+              width: isMobile ? '100%' : 'auto',
               whiteSpace: 'nowrap',
               py: 1.5,
               fontSize: '1.1rem',
@@ -179,14 +194,14 @@ const PurchaseActions = ({
             }}
           >
             {!isLoggedIn
-              ? 'Inicia sesión para agregar'
+              ? (isMobile ? 'Inicia sesión' : 'Inicia sesión para agregar')
               : stock === 0
               ? 'Sin stock'
-              : 'Agregar al Carrito'}
+              : (isMobile ? 'Agregar' : 'Agregar al Carrito')}
           </AddToCart>
         </Box>
 
-        <Box sx={{ flex: 1 }} />
+        {!isMobile && <Box sx={{ flex: 1 }} />}
       </Box>
       <OfferModal
         open={isOfferOpen}

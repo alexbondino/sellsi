@@ -82,6 +82,8 @@ const LoginForm = memo(({ state, dispatch, onSubmit, onGoogleLogin }) => (
       p: 3,
       width: CONSTANTS.FORM_WIDTH,
       maxWidth: '100%',
+      border: 'none',
+      boxShadow: 'none',
     }}
   >
     <form onSubmit={onSubmit}>
@@ -291,6 +293,7 @@ export default function Login({ open, onClose, onOpenRegister }) {
             maxHeight: '90vh',
             overflow: 'hidden',
             position: 'fixed',
+            width: { xs: '95%', sm: 'auto' },
           },
         }}
       >
@@ -391,6 +394,7 @@ export default function Login({ open, onClose, onOpenRegister }) {
             maxHeight: '90vh',
             overflow: 'hidden',
             position: 'fixed',
+            width: { xs: '95%', sm: 'auto' },
           },
         }}
       >

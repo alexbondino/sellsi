@@ -166,8 +166,8 @@ const CartItem = ({
       {/* ========== CONTENEDOR PRINCIPAL DEL ITEM DEL CARRITO ========== */}{' '}
       <Paper
         sx={{
-          p: 1.5,
-          mb: 4,
+          p: { xs: 1.5, md: 1, lg: 1.5, xl: 1.5 },
+          mb: { xs: 4, md: 3, lg: 4, xl: 4 },
           borderRadius: 1,
           background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
           boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
@@ -179,9 +179,9 @@ const CartItem = ({
           maxWidth: {
             xs: '100%',
             sm: '600px',
-            md: '800px',
-            lg: '1030px',
-            xl: '1200px',
+            md: '100%',
+            lg: '100%',
+            xl: '100%',
           },
           overflow: 'hidden', // Prevenir overflow horizontal
           position: 'relative',
@@ -241,17 +241,19 @@ const CartItem = ({
         {/* Columna 4: Opciones de envío (xs=12, sm=2.8) */}
         <Grid
           container
-          spacing={3}
+          spacing={{ xs: 3, md: 2, lg: 3, xl: 3 }}
           alignItems="flex-start"
           sx={{ overflow: 'hidden' }}
         >
           {' '}          {/* Imagen optimizada */}{' '}
-          <Grid size={{ xs: 12, sm: 2.4,}}>
+          <Grid size={{ xs: 12, sm: 2.4, md: 2.4, lg: 2.4, xl: 2.4 }}>
             <Box
               sx={{
                 position: 'relative',
-                width: '160px',
-                height: '160px',
+                width: '100%',
+                maxWidth: { xs: '160px', md: '140px', lg: '160px' },
+                height: { xs: '160px', md: '140px', lg: '160px' },
+                mx: 'auto'
               }}
             >
               <CartItemImage
@@ -265,7 +267,7 @@ const CartItem = ({
               />
             </Box>
           </Grid>{' '}          {/* Información del producto */}
-          <Grid size={{ xs: 12, sm: 3.6 }} >
+          <Grid size={{ xs: 12, sm: 3.6, md: 3.6, lg: 3.6, xl: 3.6 }} >
             <Box
               sx={{
                 display: 'flex',
@@ -278,7 +280,7 @@ const CartItem = ({
               {/* ========== TÍTULO DEL PRODUCTO ========== */}
               {/* Este Typography contiene el título/nombre del producto */}
               {/* IMPORTANTE: Aquí está el título que debe tener el margin-top removido */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 2, md: 1.5 } }}>
                 <Typography
                   variant="h6"
                   sx={{
@@ -289,6 +291,7 @@ const CartItem = ({
                     flex: 1,
                     mb: 0,
                     minWidth: 0,
+                    fontSize: { xs: '1.25rem', md: '1.1rem', lg: '1.25rem' }
                   }}
                 >
                   {productData.name}
@@ -301,11 +304,11 @@ const CartItem = ({
                       color: 'success.main',
                       fontWeight: 800,
                       ml: 0.5,
-                      fontSize: '0.95rem',
+                      fontSize: { xs: '0.95rem', md: '0.8rem', lg: '0.95rem' },
                       display: 'inline-flex',
                       alignItems: 'center',
-                      px: 1,
-                      py: '3px',
+                      px: { xs: 1, md: 0.7, lg: 1 },
+                      py: { xs: '3px', md: '2px', lg: '3px' },
                       borderRadius: '6px',
                       border: '1px solid',
                       borderColor: 'success.main',
@@ -322,8 +325,8 @@ const CartItem = ({
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  mb: 1,
-                  gap: 1,
+                  mb: { xs: 1, md: 0.7, lg: 1 },
+                  gap: { xs: 1, md: 0.7, lg: 1 },
                   fontSize: '0.9rem',
                 }}
               >
@@ -332,7 +335,7 @@ const CartItem = ({
                   sx={{
                     color: 'primary.main',
                     fontWeight: 600,
-                    fontSize: '0.9rem',
+                    fontSize: { xs: '0.9rem', md: '0.8rem', lg: '0.9rem' },
                   }}
                 >
                   {item.proveedor || 'Proveedor no encontrado'}
@@ -341,7 +344,7 @@ const CartItem = ({
                 {(item.proveedorVerificado || item.verified || item.supplier_verified || item.supplierVerified) && (
                   <VerifiedIcon
                     sx={{
-                      fontSize: 16,
+                      fontSize: { xs: 16, md: 14, lg: 16 },
                       color: 'primary.main',
                     }}
                   />
@@ -349,28 +352,28 @@ const CartItem = ({
               </Box>{' '}
               {/* (El Chip visual de 'Ofertado' fue removido; se mantiene el texto "OFERTADO") */}
               {/* Price - Usando precio dinámico basado en quantity y price_tiers */}
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ color: '#222', fontWeight: 500, mb: 0.5, fontsize: '0.9rem' }}>
+              <Box sx={{ mb: { xs: 2, md: 1.2, lg: 2 } }}>
+                <Typography variant="body2" sx={{ color: '#222', fontWeight: 500, mb: 0.5, fontSize: { xs: '0.9rem', md: '0.8rem', lg: '0.9rem' } }}>
                   Precio Unitario:
                 </Typography>
                 <PriceDisplay
                   price={priceCalculations.unitPrice}
                   variant="h6"
-                  sx={{ color: '#222', fontWeight: 700, fontSize: '1rem' }}
+                  sx={{ color: '#222', fontWeight: 700, fontSize: { xs: '1rem', md: '0.9rem', lg: '1rem' } }}
                 />
               </Box>
               {/* Feature badges */}
               {/* Stack de badges eliminado: Chip "Verificado" removido */}
             </Box>{' '}
           </Grid>{' '}          {/* Controles y acciones */}
-          <Grid size={{ xs: 12, sm: 3.2 }} sx={{ marginLeft: 'auto !important' }}>
+          <Grid size={{ xs: 12, sm: 3.2, md: 3.2, lg: 3.2, xl: 3.2 }} sx={{ marginLeft: 'auto !important' }}>
             <Box
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'flex-start',
-                gap: 1,
+                gap: { xs: 1, md: 0.7, lg: 1 },
                 height: '100%',
                 width: '100%',
                 marginLeft: 'auto',
@@ -434,8 +437,7 @@ const CartItem = ({
                     fontWeight: 500,
                     mb: 0,
                     textAlign: 'center',
-                    fontSize: '0.9rem'
-
+                    fontSize: { xs: '0.9rem', md: '0.8rem', lg: '0.9rem' }
                   }}
                 >
                   Precio Total:
@@ -450,6 +452,7 @@ const CartItem = ({
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     opacity: isSelectionMode ? 0.5 : 1,
+                    fontSize: { xs: '1.5rem', md: '1.3rem', lg: '1.5rem' }
                   }}
                 >
                   {formatPrice(priceCalculations.subtotal)}
@@ -457,7 +460,7 @@ const CartItem = ({
               </Box>
             </Box>
           </Grid>{' '}          {/* Opciones de Envío */}
-          <Grid size={{ xs: 12, sm: 2.8 }}>
+          <Grid size={{ xs: 12, sm: 2.8, md: 2.8, lg: 2.8, xl: 2.8 }}>
             <Box
               sx={{
                 display: 'flex',
@@ -539,9 +542,9 @@ const CartItem = ({
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-start',
-                width: '140px',
-                minWidth: '140px',
-                maxWidth: '140px',
+                width: { xs: '140px', md: '100%', lg: '140px' },
+                minWidth: { xs: '140px', md: '120px', lg: '140px' },
+                maxWidth: { xs: '140px', md: '100%', lg: '140px' },
                 py: 1,
                 px: 0,
                 borderRadius: 1,

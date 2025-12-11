@@ -86,23 +86,31 @@ const QuotationModal = ({
       cancelButtonText="Cancelar"
       showCancelButton={true}
     >
-      <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
-        <Box sx={{ mb: 1 }}>
+      <Box sx={{ p: { xs: 2, sm: 2 }, bgcolor: 'grey.50', borderRadius: 2 }}>
+        <Box sx={{ mb: { xs: 1.5, sm: 1 }, textAlign: { xs: 'center', sm: 'left' } }}>
           <Typography
             variant="body2"
             component="div"
-            sx={{ color: 'text.secondary' }}
+            sx={{ 
+              color: 'text.secondary',
+              fontSize: { xs: '0.9375rem', sm: '0.875rem' }
+            }}
           >
             La Cotización incluirá:
           </Typography>
         </Box>
 
         {/* Precio unitario */}
-        <Box sx={{ mb: 0.5 }}>
+        <Box sx={{ mb: { xs: 1, sm: 0.5 } }}>
           <Typography
             variant="body2"
             component="div"
-            sx={{ color: 'text.primary', fontWeight: 500, textAlign: 'left' }}
+            sx={{ 
+              color: 'text.primary', 
+              fontWeight: 500, 
+              textAlign: { xs: 'center', sm: 'left' },
+              fontSize: { xs: '0.9375rem', sm: '0.875rem' }
+            }}
           >
             Precio unitario: $
             {Math.trunc(calculatedPrices.unitPrice).toLocaleString('es-CL')}
@@ -110,11 +118,16 @@ const QuotationModal = ({
         </Box>
 
         {/* Total (IVA incluido) */}
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ mb: { xs: 2, sm: 2 } }}>
           <Typography
             variant="body2"
             component="div"
-            sx={{ color: 'text.primary', fontWeight: 600, textAlign: 'left' }}
+            sx={{ 
+              color: 'text.primary', 
+              fontWeight: 600, 
+              textAlign: { xs: 'center', sm: 'left' },
+              fontSize: { xs: '1rem', sm: '0.875rem' }
+            }}
           >
             Total (IVA incluido): $
             {Math.trunc(calculatedPrices.totalPrice).toLocaleString('es-CL')}
@@ -122,7 +135,7 @@ const QuotationModal = ({
         </Box>
 
         {/* Nota sobre precios */}
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ mb: { xs: 2, sm: 2 } }}>
           <Typography
             variant="body2"
             component="div"
@@ -130,7 +143,7 @@ const QuotationModal = ({
               color: 'text.disabled',
               fontStyle: 'italic',
               textAlign: 'center',
-              fontSize: 12,
+              fontSize: { xs: '0.8125rem', sm: '0.75rem' },
             }}
           >
             Valores expresados en pesos chilenos (CLP).
@@ -138,32 +151,38 @@ const QuotationModal = ({
         </Box>
 
         {/* Selector de cantidad */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: { xs: 8, sm: 2 } }}>
           <QuantitySelector
             value={selectedQuantity}
             onChange={setSelectedQuantity}
-            min={productData.minimumPurchase} // Usar la cantidad mínima del producto
-            max={maxQuantity} // Usar el stock máximo del producto
+            min={productData.minimumPurchase}
+            max={maxQuantity}
             size="medium"
             label="Cantidad"
             sx={{
-              width: 'auto',
+              width: { xs: '100%', sm: 'auto' },
+              maxWidth: { xs: '280px', sm: 'none' },
+              '& .MuiFormLabel-root': {
+                textAlign: 'center',
+                width: '100%',
+              },
               '& .MuiTypography-root': {
                 textAlign: 'center',
                 color: 'text.primary',
                 fontWeight: 500,
+                fontSize: { xs: '0.9375rem', sm: '0.875rem' },
               },
             }}
           />
         </Box>
 
         {/* Mostrar información de stock */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: { xs: 1.5, sm: 1 } }}>
           <Typography
             variant="caption"
             color="text.secondary"
             sx={{
-              fontSize: '0.75rem',
+              fontSize: { xs: '0.8125rem', sm: '0.75rem' },
               textAlign: 'center',
             }}
           >

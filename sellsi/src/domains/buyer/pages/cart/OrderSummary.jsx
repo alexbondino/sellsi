@@ -91,18 +91,19 @@ const OrderSummary = ({
     <Paper
       elevation={3}
       sx={{
-        p: { xs: 2, sm: 2.25, md: 3 },
+        p: { xs: 2, sm: 2.25, md: 2, lg: 3, xl: 3 },
         borderRadius: 3,
         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
         border: '1px solid rgba(102, 126, 234, 0.1)',
         position: { xs: 'static', md: 'sticky' },
         top: { md: 100 },
-        width: {
+        width: '100%',
+        maxWidth: {
           xs: '100%',
           sm: '100%',
-          md: '300px',
-          lg: '360px',
-          xl: '400px',
+          md: '100%',
+          lg: '100%',
+          xl: '100%',
         },
         boxShadow: { xs: 2, md: 3 },
       }}

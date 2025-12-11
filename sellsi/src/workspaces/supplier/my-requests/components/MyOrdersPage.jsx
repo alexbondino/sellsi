@@ -842,10 +842,10 @@ const MyOrdersPage = () => {
           pt: { xs: 4.5, md: 5 }, // Padding top para espacio con el header
           px: { xs: 0, md: 3 }, // Padding horizontal
           pb: SPACING_BOTTOM_MAIN, // Padding bottom
-          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
+          ml: { xs: 0, md: 6, lg: 14, xl: 24 }, // Reducir ml en md para dar más espacio a la tabla
         }}
       >
-        <Container maxWidth={false} disableGutters={isMobile ? true : false} sx={{ width: '100%' }}>
+        <Container maxWidth={false} disableGutters={isMobile ? true : false} sx={{ width: { xs: '100%', md: '108%', lg: '100%', xl: '100%' } }}>
           {/* Título de la página */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
             <AssignmentIcon

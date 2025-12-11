@@ -304,12 +304,12 @@ const QuantitySelector = ({
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         ...sx,
       }}
     >
       {label && (
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, textAlign: 'center' }}>
           {label}
         </Typography>
       )}
@@ -321,7 +321,7 @@ const QuantitySelector = ({
       </Stack>
 
       {showStockLimit && stockText && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
           {stockText}
         </Typography>
       )}

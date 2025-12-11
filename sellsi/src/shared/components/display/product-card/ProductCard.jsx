@@ -106,13 +106,13 @@ const ProductCard = React.memo(
         // Altura responsive igual que antes
         height:
           type === 'supplier'
-            ? { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 }
-            : { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 },
-        // Ancho: 100% en xs/sm para adaptarse al grid, valores fijos en md+
-        width:
-          type === 'supplier'
-            ? { xs: '100%', sm: '100%', md: 220, lg: 370, xl: 360 }
-            : { xs: '100%', sm: '100%', md: 220, lg: 300, xl: 320 },
+            ? { xs: 380, sm: 400, md: 435, lg: 487.5, xl: 520 }
+            : { xs: 380, sm: 400, md: 435, lg: 487.5, xl: 520 },
+        // ✅ Ancho: 100% en todos los breakpoints para adaptarse al grid
+        width: '100%',
+        maxWidth: type === 'supplier' 
+          ? { xs: '100%', sm: '100%', md: 240, lg: 380, xl: 370 }
+          : { xs: '100%', sm: '100%', md: 240, lg: 320, xl: 340 },
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',

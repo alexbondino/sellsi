@@ -36,7 +36,7 @@ const PaymentMethod = () => {
   const theme = useTheme()
   
   // ===== DETECCIÓN DE MOBILE =====
-  const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   
   // Estados del carrito
   const { items, getSubtotal, getTotal } = useCartStore() // ✅ REMOVIDO: getShippingCost (no usar mock)
@@ -212,8 +212,8 @@ const PaymentMethod = () => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          // Mismo margen que BuyerCart solo en desktop
-          ml: { xs: 0, md: 8, lg: 24, xl: 34 },
+          // Mismo margen que BuyerOrders solo en desktop
+          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
           transition: 'margin-left 0.3s',
         }}
       >
@@ -222,7 +222,7 @@ const PaymentMethod = () => {
           disableGutters 
           sx={{ 
             // Quitar límite de 480px y gutters en mobile para aprovechar toda la pantalla
-            px: { xs: 0, md: 2 },
+            px: { xs: 0, md: 2, lg: 3, xl: 3 },
             width: '100%',
             maxWidth: '100%'
           }}

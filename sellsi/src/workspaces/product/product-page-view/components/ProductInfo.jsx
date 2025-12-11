@@ -33,7 +33,7 @@ const ProductInfo = ({ product, isMobile = false }) => {
             fontWeight: 700,
             color: 'black',
             mb: 3,
-            fontSize: { xs: '1.4rem', sm: '1.4rem', md: '1.4rem' },
+            fontSize: { xs: '1.15rem', sm: '1.3rem', md: '1.4rem' },
             position: 'relative',
             '&::after': {
               content: '""',
@@ -53,7 +53,7 @@ const ProductInfo = ({ product, isMobile = false }) => {
         <Typography
           variant="body1"
           sx={{
-            fontSize: { xs: '1rem', sm: '1rem', md: '1rem' },
+            fontSize: { xs: '0.875rem', sm: '0.95rem', md: '1rem' },
             lineHeight: 1.8,
             color: '#000000ff',
             textAlign: 'justify',

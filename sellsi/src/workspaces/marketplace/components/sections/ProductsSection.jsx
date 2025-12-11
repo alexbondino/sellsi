@@ -67,8 +67,16 @@ const ProductsSection = React.memo(
     // Layout styles
     const mainContainerStyles = React.useMemo(
       () => ({
-        pt: { xs: 4.5, md: '90px' },
-        mt: { xs: isProviderView ? -20 : 0, md: 0 },
+        // ✅ MOBILE FIX: Ajustar padding-top para compensar search bar fija
+        // SearchBar está en top: { xs: 45, md: 64 } + CategoryNavigation
+        pt: { 
+          xs: isProviderView ? '10px' : '40px', 
+          sm: isProviderView ? '10px' : '50px', 
+          md: '50px',
+          lg: '90px', // Desktop: espacio original restaurado
+          xl: '90px'  // Desktop XL: espacio original restaurado
+        },
+        mt: { xs: 0, sm: 0, md: 0 }, // ✅ MOBILE FIX: Eliminar margin negativo que causaba overlap
         pb: SPACING_BOTTOM_MAIN,
         minHeight: '100vh',
         display: 'flex',
@@ -112,8 +120,8 @@ const ProductsSection = React.memo(
         xl: `repeat(${productGridColumns.xl}, 1fr)`,
       },
       gap: {
-        xs: 1.5, // Reducido para mobile (12px)
-        sm: productGridGaps.sm,
+        xs: 2, // ✅ MOBILE FIX: Aumentar gap para mejor separación (16px)
+        sm: 2.5, // ✅ MOBILE FIX: Gap mejorado para sm (20px)
         md: productGridGaps.md,
         lg: productGridGaps.lg,
         xl: productGridGaps.xl,
@@ -123,9 +131,10 @@ const ProductsSection = React.memo(
     };
 
     // Ô£à MEJORA DE RENDIMIENTO: Memoizaci├│n de estilos de las tarjetas
-    // Cards ocupan 100% en mobile (xs/sm) para adaptarse al grid
+    // ✅ Cards ocupan 100% del ancho disponible en el grid para adaptarse responsivamente
     const cardContainerStyles = {
-      width: { xs: '100%', sm: '100%', md: 220, lg: 300, xl: 320 },
+      width: '100%', // Usar 100% en todos los breakpoints para que se adapte al grid
+      maxWidth: { xs: '100%', sm: '100%', md: 240, lg: 320, xl: 340 }, // Límites máximos opcionales
     };
 
     // Ô£à MEJORA DE RENDIMIENTO: Memoizaci├│n del t├¡tulo de secci├│n

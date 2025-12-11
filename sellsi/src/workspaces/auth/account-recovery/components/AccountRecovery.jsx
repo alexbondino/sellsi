@@ -41,25 +41,27 @@ const AccountRecovery = forwardRef(function AccountRecovery(props, ref) {
   }, [props.onClose]);
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: { xs: 1, sm: 2 } }}>
       <Box sx={{ maxWidth: '450px', mx: 'auto' }}>
         <Paper
-          elevation={3}
+          elevation={0}
           sx={{
-            p: 4,
+            p: { xs: 2, sm: 4 },
             width: '100%',
             position: 'relative',
             bgcolor: theme.palette.background.paper,
             borderRadius: 2,
             textAlign: 'center',
+            border: 'none',
+            boxShadow: 'none',
           }}
         >
           <IconButton
             onClick={handleCerrarTotal}
             sx={{
               position: 'absolute',
-              right: 16,
-              top: 16,
+              right: { xs: 8, sm: 16 },
+              top: { xs: 8, sm: 16 },
               color: '#666',
               backgroundColor: 'rgba(0,0,0,0.05)',
               '&:hover': { backgroundColor: 'rgba(0,0,0,0.1)' },
@@ -114,12 +116,12 @@ const AccountRecovery = forwardRef(function AccountRecovery(props, ref) {
                 </Alert>
               )}
 
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 2, justifyContent: 'center' }}>
                 <PrimaryButton
                   type="button"
                   variant="text"
                   onClick={handleCerrarTotal}
-                  sx={{ color: 'primary.main' }}
+                  sx={{ color: 'primary.main', width: { xs: '100%', sm: 'auto' } }}
                 >
                   Volver
                 </PrimaryButton>
@@ -127,6 +129,7 @@ const AccountRecovery = forwardRef(function AccountRecovery(props, ref) {
                   type="submit"
                   variant="contained"
                   disabled={loading || !correo}
+                  sx={{ width: { xs: '100%', sm: 'auto' } }}
                 >
                   Enviar Mail
                 </PrimaryButton>

@@ -142,14 +142,13 @@ export async function UpdateOrderStatus(orderId, newStatus, additionalData = {})
   if ('estimated_delivery_date' in cartUpdateData) {
     delete cartUpdateData.estimated_delivery_date;
   }
+  // carts (legacy) no soporta tax_document_path; remover si existe para evitar 400
+  const cartClone = { ...cartUpdateData };
+  if ('tax_document_path' in cartClone) delete cartClone.tax_document_path;
+  
   const { data: cartData, error: cartError } = await supabase
     .from('carts')
-    // carts (legacy) no soporta tax_document_path; remover si existe para evitar 400
-    .update(() => {
-      const clone = { ...cartUpdateData };
-      if ('tax_document_path' in clone) delete clone.tax_document_path;
-      return clone;
-    })
+    .update(cartClone)
     .eq('cart_id', orderId)
     .select('*')
     .single();

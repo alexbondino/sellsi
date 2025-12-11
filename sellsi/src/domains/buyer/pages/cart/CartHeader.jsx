@@ -70,119 +70,127 @@ const CartHeader = ({
         flexDirection: 'column'
       }}
     >
-      {' '}
+      {/* HEADER: Mi Carrito */}
+      <Box sx={{ textAlign: { xs: 'center', md: 'left' }, mb: { xs: 2, md: 3 } }}>
+        <Typography
+          variant="h4"
+          component="h1"
+          fontWeight={600}
+          gutterBottom
+          sx={{
+            mb: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: { xs: 1, sm: 1.25 },
+            fontSize: { xs: '1.45rem', sm: '1.55rem', md: '2.125rem' },
+            justifyContent: { xs: 'center', md: 'flex-start' }
+          }}
+        >
+          {/* Flecha de volver - Estilo estándar */}
+          {onBack && (
+            <Tooltip title="Volver" arrow>
+              <IconButton 
+                onClick={onBack} 
+                sx={{ 
+                  p: 1,
+                  '&:hover': {
+                    backgroundColor: 'action.hover'
+                  }
+                }}
+              >
+                <ArrowBackIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          {!isSelectionMode && (
+            <ShoppingCartIcon
+              sx={{
+                fontSize: { xs: 32, md: 40 },
+                color: '#2E52B2',
+                mr: 1
+              }}
+            />
+          )}
+          <span style={{ color: '#2E52B2' }}>
+            {isSelectionMode ? 'Seleccionar Items' : 'Mi Carrito'}
+          </span>
+        </Typography>
+      </Box>
+
+      {/* SUBHEADER: Chip de productos + Botón de eliminar */}
       <Grid
         container
         columns={12}
-        spacing={{ xs: 2, sm: 2.5, md: 3 }}
+        spacing={{ xs: 2, md: 2 }}
         alignItems="center"
-        justifyContent="left"
         sx={{
-          rowGap: { xs: 2.5, md: 0 }
+          rowGap: { xs: 2 }
         }}
       >
-        {/* Grid Item 1: Title and Chips */}
+        {/* Lado izquierdo: Chips */}
         <Grid
           xs={12}
-          sm={8}
+          md={8}
           sx={{
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: { xs: 'center', md: 'flex-start' },
-            gap: 1.5
+            alignItems: 'center',
+            justifyContent: { xs: 'center', md: 'flex-start' }
           }}
         >
-          <Box sx={{ textAlign: { xs: 'center', md: 'left' }, position: 'relative', width: '100%' }}>
-            {' '}
-            <Typography
-              variant="h4"
-              component="h1"
-              fontWeight={600}
-              color="primary.main"
-              gutterBottom
-              sx={{
-                mb: { xs: 1.5, md: 4 },
-                display: 'flex',
-                alignItems: 'center',
-                gap: { xs: 1, sm: 1.25 },
-                fontSize: { xs: '1.45rem', sm: '1.55rem', md: 'inherit' }
-              }}
-            >
-              {/* Flecha de volver - Estilo estándar */}
-              {onBack && (
-                <Tooltip title="Volver" arrow>
-                  <IconButton 
-                    onClick={onBack} 
-                    sx={{ 
-                      p: 1,
-                      '&:hover': {
-                        backgroundColor: 'action.hover'
-                      }
-                    }}
-                  >
-                    <ArrowBackIcon />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {!isSelectionMode && (
-                <ShoppingCartIcon
+          <Box
+            sx={{
+              display: 'flex',
+              gap: { xs: 1, md: 2 },
+              flexWrap: 'wrap',
+              justifyContent: { xs: 'center', md: 'flex-start' }
+            }}
+          >
+            {isSelectionMode ? (
+              /* Chips para modo selección */
+              <>
+                <Chip
+                  icon={<CheckBoxIcon />}
+                  label={`${selectedItems.length} de ${totalItems} seleccionados`}
+                  color="primary"
+                  variant="filled"
+                />
+              </>
+            ) : (
+              /* Chips normales */
+              <>
+                <Chip
+                  icon={<InventoryIcon />}
+                  label={`${cartStats.totalItems} ${cartStats.totalItems === 1 ? 'Producto' : 'Productos'}`}
+                  variant="outlined"
                   sx={{
-                    fontSize: { xs: 32, md: 40 },
                     color: '#2E52B2',
-                    mr: 1
+                    borderColor: '#2E52B2',
+                    backgroundColor: 'white',
+                    '& .MuiChip-icon': {
+                      color: '#2E52B2'
+                    }
                   }}
                 />
-              )}
-              {isSelectionMode ? 'Seleccionar Items' : 'Mi Carrito'}
-            </Typography>
-            <Box
-              sx={{
-                display: 'flex',
-                gap: { xs: 1, md: 2 },
-                flexWrap: 'wrap',
-                position: 'relative',
-                justifyContent: { xs: 'center', md: 'flex-start' }
-              }}
-            >
-              {isSelectionMode ? (
-                /* Chips para modo selección */
-                <>
-                  <Chip
-                    icon={<CheckBoxIcon />}
-                    label={`${selectedItems.length} de ${totalItems} seleccionados`}
-                    color="primary"
-                    variant="filled"
-                  />
-                </>
-              ) : (
-                /* Chips normales */
-                <>
-                  <Chip
-                    icon={<InventoryIcon />}
-                    label={`${cartStats.totalItems} productos`}
-                    color="primary"
-                    variant="filled"
-                  />
-                  {/*
-                  <Chip
-                    icon={<MonetizationOnIcon />}
-                    label={formatPrice(cartStats.totalValue)}
-                    color="success"
-                    variant="filled"
-                  />
-                  */}
-                </>
-              )}
-            </Box>
-          </Box>{' '}
-        </Grid>{' '}
-        {/* Grid Item 2: Controls */}
+                {/*
+                <Chip
+                  icon={<MonetizationOnIcon />}
+                  label={formatPrice(cartStats.totalValue)}
+                  color="success"
+                  variant="filled"
+                />
+                */}
+              </>
+            )}
+          </Box>
+        </Grid>
+
+        {/* Lado derecho: Botones de control */}
         <Grid
           xs={12}
-          sm={4}
+          md={4}
           sx={{
             display: 'flex',
-            justifyContent: { xs: 'center', sm: 'flex-end' }
+            justifyContent: { xs: 'center', md: 'flex-end' }
           }}
         >
           <Stack

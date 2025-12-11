@@ -13,6 +13,8 @@ import {
   IconButton,
   CircularProgress,
   Chip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -33,6 +35,10 @@ const OfferModal = ({
   defaultPrice = '',
   initialLimits = null,
 }) => {
+  // ✅ Detectar mobile para fullScreen
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   // ✅ Bloquear scroll del body cuando el modal está abierto
   useBodyScrollLock(open);
   const [offeredPrice, setOfferedPrice] = useState('');
@@ -356,9 +362,13 @@ const OfferModal = ({
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
+      fullScreen={isMobile}
       disableEscapeKeyDown={loading}
       disableScrollLock={true}
       disableRestoreFocus={true}
+      sx={{
+        zIndex: 1500,
+      }}
       BackdropProps={{
         style: {
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -368,7 +378,7 @@ const OfferModal = ({
       <DialogTitle
         sx={{
           m: 0,
-          p: 2,
+          p: { xs: 1.5, sm: 2 },
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -377,42 +387,75 @@ const OfferModal = ({
           color: '#fff',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <GavelIcon sx={{ color: '#fff' }} />
-          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>Hacer Oferta</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1 } }}>
+          <GavelIcon sx={{ color: '#fff', fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: '#fff', 
+              fontWeight: 700,
+              fontSize: { xs: '1.1rem', sm: '1.25rem' }
+            }}
+          >
+            Hacer Oferta
+          </Typography>
         </Box>
         <IconButton
           onClick={handleClose}
           disabled={loading}
           size="small"
-          sx={{ position: 'absolute', right: 8, color: '#fff' }}
+          sx={{ 
+            position: 'absolute', 
+            right: { xs: 8, sm: 16 }, 
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#fff',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            p: { xs: 0.75, sm: 1 },
+            '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+          }}
         >
-          <CloseIcon />
+          <CloseIcon sx={{ fontSize: { xs: '1.5rem', sm: '1.5rem' } }} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers>
+      <DialogContent dividers sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.5 } }}>
         {/* Información del producto */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+        <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+          <Typography 
+            variant="subtitle1" 
+            gutterBottom 
+            sx={{ 
+              fontWeight: 600,
+              fontSize: { xs: '0.95rem', sm: '1rem' }
+            }}
+          >
             {product.name || product.productnm || product.nombre}
           </Typography>
           {product.price && (
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+            >
               Precio actual: ${product.price?.toLocaleString('es-CL')}
             </Typography>
           )}
         </Box>
 
-        <Divider sx={{ mb: 3 }} />
+        <Divider sx={{ mb: { xs: 2, sm: 3 } }} />
 
         {/* Información de límites */}
         {limitsValidation && (
           <Alert
             severity={limitsValidation.allowed ? 'info' : 'warning'}
-            sx={{ mb: 3 }}
+            sx={{ mb: { xs: 2, sm: 3 } }}
           >
-            <Typography variant="body2" gutterBottom>
+            <Typography 
+              variant="body2" 
+              gutterBottom
+              sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+            >
               <strong>Límites de ofertas:</strong>
             </Typography>
             {/* Mostrar contador legible (incluye 0) */}
@@ -422,7 +465,10 @@ const OfferModal = ({
               const count = typeof productCount === 'number' ? productCount : 0;
               const limit = limitsValidation.limit || 3;
               return (
-                <Typography variant="body2">
+                <Typography 
+                  variant="body2"
+                  sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+                >
                   • Ofertas por este producto este mes: {count} de {limit}
                 </Typography>
               );
@@ -432,7 +478,11 @@ const OfferModal = ({
               <Typography
                 variant="body2"
                 color="error"
-                sx={{ mt: 1, fontWeight: 600 }}
+                sx={{ 
+                  mt: 1, 
+                  fontWeight: 600,
+                  fontSize: { xs: '0.8125rem', sm: '0.875rem' }
+                }}
               >
                 {(limitsValidation.reason ||
                   'Se alcanzó el límite mensual de ofertas') +
@@ -459,7 +509,12 @@ const OfferModal = ({
         {hasPendingForProduct && (
           <Alert
             severity="warning"
-            sx={{ mb: 3 }}
+            sx={{ 
+              mb: { xs: 2, sm: 3 },
+              '& .MuiAlert-message': {
+                fontSize: { xs: '0.8125rem', sm: '0.875rem' }
+              }
+            }}
             data-testid="pending-offer-block"
           >
             Ya tienes una oferta pendiente para este producto. Debes esperar a
@@ -468,7 +523,7 @@ const OfferModal = ({
         )}
 
         {/* Formulario */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, sm: 2 } }}>
           {/* Precio ofertado */}
           <TextField
             label="Precio por unidad"
@@ -479,12 +534,19 @@ const OfferModal = ({
             helperText={errors.price}
             autoComplete="off"
             InputProps={{
-              startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>,
+              startAdornment: <Typography sx={{ mr: 1, fontSize: { xs: '0.875rem', sm: '1rem' } }}>$</Typography>,
+            }}
+            InputLabelProps={{
+              sx: { fontSize: { xs: '0.875rem', sm: '1rem' } }
+            }}
+            FormHelperTextProps={{
+              sx: { fontSize: { xs: '0.75rem', sm: '0.75rem' } }
             }}
             inputProps={{
               min: 1,
               step: '1',
               inputMode: 'numeric',
+              sx: { fontSize: { xs: '0.875rem', sm: '1rem' } }
             }}
             onBlur={handlePriceBlur}
             fullWidth
@@ -501,10 +563,17 @@ const OfferModal = ({
             error={!!errors.quantity}
             helperText={errors.quantity}
             autoComplete="off"
+            InputLabelProps={{
+              sx: { fontSize: { xs: '0.875rem', sm: '1rem' } }
+            }}
+            FormHelperTextProps={{
+              sx: { fontSize: { xs: '0.75rem', sm: '0.75rem' } }
+            }}
             inputProps={{
               min: 1,
               max: effectiveStock,
               inputMode: 'numeric',
+              sx: { fontSize: { xs: '0.875rem', sm: '1rem' } }
             }}
             fullWidth
             disabled={loading || hasPendingForProduct}
@@ -512,18 +581,29 @@ const OfferModal = ({
 
           {/* Stock moved below Cantidad and above Total */}
           {/* Stock */}
-          <Typography variant="body2" color="text.secondary">
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+          >
             Stock disponible: {effectiveStock} unidades
           </Typography>
 
           {/* Total calculado - simple texto (no box) */}
-          <Typography variant="body2" color="text.secondary">
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+          >
             Total de la oferta:
           </Typography>
           <Typography
             variant="h6"
             color="primary"
-            sx={{ fontWeight: 700 }}
+            sx={{ 
+              fontWeight: 700,
+              fontSize: { xs: '1.25rem', sm: '1.5rem' }
+            }}
             title={
               totalValue > 0 ? `$${totalValue.toLocaleString('es-CL')}` : '$0'
             }
@@ -536,7 +616,16 @@ const OfferModal = ({
             <Alert severity="error">{limitsValidation.reason}</Alert>
           )}
           {storeError && (
-            <Alert severity="error" data-testid="offer-error" sx={{ mt: 1 }}>
+            <Alert 
+              severity="error" 
+              data-testid="offer-error" 
+              sx={{ 
+                mt: 1,
+                '& .MuiAlert-message': {
+                  fontSize: { xs: '0.8125rem', sm: '0.875rem' }
+                }
+              }}
+            >
               Error: {storeError}
             </Alert>
           )}
@@ -548,9 +637,13 @@ const OfferModal = ({
           )}
 
           {/* Información de tiempo */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
-            <ScheduleIcon fontSize="small" color="primary" />
-            <Typography variant="body2" color="text.secondary">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1 }, mt: { xs: 1.5, sm: 2 } }}>
+            <ScheduleIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }} color="primary" />
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+            >
               El proveedor tendrá 48 horas para responder tu oferta
             </Typography>
           </Box>
@@ -560,9 +653,9 @@ const OfferModal = ({
       <DialogActions
         sx={{
           flexDirection: { xs: 'column', sm: 'row' },
-          gap: 1,
-          p: 3,
-          pt: 1,
+          gap: { xs: 1.5, sm: 2 },
+          p: { xs: 2, sm: 3 },
+          pt: { xs: 1.5, sm: 1 },
           justifyContent: 'center',
         }}
       >
@@ -570,11 +663,16 @@ const OfferModal = ({
           onClick={handleClose}
           disabled={loading}
           variant="outlined"
-          fullWidth={false}
           sx={{
             textTransform: 'none',
             fontWeight: 500,
             borderRadius: 2,
+            fontSize: { xs: '0.875rem', sm: '0.875rem' },
+            px: 2,
+            py: { xs: 1, sm: 0.75 },
+            minWidth: 0,
+            width: { xs: '100%', sm: '160px' },
+            boxSizing: 'border-box',
           }}
         >
           Cancelar
@@ -584,11 +682,17 @@ const OfferModal = ({
           onClick={handleSubmit}
           variant="contained"
           disabled={loading || !isFormValid() || hasPendingForProduct}
-          startIcon={loading && <CircularProgress size={16} />}
           sx={{
             textTransform: 'none',
             fontWeight: 600,
             borderRadius: 2,
+            order: { xs: -1, sm: 0 },
+            fontSize: { xs: '0.875rem', sm: '0.875rem' },
+            px: 2,
+            py: { xs: 1, sm: 0.75 },
+            minWidth: 0,
+            width: { xs: '100%', sm: '160px' },
+            boxSizing: 'border-box',
           }}
         >
           {loading ? 'Enviando...' : 'Enviar Oferta'}
