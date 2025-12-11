@@ -18,7 +18,7 @@ const CRITICAL_ASSETS = [
   '/assets/js/mui-core-',
   '/assets/css/index-',
   '/Logos/sellsi_minilogoLoader.webp',
-  '/logo.svg'
+  '/Logos\sellsi_logo_transparent.webp'
 ];
 
 // TTL por tipo de recurso (en milisegundos)

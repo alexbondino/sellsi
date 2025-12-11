@@ -46,7 +46,7 @@ const NotFound = () => {
         >
           <Box
             component="img"
-            src="/logo.svg"
+            src="/Logos\sellsi_logo_transparent.webp"
             alt="Sellsi Logo"
             sx={{
               width: { xs: 120, md: 150 },
