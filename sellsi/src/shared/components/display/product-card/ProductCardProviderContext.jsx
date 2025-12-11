@@ -41,21 +41,22 @@ const ProductCardProviderContext = React.memo(({ product }) => {
   );
 
   // Decide avatar priority for provider cards (STRICT: only avatar/profile/logo fields)
-  // Fallback ONLY to Sellsi default '/LOGO-removebg-preview.webp'
+  // ✅ Confía en productAdapter para el fallback (supplierLogo ya incluye fallback a logo Sellsi)
   const avatarSrc = React.useMemo(() => {
-    if (!product) return '/LOGO-removebg-preview.webp';
+    if (!product) return '/Logos/sellsi_logo_transparent.webp';
     const tryPaths = [
+      product.supplier_logo_url, // ✅ Viene del adapter con fallback incluido
       product.user?.avatar,
       product.user?.profile?.avatar || product.user?.profile?.logo_url,
       product.avatar,
       product.logo_url,
-      product.supplier_logo_url,
       product.supplierLogo,
     ];
     for (const v of tryPaths) {
       if (v && typeof v === 'string' && v.trim().length > 0) return v;
     }
-    return '/LOGO-removebg-preview.webp';
+    // ✅ Fallback de seguridad (no debería llegar aquí si productAdapter funciona)
+    return '/Logos/sellsi_logo_transparent.webp';
   }, [product]);
 
   // We intentionally do NOT create a productForImage here.
@@ -214,7 +215,7 @@ const ProductCardProviderContext = React.memo(({ product }) => {
             },
           }}
         >
-          REVISAR CATÁLOGO
+          VER CATALOGO
         </Button>
       </CardActions>
     </>

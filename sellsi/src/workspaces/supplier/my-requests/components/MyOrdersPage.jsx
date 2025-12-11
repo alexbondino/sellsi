@@ -772,6 +772,9 @@ const MyOrdersPage = () => {
         >
           <Container maxWidth={false} disableGutters={isMobile ? true : false} sx={{ width: '100%' }}>
             <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+              <AssignmentIcon
+                sx={{ color: 'primary.main', fontSize: 36, mr: 1 }}
+              />
               <Typography
                 variant="h4"
                 fontWeight={600}

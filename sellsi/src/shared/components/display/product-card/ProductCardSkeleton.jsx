@@ -8,14 +8,19 @@ import { Card, Box, Skeleton, alpha } from '@mui/material';
  * para minimizar CLS. Soporta variantes: 'buyer' | 'supplier' | 'provider'.
  */
 export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
-  // Estilos del card alineados con ProductCard.jsx
+  // Estilos del card alineados EXACTAMENTE con ProductCard.jsx
   const cardStyles = React.useMemo(
     () => ({
+      // ✅ CORREGIDO: Altura exacta de ProductCard
       height:
-        type === 'supplier' ? { xs: 380, sm: '100%' } : { xs: 340, sm: '100%' },
-      // ✅ Buyer: valores reducidos para mostrar 4 tarjetas por fila en desktop
+        type === 'supplier'
+          ? { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 }
+          : { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 },
+      // ✅ CORREGIDO: Ancho exacto de ProductCard
       width:
-        type === 'supplier' ? { xs: 180, sm: '100%' } : { xs: 160, sm: '100%' },
+        type === 'supplier'
+          ? { xs: '100%', sm: '100%', md: 220, lg: 370, xl: 360 }
+          : { xs: '100%', sm: '100%', md: 220, lg: 300, xl: 320 },
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
@@ -23,21 +28,16 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
       borderColor: 'divider',
       borderRadius: 2,
       overflow: 'hidden',
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      '&:hover': {
-        transform: 'translateY(-2px)',
-        boxShadow: theme =>
-          `0 8px 25px ${alpha(theme.palette.primary.main, 0.08)}`,
-        borderColor: 'primary.main',
-      },
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      boxSizing: 'border-box',
     }),
     [type]
   );
 
-  // Altura del contenedor de imagen/encabezado para cada variante
+  // ✅ CORREGIDO: Altura del contenedor de imagen EXACTA según ProductCardImage
   const headerHeight = React.useMemo(() => {
-    // Alineado a ProductCardImage y ProviderContext
-    return { xs: 142, sm: 154, md: 187.5, lg: 220, xl: 220 };
+    // Alineado a ProductCardImage (UniversalProductImage.jsx línea 499-505)
+    return { xs: 142, sm: 154, md: 187.5, lg: 243.75, xl: 260 };
   }, []);
 
   return (
@@ -45,55 +45,66 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
       elevation={type === 'buyer' || type === 'provider' ? 2 : 0}
       sx={cardStyles}
     >
-      {/* Encabezado / Imagen */}
-      <Box
-        sx={{
-          width: '100%',
-          height: headerHeight,
-          bgcolor: 'grey.100',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <Skeleton
-          variant={type === 'provider' ? 'rectangular' : 'rectangular'}
-          animation="wave"
-          sx={{
-            width: '100%',
-            height: '100%',
-            borderRadius: type === 'provider' ? 0 : 0,
-          }}
-        />
-      </Box>
-
-      {/* Cuerpo del card: variante específica */}
-      <Box sx={{ flex: 1, p: 2, position: 'relative' }}>
-        {type === 'supplier' && <SupplierBodySkeleton />}
-        {type === 'buyer' && <BuyerBodySkeleton />}
-        {type === 'provider' && <ProviderBodySkeleton />}
-      </Box>
-
-      {/* Botón/acciones al pie (buyer y provider muestran botón) */}
-      {(type === 'buyer' || type === 'provider') && (
+      {/* Encabezado / Imagen - Solo para buyer y supplier, NO para provider */}
+      {type !== 'provider' && (
         <Box
           sx={{
-            position: 'absolute',
-            left: 16,
-            right: 16,
-            bottom: 10,
-            p: 0,
+            width: '100%',
+            height: headerHeight,
+            bgcolor: 'grey.100',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Skeleton
             variant="rectangular"
-            height={40}
-            sx={{ borderRadius: 2 }}
+            animation="wave"
+            sx={{
+              width: '100%',
+              height: '100%',
+            }}
           />
         </Box>
       )}
+
+      {/* ✅ CORREGIDO: Estructura con CardContent como ProductCard */}
+      <Box sx={{ height: '100%' }}>
+        {/* CardContent equivalente */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            p: 2,
+            pb: { xs: 6, md: 9 },
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* Cuerpo del card: variante específica */}
+          {type === 'supplier' && <SupplierBodySkeleton />}
+          {type === 'buyer' && <BuyerBodySkeleton />}
+          {type === 'provider' && <ProviderBodySkeleton />}
+        </Box>
+
+        {/* ✅ CORREGIDO: CardActions equivalente con posicionamiento absoluto */}
+        {(type === 'buyer' || type === 'provider') && (
+          <Box
+            sx={{
+              position: 'absolute',
+              left: '16px',
+              right: '16px',
+              bottom: '10px',
+              p: 0,
+            }}
+          >
+            <Skeleton
+              variant="rectangular"
+              height={40}
+              sx={{ borderRadius: 2 }}
+            />
+          </Box>
+        )}
+      </Box>
     </Card>
   );
 });
@@ -104,55 +115,68 @@ ProductCardSkeleton.displayName = 'ProductCardSkeleton';
 
 const BuyerBodySkeleton = () => (
   <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-    {/* Nombre del producto */}
+    {/* ✅ Product name - EXACTO como ProductCardBuyerContext */}
     <Box sx={{ mb: { xs: 0.5, md: 1 } }}>
-      <Skeleton variant="text" width="85%" height={28} />
+      <Skeleton
+        variant="text"
+        width="85%"
+        sx={{
+          minHeight: 48,
+          fontSize: { xs: 14, md: 17.5 },
+        }}
+      />
     </Box>
 
-    {/* MOBILE: bloque compacto */}
+    {/* ✅ MOBILE: bloque compacto - EXACTO como ProductCardBuyerContext */}
     <Box
       sx={{
         display: { xs: 'flex', sm: 'flex', md: 'none' },
         flexDirection: 'column',
+        justifyContent: 'space-between',
+        alignItems: 'stretch',
         gap: 1,
       }}
     >
-      {/* Proveedor */}
+      {/* Proveedor con ícono de verificación */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Skeleton variant="text" width={30} height={18} sx={{ fontSize: 12 }} />
+        <Skeleton variant="text" width={90} height={18} sx={{ fontSize: 12, fontWeight: 700 }} />
         <Skeleton variant="circular" width={16} height={16} />
-        <Skeleton variant="text" width={120} height={18} />
       </Box>
       {/* Compra mínima */}
-      <Skeleton variant="text" width={160} height={18} />
+      <Skeleton variant="text" width={160} height={18} sx={{ fontSize: 12 }} />
       {/* Precio */}
-      <Skeleton variant="text" width={110} height={26} />
+      <Skeleton variant="text" width={110} height={26} sx={{ fontSize: { xs: 14, sm: 16, md: 22 } }} />
       {/* Stock */}
-      <Skeleton variant="text" width={140} height={18} />
+      <Skeleton variant="text" width={140} height={18} sx={{ fontSize: 12 }} />
     </Box>
 
-    {/* DESKTOP: bloque detallado */}
+    {/* ✅ DESKTOP: bloque detallado - EXACTO como ProductCardBuyerContext */}
     <Box
       sx={{
         display: { xs: 'none', sm: 'none', md: 'flex' },
         flexDirection: 'column',
-        gap: 0.75,
-        flex: 1,
+        justifyContent: 'space-between',
+        alignItems: 'stretch',
+        gap: 0.5,
+        mb: 1.5,
+        flexGrow: 1,
       }}
     >
-      {/* Proveedor */}
+      {/* Proveedor con ícono de verificación */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Skeleton variant="text" width={30} height={18} sx={{ fontSize: 12 }} />
+        <Skeleton variant="text" width={120} height={18} sx={{ fontSize: 12, fontWeight: 700 }} />
         <Skeleton variant="circular" width={16} height={16} />
-        <Skeleton variant="text" width={160} height={18} />
       </Box>
       {/* Compra mínima */}
-      <Skeleton variant="text" width={190} height={18} />
-      {/* Precio (incluye posible precio tachado) */}
+      <Skeleton variant="text" width={190} height={18} sx={{ fontSize: 12 }} />
+      {/* Precio (puede incluir precio tachado) */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Skeleton variant="text" width={120} height={28} />
-        <Skeleton variant="text" width={80} height={18} />
+        <Skeleton variant="text" width={120} height={28} sx={{ fontSize: { xs: 14, sm: 16, md: 22 } }} />
       </Box>
       {/* Stock */}
-      <Skeleton variant="text" width={160} height={18} />
+      <Skeleton variant="text" width={160} height={18} sx={{ fontSize: 12 }} />
     </Box>
   </Box>
 );

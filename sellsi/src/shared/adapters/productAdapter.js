@@ -13,7 +13,7 @@ export function productAdapter(raw) {
       raw.user_nm ??
       'Proveedor desconocido',
     supplierLogo:
-      raw.supplier_logo_url || raw.logo_url || '/LOGO-removebg-preview.webp', // fallback consistente
+      raw.supplier_logo_url || raw.logo_url || '/Logos/sellsi_logo_transparent.webp', // ✅ Fallback único consistente
     supplierDescription:
       raw.descripcion_proveedor || raw.supplier_description || null,
     active: isProductActive(raw),
