@@ -251,7 +251,7 @@ const ContactModal = ({ open, onClose, context = null }) => {
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.03),
             py: { xs: 2, sm: 2.5, md: 3 },
-            px: { xs: 2, sm: 3, md: 4 },
+            px: { xs: 1, sm: 3, md: 4 },
           }}
         >
           <Stack
@@ -291,7 +291,7 @@ const ContactModal = ({ open, onClose, context = null }) => {
         <Box
           component="form"
           onSubmit={handleSubmit}
-          sx={{ p: { xs: 2, sm: 3, md: 4 } }}
+          sx={{ py: { xs: 2, sm: 3, md: 4 }, px: { xs: 1, sm: 3, md: 4 } }}
         >
           <Stack spacing={{ xs: 2.5, sm: 3 }}>
             <TextField

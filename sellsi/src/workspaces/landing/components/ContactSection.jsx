@@ -159,7 +159,7 @@ import { useScrollReveal } from './hooks/useScrollReveal';
           {/* Glow effect */}
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 rounded-3xl opacity-20 group-hover:opacity-30 blur-2xl transition duration-500"></div>
 
-          <form onSubmit={handleSubmit} className="relative space-y-8 bg-white/80 backdrop-blur-sm p-10 lg:p-12 rounded-3xl shadow-2xl border border-gray-200/50">
+          <form onSubmit={handleSubmit} className="relative space-y-8 bg-white/80 backdrop-blur-sm py-10 px-4 lg:p-12 rounded-3xl shadow-2xl border border-gray-200/50">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="group/input relative">
                 <label htmlFor="nombre" className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
@@ -291,7 +291,7 @@ import { useScrollReveal } from './hooks/useScrollReveal';
               <button
                 type="submit"
                 disabled={!isFormValid || loading}
-                className="group/btn relative px-10 py-5 bg-gradient-to-r from-[#2E52B2] to-blue-600 hover:from-[#254195] hover:to-[#2E52B2] text-white font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105 overflow-hidden"
+                className="group/btn relative w-full sm:w-auto px-6 py-5 bg-gradient-to-r from-[#2E52B2] to-blue-600 hover:from-[#254195] hover:to-[#2E52B2] text-white font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105 overflow-hidden flex items-center justify-center"
               >
                 <span className="relative z-10 flex items-center gap-2">
                   {loading ? (
