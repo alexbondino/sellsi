@@ -17,7 +17,7 @@ export default defineConfig({
   },
   build: {
     // Configuración de chunking optimizada y estable
-    chunkSizeWarningLimit: 1500, // Aumentar límite para evitar warning de vendor-misc
+    chunkSizeWarningLimit: 1000,
     // Generar manifest para análisis comparativo de chunks
     manifest: true,
 
@@ -34,26 +34,16 @@ export default defineConfig({
 
     rollupOptions: {
       output: {
-        // Chunking estratégico: solo vendors grandes, código app automático
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            // MUI + Emotion - TODO junto (el más pesado ~500KB)
-            if (id.includes('@mui') || id.includes('@emotion')) {
-              return 'mui';
-            }
-            // React core (incluye react-is, scheduler, etc)
-            if (id.includes('react/') || id.includes('react-dom/') || 
-                id.includes('scheduler/')) {
-              return 'react';
-            }
-            // Supabase
-            if (id.includes('@supabase')) {
-              return 'supabase';
-            }
-            // TODO lo demás junto para evitar circular deps
-            return 'vendor';
-          }
-          // NO chunking manual del código de la app
+        // ✅ OPTIMIZACIÓN: Chunking simplificado para evitar dependencias circulares
+        manualChunks: {
+          // Vendors base (siempre juntos para evitar problemas de orden)
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'mui-core': ['@mui/material', '@emotion/react', '@emotion/styled'],
+          'mui-icons': ['@mui/icons-material'],
+          'mui-extras': ['@mui/lab', '@mui/x-charts'],
+          'supabase': ['@supabase/supabase-js'],
+          'animation': ['framer-motion', 'react-confetti'],
+          'utils': ['lodash.debounce', 'react-hot-toast', 'zustand', 'immer'],
         },
 
         // Optimizar nombres de archivos
@@ -84,11 +74,12 @@ export default defineConfig({
     include: [
       'react',
       'react-dom',
+      '@mui/material',
       'react-router-dom',
       'zustand',
     ],
     exclude: [
-      '@react-pdf/renderer',
+      '@react-pdf/renderer', // Excluir PDF renderer del pre-bundling
     ],
   },
 
