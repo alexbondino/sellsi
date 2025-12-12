@@ -480,7 +480,7 @@ const MobileExpandableBottomBar = ({
                       fontWeight="600"
                       sx={{ fontSize: '0.8rem' }}
                     >
-                      {formData.stock} unidades
+                      {formData.stock || 0}{formData.stock > 0 ? ` ${formData.unidades || 'Unidad'}` : ''}
                     </Typography>
                   </Box>
                   <Box
@@ -498,7 +498,7 @@ const MobileExpandableBottomBar = ({
                       fontWeight="600"
                       sx={{ fontSize: '0.8rem' }}
                     >
-                      {formData.compraMinima} unidades
+                      {formData.compraMinima || 1} {formData.unidades || 'Unidad'}
                     </Typography>
                   </Box>
                   <Box
@@ -512,7 +512,7 @@ const MobileExpandableBottomBar = ({
                       Tipo de precio:
                     </Typography>
                     <Chip
-                      label={formData.pricingType}
+                      label={formData.pricingType || 'Unidad'}
                       color="primary"
                       size="small"
                       sx={{ fontSize: '0.65rem' }}

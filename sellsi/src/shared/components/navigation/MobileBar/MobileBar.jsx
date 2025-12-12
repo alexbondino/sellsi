@@ -173,7 +173,12 @@ const MobileBar = ({ role, session, isBuyer, logoUrl }) => {
               }}
               disabled={isActive}
             >
-              {item.icon}
+              {React.cloneElement(item.icon, {
+                sx: { 
+                  color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
+                  fontSize: '1.5rem',
+                }
+              })}
             </IconButton>
             <Typography
               variant="caption"

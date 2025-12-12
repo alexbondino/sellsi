@@ -191,7 +191,7 @@ const ProductsSection = React.memo(
                 mr: 1,
               }}
             />
-            <span style={{ color: '#2E52B2' }}>Proveedores Disponibles</span>
+            <span style={{ color: '#2E52B2' }}>Proveedores</span>
           </>
         );
       }

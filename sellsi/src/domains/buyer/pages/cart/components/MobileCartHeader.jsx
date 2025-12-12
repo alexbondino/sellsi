@@ -44,7 +44,7 @@ const MobileCartHeader = ({
       <Stack direction="row" alignItems="center" spacing={1} flex={1}>
         <CartIcon sx={{ color: 'primary.main', fontSize: 28 }} />
         <Stack>
-          <Typography variant="h5" fontWeight={700} sx={{ lineHeight: 1 }}>
+          <Typography variant="h5" fontWeight={700} sx={{ lineHeight: 1, color: '#2E52B2' }}>
             {title}
           </Typography>
           <Typography variant="caption" color="text.secondary">

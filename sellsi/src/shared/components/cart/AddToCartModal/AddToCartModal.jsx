@@ -13,6 +13,8 @@ import {
   FormControlLabel,
   Radio,
   IconButton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -132,7 +134,7 @@ const ProductSummary = React.memo(function ProductSummary({
   return (
     <Paper
       variant="outlined"
-      sx={{ p: 2 }}
+      sx={{ p: { xs: 1.3, sm: 2 } }}
       onClick={e => {
         e.stopPropagation();
       }}
@@ -140,11 +142,11 @@ const ProductSummary = React.memo(function ProductSummary({
         e.stopPropagation();
       }}
     >
-      <Stack direction="row" spacing={2} alignItems="center">
+      <Stack direction="row" spacing={{ xs: 1.3, sm: 2 }} alignItems="center">
         <Box
           sx={{
-            width: 50,
-            height: 50,
+            width: { xs: 42, sm: 50 },
+            height: { xs: 42, sm: 50 },
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -160,7 +162,7 @@ const ProductSummary = React.memo(function ProductSummary({
             direction="row"
             justifyContent="space-between"
             alignItems="flex-start"
-            sx={{ mb: 0.5 }}
+            sx={{ mb: { xs: 0.3, sm: 0.5 } }}
           >
             <Typography
               variant="body1"
@@ -187,6 +189,8 @@ const ProductSummary = React.memo(function ProductSummary({
                   label="Cantidad:"
                   sx={{
                     '& .MuiFormHelperText-root': { display: 'none' },
+                    transform: { xs: 'scale(0.9)', sm: 'none' },
+                    transformOrigin: 'right center',
                   }}
                 />
                 {quantityError && (
@@ -281,6 +285,9 @@ const AddToCartModal = ({
   isOwnProduct = false, // Nuevo: deshabilitar agregar si es producto propio
   onRequireBillingInfo = null, // Nuevo: callback cuando falta billing info y se requiere factura
 }) => {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.only('xs'));
+  
   // Validación de Billing (solo interesa si usuario selecciona factura)
   const {
     isComplete: isBillingComplete,
@@ -756,19 +763,8 @@ const AddToCartModal = ({
                   offer={offer}
                 />
 
-                {/* 3. Aviso de edad para categorías restringidas */}
-                {isAgeRestrictedCategory && (
-                  <Alert
-                    severity="warning"
-                    icon={<WarningIcon />}
-                    sx={{ fontSize: '0.95rem' }}
-                  >
-                    Venta de alcohol y tabaco solo para mayores de 18 años.
-                  </Alert>
-                )}
-
-                {/* 4. Tipo de documento (solo si no es oferta o si el proveedor lo permite) */}
-                {(!isOfferMode || availableOptions?.length > 0) && (
+                {/* 3. Tipo de documento (solo XS, antes del aviso) */}
+                {isXs && (!isOfferMode || availableOptions?.length > 0) && (
                   <DocumentTypeSelector
                     loadingDocumentTypes={loadingDocumentTypes}
                     documentTypesError={documentTypesError}
@@ -778,7 +774,29 @@ const AddToCartModal = ({
                   />
                 )}
 
-                {/* 4. Estado de despacho */}
+                {/* 4. Aviso de edad para categorías restringidas */}
+                {isAgeRestrictedCategory && (
+                  <Alert
+                    severity="warning"
+                    icon={<WarningIcon />}
+                    sx={{ fontSize: { xs: '0.8rem', md: '0.95rem' } }}
+                  >
+                    Venta de alcohol y tabaco solo para mayores de 18 años.
+                  </Alert>
+                )}
+
+                {/* 5. Tipo de documento (solo SM+, después del aviso) */}
+                {!isXs && (!isOfferMode || availableOptions?.length > 0) && (
+                  <DocumentTypeSelector
+                    loadingDocumentTypes={loadingDocumentTypes}
+                    documentTypesError={documentTypesError}
+                    availableOptions={availableOptions}
+                    documentType={documentType}
+                    onChange={handleDocumentTypeChange}
+                  />
+                )}
+
+                {/* 6. Estado de despacho */}
                 <ShippingStatus
                   isLoadingRegions={isLoadingRegions}
                   isLoadingUserProfile={isLoadingUserProfile}
