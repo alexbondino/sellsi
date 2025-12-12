@@ -92,7 +92,7 @@ const ServicesSection = ({ serviciosRef, onExploreClick, onBecomeSupplierClick }
                   {/* Subtle shine effect */}
                   <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                   <img
-                    src="/Landing Page/imagenuno.webp"
+                    src="/Landing Page/landingbuyer.webp"
                     alt="Para Compradores"
                     className="w-full h-80 lg:h-[450px] object-cover transform group-hover:scale-[1.08] transition-transform duration-700"
                   />

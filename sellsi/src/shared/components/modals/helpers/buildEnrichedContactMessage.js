@@ -82,7 +82,6 @@ function translateInvokedPath(path) {
     // Buyer
     '/buyer/orders': 'Mis Pedidos (Comprador)',
     '/buyer/marketplace': 'Marketplace',
-    '/buyer/performance': 'Dashboard de Rendimiento',
     '/buyer/offers': 'Mis Ofertas (Comprador)',
     '/buyer/cart': 'Carrito de Compras',
     '/buyer/paymentmethod': 'Método de Pago',

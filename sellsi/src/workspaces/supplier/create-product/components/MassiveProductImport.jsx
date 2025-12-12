@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ImportExcel from '../../../../ui-components/imports/ImportExcel';
 import { downloadExcelTemplate } from '../../../../ui-components/templates/ExcelTemplateGenerator';
-import { Box, Button, Alert } from '@mui/material';
+import { Box, Button, Alert, useTheme, useMediaQuery } from '@mui/material';
 
 // Definición de los campos requeridos para el Excel con descripciones
 const PRODUCT_IMPORT_FIELDS = [
@@ -101,6 +101,8 @@ const PRODUCT_IMPORT_FIELDS = [
 
 const MassiveProductImport = ({ open, onClose, onSuccess }) => {
   const [importError, setImportError] = useState(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Para el template y el import, solo se pasan los keys
   const fieldKeys = PRODUCT_IMPORT_FIELDS.map(f => f.key);
@@ -114,10 +116,10 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
         sx={{
           mb: 2,
           display: 'flex',
-          gap: 2,
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 1.5, sm: 2 },
           justifyContent: 'center',
-          alignItems: 'center',
-          flexWrap: 'wrap',
+          alignItems: 'stretch',
         }}
       >
         <Button
@@ -125,6 +127,11 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
           onClick={() =>
             downloadExcelTemplate(fieldKeys, 'productos_template.xlsx')
           }
+          fullWidth={isMobile}
+          sx={{
+            textTransform: 'none',
+            fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+          }}
         >
           Descargar template
         </Button>
@@ -139,22 +146,32 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
           }}
           // ← recibe errores desde ImportExcel y los muestra debajo de los botones
           onErrorChange={setImportError}
-          buttonProps={{ variant: 'contained' }}
+          buttonProps={{
+            variant: 'contained',
+            fullWidth: isMobile,
+            sx: {
+              textTransform: 'none',
+              fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+            },
+          }}
         />
       </Box>
 
       {/* Info: Feature solo disponible para productos de venta por unidad */}
-      <div
-        style={{
+      <Box
+        sx={{
           color: '#d32f2f',
           fontWeight: 600,
-          marginBottom: 12,
-          marginTop: 4,
+          mb: 1.5,
+          mt: 0.5,
+          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+          textAlign: 'center',
+          px: { xs: 1, sm: 0 },
         }}
       >
         Feature solo disponible para productos de venta por unidad. Venta por
         tramos disponible próximamente.
-      </div>
+      </Box>
 
       {/* 🔴 Error justo debajo de los botones */}
       {importError && (
@@ -164,6 +181,10 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
             mb: 2,
             whiteSpace: 'pre-line',
             textAlign: 'left',
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            '& .MuiAlert-message': {
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            },
           }}
         >
           {importError}
@@ -174,17 +195,39 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
       <Box
         sx={{
           color: 'text.secondary',
-          fontSize: 16,
+          fontSize: { xs: 14, sm: 16 },
           mx: 'auto',
           mt: 2,
         }}
       >
-        <div style={{ fontWeight: 500, marginBottom: 30, marginTop: 30 }}>
+        <Box
+          sx={{
+            fontWeight: 500,
+            mb: { xs: 2, sm: 3.75 },
+            mt: { xs: 2, sm: 3.75 },
+            fontSize: { xs: '0.875rem', sm: '1rem' },
+            textAlign: 'center',
+          }}
+        >
           Los campos requeridos en el Excel son:
-        </div>
-        <ul style={{ textAlign: 'left', paddingLeft: 24, margin: 0 }}>
+        </Box>
+        <Box
+          component="ul"
+          sx={{
+            textAlign: 'left',
+            pl: { xs: 2, sm: 3 },
+            m: 0,
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+          }}
+        >
           {PRODUCT_IMPORT_FIELDS.map(field => (
-            <li key={field.key} style={{ marginBottom: 6 }}>
+            <li
+              key={field.key}
+              style={{
+                marginBottom: isMobile ? 8 : 6,
+                lineHeight: isMobile ? 1.4 : 1.5,
+              }}
+            >
               <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>
                 {field.key}
               </span>
@@ -198,7 +241,7 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
               </span>
             </li>
           ))}
-        </ul>
+        </Box>
       </Box>
     </Box>
   );

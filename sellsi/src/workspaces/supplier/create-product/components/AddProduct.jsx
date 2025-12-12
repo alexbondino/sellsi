@@ -4,6 +4,8 @@ import React, {
   useCallback,
   useMemo,
   useRef,
+  lazy,
+  Suspense,
 } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -22,6 +24,7 @@ import {
   Stack,
   IconButton,
   Tooltip,
+  CircularProgress,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -29,7 +32,9 @@ import {
   CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 import BigModal from '../../../../shared/components/modals/BigModal/BigModal';
-import MassiveProductImport from './MassiveProductImport';
+// ✅ OPTIMIZACIÓN: Lazy load de MassiveProductImport (437 KB)
+// Solo se carga cuando el usuario abre el modal de importación masiva
+const MassiveProductImport = lazy(() => import('./MassiveProductImport'));
 import { ThemeProvider } from '@mui/material/styles';
 import {
   showValidationError,
@@ -548,7 +553,8 @@ const AddProduct = () => {
       /* noop */
     }
     updateField('imagenes', images);
-    setImageError('');
+    // ⚠️ NO borrar el error aquí - solo se borra cuando las imágenes son válidas
+    // El ImageUploader ya maneja cuándo limpiar el error llamando a onError(null)
   };
 
   // Handler cambio de pricing type (Unidad / Tramos)
@@ -726,8 +732,9 @@ const AddProduct = () => {
             }}
           >
             <Container
-              maxWidth={isMobile ? false : 'xl'}
+              maxWidth={false}
               disableGutters={isMobile ? true : false}
+              sx={{ width: '100%' }}
             >
               {/* Header */}
               <Box
@@ -930,11 +937,24 @@ const AddProduct = () => {
           onClose={handleCloseMassiveImport}
           title="Importar productos desde Excel"
         >
-          <MassiveProductImport
-            open={massiveImportOpen}
-            onClose={handleCloseMassiveImport}
-            onSuccess={handleMassiveImportSuccess}
-          />
+          <Suspense
+            fallback={
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                minHeight="400px"
+              >
+                <CircularProgress />
+              </Box>
+            }
+          >
+            <MassiveProductImport
+              open={massiveImportOpen}
+              onClose={handleCloseMassiveImport}
+              onSuccess={handleMassiveImportSuccess}
+            />
+          </Suspense>
         </BigModal>
       </ThemeProvider>
     </SupplierErrorBoundary>

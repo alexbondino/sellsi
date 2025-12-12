@@ -26,6 +26,7 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import BlockIcon from '@mui/icons-material/Block'
 import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material'
 import MobileOfferCard from '../../../../shared/components/mobile/MobileOfferCard'
+import MobileOffersSkeleton from '../../../../shared/components/display/skeletons/MobileOffersSkeleton'
 import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion'
 import ConfirmDialog from '../../../../shared/components/modals/ConfirmDialog'
 
@@ -286,15 +287,18 @@ const OffersList = ({
   ]
 
   if (!hasOffers) {
-    if (loading)
-      return (
+    if (loading) {
+      return isMobile ? (
+        <MobileOffersSkeleton rows={3} />
+      ) : (
         <TableSkeleton
           rows={6}
           columns={4}
           withAvatar
-          variant={isMobile ? 'card' : 'table'}
+          variant="table"
         />
       )
+    }
     if (!error) {
       return (
         <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>

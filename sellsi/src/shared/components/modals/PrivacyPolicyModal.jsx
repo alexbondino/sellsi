@@ -18,7 +18,7 @@ import { TextFormatter } from '../formatters';
 
 const PrivacyPolicyModal = ({ open, onClose }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <Dialog
@@ -26,13 +26,17 @@ const PrivacyPolicyModal = ({ open, onClose }) => {
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      fullScreen={isMobile}
       scroll="paper"
+      sx={{
+        zIndex: 1500, // Mayor que el modal de Register (1400)
+      }}
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          maxHeight: '90vh',
-          width: { xs: '95vw', md: '80vw' },
-          maxWidth: '900px',
+          borderRadius: isMobile ? 0 : 3,
+          maxHeight: isMobile ? 'none' : '90vh',
+          width: isMobile ? '100%' : { xs: '95vw', md: '80vw' },
+          maxWidth: isMobile ? 'none' : '900px',
         },
       }}
     >

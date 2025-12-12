@@ -507,9 +507,9 @@ export function useProducts() {
           p = (async () => {
             return await supabase
               .from('product_price_summary')
-              .select('productid,min_price,max_price,tiers_count,has_variable_pricing')
-              .in('productid', chunk)
-          })()
+              .select('product_id, min_price, max_price, tiers_count, has_variable_pricing')
+              .in('product_id', chunk)
+          })();
           globalSummariesInFlight.set(chunkKey, p)
         }
         try {
@@ -519,7 +519,7 @@ export function useProducts() {
           if (error) throw error
           // store into cache
           for (const d of (data || [])) {
-            globalSummariesCache.set(String(d.productid), { data: d, ts: Date.now() })
+            globalSummariesCache.set(String(d.product_id), { data: d, ts: Date.now() })
             fetchedResults.push(d)
           }
         } catch (errChunk) {

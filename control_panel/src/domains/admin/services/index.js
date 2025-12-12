@@ -111,8 +111,7 @@ export {
 // ========================================
 // 🔒 SERVICIOS DE SEGURIDAD Y BANEOS
 // ========================================
-// Exportar BanService desde la ubicación canonical en services/security
-export { default as BanService } from '../../../services/security/banService'
+// BanService eliminado - no se usa en el control panel
 export {
   updateUserIP,
   getCurrentUserIP,

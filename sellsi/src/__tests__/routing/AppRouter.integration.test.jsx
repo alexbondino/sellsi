@@ -244,9 +244,6 @@ jest.mock('../../domains/profile/pages/Profile', () => mockDefault('PROFILE'));
 jest.mock('../../workspaces/buyer/my-orders/components/BuyerOrders', () =>
   mockDefault('BUYER_ORDERS')
 );
-jest.mock('../../domains/buyer/pages/BuyerPerformance', () =>
-  mockDefault('BUYER_PERFORMANCE')
-);
 jest.mock('../../workspaces/buyer/my-offers/components/BuyerOffers', () =>
   mockDefault('BUYER_OFFERS')
 );

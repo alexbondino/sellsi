@@ -81,26 +81,31 @@ const ImageUploader = ({
     });
 
     if (imageFiles.length === 0) {
-      onError?.('No se seleccionaron archivos válidos');
+      const errorMsg = 'No se seleccionaron archivos de imagen válidos. Por favor selecciona archivos JPEG, PNG o WebP.';
+      onError?.(errorMsg);
       return;
     }
 
     // Validar tamaño de archivos PRIMERO (antes de validar límite de imágenes)
     const oversizedFiles = imageFiles.filter(file => file.size > maxFileSize);
     if (oversizedFiles.length > 0) {
-      const fileNames = oversizedFiles.map(f => f.name).join(', ');
-      onError?.(
-        `Las siguientes imágenes exceden el límite de 2MB: ${fileNames}`
-      );
+      const fileList = oversizedFiles.map(f => `"${f.name}" (${formatFileSize(f.size)})`).join(', ');
+      const errorMsg = oversizedFiles.length === 1
+        ? `La imagen ${fileList} excede el límite de 2MB. Por favor comprime la imagen o selecciona una más pequeña.`
+        : `Las siguientes imágenes exceden el límite de 2MB: ${fileList}. Por favor comprime las imágenes o selecciona archivos más pequeños.`;
+      onError?.(errorMsg);
       return;
     }
 
     // Validar límite de imágenes
     if (images.length + imageFiles.length > maxImages) {
-      const errorMsg = `Solo puedes subir máximo ${maxImages} imágenes`;
+      const errorMsg = `Solo puedes subir máximo ${maxImages} imágenes. Ya tienes ${images.length} imagen${images.length !== 1 ? 'es' : ''} y estás intentando agregar ${imageFiles.length} más.`;
       onError?.(errorMsg);
       return;
     }
+
+    // Limpiar error si todo está bien
+    onError?.(null);
 
     // Convertir archivos a URLs de objeto para preview
     const newImages = imageFiles.map(file => ({
@@ -373,14 +378,39 @@ const ImageUploader = ({
 
       {/* Error */}
       {error && (
-        <Typography
-          variant="caption"
-          color="error"
-          display="block"
-          sx={{ mt: 1 }}
+        <Box
+          sx={{
+            mt: 2,
+            p: 2,
+            bgcolor: 'error.50',
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'error.main',
+          }}
         >
-          {error}
-        </Typography>
+          <Typography
+            variant="body2"
+            color="error.main"
+            sx={{
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 1,
+            }}
+          >
+            <Box
+              component="span"
+              sx={{
+                fontSize: '1.2rem',
+                lineHeight: 1,
+                mt: 0.2,
+              }}
+            >
+              ⚠️
+            </Box>
+            <Box component="span">{error}</Box>
+          </Typography>
+        </Box>
       )}
 
       {/* Info adicional */}

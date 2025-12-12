@@ -537,14 +537,15 @@ const BuyerCart = () => {
         sx={{
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          pt: { xs: 9, md: 10 },
+          pt: { xs: 4.5, md: 5 },
           // Remover padding horizontal en mobile para permitir edge-to-edge real
-          px: { xs: 0, sm: 0, md: 4 },
+          px: { xs: 0, sm: 0, md: 2, lg: 4, xl: 4 },
           pb: isMobile ? 0 : SPACING_BOTTOM_MAIN,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           // Agrega margen izquierdo solo en desktop (md+)
+          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
           transition: 'margin-left 0.3s',
         }}
       >
@@ -574,15 +575,9 @@ const BuyerCart = () => {
             sx={{
               backgroundColor: { xs: 'transparent', md: 'white' },
               width: '100%',
-              maxWidth: {
-                xs: 500,
-                sm: 600,
-                md: 1000,
-                lg: 1500,
-                xl: 1560,
-              },
+              maxWidth: '100%',
               mx: 'auto',
-              p: { xs: 0, md: 3 },
+              p: { xs: 0, md: 2, lg: 3, xl: 3 },
               mb: { xs: 3, md: 6 },
               border: { xs: 'none', md: '1.5px solid #e0e0e0' },
               boxShadow: { xs: 'none', md: 6 },
@@ -625,7 +620,7 @@ const BuyerCart = () => {
               
               <Grid
                 container
-                spacing={{ xs: 2, md: 2, lg: 2, xl: 3 }}
+                spacing={{ xs: 2, md: 1.5, lg: 2, xl: 3 }}
                 sx={{
                   flexWrap: { xs: 'wrap', sm: 'wrap', md: 'nowrap' },
                   alignItems: 'flex-start'
@@ -636,17 +631,13 @@ const BuyerCart = () => {
                   item
                   xs={12}
                   sm={12}
-                  md={8}
-                  lg={8}
-                  xl={8}
+                  md={9.6}
+                  lg={9.6}
+                  xl={9.6}
                   sx={{
-                    width: {
-                      xs: '100%',
-                      md: '75%',
-                      lg: '75%',
-                      xl: '75%',
-                    },
                     order: { xs: 1 },
+                    flexBasis: { xs: '100%', md: '72%', lg: '75%', xl: '75%' },
+                    maxWidth: { xs: '100%', md: '72%', lg: '75%', xl: '75%' },
                   }}
                 >
                   <AnimatePresence>
@@ -705,13 +696,14 @@ const BuyerCart = () => {
                   item
                   xs={12}
                   sm={12}
-                  md={4}
-                  lg={4}
-                  xl={4}
+                  md={2.4}
+                  lg={2.4}
+                  xl={2.4}
                   sx={{
-                    minWidth: { md: '350px' }, // Evitar forzar ancho mínimo en mobile
                     order: { xs: 2 },
-                    mt: { xs: 2, sm: 2, md: 0 }
+                    mt: { xs: 2, sm: 2, md: 0 },
+                    flexBasis: { xs: '100%', md: '28%', lg: '25%', xl: '25%' },
+                    maxWidth: { xs: '100%', md: '28%', lg: '25%', xl: '25%' },
                   }}
                 >
                   <Box

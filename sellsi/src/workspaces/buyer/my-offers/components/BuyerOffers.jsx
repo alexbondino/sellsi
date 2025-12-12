@@ -23,7 +23,7 @@ const BuyerOffers = () => {
           pb: SPACING_BOTTOM_MAIN,
         }}
       >
-        <Container maxWidth={isMobile ? false : 'xl'} disableGutters={isMobile ? true : false}>
+        <Container maxWidth={false} disableGutters={isMobile ? true : false} sx={{ width: '100%' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
             <OffersIcon sx={{ color: 'primary.main', mr: 1, fontSize: '1.75rem' }} />
             <Typography variant="h4" fontWeight={600} color="primary.main" gutterBottom>

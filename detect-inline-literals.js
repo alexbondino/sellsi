@@ -9,7 +9,7 @@
  * Ejemplos:
  *   node detect-inline-literals.js src/components/Button.jsx
  *   node detect-inline-literals.js src --summary
- *   node detect-inline-literals.js "src/**/*.{jsx,tsx}" --json --summary > report.json
+ *   node detect-inline-literals.js 'src slash-star-star slash-star.{jsx,tsx}' --json --summary > report.json
  */
 
 const fs = require('fs');

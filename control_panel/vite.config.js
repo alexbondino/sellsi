@@ -1,5 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import { visualizer } from 'rollup-plugin-visualizer'
+import viteCompression from 'vite-plugin-compression'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -20,18 +22,68 @@ export default defineConfig(({ mode }) => {
   }
   
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      // ⚡ Bundle analyzer - genera reporte visual del bundle
+      visualizer({
+        open: false, // No abrir automáticamente
+        filename: 'dist/stats.html',
+        gzipSize: true,
+        brotliSize: true,
+      }),
+      // ⚡ Compresión Brotli (mejor que gzip)
+      viteCompression({
+        algorithm: 'brotliCompress',
+        ext: '.br',
+        threshold: 10240, // Solo archivos > 10KB
+        deleteOriginFile: false,
+      }),
+      // ⚡ Compresión Gzip (fallback para navegadores viejos)
+      viteCompression({
+        algorithm: 'gzip',
+        ext: '.gz',
+        threshold: 10240,
+        deleteOriginFile: false,
+      }),
+    ],
     build: {
       sourcemap: mode !== 'production',
       minify: mode === 'production' ? 'terser' : false,
+      // ⚡ OPTIMIZACIÓN: Configuración de terser para mejor compresión
+      terserOptions: mode === 'production' ? {
+        compress: {
+          drop_console: true, // Eliminar console.logs en producción
+          drop_debugger: true,
+        },
+      } : undefined,
       rollupOptions: {
         output: {
+          // ✅ Code splitting conservador (evita dependencias circulares)
           manualChunks: {
-            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-            'mui-vendor': ['@mui/material', '@mui/icons-material'],
+            // Vendors básicos juntos (evita circular refs)
+            'vendor': [
+              'react',
+              'react-dom',
+              'react-router-dom'
+            ],
+            'mui-core': [
+              '@mui/material',
+              '@emotion/react',
+              '@emotion/styled'
+            ],
+            'mui-icons': ['@mui/icons-material'],
+            'mui-datagrid': ['@mui/x-data-grid'],
+            'supabase': ['@supabase/supabase-js'],
+            'react-query': ['@tanstack/react-query']
           },
+          // ⚡ Nombres de chunks consistentes para mejor caching
+          chunkFileNames: 'assets/[name]-[hash].js',
+          entryFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash].[ext]',
         },
       },
+      // ⚡ Aumentar límite de advertencia de chunks
+      chunkSizeWarningLimit: 600,
     },
     server: {
       port: 5174,

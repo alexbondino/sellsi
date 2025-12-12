@@ -308,8 +308,9 @@ const BuyerOrders = memo(function BuyerOrders() {
           }}
         >
           <Container
-            maxWidth={isMobile ? false : 'xl'}
+            maxWidth={false}
             disableGutters={isMobile ? true : false}
+            sx={{ width: '100%' }}
           >
             {/* Header: siempre visible, fuera del skeleton */}
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
@@ -349,8 +350,9 @@ const BuyerOrders = memo(function BuyerOrders() {
           }}
         >
           <Container
-            maxWidth={isMobile ? false : 'xl'}
+            maxWidth={false}
             disableGutters={isMobile ? true : false}
+            sx={{ width: '100%' }}
           >
             <Alert severity="error" sx={{ mt: 2 }}>
               {error}
@@ -402,23 +404,24 @@ const BuyerOrders = memo(function BuyerOrders() {
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 4.5, md: 5 },
-          ml: { xs: 0, md: 10, lg: 14, xl: 14 },
+          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
           px: { xs: 0, md: 3 },
           pb: SPACING_BOTTOM_MAIN,
         }}
       >
         <Container
-          maxWidth={isMobile ? false : 'xl'}
+          maxWidth={false}
           disableGutters={isMobile ? true : false}
+          sx={{ width: '100%' }}
         >
           {/* Título de la página */}
           <Box
-            sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, md: 4 } }}
+            sx={{ display: 'flex', alignItems: 'center', mb: 4 }}
           >
             <AssignmentIcon
               sx={{
                 color: 'primary.main',
-                fontSize: { xs: 28, md: 36 },
+                fontSize: 36,
                 mr: 1,
               }}
             />
@@ -427,7 +430,6 @@ const BuyerOrders = memo(function BuyerOrders() {
               fontWeight={600}
               color="primary.main"
               gutterBottom
-              sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' }, mb: 0 }}
             >
               Mis Pedidos
             </Typography>

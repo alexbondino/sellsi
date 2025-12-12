@@ -44,7 +44,7 @@ const BannedPageUI = ({ onContactClick, banStatus = null }) => {
           }}
         >
           <img
-            src="/logo.svg"
+            src="/Logos\sellsi_logo_transparent.webp"
             alt="Sellsi Logo"
             style={{
               height: isMobile ? '60px' : '80px',

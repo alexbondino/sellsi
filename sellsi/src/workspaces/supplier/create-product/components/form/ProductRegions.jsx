@@ -307,14 +307,21 @@ const ProductRegions = ({
       <Box
         sx={{
           display: 'flex',
-          flexDirection: 'row',
+          flexDirection: { xs: 'column', sm: 'row' },
           gap: 1,
           mb: 1,
           width: '100%',
         }}
       >
         {/* Botones de Config Preset */}
-        <Box sx={{ display: 'flex', flex: 1, gap: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            flex: 1,
+            gap: 1,
+          }}
+        >
           {[1, 2, 3].map(idx => {
             const preset = getPresetByIndex(idx);
             const isActive = activePreset === idx;
@@ -392,73 +399,82 @@ const ProductRegions = ({
             );
           })}
         </Box>
-        {/* Botón Guardar */}
-        <Tooltip
-          title={
-            activePreset
-              ? presetDirty
-                ? 'Guardar cambios en preset'
-                : 'Sin cambios'
-              : 'Guardar en un preset'
-          }
+        {/* Botón Guardar y Eliminar juntos en mobile */}
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            flexDirection: { xs: 'row', sm: 'row' },
+            justifyContent: { xs: 'flex-end', sm: 'flex-start' },
+            alignItems: 'center',
+          }}
         >
-          <span style={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton
-              size="small"
-              onClick={handleSavePreset}
-              disabled={
-                freezeDisplay ||
-                displayRegions.length === 0 ||
-                presetsSaving ||
-                (!presetDirty && !!activePreset)
-              }
-              sx={{
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 2,
-                width: 32,
-                minWidth: 32,
-                maxWidth: 32,
-                flex: 'none',
-              }}
-            >
-              <SaveIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
-        {/* Botón Eliminar */}
-        <Tooltip
-          title={
-            activePreset
-              ? 'Eliminar esta configuración'
-              : 'No hay configuración seleccionada'
-          }
-        >
-          <span style={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton
-              size="small"
-              aria-label="Eliminar configuración"
-              onClick={handleRequestDeletePreset}
-              disabled={freezeDisplay || presetsSaving || !activePreset}
-              sx={{
-                ml: 0.5,
-                bgcolor: 'transparent',
-                p: 0.5,
-                width: 32,
-                minWidth: 32,
-                maxWidth: 32,
-                flex: 'none',
-                '&:hover': {
-                  bgcolor: activePreset ? 'rgba(0,0,0,0.06)' : 'transparent',
-                },
-                '&:focus': { boxShadow: 'none', outline: 'none' },
-                '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
-              }}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
+          <Tooltip
+            title={
+              activePreset
+                ? presetDirty
+                  ? 'Guardar cambios en preset'
+                  : 'Sin cambios'
+                : 'Guardar en un preset'
+            }
+          >
+            <span style={{ display: 'flex', alignItems: 'center' }}>
+              <IconButton
+                size="small"
+                onClick={handleSavePreset}
+                disabled={
+                  freezeDisplay ||
+                  displayRegions.length === 0 ||
+                  presetsSaving ||
+                  (!presetDirty && !!activePreset)
+                }
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  width: 32,
+                  minWidth: 32,
+                  maxWidth: 32,
+                  flex: 'none',
+                }}
+              >
+                <SaveIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+          {/* Botón Eliminar */}
+          <Tooltip
+            title={
+              activePreset
+                ? 'Eliminar esta configuración'
+                : 'No hay configuración seleccionada'
+            }
+          >
+            <span style={{ display: 'flex', alignItems: 'center' }}>
+              <IconButton
+                size="small"
+                aria-label="Eliminar configuración"
+                onClick={handleRequestDeletePreset}
+                disabled={freezeDisplay || presetsSaving || !activePreset}
+                sx={{
+                  bgcolor: 'transparent',
+                  p: 0.5,
+                  width: 32,
+                  minWidth: 32,
+                  maxWidth: 32,
+                  flex: 'none',
+                  '&:hover': {
+                    bgcolor: activePreset ? 'rgba(0,0,0,0.06)' : 'transparent',
+                  },
+                  '&:focus': { boxShadow: 'none', outline: 'none' },
+                  '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
+                }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
       </Box>
 
       {/* Mostrar las regiones configuradas */}

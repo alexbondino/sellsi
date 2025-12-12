@@ -1,0 +1,812 @@
+﻿{
+    "Buyer":  {
+                  "Marketplace":  {
+                                      "Route":  "src/workspaces/marketplace/index.js",
+                                      "TotalKB":  1149.47,
+                                      "ChunkCount":  29,
+                                      "Chunks":  [
+                                                     {
+                                                         "Name":  "mui-core-CXRB1ZD-.js",
+                                                         "Size":  503
+                                                     },
+                                                     {
+                                                         "Name":  "index-BviWTznx.js",
+                                                         "Size":  131.15
+                                                     },
+                                                     {
+                                                         "Name":  "animation-BR3i4Jpi.js",
+                                                         "Size":  114.37
+                                                     },
+                                                     {
+                                                         "Name":  "supabase-BWIPC9-w.js",
+                                                         "Size":  112.23
+                                                     },
+                                                     {
+                                                         "Name":  "react-vendor-C59k9KPc.js",
+                                                         "Size":  61.61
+                                                     },
+                                                     {
+                                                         "Name":  "AddToCart-p5kZ10-Y.js",
+                                                         "Size":  61.54
+                                                     },
+                                                     {
+                                                         "Name":  "ProductCard-CIGVPbv4.js",
+                                                         "Size":  35.55
+                                                     },
+                                                     {
+                                                         "Name":  "UniversalProductImage-BAFtHPsd.js",
+                                                         "Size":  26.32
+                                                     },
+                                                     {
+                                                         "Name":  "mui-icons-CHknRZKJ.js",
+                                                         "Size":  22.09
+                                                     },
+                                                     {
+                                                         "Name":  "chileData-D_D-4zCp.js",
+                                                         "Size":  13.99
+                                                     },
+                                                     {
+                                                         "Name":  "utils-D4lB1pFq.js",
+                                                         "Size":  13.68
+                                                     },
+                                                     {
+                                                         "Name":  "Modal-BzpItmjm.js",
+                                                         "Size":  8.53
+                                                     },
+                                                     {
+                                                         "Name":  "QuantitySelector-Bu-4azY-.js",
+                                                         "Size":  7.03
+                                                     },
+                                                     {
+                                                         "Name":  "productSpecificationsService-8zMTVx1E.js",
+                                                         "Size":  6.71
+                                                     },
+                                                     {
+                                                         "Name":  "useOptimizedUserShippingRegion-DGRnJdy-.js",
+                                                         "Size":  4.77
+                                                     },
+                                                     {
+                                                         "Name":  "useBillingInfoValidation-DKumo9Ho.js",
+                                                         "Size":  4.29
+                                                     },
+                                                     {
+                                                         "Name":  "phase1ETAGThumbnailService-CVZcUCR6.js",
+                                                         "Size":  3.58
+                                                     },
+                                                     {
+                                                         "Name":  "modalConfig-DMqk5LeA.js",
+                                                         "Size":  3.35
+                                                     },
+                                                     {
+                                                         "Name":  "StockIndicator-Cjovm_za.js",
+                                                         "Size":  2.88
+                                                     },
+                                                     {
+                                                         "Name":  "PriceDisplay-BUrGi8VE.js",
+                                                         "Size":  2.02
+                                                     },
+                                                     {
+                                                         "Name":  "getProductImageUrl-BFi4K_JO.js",
+                                                         "Size":  1.58
+                                                     },
+                                                     {
+                                                         "Name":  "formatters-BmQMcJrc.js",
+                                                         "Size":  1.54
+                                                     },
+                                                     {
+                                                         "Name":  "thumbnailMetrics-CSteOqj2.js",
+                                                         "Size":  1.46
+                                                     },
+                                                     {
+                                                         "Name":  "productUrl-C_hUFoDu.js",
+                                                         "Size":  1.4
+                                                     },
+                                                     {
+                                                         "Name":  "dashboardThemeCore-D_QQzY3O.js",
+                                                         "Size":  1.34
+                                                     },
+                                                     {
+                                                         "Name":  "productDeliveryRegionsService-D6DpigdO.js",
+                                                         "Size":  1.18
+                                                     },
+                                                     {
+                                                         "Name":  "featureFlags-DtXFqefB.js",
+                                                         "Size":  1.16
+                                                     },
+                                                     {
+                                                         "Name":  "priceFormatters-mG1YNvdH.js",
+                                                         "Size":  0.63
+                                                     },
+                                                     {
+                                                         "Name":  "layoutSpacing-CJQ8Zxa9.js",
+                                                         "Size":  0.49
+                                                     }
+                                                 ]
+                                  },
+                  "MyOrders":  {
+                                   "Route":  "src/workspaces/buyer/my-orders/index.js",
+                                   "TotalKB":  831.95,
+                                   "ChunkCount":  20,
+                                   "Chunks":  [
+                                                  {
+                                                      "Name":  "mui-core-CXRB1ZD-.js",
+                                                      "Size":  503
+                                                  },
+                                                  {
+                                                      "Name":  "supabase-BWIPC9-w.js",
+                                                      "Size":  112.23
+                                                  },
+                                                  {
+                                                      "Name":  "react-vendor-C59k9KPc.js",
+                                                      "Size":  61.61
+                                                  },
+                                                  {
+                                                      "Name":  "index-0VRePY7P.js",
+                                                      "Size":  57.28
+                                                  },
+                                                  {
+                                                      "Name":  "UniversalProductImage-BAFtHPsd.js",
+                                                      "Size":  26.32
+                                                  },
+                                                  {
+                                                      "Name":  "mui-icons-CHknRZKJ.js",
+                                                      "Size":  22.09
+                                                  },
+                                                  {
+                                                      "Name":  "utils-D4lB1pFq.js",
+                                                      "Size":  13.68
+                                                  },
+                                                  {
+                                                      "Name":  "ContactModal-vod5Lz1s.js",
+                                                      "Size":  13.54
+                                                  },
+                                                  {
+                                                      "Name":  "splitOrderBySupplier-05yVAbfL.js",
+                                                      "Size":  5.03
+                                                  },
+                                                  {
+                                                      "Name":  "phase1ETAGThumbnailService-CVZcUCR6.js",
+                                                      "Size":  3.58
+                                                  },
+                                                  {
+                                                      "Name":  "ConfirmDialog-BGY6JaVa.js",
+                                                      "Size":  2.43
+                                                  },
+                                                  {
+                                                      "Name":  "invoiceStorageService-DbCYHSS2.js",
+                                                      "Size":  2.21
+                                                  },
+                                                  {
+                                                      "Name":  "getProductImageUrl-BFi4K_JO.js",
+                                                      "Size":  1.58
+                                                  },
+                                                  {
+                                                      "Name":  "formatters-BmQMcJrc.js",
+                                                      "Size":  1.54
+                                                  },
+                                                  {
+                                                      "Name":  "thumbnailMetrics-CSteOqj2.js",
+                                                      "Size":  1.46
+                                                  },
+                                                  {
+                                                      "Name":  "dashboardThemeCore-D_QQzY3O.js",
+                                                      "Size":  1.34
+                                                  },
+                                                  {
+                                                      "Name":  "featureFlags-DtXFqefB.js",
+                                                      "Size":  1.16
+                                                  },
+                                                  {
+                                                      "Name":  "dateFormatters-BSkBtlNM.js",
+                                                      "Size":  0.75
+                                                  },
+                                                  {
+                                                      "Name":  "priceFormatters-mG1YNvdH.js",
+                                                      "Size":  0.63
+                                                  },
+                                                  {
+                                                      "Name":  "layoutSpacing-CJQ8Zxa9.js",
+                                                      "Size":  0.49
+                                                  }
+                                              ]
+                               },
+                  "MyOffers":  {
+                                   "Route":  "src/workspaces/buyer/my-offers/index.js",
+                                   "TotalKB":  1032.83,
+                                   "ChunkCount":  26,
+                                   "Chunks":  [
+                                                  {
+                                                      "Name":  "mui-core-CXRB1ZD-.js",
+                                                      "Size":  503
+                                                  },
+                                                  {
+                                                      "Name":  "animation-BR3i4Jpi.js",
+                                                      "Size":  114.37
+                                                  },
+                                                  {
+                                                      "Name":  "supabase-BWIPC9-w.js",
+                                                      "Size":  112.23
+                                                  },
+                                                  {
+                                                      "Name":  "react-vendor-C59k9KPc.js",
+                                                      "Size":  61.61
+                                                  },
+                                                  {
+                                                      "Name":  "AddToCart-p5kZ10-Y.js",
+                                                      "Size":  61.54
+                                                  },
+                                                  {
+                                                      "Name":  "index-BXw949gy.js",
+                                                      "Size":  30.84
+                                                  },
+                                                  {
+                                                      "Name":  "UniversalProductImage-BAFtHPsd.js",
+                                                      "Size":  26.32
+                                                  },
+                                                  {
+                                                      "Name":  "mui-icons-CHknRZKJ.js",
+                                                      "Size":  22.09
+                                                  },
+                                                  {
+                                                      "Name":  "MobileOffersSkeleton-CJEzfwxb.js",
+                                                      "Size":  21.61
+                                                  },
+                                                  {
+                                                      "Name":  "chileData-D_D-4zCp.js",
+                                                      "Size":  13.99
+                                                  },
+                                                  {
+                                                      "Name":  "utils-D4lB1pFq.js",
+                                                      "Size":  13.68
+                                                  },
+                                                  {
+                                                      "Name":  "Modal-BzpItmjm.js",
+                                                      "Size":  8.53
+                                                  },
+                                                  {
+                                                      "Name":  "QuantitySelector-Bu-4azY-.js",
+                                                      "Size":  7.03
+                                                  },
+                                                  {
+                                                      "Name":  "TableSkeleton-nzkjJoWz.js",
+                                                      "Size":  6.39
+                                                  },
+                                                  {
+                                                      "Name":  "useOptimizedUserShippingRegion-DGRnJdy-.js",
+                                                      "Size":  4.77
+                                                  },
+                                                  {
+                                                      "Name":  "MobileFilterAccordion-xcu1OoD1.js",
+                                                      "Size":  4.52
+                                                  },
+                                                  {
+                                                      "Name":  "useBillingInfoValidation-DKumo9Ho.js",
+                                                      "Size":  4.29
+                                                  },
+                                                  {
+                                                      "Name":  "phase1ETAGThumbnailService-CVZcUCR6.js",
+                                                      "Size":  3.58
+                                                  },
+                                                  {
+                                                      "Name":  "modalConfig-DMqk5LeA.js",
+                                                      "Size":  3.35
+                                                  },
+                                                  {
+                                                      "Name":  "ConfirmDialog-BGY6JaVa.js",
+                                                      "Size":  2.43
+                                                  },
+                                                  {
+                                                      "Name":  "getProductImageUrl-BFi4K_JO.js",
+                                                      "Size":  1.58
+                                                  },
+                                                  {
+                                                      "Name":  "thumbnailMetrics-CSteOqj2.js",
+                                                      "Size":  1.46
+                                                  },
+                                                  {
+                                                      "Name":  "dashboardThemeCore-D_QQzY3O.js",
+                                                      "Size":  1.34
+                                                  },
+                                                  {
+                                                      "Name":  "featureFlags-DtXFqefB.js",
+                                                      "Size":  1.16
+                                                  },
+                                                  {
+                                                      "Name":  "priceFormatters-mG1YNvdH.js",
+                                                      "Size":  0.63
+                                                  },
+                                                  {
+                                                      "Name":  "layoutSpacing-CJQ8Zxa9.js",
+                                                      "Size":  0.49
+                                                  }
+                                              ]
+                               },
+                  "Average":  1004.75
+              },
+    "Supplier":  {
+                     "Home":  {
+                                  "Route":  "src/workspaces/supplier/home/components/Home.jsx",
+                                  "TotalKB":  843.70,
+                                  "ChunkCount":  18,
+                                  "Chunks":  [
+                                                 {
+                                                     "Name":  "mui-core-CXRB1ZD-.js",
+                                                     "Size":  503
+                                                 },
+                                                 {
+                                                     "Name":  "supabase-BWIPC9-w.js",
+                                                     "Size":  112.23
+                                                 },
+                                                 {
+                                                     "Name":  "useSupplierProducts-CmVcrgKb.js",
+                                                     "Size":  66.85
+                                                 },
+                                                 {
+                                                     "Name":  "react-vendor-C59k9KPc.js",
+                                                     "Size":  61.61
+                                                 },
+                                                 {
+                                                     "Name":  "mui-icons-CHknRZKJ.js",
+                                                     "Size":  22.09
+                                                 },
+                                                 {
+                                                     "Name":  "chileData-D_D-4zCp.js",
+                                                     "Size":  13.99
+                                                 },
+                                                 {
+                                                     "Name":  "utils-D4lB1pFq.js",
+                                                     "Size":  13.68
+                                                 },
+                                                 {
+                                                     "Name":  "Home-DatKpCj3.js",
+                                                     "Size":  13.54
+                                                 },
+                                                 {
+                                                     "Name":  "SupplierErrorBoundary-vO1u4FDP.js",
+                                                     "Size":  10.59
+                                                 },
+                                                 {
+                                                     "Name":  "Modal-BzpItmjm.js",
+                                                     "Size":  8.53
+                                                 },
+                                                 {
+                                                     "Name":  "productSpecificationsService-8zMTVx1E.js",
+                                                     "Size":  6.71
+                                                 },
+                                                 {
+                                                     "Name":  "modalConfig-DMqk5LeA.js",
+                                                     "Size":  3.35
+                                                 },
+                                                 {
+                                                     "Name":  "TransferInfoValidationModal-BKCjPJGf.js",
+                                                     "Size":  2.45
+                                                 },
+                                                 {
+                                                     "Name":  "thumbnailMetrics-CSteOqj2.js",
+                                                     "Size":  1.46
+                                                 },
+                                                 {
+                                                     "Name":  "dashboardThemeCore-D_QQzY3O.js",
+                                                     "Size":  1.34
+                                                 },
+                                                 {
+                                                     "Name":  "featureFlags-DtXFqefB.js",
+                                                     "Size":  1.16
+                                                 },
+                                                 {
+                                                     "Name":  "priceFormatters-mG1YNvdH.js",
+                                                     "Size":  0.63
+                                                 },
+                                                 {
+                                                     "Name":  "layoutSpacing-CJQ8Zxa9.js",
+                                                     "Size":  0.49
+                                                 }
+                                             ]
+                              },
+                     "MyProducts":  {
+                                        "Route":  "src/workspaces/supplier/my-products/components/MyProducts.jsx",
+                                        "TotalKB":  1150.98,
+                                        "ChunkCount":  31,
+                                        "Chunks":  [
+                                                       {
+                                                           "Name":  "mui-core-CXRB1ZD-.js",
+                                                           "Size":  503
+                                                       },
+                                                       {
+                                                           "Name":  "animation-BR3i4Jpi.js",
+                                                           "Size":  114.37
+                                                       },
+                                                       {
+                                                           "Name":  "supabase-BWIPC9-w.js",
+                                                           "Size":  112.23
+                                                       },
+                                                       {
+                                                           "Name":  "useSupplierProducts-CmVcrgKb.js",
+                                                           "Size":  66.85
+                                                       },
+                                                       {
+                                                           "Name":  "react-vendor-C59k9KPc.js",
+                                                           "Size":  61.61
+                                                       },
+                                                       {
+                                                           "Name":  "AddToCart-p5kZ10-Y.js",
+                                                           "Size":  61.54
+                                                       },
+                                                       {
+                                                           "Name":  "MyProducts-DyR-OQGN.js",
+                                                           "Size":  45.63
+                                                       },
+                                                       {
+                                                           "Name":  "ProductCard-CIGVPbv4.js",
+                                                           "Size":  35.55
+                                                       },
+                                                       {
+                                                           "Name":  "UniversalProductImage-BAFtHPsd.js",
+                                                           "Size":  26.32
+                                                       },
+                                                       {
+                                                           "Name":  "mui-icons-CHknRZKJ.js",
+                                                           "Size":  22.09
+                                                       },
+                                                       {
+                                                           "Name":  "chileData-D_D-4zCp.js",
+                                                           "Size":  13.99
+                                                       },
+                                                       {
+                                                           "Name":  "utils-D4lB1pFq.js",
+                                                           "Size":  13.68
+                                                       },
+                                                       {
+                                                           "Name":  "SupplierErrorBoundary-vO1u4FDP.js",
+                                                           "Size":  10.59
+                                                       },
+                                                       {
+                                                           "Name":  "Modal-BzpItmjm.js",
+                                                           "Size":  8.53
+                                                       },
+                                                       {
+                                                           "Name":  "BigModal-1jH-Dsih.js",
+                                                           "Size":  8.22
+                                                       },
+                                                       {
+                                                           "Name":  "QuantitySelector-Bu-4azY-.js",
+                                                           "Size":  7.03
+                                                       },
+                                                       {
+                                                           "Name":  "productSpecificationsService-8zMTVx1E.js",
+                                                           "Size":  6.71
+                                                       },
+                                                       {
+                                                           "Name":  "useOptimizedUserShippingRegion-DGRnJdy-.js",
+                                                           "Size":  4.77
+                                                       },
+                                                       {
+                                                           "Name":  "MobileFilterAccordion-xcu1OoD1.js",
+                                                           "Size":  4.52
+                                                       },
+                                                       {
+                                                           "Name":  "useBillingInfoValidation-DKumo9Ho.js",
+                                                           "Size":  4.29
+                                                       },
+                                                       {
+                                                           "Name":  "phase1ETAGThumbnailService-CVZcUCR6.js",
+                                                           "Size":  3.58
+                                                       },
+                                                       {
+                                                           "Name":  "modalConfig-DMqk5LeA.js",
+                                                           "Size":  3.35
+                                                       },
+                                                       {
+                                                           "Name":  "TransferInfoValidationModal-BKCjPJGf.js",
+                                                           "Size":  2.45
+                                                       },
+                                                       {
+                                                           "Name":  "PriceDisplay-BUrGi8VE.js",
+                                                           "Size":  2.02
+                                                       },
+                                                       {
+                                                           "Name":  "getProductImageUrl-BFi4K_JO.js",
+                                                           "Size":  1.58
+                                                       },
+                                                       {
+                                                           "Name":  "thumbnailMetrics-CSteOqj2.js",
+                                                           "Size":  1.46
+                                                       },
+                                                       {
+                                                           "Name":  "productUrl-C_hUFoDu.js",
+                                                           "Size":  1.4
+                                                       },
+                                                       {
+                                                           "Name":  "dashboardThemeCore-D_QQzY3O.js",
+                                                           "Size":  1.34
+                                                       },
+                                                       {
+                                                           "Name":  "featureFlags-DtXFqefB.js",
+                                                           "Size":  1.16
+                                                       },
+                                                       {
+                                                           "Name":  "priceFormatters-mG1YNvdH.js",
+                                                           "Size":  0.63
+                                                       },
+                                                       {
+                                                           "Name":  "layoutSpacing-CJQ8Zxa9.js",
+                                                           "Size":  0.49
+                                                       }
+                                                   ]
+                                    },
+                     "AddProduct":  {
+                                        "Route":  "src/workspaces/supplier/create-product/components/AddProduct.jsx",
+                                        "TotalKB":  1013.90,
+                                        "ChunkCount":  21,
+                                        "Chunks":  [
+                                                       {
+                                                           "Name":  "mui-core-CXRB1ZD-.js",
+                                                           "Size":  503
+                                                       },
+                                                       {
+                                                           "Name":  "AddProduct-Dqi4pLQo.js",
+                                                           "Size":  178.2
+                                                       },
+                                                       {
+                                                           "Name":  "supabase-BWIPC9-w.js",
+                                                           "Size":  112.23
+                                                       },
+                                                       {
+                                                           "Name":  "useSupplierProducts-CmVcrgKb.js",
+                                                           "Size":  66.85
+                                                       },
+                                                       {
+                                                           "Name":  "react-vendor-C59k9KPc.js",
+                                                           "Size":  61.61
+                                                       },
+                                                       {
+                                                           "Name":  "mui-icons-CHknRZKJ.js",
+                                                           "Size":  22.09
+                                                       },
+                                                       {
+                                                           "Name":  "chileData-D_D-4zCp.js",
+                                                           "Size":  13.99
+                                                       },
+                                                       {
+                                                           "Name":  "utils-D4lB1pFq.js",
+                                                           "Size":  13.68
+                                                       },
+                                                       {
+                                                           "Name":  "SupplierErrorBoundary-vO1u4FDP.js",
+                                                           "Size":  10.59
+                                                       },
+                                                       {
+                                                           "Name":  "BigModal-1jH-Dsih.js",
+                                                           "Size":  8.22
+                                                       },
+                                                       {
+                                                           "Name":  "productSpecificationsService-8zMTVx1E.js",
+                                                           "Size":  6.71
+                                                       },
+                                                       {
+                                                           "Name":  "phase1ETAGThumbnailService-CVZcUCR6.js",
+                                                           "Size":  3.58
+                                                       },
+                                                       {
+                                                           "Name":  "modalConfig-DMqk5LeA.js",
+                                                           "Size":  3.35
+                                                       },
+                                                       {
+                                                           "Name":  "ConfirmDialog-BGY6JaVa.js",
+                                                           "Size":  2.43
+                                                       },
+                                                       {
+                                                           "Name":  "thumbnailMetrics-CSteOqj2.js",
+                                                           "Size":  1.46
+                                                       },
+                                                       {
+                                                           "Name":  "dashboardThemeCore-D_QQzY3O.js",
+                                                           "Size":  1.34
+                                                       },
+                                                       {
+                                                           "Name":  "productDeliveryRegionsService-D6DpigdO.js",
+                                                           "Size":  1.18
+                                                       },
+                                                       {
+                                                           "Name":  "featureFlags-DtXFqefB.js",
+                                                           "Size":  1.16
+                                                       },
+                                                       {
+                                                           "Name":  "shippingRegionsUtils-DeRF7ZDt.js",
+                                                           "Size":  1.11
+                                                       },
+                                                       {
+                                                           "Name":  "priceFormatters-mG1YNvdH.js",
+                                                           "Size":  0.63
+                                                       },
+                                                       {
+                                                           "Name":  "layoutSpacing-CJQ8Zxa9.js",
+                                                           "Size":  0.49
+                                                       }
+                                                   ]
+                                    },
+                     "MyOrdersPage":  {
+                                          "Route":  "src/workspaces/supplier/my-requests/components/MyOrdersPage.jsx",
+                                          "TotalKB":  1089.14,
+                                          "ChunkCount":  17,
+                                          "Chunks":  [
+                                                         {
+                                                             "Name":  "mui-core-CXRB1ZD-.js",
+                                                             "Size":  503
+                                                         },
+                                                         {
+                                                             "Name":  "MyOrdersPage-CSpbvRFN.js",
+                                                             "Size":  310.95
+                                                         },
+                                                         {
+                                                             "Name":  "supabase-BWIPC9-w.js",
+                                                             "Size":  112.23
+                                                         },
+                                                         {
+                                                             "Name":  "react-vendor-C59k9KPc.js",
+                                                             "Size":  61.61
+                                                         },
+                                                         {
+                                                             "Name":  "mui-icons-CHknRZKJ.js",
+                                                             "Size":  22.09
+                                                         },
+                                                         {
+                                                             "Name":  "chileData-D_D-4zCp.js",
+                                                             "Size":  13.99
+                                                         },
+                                                         {
+                                                             "Name":  "utils-D4lB1pFq.js",
+                                                             "Size":  13.68
+                                                         },
+                                                         {
+                                                             "Name":  "ContactModal-vod5Lz1s.js",
+                                                             "Size":  13.54
+                                                         },
+                                                         {
+                                                             "Name":  "SupplierErrorBoundary-vO1u4FDP.js",
+                                                             "Size":  10.59
+                                                         },
+                                                         {
+                                                             "Name":  "Modal-BzpItmjm.js",
+                                                             "Size":  8.53
+                                                         },
+                                                         {
+                                                             "Name":  "TableSkeleton-nzkjJoWz.js",
+                                                             "Size":  6.39
+                                                         },
+                                                         {
+                                                             "Name":  "MobileFilterAccordion-xcu1OoD1.js",
+                                                             "Size":  4.52
+                                                         },
+                                                         {
+                                                             "Name":  "modalConfig-DMqk5LeA.js",
+                                                             "Size":  3.35
+                                                         },
+                                                         {
+                                                             "Name":  "invoiceStorageService-DbCYHSS2.js",
+                                                             "Size":  2.21
+                                                         },
+                                                         {
+                                                             "Name":  "dashboardThemeCore-D_QQzY3O.js",
+                                                             "Size":  1.34
+                                                         },
+                                                         {
+                                                             "Name":  "priceFormatters-mG1YNvdH.js",
+                                                             "Size":  0.63
+                                                         },
+                                                         {
+                                                             "Name":  "layoutSpacing-CJQ8Zxa9.js",
+                                                             "Size":  0.49
+                                                         }
+                                                     ]
+                                      },
+                     "MyOffers":  {
+                                      "Route":  "src/workspaces/supplier/my-offers/components/SupplierOffers.jsx",
+                                      "TotalKB":  1038.07,
+                                      "ChunkCount":  25,
+                                      "Chunks":  [
+                                                     {
+                                                         "Name":  "mui-core-CXRB1ZD-.js",
+                                                         "Size":  503
+                                                     },
+                                                     {
+                                                         "Name":  "animation-BR3i4Jpi.js",
+                                                         "Size":  114.37
+                                                     },
+                                                     {
+                                                         "Name":  "supabase-BWIPC9-w.js",
+                                                         "Size":  112.23
+                                                     },
+                                                     {
+                                                         "Name":  "react-vendor-C59k9KPc.js",
+                                                         "Size":  61.61
+                                                     },
+                                                     {
+                                                         "Name":  "AddToCart-p5kZ10-Y.js",
+                                                         "Size":  61.54
+                                                     },
+                                                     {
+                                                         "Name":  "SupplierOffers-CCa9-ZBp.js",
+                                                         "Size":  38.51
+                                                     },
+                                                     {
+                                                         "Name":  "UniversalProductImage-BAFtHPsd.js",
+                                                         "Size":  26.32
+                                                     },
+                                                     {
+                                                         "Name":  "mui-icons-CHknRZKJ.js",
+                                                         "Size":  22.09
+                                                     },
+                                                     {
+                                                         "Name":  "MobileOffersSkeleton-CJEzfwxb.js",
+                                                         "Size":  21.61
+                                                     },
+                                                     {
+                                                         "Name":  "chileData-D_D-4zCp.js",
+                                                         "Size":  13.99
+                                                     },
+                                                     {
+                                                         "Name":  "utils-D4lB1pFq.js",
+                                                         "Size":  13.68
+                                                     },
+                                                     {
+                                                         "Name":  "Modal-BzpItmjm.js",
+                                                         "Size":  8.53
+                                                     },
+                                                     {
+                                                         "Name":  "QuantitySelector-Bu-4azY-.js",
+                                                         "Size":  7.03
+                                                     },
+                                                     {
+                                                         "Name":  "TableSkeleton-nzkjJoWz.js",
+                                                         "Size":  6.39
+                                                     },
+                                                     {
+                                                         "Name":  "useOptimizedUserShippingRegion-DGRnJdy-.js",
+                                                         "Size":  4.77
+                                                     },
+                                                     {
+                                                         "Name":  "MobileFilterAccordion-xcu1OoD1.js",
+                                                         "Size":  4.52
+                                                     },
+                                                     {
+                                                         "Name":  "useBillingInfoValidation-DKumo9Ho.js",
+                                                         "Size":  4.29
+                                                     },
+                                                     {
+                                                         "Name":  "phase1ETAGThumbnailService-CVZcUCR6.js",
+                                                         "Size":  3.58
+                                                     },
+                                                     {
+                                                         "Name":  "modalConfig-DMqk5LeA.js",
+                                                         "Size":  3.35
+                                                     },
+                                                     {
+                                                         "Name":  "getProductImageUrl-BFi4K_JO.js",
+                                                         "Size":  1.58
+                                                     },
+                                                     {
+                                                         "Name":  "thumbnailMetrics-CSteOqj2.js",
+                                                         "Size":  1.46
+                                                     },
+                                                     {
+                                                         "Name":  "dashboardThemeCore-D_QQzY3O.js",
+                                                         "Size":  1.34
+                                                     },
+                                                     {
+                                                         "Name":  "featureFlags-DtXFqefB.js",
+                                                         "Size":  1.16
+                                                     },
+                                                     {
+                                                         "Name":  "priceFormatters-mG1YNvdH.js",
+                                                         "Size":  0.63
+                                                     },
+                                                     {
+                                                         "Name":  "layoutSpacing-CJQ8Zxa9.js",
+                                                         "Size":  0.49
+                                                     }
+                                                 ]
+                                  },
+                     "Average":  1027.16
+                 }
+}

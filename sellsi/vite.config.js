@@ -34,16 +34,16 @@ export default defineConfig({
 
     rollupOptions: {
       output: {
-        // Restaurado manualChunks tras experimento
+        // ✅ OPTIMIZACIÓN: Chunking simplificado para evitar dependencias circulares
         manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
+          // Vendors base (siempre juntos para evitar problemas de orden)
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'mui-core': ['@mui/material', '@emotion/react', '@emotion/styled'],
           'mui-icons': ['@mui/icons-material'],
           'mui-extras': ['@mui/lab', '@mui/x-charts'],
-          router: ['react-router-dom'],
-          supabase: ['@supabase/supabase-js'],
-          animation: ['framer-motion', 'react-confetti'],
-          utils: ['lodash.debounce', 'react-hot-toast', 'zustand', 'immer'],
+          'supabase': ['@supabase/supabase-js'],
+          'animation': ['framer-motion', 'react-confetti'],
+          'utils': ['lodash.debounce', 'react-hot-toast', 'zustand', 'immer'],
         },
 
         // Optimizar nombres de archivos

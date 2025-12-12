@@ -85,7 +85,12 @@ const BigModal = ({
           overflow: 'hidden',
           position: 'fixed',
           width: isMobile ? '100vw' : '60%',
-          height: isMobile ? '100vh' : '80%',
+          height: isMobile ? 'calc(100vh - 80px)' : '80%',
+          maxHeight: isMobile ? 'calc(100vh - 80px)' : '80vh',
+          bottom: isMobile ? '80px' : 'auto',
+          top: isMobile ? 0 : 'auto',
+          display: 'flex',
+          flexDirection: 'column',
         },
       }}
     >
@@ -116,6 +121,7 @@ const BigModal = ({
           ].includes(type)
             ? 3
             : 1,
+          flexShrink: 0,
         }}
       >
         <Box
@@ -184,8 +190,9 @@ const BigModal = ({
             }
             sx={{
               flexGrow: 1,
-              fontSize: { xs: '1.1rem', sm: '1.25rem' },
+              fontSize: { xs: '0.95rem', sm: '1.25rem' },
               color: 'text.primary',
+              lineHeight: { xs: 1.3, sm: 1.5 },
             }}
           >
             {title}
@@ -211,8 +218,12 @@ const BigModal = ({
         dividers={isFormModal}
         sx={{
           textAlign: isFormModal ? 'left' : 'center',
-          pt: isFormModal ? 0 : 0,
-          pb: isFormModal ? 2 : 2,
+          pt: { xs: 1, sm: isFormModal ? 0 : 0 },
+          pb: { xs: 1.5, sm: isFormModal ? 2 : 2 },
+          px: { xs: 2, sm: 3 },
+          overflow: 'auto',
+          flex: 1,
+          minHeight: 0,
         }}
       >
         {order && isFormModal && (
@@ -255,8 +266,8 @@ const BigModal = ({
           component="div"
           color="text.secondary"
           sx={{
-            fontSize: { xs: '0.9rem', sm: '1rem' },
-            lineHeight: 1.5,
+            fontSize: { xs: '0.85rem', sm: '1rem' },
+            lineHeight: { xs: 1.4, sm: 1.5 },
           }}
         >
           {children}
@@ -266,10 +277,11 @@ const BigModal = ({
       <DialogActions
         sx={{
           flexDirection: isMobile ? 'column' : 'row',
-          gap: 1,
-          p: 3,
-          pt: 1,
-          justifyContent: isMobile ? 'center' : 'flex-end', // 👉 derecha en desktop
+          gap: { xs: 1.5, sm: 1 },
+          p: { xs: 2, sm: 3 },
+          pt: { xs: 1, sm: 1 },
+          justifyContent: isMobile ? 'center' : 'flex-end',
+          flexShrink: 0,
         }}
       >
         {showCancelButton && (
@@ -282,8 +294,9 @@ const BigModal = ({
               textTransform: 'none',
               fontWeight: 'bold',
               borderRadius: 2,
-              width: isMobile ? '100%' : '120px', // 👈 AJUSTA EL ANCHO AQUÍ
-              alignSelf: isMobile ? 'stretch' : 'flex-end', // opcional, refuerza derecha
+              width: isMobile ? '100%' : 'auto',
+              minWidth: { sm: '120px' },
+              alignSelf: isMobile ? 'stretch' : 'flex-end',
             }}
           >
             {cancelButtonText}

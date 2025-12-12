@@ -46,7 +46,7 @@ const PaymentMethodSelector = () => {
   const theme = useTheme();
 
   // ===== DETECCIÓN DE MOBILE =====
-  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Estados del checkout
   const {
@@ -406,7 +406,7 @@ const PaymentMethodSelector = () => {
             {/* Stepper de progreso */}
             <Box
               sx={{
-                maxWidth: { xs: 340, sm: 480, md: 700, lg: 1360, xl: 1560 },
+                maxWidth: { xs: 340, sm: 480, md: '100%', lg: '100%', xl: '100%' },
                 width: '100%',
                 display: 'flex',
                 justifyContent: 'flex-start',
@@ -423,9 +423,13 @@ const PaymentMethodSelector = () => {
 
           {/* Contenido principal */}
           <Box sx={{ px: { xs: 2, md: 3 }, pb: { xs: 10, md: 0 } }}>
-            <Stack direction={{ xs: 'column', lg: 'row' }} spacing={{ xs: 3, md: 4 }}>
+            <Stack direction={{ xs: 'column', md: 'row', lg: 'row' }} spacing={{ xs: 3, md: 2, lg: 4 }}>
               {/* Panel izquierdo - Métodos de pago */}
-              <Box sx={{ width: { xs: '100%', md: '68%', lg: '65%', xl: '65%' } }}>
+              <Box sx={{ 
+                width: { xs: '100%' },
+                flexBasis: { xs: '100%', md: '65%', lg: '65%', xl: '65%' },
+                maxWidth: { xs: '100%', md: '65%', lg: '65%', xl: '65%' }
+              }}>
                 <motion.div variants={itemVariants}>
                   <Paper
                     elevation={3}
@@ -493,7 +497,11 @@ const PaymentMethodSelector = () => {
               </Box>
 
               {/* Panel derecho - Resumen */}
-              <Box sx={{ width: { xs: '100%', lg: '400px' } }}>
+              <Box sx={{ 
+                width: { xs: '100%' },
+                flexBasis: { xs: '100%', md: '35%', lg: '35%', xl: '35%' },
+                maxWidth: { xs: '100%', md: '35%', lg: '35%', xl: '35%' }
+              }}>
                 <motion.div variants={itemVariants}>
                   <CheckoutSummary
                     orderData={orderData}

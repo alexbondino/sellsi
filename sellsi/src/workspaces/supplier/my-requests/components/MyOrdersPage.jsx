@@ -19,6 +19,7 @@ import { useSupplierPartActions } from '../hooks/useSupplierPartActions'
 import TableFilter from '../../../../shared/components/display/tables/TableFilter' // Asegúrate que esta ruta sea correcta
 import Table from '../../../../shared/components/display/tables/Table' // Asegúrate que esta ruta sea correcta
 import MobileOrderCard from '../../../../shared/components/mobile/MobileOrderCard' // Mobile view para pedidos
+import MobileSupplierOrdersSkeleton from '../../../../shared/components/display/skeletons/MobileSupplierOrdersSkeleton'
 import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion' // Mobile filters
 import MobileFileUpload from '../../../../shared/components/mobile/MobileFileUpload' // Mobile file upload
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback' // Componente Modal genérico y sus tipos
@@ -769,8 +770,11 @@ const MyOrdersPage = () => {
             ml: { xs: 0, md: 10, lg: 14, xl: 24 },
           }}
         >
-          <Container maxWidth={false} disableGutters>
+          <Container maxWidth={false} disableGutters={isMobile ? true : false} sx={{ width: '100%' }}>
             <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+              <AssignmentIcon
+                sx={{ color: 'primary.main', fontSize: 36, mr: 1 }}
+              />
               <Typography
                 variant="h4"
                 fontWeight={600}
@@ -780,7 +784,11 @@ const MyOrdersPage = () => {
                 Mis Pedidos
               </Typography>
             </Box>
-            <TableSkeleton rows={7} columns={6} />
+            {isMobile ? (
+              <MobileSupplierOrdersSkeleton rows={3} />
+            ) : (
+              <TableSkeleton rows={7} columns={6} />
+            )}
           </Container>
         </Box>
       </ThemeProvider>
@@ -804,7 +812,7 @@ const MyOrdersPage = () => {
             alignItems: 'center',
           }}
         >
-          <Container maxWidth={false} disableGutters>
+          <Container maxWidth={false} disableGutters={isMobile ? true : false} sx={{ width: '100%' }}>
             <Alert severity="error" sx={{ mt: 2 }}>
               {error}
             </Alert>
@@ -834,10 +842,10 @@ const MyOrdersPage = () => {
           pt: { xs: 4.5, md: 5 }, // Padding top para espacio con el header
           px: { xs: 0, md: 3 }, // Padding horizontal
           pb: SPACING_BOTTOM_MAIN, // Padding bottom
-          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
+          ml: { xs: 0, md: 6, lg: 14, xl: 24 }, // Reducir ml en md para dar más espacio a la tabla
         }}
       >
-        <Container maxWidth={false} disableGutters>
+        <Container maxWidth={false} disableGutters={isMobile ? true : false} sx={{ width: { xs: '100%', md: '108%', lg: '100%', xl: '100%' } }}>
           {/* Título de la página */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
             <AssignmentIcon

@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, CircularProgress } from '@mui/material';
 
 // Imagen base del loader (optimizada). Opcional: añadir variante @2x y srcSet si se crea.
-const LOADER_IMAGE_SRC = '/logos/sellsi_minilogoLoader.webp';
+const LOADER_IMAGE_SRC = '/Logos/sellsi_minilogoLoader.webp';
 export const LOADER_DEFAULT_SIZE = 80;      // Radio externo (círculo)
 export const LOADER_DEFAULT_LOGO_SIZE = 48;  // Tamaño del logo central
 

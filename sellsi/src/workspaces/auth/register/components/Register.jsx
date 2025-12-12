@@ -1,7 +1,7 @@
 // 📁 domains/auth/components/Register.jsx
 // Migrado de features/register/Register.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, Box, IconButton } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, Box, IconButton, useMediaQuery } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useTheme } from '@mui/material/styles';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -22,6 +22,7 @@ import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
 
 export default function Register({ open, onClose }) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { showBanner } = useBanner();
   const navigate = useNavigate();
 
@@ -257,6 +258,7 @@ export default function Register({ open, onClose }) {
         }}
         maxWidth="md"
         fullWidth
+        fullScreen={isMobile}
         disableScrollLock={true}
         disableRestoreFocus={true}
         // 🔧 FIX Bug #1: Asegurar z-index mayor que BottomBar (1301)
@@ -265,10 +267,10 @@ export default function Register({ open, onClose }) {
         }}
         PaperProps={{
           sx: {
-            width: '90vw',
-            maxWidth: 1050,
-            height: '85vh',
-            maxHeight: '800px',
+            width: isMobile ? '100%' : '90vw',
+            maxWidth: isMobile ? 'none' : 1050,
+            height: isMobile ? '100%' : '85vh',
+            maxHeight: isMobile ? 'none' : '800px',
             overflowX: 'hidden',
             position: 'fixed',
           },

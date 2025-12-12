@@ -8,6 +8,8 @@ import {
   Button,
   Box,
   Avatar,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Visibility as VisibilityIcon, Verified as VerifiedIcon } from '@mui/icons-material';
 import { PRODUCTS_TEXTS } from '../../../constants/productsTexts';
@@ -23,6 +25,8 @@ import { PRODUCTS_TEXTS } from '../../../constants/productsTexts';
  */
 const ProductCardProviderContext = React.memo(({ product }) => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const {
     supplier_id,
@@ -41,21 +45,22 @@ const ProductCardProviderContext = React.memo(({ product }) => {
   );
 
   // Decide avatar priority for provider cards (STRICT: only avatar/profile/logo fields)
-  // Fallback ONLY to Sellsi default '/LOGO-removebg-preview.webp'
+  // ✅ Confía en productAdapter para el fallback (supplierLogo ya incluye fallback a logo Sellsi)
   const avatarSrc = React.useMemo(() => {
-    if (!product) return '/LOGO-removebg-preview.webp';
+    if (!product) return '/Logos/sellsi_logo_transparent.webp';
     const tryPaths = [
+      product.supplier_logo_url, // ✅ Viene del adapter con fallback incluido
       product.user?.avatar,
       product.user?.profile?.avatar || product.user?.profile?.logo_url,
       product.avatar,
       product.logo_url,
-      product.supplier_logo_url,
       product.supplierLogo,
     ];
     for (const v of tryPaths) {
       if (v && typeof v === 'string' && v.trim().length > 0) return v;
     }
-    return '/LOGO-removebg-preview.webp';
+    // ✅ Fallback de seguridad (no debería llegar aquí si productAdapter funciona)
+    return '/Logos/sellsi_logo_transparent.webp';
   }, [product]);
 
   // We intentionally do NOT create a productForImage here.
@@ -64,7 +69,12 @@ const ProductCardProviderContext = React.memo(({ product }) => {
     <>
       {/* Provider avatar: render a plain <img> inside a responsive box to avoid
           invoking UniversalProductImage and thumbnail hooks. */}
-      <Box sx={{ width: '100%', height: { xs: 142, sm: 154, md: 187.5, lg: 243.75, xl: 260 }, minHeight: { xs: 142 }, boxSizing: 'border-box' }}>
+      <Box sx={{ 
+        width: '100%', 
+        height: { xs: 160, sm: 170, md: 187.5, lg: 243.75, xl: 260 }, 
+        minHeight: { xs: 160 }, 
+        boxSizing: 'border-box' 
+      }}>
         <Box
           component="img"
           src={avatarSrc}
@@ -75,14 +85,14 @@ const ProductCardProviderContext = React.memo(({ product }) => {
             display: 'block',
             objectFit: 'contain',
             bgcolor: '#fff',
-            p: { xs: 1, sm: 1.2, md: 1.5 },
+            p: { xs: 1.5, sm: 1.8, md: 1.5 }, // ✅ MOBILE FIX: Mejor padding para mobile
           }}
         />
       </Box>
 
       <CardContent
         sx={{
-          p: { xs: 1, sm: 1.5 },
+          p: { xs: 1.5, sm: 2 }, // ✅ MOBILE FIX: Más padding para mejor espaciado
           pb: '8px !important',
           flexGrow: 1,
           display: 'flex',
@@ -98,7 +108,7 @@ const ProductCardProviderContext = React.memo(({ product }) => {
               variant="h6"
               component="h3"
               sx={{
-                fontSize: { xs: '0.9rem', sm: '1rem', md: '1.4rem' },
+                fontSize: { xs: '1rem', sm: '1.1rem', md: '1.4rem' }, // ✅ MOBILE FIX: Texto más legible
                 fontWeight: 600,
                 lineHeight: 1.2,
                 color: 'primary.main',
@@ -114,7 +124,7 @@ const ProductCardProviderContext = React.memo(({ product }) => {
               {providerName}
             </Typography>
             {verified && (
-              <VerifiedIcon sx={{ fontSize: { xs: 16, sm: 18, md: 20 }, color: 'primary.main', flexShrink: 0 }} />
+              <VerifiedIcon sx={{ fontSize: { xs: 18, sm: 20, md: 20 }, color: 'primary.main', flexShrink: 0 }} />
             )}
           </Box>
         )}
@@ -123,12 +133,12 @@ const ProductCardProviderContext = React.memo(({ product }) => {
         <Typography
           variant="body2"
           sx={{
-            fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' },
+            fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, // ✅ MOBILE FIX: Texto ligeramente más grande
             lineHeight: 1.5,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             display: '-webkit-box',
-            WebkitLineClamp: { xs: 8, sm: 7, md: 6, lg: 8 },
+            WebkitLineClamp: { xs: 6, sm: 6, md: 6, lg: 8 }, // ✅ MOBILE FIX: Menos líneas en mobile
             WebkitBoxOrient: 'vertical',
             // Changed from 'justify' to 'left' to avoid uneven word spacing
             // when text is narrow; 'start' can be used for RTL-awareness.
@@ -146,7 +156,7 @@ const ProductCardProviderContext = React.memo(({ product }) => {
 
       <CardActions
         sx={{
-          p: { xs: 1, sm: 1.5 },
+          p: { xs: 1.5, sm: 2 }, // ✅ MOBILE FIX: Mejor padding
           pt: 0,
           justifyContent: 'center',
         }}
@@ -157,7 +167,7 @@ const ProductCardProviderContext = React.memo(({ product }) => {
           color="primary"
           fullWidth
           data-no-card-click="true"
-          startIcon={<VisibilityIcon sx={{ fontSize: 16 }} />}
+          startIcon={<VisibilityIcon sx={{ fontSize: { xs: 18, sm: 20, md: 16 } }} />}
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -187,8 +197,8 @@ const ProductCardProviderContext = React.memo(({ product }) => {
             textTransform: 'none',
             fontWeight: 600,
             borderRadius: 2,
-            py: 0.8,
-            fontSize: '0.9rem',
+            py: { xs: 1, sm: 1.2, md: 0.8 }, // ✅ MOBILE FIX: Botón más grande en mobile
+            fontSize: { xs: '0.95rem', sm: '1rem', md: '0.9rem' }, // ✅ MOBILE FIX: Texto más legible
             color: 'white',
             backgroundColor: 'primary.main',
             boxShadow: '0 3px 10px rgba(25, 118, 210, 0.3)',
@@ -214,7 +224,7 @@ const ProductCardProviderContext = React.memo(({ product }) => {
             },
           }}
         >
-          REVISAR CATÁLOGO
+          {isMobile ? 'CATÁLOGO' : 'VER CATÁLOGO'}
         </Button>
       </CardActions>
     </>
