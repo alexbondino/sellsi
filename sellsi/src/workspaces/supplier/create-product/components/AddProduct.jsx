@@ -769,12 +769,18 @@ const AddProduct = () => {
                             sx={{
                               p: 1,
                               color: 'primary.main',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 0.25,
                               '&:hover': {
                                 backgroundColor: 'action.hover',
                               },
                             }}
                           >
-                            <CloudUploadIcon />
+                            <CloudUploadIcon sx={{ fontSize: '1.25rem' }} />
+                            <Typography variant="caption" sx={{ fontSize: '0.65rem', lineHeight: 1 }}>
+                              Carga Masiva
+                            </Typography>
                           </IconButton>
                         </Tooltip>
                       )}

@@ -30,6 +30,7 @@ import {
   AttachMoney as AttachMoneyIcon,
   KeyboardArrowUp as KeyboardArrowUpIcon,
   Storefront as StorefrontIcon,
+  CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import {
@@ -390,6 +391,7 @@ const MyProducts = () => {
                   <Button
                     variant="outlined"
                     size="large"
+                    startIcon={<CloudUploadIcon />}
                     onClick={handleOpenMassiveImport}
                     sx={{
                       borderRadius: 2,

@@ -352,7 +352,6 @@ const Modal = ({
               fontSize: { xs: '0.875rem', sm: '0.875rem' },
               px: 2,
               py: { xs: 1, sm: 0.75 },
-              minWidth: 0,
               width: { xs: '100%', sm: '160px' },
               boxSizing: 'border-box',
             }}
@@ -375,7 +374,6 @@ const Modal = ({
             fontSize: { xs: '0.875rem', sm: '0.875rem' },
             px: 2,
             py: { xs: 1, sm: 0.75 },
-            minWidth: 0,
             width: { xs: '100%', sm: '160px' },
             boxSizing: 'border-box',
           }}

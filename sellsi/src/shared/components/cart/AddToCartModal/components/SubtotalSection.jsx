@@ -28,7 +28,7 @@ export function SubtotalSection({ currentPricing, shippingValidation, product, q
   return (
     <Paper
       variant="outlined"
-      sx={{ p: 2, bgcolor: 'grey.50' }}
+      sx={{ p: { xs: 0.4, md: 1.5 }, bgcolor: 'grey.50' }}
       onClick={(e) => e.stopPropagation()}
     >
       <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -36,7 +36,7 @@ export function SubtotalSection({ currentPricing, shippingValidation, product, q
           Subtotal
         </Typography>
         <Box sx={{ textAlign: 'right' }}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: '1.08rem', md: '1.25rem' } }}>
             ${currentPricing.total.toLocaleString('es-CL')}
           </Typography>
           {currentPricing.hasDiscountTiers && (
@@ -52,12 +52,12 @@ export function SubtotalSection({ currentPricing, shippingValidation, product, q
             Envío
           </Typography>
           {shippingDisplay.isFree ? (
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'success.main' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'success.main', fontSize: { xs: '1.08rem', md: '1.25rem' } }}>
               GRATIS
             </Typography>
           ) : (
             <Box sx={{ textAlign: 'right' }}>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: '1.08rem', md: '1.25rem' } }}>
                 ${shippingDisplay.cost.toLocaleString('es-CL')}
               </Typography>
               {shippingDisplay.freeShippingEnabled && shippingDisplay.minQtyForFree && (

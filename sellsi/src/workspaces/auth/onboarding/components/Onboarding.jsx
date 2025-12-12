@@ -29,6 +29,7 @@ import {
 } from '../../../../shared/components';
 import { Collapse } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../../infrastructure/providers/UnifiedAuthProvider';
 
 // Si usas Grid v6 (Grid2), mantén "size={{ xs: 12 }}".
 // Si usas Grid v5, cambia a item xs={12}.
@@ -120,6 +121,7 @@ const Onboarding = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { showBanner } = useBanner();
+  const { refreshUserProfile } = useAuth();
 
   const [formData, setFormData] = useState({
     accountType: '',
@@ -146,10 +148,6 @@ const Onboarding = () => {
 
   // Hook para primar caché de región inmediatamente al finalizar onboarding
   const { primeUserRegionCache } = useOptimizedUserShippingRegion();
-
-  // (Opcional) Si tienes un contexto que expone refetchProfile, úsalo:
-  // const { refetchProfile } = useAuthContext() || {};
-  const refetchProfile = undefined; // dejar undefined si no existe
 
   useEffect(() => {}, [logoPreview]);
 
@@ -367,10 +365,8 @@ const Onboarding = () => {
       // 🔒 Evita el bucle del guard:
       // 1) Refresca sesión (opcional pero recomendado)
       await supabase.auth.refreshSession().catch(() => {});
-      // 2) Marca que ya completaste el onboarding (bypass one-shot)
-      sessionStorage.setItem('onboardingDone', '1');
-      // 3) Si tienes refetchProfile del contexto, úsalo para que el guard ya te "vea" completo
-      await (refetchProfile?.() ?? Promise.resolve());
+      // 2) Refresca el perfil en el Auth Provider para que `needsOnboarding` se actualice
+      await refreshUserProfile();
 
       // Prime de región (si aplica) - ahora de formData ya que billing va a otra tabla
       const regionCandidate = formData.billingRegion || formData.shippingRegion || null;
@@ -388,9 +384,6 @@ const Onboarding = () => {
         severity: 'success',
         duration: 3000
       });
-
-      // Esperar a que el banner sea visible antes de navegar
-      await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Navega a la home
       navigate('/', { replace: true });
