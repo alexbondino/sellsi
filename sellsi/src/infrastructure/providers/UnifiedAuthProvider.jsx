@@ -429,6 +429,10 @@ export const UnifiedAuthProvider = ({ children }) => {
       if (!error && userData) {
         setUserProfile(userData);
         setLastMainSupplier(userData.main_supplier);
+        setNeedsOnboarding(
+          !userData ||
+            userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING
+        );
       }
     } catch (e) {}
   };

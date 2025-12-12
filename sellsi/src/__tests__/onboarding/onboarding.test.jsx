@@ -5,11 +5,27 @@ import { renderWithProviders } from '../testUtils/renderWithProviders';
 // Import the real supabase client and spy on methods
 import { supabase } from '../../services/supabase';
 
+const mockRefreshUserProfile = jest.fn().mockResolvedValue(undefined);
+
+jest.mock('../../infrastructure/providers/UnifiedAuthProvider', () => ({
+  useAuth: () => ({
+    refreshUserProfile: mockRefreshUserProfile,
+  }),
+}));
+
 // Mock the optimized region hook (component only calls primeUserRegionCache)
 jest.mock('../../hooks/useOptimizedUserShippingRegion', () => ({
   useOptimizedUserShippingRegion: () => ({
     primeUserRegionCache: jest.fn(),
   }),
+}));
+
+// Onboarding imports from src/shared/components (barrel) which pulls in modules
+// that rely on import.meta.env (Vite). Jest in this repo isn't configured for
+// import.meta, so we stub only what Onboarding needs.
+jest.mock('../../shared/components', () => ({
+  TaxDocumentSelector: () => null,
+  BillingInfoForm: () => null,
 }));
 
 // Require the component after mocks so tests can safely adjust module-scoped mocks
@@ -35,6 +51,7 @@ describe('Onboarding page - integration-ish tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRefreshUserProfile.mockClear();
     // default supabase spies - ensure objects exist before assigning
     if (supabase) {
       if (!supabase.auth) supabase.auth = {};
@@ -135,8 +152,8 @@ describe('Onboarding page - integration-ish tests', () => {
 
     // wait for upsert and onboarding flag
     await waitFor(() => {
-      expect(sessionStorage.getItem('onboardingDone')).toBe('1');
       expect(supabase.from).toHaveBeenCalledWith('users');
+      expect(mockRefreshUserProfile).toHaveBeenCalled();
     });
   }, 10000);
 
