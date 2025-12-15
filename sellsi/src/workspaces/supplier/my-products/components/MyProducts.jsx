@@ -47,6 +47,8 @@ import BigModal from '../../../../shared/components/modals/BigModal/BigModal';
 import {
   TransferInfoValidationModal,
   useTransferInfoModal,
+  VerifiedValidationModal,
+  useVerifiedModal,
 } from '../../../../shared/components/validation';
 import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion';
 
@@ -163,6 +165,13 @@ const MyProducts = () => {
     missingFieldLabels,
   } = useTransferInfoModal();
 
+  // Modal de validación de verificación
+  const {
+    isOpen: showVerifiedModal,
+    checkAndProceed: verifiedCheckAndProceed,
+    handleClose: handleCloseVerified,
+  } = useVerifiedModal();
+
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -211,13 +220,21 @@ const MyProducts = () => {
 
   // --- Handlers ---
   const handleAddProduct = () => {
-    checkAndProceed('/supplier/addproduct');
+    // Primero verificar que esté verificado
+    verifiedCheckAndProceed(() => {
+      // Luego verificar info bancaria
+      checkAndProceed('/supplier/addproduct');
+    });
   };
 
-  // Botón Importar Excel -> validar info bancaria antes de abrir modal
+  // Botón Importar Excel -> validar verificación y luego info bancaria antes de abrir modal
   const handleOpenMassiveImport = () => {
-    checkAndProceed(null, () => {
-      setMassiveImportOpen(true);
+    // Primero verificar que esté verificado
+    verifiedCheckAndProceed(() => {
+      // Luego verificar info bancaria
+      checkAndProceed(null, () => {
+        setMassiveImportOpen(true);
+      });
     });
   };
 
@@ -1023,6 +1040,12 @@ const MyProducts = () => {
           onRegisterAccount={handleRegisterAccount}
           loading={transferModalLoading}
           missingFieldLabels={missingFieldLabels}
+        />
+
+        {/* Modal de validación de verificación */}
+        <VerifiedValidationModal
+          isOpen={showVerifiedModal}
+          onClose={handleCloseVerified}
         />
       </ThemeProvider>
     </SupplierErrorBoundary>

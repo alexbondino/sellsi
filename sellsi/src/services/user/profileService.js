@@ -12,7 +12,7 @@ import { BANKS } from '../../shared/constants/profile';
 // Evita N llamadas simultáneas a getUserProfile (ownership, shippingRegion, shippingValidation etc.)
 // y reduce 3 fetch shipping_info => 1 usando embedding.
 
-const PROFILE_CACHE_TTL = 60_000; // 60s (ajustable). Mantener corto para minimizar stale.
+const PROFILE_CACHE_TTL = 1_800_000; // 30 minutos (balance entre performance y freshness de datos)
 const profileCache = new Map(); // userId -> { data, ts }
 const inFlight = new Map(); // userId -> Promise
 
