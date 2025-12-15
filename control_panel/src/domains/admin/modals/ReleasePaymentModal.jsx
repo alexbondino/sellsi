@@ -170,7 +170,7 @@ const ReleasePaymentModal = ({ open, onClose, release, onConfirm }) => {
                 Fecha de entrega:
               </Typography>
               <Typography variant="body2">
-                {formatDate(release.delivered_at)}
+                {formatDate(release.delivery_confirmed_at)}
               </Typography>
             </Box>
 

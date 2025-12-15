@@ -179,7 +179,7 @@ export const checkTrustedDevice = async (adminId, deviceFingerprint, trustToken)
  * @param {string} email - Email del administrador
  * @returns {Promise<{success: boolean, secret?: string, qrCode?: string, error?: string}>}
  */
-export const generate2FASecret = async (adminId, email) => {
+export const generate2FASecret = async (adminId, email, password = null) => {
   return AdminApiService.executeQuery(async () => {
     // Validar parámetros
     if (!adminId || !email) {
@@ -189,7 +189,8 @@ export const generate2FASecret = async (adminId, email) => {
     const { data, error } = await supabase.functions.invoke('admin-2fa', {
       body: {
         action: 'generate_secret',
-        adminId: adminId
+        adminId: adminId,
+        password: password // Enviar password si se proporciona (necesario para setup inicial)
       },
       headers: {
         'admin-email': email
@@ -201,11 +202,14 @@ export const generate2FASecret = async (adminId, email) => {
       throw new Error('Error generando código 2FA')
     }
 
-    // Registrar generación de secret
-    await AdminApiService.logAuditAction(adminId, 'generate_2fa_secret', adminId, {
-      email,
-      generation_time: new Date().toISOString()
-    })
+    // Registrar generación de secret (solo si hay sesión activa, para evitar errores de RLS)
+    const { data: session } = await supabase.auth.getSession()
+    if (session?.session) {
+      await AdminApiService.logAuditAction(adminId, 'generate_2fa_secret', adminId, {
+        email,
+        generation_time: new Date().toISOString()
+      })
+    }
 
     return {
       secret: data.secret,

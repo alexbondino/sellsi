@@ -30,8 +30,8 @@ import {
 const PaymentReleaseDetailsModal = ({ open, onClose, release }) => {
   if (!release) return null
 
-  const daysSinceDelivery = release.delivered_at
-    ? daysBetween(release.delivered_at, new Date())
+  const daysSinceDelivery = release.delivery_confirmed_at
+    ? daysBetween(release.delivery_confirmed_at, new Date())
     : 0
 
   const daysSinceRelease = release.released_at
@@ -186,7 +186,7 @@ const PaymentReleaseDetailsModal = ({ open, onClose, release }) => {
                 Fecha de entrega:
               </Typography>
               <Typography variant="body2">
-                {formatDate(release.delivered_at)}
+                {formatDate(release.delivery_confirmed_at)}
               </Typography>
             </Box>
 
