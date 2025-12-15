@@ -74,15 +74,15 @@ const Marketplace = React.memo(({ hasSideBar = false }) => {
       // Sin sidebar: márgenes más amplios ya que hay más espacio disponible
       px: hasSideBar
         ? {
-            xs: 2, // Mobile: margen pequeño
-            sm: 2.5, // Tablet pequeña: margen reducido
+            xs: 1, // ✅ MOBILE FIX: Sin padding para maximizar espacio de cards
+            sm: 1.5, // Tablet pequeña: margen reducido
             md: 3, // Tablet: margen moderado
             lg: 4, // Desktop: margen compacto
             xl: 6, // Desktop grande: margen medio (reducido de 20 a 6)
           }
         : {
-            xs: 2, // Mobile: margen pequeño
-            sm: 3, // Tablet pequeña: margen medio
+            xs: 1, // ✅ MOBILE FIX: Sin padding para maximizar espacio de cards
+            sm: 1.5, // Tablet pequeña: margen medio
             md: 4, // Tablet: margen moderado
             lg: 6, // Desktop: margen amplio
             xl: 8, // Desktop grande: margen grande

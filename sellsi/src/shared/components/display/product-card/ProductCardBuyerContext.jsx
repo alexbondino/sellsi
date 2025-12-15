@@ -166,7 +166,8 @@ const ProductCardBuyerContext = React.memo(
         <CardContent
           sx={{
             flexGrow: 1,
-            p: 2,
+            px: { xs: 1, sm: 2 },
+            py: 2,
             pb: { xs: 6, md: 9 },
             display: 'flex',
             flexDirection: 'column',
