@@ -113,6 +113,11 @@ export async function UpdateOrderStatus(orderId, newStatus, additionalData = {})
             }
           };
           
+          // Actualizar delivered_at cuando el estado cambia a 'delivered'
+          if (normalizedStatus === 'delivered' && !updatedMeta[supplierId].delivered_at) {
+            updatedMeta[supplierId].delivered_at = now;
+          }
+          
           // Actualizar supplier_parts_meta en la base de datos
           await supabase
             .from('orders')

@@ -252,6 +252,7 @@ const ProductHeader = React.memo(
               availableOptions={availableOptions}
               loadingDocumentTypes={loadingDocumentTypes}
               isMobile={isMobile}
+              supplierMinimumAmount={product.minimum_purchase_amount || product.supplier_minimum_purchase_amount || 0}
             />
 
             {/* Proveedor */}

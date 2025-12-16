@@ -67,7 +67,7 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
         const { data, error } = await supabase
           .from('products')
           .select(
-            `*, product_images (*), product_quantity_ranges (*), product_delivery_regions (*), users!products_supplier_id_fkey (user_nm, logo_url, verified) `
+            `*, product_images (*), product_quantity_ranges (*), product_delivery_regions (*), users!products_supplier_id_fkey (user_nm, logo_url, verified, minimum_purchase_amount) `
           )
           .eq('productid', productId)
           .eq('is_active', true)
@@ -104,6 +104,7 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             logo_url: data.users?.logo_url || null,
             proveedorVerificado: data.users?.verified || false,
             verified: data.users?.verified || false,
+            minimum_purchase_amount: data.users?.minimum_purchase_amount || 0,
             priceTiers: data.product_quantity_ranges || [],
             imagenes: orderedImages,
             images: orderedImages,

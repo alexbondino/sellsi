@@ -282,11 +282,11 @@ export function useProducts() {
           if (supplierIds.length > 0) {
             const { data: usersData, error: usersError } = await supabase
               .from('users')
-              .select('user_id, user_nm, logo_url, descripcion_proveedor, verified')
+              .select('user_id, user_nm, logo_url, descripcion_proveedor, verified, minimum_purchase_amount')
               .in('user_id', supplierIds.map(id => String(id)))
               .eq('verified', true) // ✅ SOLO PROVEEDORES VERIFICADOS
             if (!usersError && usersData) {
-              usersMap = Object.fromEntries(usersData.map(u => [u.user_id, { name: u.user_nm, logo_url: u.logo_url, descripcion_proveedor: u.descripcion_proveedor, verified: u.verified }]))
+              usersMap = Object.fromEntries(usersData.map(u => [u.user_id, { name: u.user_nm, logo_url: u.logo_url, descripcion_proveedor: u.descripcion_proveedor, verified: u.verified, minimum_purchase_amount: u.minimum_purchase_amount || 0 }]))
             }
           }
         }
@@ -323,6 +323,7 @@ export function useProducts() {
             descripcion_proveedor: usersMap[p.supplier_id]?.descripcion_proveedor,
             verified: usersMap[p.supplier_id]?.verified || false,
             proveedorVerificado: usersMap[p.supplier_id]?.verified || false,
+            minimum_purchase_amount: usersMap[p.supplier_id]?.minimum_purchase_amount || 0,
             imagen: imagenPrincipal,
             thumbnails,
             thumbnail_url: thumbnailUrl,
