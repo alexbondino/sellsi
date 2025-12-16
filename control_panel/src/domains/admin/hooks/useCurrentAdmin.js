@@ -27,18 +27,33 @@ export const useCurrentAdmin = () => {
   useEffect(() => {
     const fetchAdminData = async () => {
       try {
-        // 🎭 MODO DESARROLLO: Retornar admin mock
-        // TODO: Comentar estas líneas en producción
-        setTimeout(() => {
-          setAdminData({
-            adminId: 'admin_dev_001',
-            adminName: 'Admin Desarrollo',
-            adminEmail: 'admin@sellsi.com',
-            loading: false,
-            error: null
-          })
-        }, 500)
-        return
+          // 1) Si hay sesión guardada por AdminLogin, usarla
+          const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('adminUser') : null
+          if (raw) {
+            const user = JSON.parse(raw)
+            if (user?.id) {
+              setAdminData({
+                adminId: user.id,
+                adminName: user.full_name || user.usuario || user.email || 'Administrador',
+                adminEmail: user.email || null,
+                loading: false,
+                error: null
+              })
+              return
+            }
+          }
+
+          // 2) Fallback: modo desarrollo (sin sesión)
+          setTimeout(() => {
+            setAdminData({
+              adminId: 'admin_dev_001',
+              adminName: 'Admin Desarrollo',
+              adminEmail: 'admin@sellsi.com',
+              loading: false,
+              error: null
+            })
+          }, 250)
+          return
 
         // 🚀 PRODUCCIÓN: Descomentar cuando esté listo el auth
         // const { data: { user }, error } = await supabase.auth.getUser()

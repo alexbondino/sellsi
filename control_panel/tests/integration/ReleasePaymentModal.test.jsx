@@ -12,6 +12,26 @@ import '@testing-library/jest-dom'
 import ReleasePaymentModal from '../../src/domains/admin/modals/ReleasePaymentModal'
 import { mockPaymentReleasePending } from '../mocks/paymentReleaseMocks'
 
+// Mock del servicio de liberación para controlar carga de bank_info
+jest.mock('../../src/domains/admin/services/adminPaymentReleaseService', () => {
+  const actual = jest.requireActual('../../src/domains/admin/services/adminPaymentReleaseService')
+  return {
+    ...actual,
+    getSupplierBankInfo: jest.fn(async () => ({
+      success: true,
+      data: {
+        user_id: 'sup_test_001',
+        account_holder: 'Proveedor Test S.A.',
+        bank: 'Banco Test',
+        account_number: '12345678',
+        transfer_rut: '12.345.678-9',
+        confirmation_email: 'pagos@proveedortest.cl',
+        account_type: 'corriente'
+      }
+    }))
+  }
+})
+
 // Mock del hook useCurrentAdmin
 jest.mock('../../src/domains/admin/hooks/useCurrentAdmin', () => ({
   __esModule: true,
@@ -76,6 +96,22 @@ describe('ReleasePaymentModal - Renderizado', () => {
     expect(screen.getByText(/Orden #ORDER_TEST_001/)).toBeInTheDocument()
     expect(screen.getByText(/\$150\.000/)).toBeInTheDocument()
     expect(screen.getByText('Proveedor Test S.A.')).toBeInTheDocument()
+  })
+
+  test('muestra sección de información de transferencia', async () => {
+    render(
+      <ReleasePaymentModal
+        open={true}
+        onClose={mockOnClose}
+        release={mockPaymentReleasePending}
+        onConfirm={mockOnConfirm}
+      />
+    )
+
+    expect(screen.getByText('Información de Transferencia')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('Banco Test')).toBeInTheDocument()
+    })
   })
 
   test('muestra alerta de registro manual', () => {
