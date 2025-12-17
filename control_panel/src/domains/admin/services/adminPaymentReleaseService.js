@@ -125,6 +125,36 @@ export const getPaymentReleaseDetails = async (releaseId) => {
   }, 'Error obteniendo detalles de la liberación')
 }
 
+/**
+ * Obtener información de transferencia bancaria de un proveedor
+ * (tabla public.bank_info)
+ * @param {string} supplierId - user_id del proveedor
+ * @returns {Promise<{success: boolean, data?: object|null, error?: string}>}
+ */
+export const getSupplierBankInfo = async (supplierId) => {
+  return AdminApiService.executeQuery(async () => {
+    if (!supplierId) {
+      throw new Error('ID de proveedor es requerido')
+    }
+
+    // Consulta directa: bank_info no tiene RLS habilitado (verificado en migraciones)
+    // El acceso está protegido por la autenticación del panel admin (AdminLogin)
+    const { data, error } = await supabase
+      .from('bank_info')
+      .select('user_id, account_holder, bank, account_number, transfer_rut, confirmation_email, account_type')
+      .eq('user_id', supplierId)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Error al obtener bank_info:', error)
+      throw new Error('Error al cargar información bancaria del proveedor')
+    }
+
+    // Puede ser null si el proveedor no la tiene registrada.
+    return data || null
+  }, 'Error al cargar información bancaria del proveedor')
+}
+
 // ========================================
 // ✅ LIBERACIÓN DE PAGOS
 // ========================================

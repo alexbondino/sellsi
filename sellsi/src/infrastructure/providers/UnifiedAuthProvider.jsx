@@ -206,6 +206,8 @@ export const UnifiedAuthProvider = ({ children }) => {
             main_supplier: fullProfile.main_supplier,
             logo_url: fullProfile.logo_url,
             email: fullProfile.email,
+            verified: fullProfile.verified || false,
+            verified_at: fullProfile.verified_at || null,
           }
         : null;
 
@@ -222,7 +224,7 @@ export const UnifiedAuthProvider = ({ children }) => {
             main_supplier: true,
             country: 'No especificado',
           })
-          .select('user_nm, main_supplier, logo_url, email')
+          .select('user_nm, main_supplier, logo_url, email, verified, verified_at')
           .single();
 
         if (createError) {

@@ -449,7 +449,8 @@ const AdminLogin = ({ open, onClose }) => {
       setSetupError('');
       
       try {
-        const result = await generate2FASecret(tempUserId, tempAdminData?.email || 'admin@sellsi.com');
+        // Pasamos la contraseña para autorizar la generación del secreto
+        const result = await generate2FASecret(tempUserId, tempAdminData?.email || 'admin@sellsi.com', formData.password);
         
         if (result.success) {
           const { secret, qrCode } = result;

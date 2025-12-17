@@ -100,8 +100,8 @@ const ProductsSection = React.memo(
     const innerContainerStyles = {
       width: { xs: '100vw', sm: '100vw', md: '100%', lg: '100%', xl: '100%' },
       maxWidth: {
-        xs: '440px',
-        sm: '600px',
+        xs: '100vw', // ✅ MOBILE FIX: Permitir que use todo el ancho disponible en xs
+        sm: '100vw',
         md: '960px',
         lg: '1280px',
         xl: '1700px',

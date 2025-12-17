@@ -20,6 +20,7 @@ const ProductMetadata = ({
   availableOptions,
   loadingDocumentTypes,
   isMobile = false,
+  supplierMinimumAmount = 0,
 }) => {
   const showDocSkeleton = useSmartSkeleton(loadingDocumentTypes);
 
@@ -110,7 +111,14 @@ const ProductMetadata = ({
       {/* Fila 3: Compra mínima */}
       <Box sx={METADATA_STYLES.stockRow}>
         <Typography variant="body2" sx={METADATA_STYLES.stockText}>
-          <b>Compra mínima:</b> {formatNumber(compraMinima)} unidades
+          <b>Compra mínima producto:</b> {formatNumber(compraMinima)} unidades
+        </Typography>
+      </Box>
+
+      {/* Fila 4: Compra Mínima Proveedor - Siempre visible */}
+      <Box sx={METADATA_STYLES.stockRow}>
+        <Typography variant="body2" sx={METADATA_STYLES.stockText}>
+          <b>Compra mínima proveedor:</b> ${formatNumber(supplierMinimumAmount)}
         </Typography>
       </Box>
     </Box>

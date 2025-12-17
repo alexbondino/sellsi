@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, TextField, Button, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Box, Typography, TextField, Button, ToggleButtonGroup, ToggleButton, InputAdornment } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { CountrySelector, TaxDocumentSelector } from '../../../../shared/components';
 import { validatePhone } from '../../../../utils/validators';
@@ -155,6 +155,42 @@ const CompanyInfoSection = ({
             </Typography>
           </Box>
         </Box>
+
+        {/* Compra Mínima Proveedor - Solo visible para suppliers */}
+        {formData.role === 'supplier' && (
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+              <Typography variant="body2" sx={{ minWidth: 120 }}>
+                Compra Mínima
+              </Typography>
+              <TextField
+                label="Monto mínimo de compra (CLP)"
+                value={formData.minimumPurchaseAmount || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d+$/.test(value)) {
+                    onFieldChange('minimumPurchaseAmount', value);
+                  }
+                }}
+                fullWidth
+                variant="outlined"
+                size="small"
+                type="number"
+                placeholder="0"
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                }}
+                inputProps={{ min: 0, step: 1000 }}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, ml: 0.5 }}>
+              <InfoOutlinedIcon sx={{ fontSize: 16, color: 'primary.main', mr: 0.5 }} />
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                Monto mínimo de compra que deben alcanzar los clientes para poder finalizar su pedido.
+              </Typography>
+            </Box>
+          </Box>
+        )}
 
   {/* Documento Tributario eliminado: Facturación ya no depende de este selector */}
         {/* Descripción proveedor solo si el rol es supplier */}

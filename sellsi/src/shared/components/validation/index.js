@@ -8,3 +8,8 @@ export {
   TransferInfoValidationModal, 
   useTransferInfoModal 
 } from './TransferInfoValidationModal/TransferInfoValidationModal';
+
+export {
+  VerifiedValidationModal,
+  useVerifiedModal
+} from './VerifiedValidationModal/VerifiedValidationModal';

@@ -38,7 +38,7 @@ class CheckoutService {
     try {
       const { data: existing, error } = await supabase
         .from('orders')
-        .select('id, items, total, khipu_expires_at, payment_status, created_at')
+        .select('id, items, total, payment_method, khipu_expires_at, flow_expires_at, payment_status, created_at')
         .eq('cart_id', cartId)
         .eq('payment_status', 'pending')
         .maybeSingle();
@@ -51,18 +51,43 @@ class CheckoutService {
 
       if (!existing) return null;
 
-      // Verificar expiración por khipu_expires_at
-      const isKhipuExpired = existing.khipu_expires_at && 
-        new Date(existing.khipu_expires_at) <= new Date();
+      // Verificar expiración según payment_method
+      let isExpired = false;
+      let reason = '';
+
+      if (existing.payment_method === 'khipu') {
+        // Khipu: verificar khipu_expires_at (TTL 20 min)
+        const isKhipuExpired = existing.khipu_expires_at && 
+          new Date(existing.khipu_expires_at) <= new Date();
+        
+        // Caso especial: orden sin khipu_expires_at pero muy vieja (>5 min) = "zombie"
+        const ZOMBIE_THRESHOLD_MS = 5 * 60 * 1000;
+        const isZombie = !existing.khipu_expires_at && 
+          existing.created_at && 
+          (Date.now() - new Date(existing.created_at).getTime()) > ZOMBIE_THRESHOLD_MS;
+        
+        if (isKhipuExpired || isZombie) {
+          isExpired = true;
+          reason = isKhipuExpired ? 'payment window expired (reuse check)' : 'zombie order (no khipu_expires_at after 5min)';
+        }
+      } else if (existing.payment_method === 'flow') {
+        // Flow: verificar flow_expires_at (TTL 30 min)
+        const isFlowExpired = existing.flow_expires_at && 
+          new Date(existing.flow_expires_at) <= new Date();
+        
+        // Caso especial: orden Flow sin flow_expires_at pero muy vieja (>5 min) = "zombie"
+        const ZOMBIE_THRESHOLD_MS = 5 * 60 * 1000;
+        const isZombie = !existing.flow_expires_at && 
+          existing.created_at && 
+          (Date.now() - new Date(existing.created_at).getTime()) > ZOMBIE_THRESHOLD_MS;
+        
+        if (isFlowExpired || isZombie) {
+          isExpired = true;
+          reason = isFlowExpired ? 'payment window expired (reuse check)' : 'zombie order (no flow_expires_at after 5min)';
+        }
+      }
       
-      // Caso especial: orden sin khipu_expires_at pero muy vieja (>5 min) = "zombie"
-      const ZOMBIE_THRESHOLD_MS = 5 * 60 * 1000;
-      const isZombie = !existing.khipu_expires_at && 
-        existing.created_at && 
-        (Date.now() - new Date(existing.created_at).getTime()) > ZOMBIE_THRESHOLD_MS;
-      
-      if (isKhipuExpired || isZombie) {
-        const reason = isKhipuExpired ? 'payment window expired (reuse check)' : 'zombie order (no khipu_expires_at after 5min)';
+      if (isExpired) {
         console.log('[CheckoutService] Orden existente expirada/zombie, marcando expired:', existing.id, reason);
         try {
           await supabase.from('orders')

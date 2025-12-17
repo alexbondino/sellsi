@@ -25,7 +25,7 @@ import {
   Info as InfoIcon,
   AttachMoney as AttachMoneyIcon,
   GetApp as GetAppIcon,
-  HourglassEmpty as HourglassEmptyIcon
+  SearchOff as SearchOffIcon
 } from '@mui/icons-material'
 import { DataGrid } from '@mui/x-data-grid'
 import { esES } from '@mui/x-data-grid/locales'
@@ -37,7 +37,6 @@ import {
   getPaymentReleasesReport,
   formatCLP,
   formatDate,
-  daysBetween,
   STATUS,
   STATUS_COLORS,
   STATUS_LABELS
@@ -47,7 +46,7 @@ import PaymentReleaseDetailsModal from '../modals/PaymentReleaseDetailsModal'
 
 // 🎭 Importar mocks para desarrollo (comentar en producción)
 import mockData from '../mocks/paymentReleasesMocks'
-const USE_MOCKS = true // ✅ Migración ejecutada - usando Supabase real
+const USE_MOCKS = false // ✅ Migración ejecutada - usando Supabase real
 
 const PaymentReleasesTable = () => {
   // Estados principales
@@ -98,13 +97,22 @@ const PaymentReleasesTable = () => {
         return
       }
 
-      const [releasesData, statsData] = await Promise.all([
+      const [releasesResponse, statsResponse] = await Promise.all([
         getPaymentReleases(filters),
         getPaymentReleaseStats(filters)
       ])
 
-      setReleases(releasesData || [])
-      setStats(statsData || null)
+      if (releasesResponse.success) {
+        console.log('Releases loaded:', releasesResponse.data)
+        setReleases(Array.isArray(releasesResponse.data) ? releasesResponse.data : [])
+      } else {
+        console.error('Error loading releases:', releasesResponse.error)
+        setError(releasesResponse.error || 'Error al cargar datos')
+      }
+
+      if (statsResponse.success) {
+        setStats(statsResponse.data || null)
+      }
     } catch (err) {
       console.error('Error cargando datos:', err)
       setError(err.message || 'Error al cargar las liberaciones de pago')
@@ -147,12 +155,17 @@ const PaymentReleasesTable = () => {
 
   const handleReleasePayment = async (releaseData) => {
     try {
-      await releasePayment(
+      const response = await releasePayment(
         selectedRelease.id,
         releaseData.admin_id,
         releaseData.notes,
         releaseData.proof_url
       )
+
+      if (!response.success) {
+        throw new Error(response.error || 'Error al liberar pago')
+      }
+
       setReleaseModalOpen(false)
       setSelectedRelease(null)
       await loadData() // Recargar datos
@@ -164,7 +177,12 @@ const PaymentReleasesTable = () => {
 
   const handleCancelRelease = async (releaseId, reason) => {
     try {
-      await cancelPaymentRelease(releaseId, reason)
+      const response = await cancelPaymentRelease(releaseId, reason)
+
+      if (!response.success) {
+        throw new Error(response.error || 'Error al cancelar la liberación')
+      }
+
       await loadData() // Recargar datos
     } catch (err) {
       console.error('Error cancelando liberación:', err)
@@ -174,7 +192,18 @@ const PaymentReleasesTable = () => {
 
   const handleExportReport = async () => {
     try {
-      const report = await getPaymentReleasesReport(filters)
+      if (!filters.date_from || !filters.date_to) {
+        setError('Debe seleccionar un rango de fechas para exportar el reporte')
+        return
+      }
+
+      const response = await getPaymentReleasesReport(filters.date_from, filters.date_to)
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Error al generar el reporte')
+      }
+
+      const report = response.data
       const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -186,7 +215,7 @@ const PaymentReleasesTable = () => {
       URL.revokeObjectURL(url)
     } catch (err) {
       console.error('Error exportando reporte:', err)
-      setError('Error al generar el reporte')
+      setError(err.message || 'Error al generar el reporte')
     }
   }
 
@@ -241,7 +270,7 @@ const PaymentReleasesTable = () => {
       valueGetter: (params) => formatDate(params.value)
     },
     {
-      field: 'delivered_at',
+      field: 'delivery_confirmed_at',
       headerName: 'Fecha Entrega',
       flex: 1,
       minWidth: 150,
@@ -320,19 +349,8 @@ const PaymentReleasesTable = () => {
   ]
 
   // Calcular días desde la entrega para cada registro
-  const rowsWithDays = releases.map(release => {
-    if (!release.delivered_at) return { ...release, days_since_delivery: 0 }
-    
-    const deliveredDate = new Date(release.delivered_at)
-    const today = new Date()
-    const diffTime = today - deliveredDate
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-    
-    return {
-      ...release,
-      days_since_delivery: diffDays >= 0 ? diffDays : 0
-    }
-  })
+  // NOTA: La vista ya trae days_since_delivery calculado, usamos ese valor directamente
+  const rows = Array.isArray(releases) ? releases : []
 
   return (
     <Box sx={{ p: 3, width: '100%', overflowX: 'auto' }}>
@@ -494,20 +512,20 @@ const PaymentReleasesTable = () => {
       )}
 
       {/* DataGrid */}
-      <Paper sx={{ width: '100%' }}>
+      <Paper sx={{ width: '100%', height: 600 }}>
         <DataGrid
-          rows={rowsWithDays}
+          rows={rows}
           columns={columns}
           loading={loading}
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
           pageSizeOptions={[10, 25, 50, 100]}
           disableRowSelectionOnClick
-          autoHeight
           disableColumnResize={false}
           localeText={esES.components.MuiDataGrid.defaultProps.localeText}
           sx={{
             width: '100%',
+            height: '100%',
             border: 'none',
             '& .MuiDataGrid-cell': {
               borderBottom: '1px solid rgba(224, 224, 224, 0.5)'
@@ -520,36 +538,35 @@ const PaymentReleasesTable = () => {
           // Estado vacío personalizado
           slots={{
             noRowsOverlay: () => (
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%',
-                  gap: 2,
-                  color: 'text.secondary'
-                }}
+              <Stack
+                height="100%"
+                alignItems="center"
+                justifyContent="center"
+                spacing={2}
+                sx={{ p: 3, color: 'text.secondary' }}
               >
-                <HourglassEmptyIcon sx={{ fontSize: 64, opacity: 0.3 }} />
-                <Typography variant="h6" color="text.secondary">
-                  No hay liberaciones de pago
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {filters.status || filters.date_from || filters.date_to
-                    ? 'No se encontraron resultados con los filtros aplicados'
-                    : 'Las solicitudes aparecerán automáticamente cuando los proveedores confirmen entregas'}
-                </Typography>
-                {(filters.status || filters.date_from || filters.date_to) && (
+                <SearchOffIcon sx={{ fontSize: 60, opacity: 0.2 }} />
+                <Box textAlign="center">
+                  <Typography variant="h6" gutterBottom>
+                    No hay liberaciones de pago
+                  </Typography>
+                  <Typography variant="body2" sx={{ maxWidth: 400, mx: 'auto', opacity: 0.8 }}>
+                    {(filters.status !== 'all' || filters.date_from || filters.date_to)
+                      ? 'No se encontraron resultados con los filtros actuales. Intenta ampliando la búsqueda.'
+                      : 'No hay solicitudes pendientes en este momento. Aparecerán aquí cuando los proveedores confirmen sus entregas.'}
+                  </Typography>
+                </Box>
+                {(filters.status !== 'all' || filters.date_from || filters.date_to) && (
                   <Button
                     variant="outlined"
                     size="small"
                     onClick={handleClearFilters}
+                    startIcon={<RefreshIcon />}
                   >
                     Limpiar Filtros
                   </Button>
                 )}
-              </Box>
+              </Stack>
             )
           }}
         />

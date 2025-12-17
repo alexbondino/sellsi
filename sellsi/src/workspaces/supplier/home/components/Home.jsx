@@ -22,7 +22,9 @@ import SupplierErrorBoundary from '../../error-boundary/SupplierErrorBoundary';
 import {
   TransferInfoValidationModal,
   useTransferInfoModal,
-} from '../../../../shared/components/validation'; // Modal de validación bancaria
+  VerifiedValidationModal,
+  useVerifiedModal,
+} from '../../../../shared/components/validation'; // Modal de validación bancaria y verificación
 
 // Lazy import principal (se elimina gráfico para reducir peso: BarChart removido)
 const DashboardSummary = React.lazy(() => import('./DashboardSummary'));
@@ -58,6 +60,13 @@ const ProviderHome = () => {
     missingFieldLabels,
   } = useTransferInfoModal();
 
+  // Modal de validación de verificación
+  const {
+    isOpen: showVerifiedModal,
+    checkAndProceed: verifiedCheckAndProceed,
+    handleClose: handleCloseVerified,
+  } = useVerifiedModal();
+
   // Dashboard data (metrics, charts, analytics)
   const {
     // charts,  // Eliminado: se deja de consumir data de gráficos
@@ -83,11 +92,15 @@ const ProviderHome = () => {
   const loading = dashboardLoading || productsLoading;
   const error = dashboardError || productsError;
 
-  // Función para manejar la creación de nuevo producto con validación bancaria
+  // Función para manejar la creación de nuevo producto con validaciones encadenadas
   const handleNewProduct = () => {
-    checkAndProceed(null, () => {
-      navigate('/supplier/addproduct', {
-        state: { fromHome: true },
+    // Primero verificar que esté verificado
+    verifiedCheckAndProceed(() => {
+      // Luego verificar info bancaria
+      checkAndProceed(null, () => {
+        navigate('/supplier/addproduct', {
+          state: { fromHome: true },
+        });
       });
     });
   };
@@ -225,6 +238,12 @@ const ProviderHome = () => {
           onRegisterAccount={handleRegisterAccount}
           loading={transferModalLoading}
           missingFieldLabels={missingFieldLabels}
+        />
+
+        {/* Modal de validación de verificación */}
+        <VerifiedValidationModal
+          isOpen={showVerifiedModal}
+          onClose={handleCloseVerified}
         />
       </ThemeProvider>
     </SupplierErrorBoundary>

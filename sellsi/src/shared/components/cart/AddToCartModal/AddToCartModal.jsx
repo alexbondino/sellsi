@@ -142,11 +142,11 @@ const ProductSummary = React.memo(function ProductSummary({
         e.stopPropagation();
       }}
     >
-      <Stack direction="row" spacing={{ xs: 1.3, sm: 2 }} alignItems="center">
+      <Stack direction="row" spacing={2} alignItems="center">
         <Box
           sx={{
-            width: { xs: 42, sm: 50 },
-            height: { xs: 42, sm: 50 },
+            width: 50,
+            height: 50,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -162,7 +162,7 @@ const ProductSummary = React.memo(function ProductSummary({
             direction="row"
             justifyContent="space-between"
             alignItems="flex-start"
-            sx={{ mb: { xs: 0.3, sm: 0.5 } }}
+            sx={{ mb: 0.5 }}
           >
             <Typography
               variant="body1"

@@ -16,17 +16,37 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from '@supabase/supabase-js'
 import * as OTPAuth from 'otpauth'
 
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+  return btoa(binary)
+}
+
+function base64ToBytes(b64: string): Uint8Array {
+  const binary = atob(b64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
+
+async function hmacSha256(secret: string, data: string): Promise<Uint8Array> {
+  const enc = new TextEncoder()
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify'])
+  const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(data))
+  return new Uint8Array(sigBuf)
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-trust-token',
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 }
 
-// Rate limiting en memoria (se resetea cuando la función se reinicia)
-const attemptsMap: Map<string, { count: number; first: number }> = (globalThis as any).admin2faAttempts || new Map()
-;(globalThis as any).admin2faAttempts = attemptsMap
-const MAX_ATTEMPTS = 5
-const WINDOW_MS = 5 * 60 * 1000 // 5 minutos
+// Rate limiting en memoria (ELIMINADO - Usamos DB)
+// const attemptsMap: Map<string, { count: number; first: number }> = (globalThis as any).admin2faAttempts || new Map()
+// ;(globalThis as any).admin2faAttempts = attemptsMap
+// const MAX_ATTEMPTS = 5
+// const WINDOW_MS = 5 * 60 * 1000 // 5 minutos
 
 serve(async (req) => {
   // Manejar CORS preflight
@@ -67,7 +87,8 @@ serve(async (req) => {
     }
 
     // Acciones que NO requieren autenticación (son parte del login)
-    const publicActions = ['verify_password', 'verify_token', 'check_trust']
+    // generate_secret se mueve aquí pero requerirá password para seguridad
+    const publicActions = ['verify_password', 'verify_token', 'check_trust', 'generate_secret']
     const requiresAuth = !publicActions.includes(action)
     
     let authUser: any = null
@@ -97,7 +118,23 @@ serve(async (req) => {
       authUser = userData.user
     } else {
       // Cliente anónimo para acciones públicas
-      supabase = createClient(supabaseUrl, anonKey)
+      // IMPORTANTE: Si la acción es generate_secret o verify_token, necesitamos permisos de escritura
+      // en control_panel_users, pero el usuario aún no está autenticado.
+      // Usamos SERVICE_ROLE_KEY solo si hemos verificado la contraseña (en generate_secret)
+      // o si estamos verificando el token (en verify_token).
+      
+      if (action === 'generate_secret' || action === 'verify_token') {
+        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+        if (!serviceRoleKey) {
+           console.error('Missing SUPABASE_SERVICE_ROLE_KEY')
+           // Fallback a anonKey, pero fallará si hay RLS estricto
+           supabase = createClient(supabaseUrl, anonKey)
+        } else {
+           supabase = createClient(supabaseUrl, serviceRoleKey)
+        }
+      } else {
+        supabase = createClient(supabaseUrl, anonKey)
+      }
     }
 
     // Acciones que requieren adminId
@@ -184,6 +221,30 @@ serve(async (req) => {
       }
 
       case 'generate_secret': {
+        // Si no está autenticado (flujo de login), requerir y verificar contraseña
+        if (!authUser) {
+          if (!password) {
+            return new Response(
+              JSON.stringify({ success: false, error: 'Password required for initial setup' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            )
+          }
+
+          // Verificar password
+          const { data: passwordMatch, error: verifyError } = await supabase
+            .rpc('verify_admin_password', {
+              p_admin_id: adminId,
+              p_password: password
+            })
+          
+          if (verifyError || !passwordMatch) {
+            return new Response(
+              JSON.stringify({ success: false, error: 'Invalid password' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+            )
+          }
+        }
+
         // Generar secreto para 2FA
         const secret = new OTPAuth.Secret({ size: 20 }).base32
         const appName = 'Sellsi Admin Panel'
@@ -219,19 +280,23 @@ serve(async (req) => {
           )
         }
         
-        // Rate limiting
-        const now = Date.now()
-        const entry = attemptsMap.get(adminId) || { count: 0, first: now }
-        
-        if (now - entry.first > WINDOW_MS) {
-          entry.count = 0
-          entry.first = now
-        }
-        
-        if (entry.count >= MAX_ATTEMPTS) {
-          const retryIn = Math.max(0, WINDOW_MS - (now - entry.first))
+        // 1. Verificar Rate Limit en DB (persistente / atómico)
+        const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown'
+        const { data: limitCheck, error: rpcError } = await supabase
+          .rpc('check_admin_rate_limit', { p_admin_id: adminId, p_ip_address: ipAddress, p_action: '2fa_verify' })
+
+        if (rpcError) {
+          console.error('Rate limit check error:', rpcError)
+          // Fail-secure: Si no podemos verificar el límite, bloqueamos por seguridad
           return new Response(
-            JSON.stringify({ success: false, error: 'Too many attempts', retry_in_ms: retryIn }),
+            JSON.stringify({ success: false, error: 'Security check failed' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+          )
+        }
+
+        if (!limitCheck.allowed) {
+          return new Response(
+            JSON.stringify({ success: false, error: limitCheck.error || 'Too many attempts' }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
           )
         }
@@ -244,19 +309,23 @@ serve(async (req) => {
         const totp = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(adminRow.twofa_secret) })
         const isValid = totp.validate({ token: normalizedToken, window: 1 }) !== null
         
+        // Registrar intento (éxito o fallo)
+        // Esto incrementa el contador en la DB si falló
+        await supabase.rpc('log_admin_auth_attempt', {
+          p_admin_id: adminId,
+          p_success: isValid,
+          p_ip_address: ipAddress,
+          p_action: '2fa_verify'
+        })
+        
         if (!isValid) {
-          entry.count += 1
-          attemptsMap.set(adminId, entry)
-          const attemptsRemaining = Math.max(0, MAX_ATTEMPTS - entry.count)
-          
           return new Response(
-            JSON.stringify({ success: false, error: 'Invalid token', attempts_remaining: attemptsRemaining }),
+            JSON.stringify({ success: false, error: 'Invalid token' }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
           )
         }
         
-        // Resetear intentos
-        attemptsMap.delete(adminId)
+        // Si es válido, continuamos con la actualización de estado...
         
         // Actualizar twofa_configured y last_login
         await supabase
@@ -268,10 +337,27 @@ serve(async (req) => {
         let trust_token: string | undefined = undefined
         
         if (remember && device_fingerprint) {
-          const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(device_fingerprint + ':' + adminId))
-          const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('')
+          const trustSecret = Deno.env.get('EDGE_TRUST_SECRET')
+          // Fail-secure: si no hay secreto, simplemente no emitimos trust token
+          if (!trustSecret) {
+            console.error('Missing EDGE_TRUST_SECRET; trust token disabled')
+          }
+
+          // Device hash: HMAC(secret, fingerprint:adminId) para evitar rainbow/lookup offline
+          const deviceHmac = trustSecret ? await hmacSha256(trustSecret, device_fingerprint + ':' + adminId) : null
+          const hashHex = deviceHmac
+            ? Array.from(deviceHmac).map(b => b.toString(16).padStart(2, '0')).join('')
+            : null
           const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 días
           
+          if (!hashHex) {
+            // No podemos registrar trusted device sin secreto
+            return new Response(
+              JSON.stringify({ success: true, trust_token: undefined }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+            )
+          }
+
           // Upsert trusted device
           const { data: existing } = await supabase
             .from('admin_trusted_devices')
@@ -304,14 +390,16 @@ serve(async (req) => {
           }
           
           if (tokenId) {
-            // Crear trust token firmado con HMAC
-            const secret = Deno.env.get('EDGE_TRUST_SECRET') || 'default-insecure-secret-change-in-production'
-            const payload = JSON.stringify({ aid: adminId, tk: tokenId, exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60 })
-            const enc = new TextEncoder()
-            const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
-            const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(payload))
-            const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sigBuf)))
-            trust_token = btoa(payload) + '.' + sigB64
+            // Crear trust token firmado con HMAC (sin fallbacks inseguros)
+            const trustSecret = Deno.env.get('EDGE_TRUST_SECRET')
+            if (!trustSecret) {
+              console.error('Missing EDGE_TRUST_SECRET; trust token disabled')
+            } else {
+              const payload = JSON.stringify({ aid: adminId, tk: tokenId, exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60 })
+              const sigBytes = await hmacSha256(trustSecret, payload)
+              const sigB64 = bytesToBase64(sigBytes)
+              trust_token = btoa(payload) + '.' + sigB64
+            }
           }
         }
         
@@ -337,8 +425,16 @@ serve(async (req) => {
           )
         }
         
-        // Verificar firma del trust token
-        const secret = Deno.env.get('EDGE_TRUST_SECRET') || 'default-insecure-secret-change-in-production'
+        // Verificar firma del trust token (fail-secure: sin secreto nunca es trusted)
+        const trustSecret = Deno.env.get('EDGE_TRUST_SECRET')
+        if (!trustSecret) {
+          console.error('Missing EDGE_TRUST_SECRET; trust disabled')
+          return new Response(
+            JSON.stringify({ success: true, trusted: false }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          )
+        }
+
         const [payloadB64, sig] = trustHeader.split('.')
         
         if (!payloadB64 || !sig) {
@@ -365,13 +461,11 @@ serve(async (req) => {
           )
         }
         
-        // Verificar firma HMAC
+        // Verificar firma HMAC usando crypto.subtle.verify (evita compare no-constante)
         const enc = new TextEncoder()
-        const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
-        const expectedSigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(JSON.stringify(payloadJson)))
-        const expectedSigB64 = btoa(String.fromCharCode(...new Uint8Array(expectedSigBuf)))
-        
-        if (expectedSigB64 !== sig) {
+        const key = await crypto.subtle.importKey('raw', enc.encode(trustSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'])
+        const ok = await crypto.subtle.verify('HMAC', key, base64ToBytes(sig), enc.encode(atob(payloadB64)))
+        if (!ok) {
           return new Response(
             JSON.stringify({ success: true, trusted: false }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -379,8 +473,8 @@ serve(async (req) => {
         }
         
         // Verificar que el device_hash existe en la BD
-        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(device_fingerprint + ':' + adminId))
-        const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('')
+        const deviceHmac = await hmacSha256(trustSecret, device_fingerprint + ':' + adminId)
+        const hashHex = Array.from(deviceHmac).map(b => b.toString(16).padStart(2, '0')).join('')
         
         const { data: row } = await supabase
           .from('admin_trusted_devices')

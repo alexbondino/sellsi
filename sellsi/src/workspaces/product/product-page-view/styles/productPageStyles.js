@@ -182,7 +182,7 @@ export const PRICING_STYLES = {
   header: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: { xs: 'center', md: 'flex-start' }, // Centrado en mobile, izquierda en desktop
     gap: 1,
     mb: 1,
   },
@@ -201,7 +201,7 @@ export const PRICING_STYLES = {
 
   tableContainer: {
     maxWidth: DIMENSIONS.maxTableWidth,
-    mx: 'auto',
+    mx: { xs: 'auto', md: 0 }, // Centrado en mobile, alineado a la izquierda en desktop
     mb: 2,
   },
 

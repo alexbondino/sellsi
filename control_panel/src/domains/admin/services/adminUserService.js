@@ -187,18 +187,14 @@ export const banUser = async (userId, reason, adminId) => {
       throw new Error('El usuario ya está baneado')
     }
 
-    // Banear usuario
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ 
-        banned: true,
-        banned_at: new Date().toISOString(),
-        banned_reason: reason,
-        updatedt: new Date().toISOString()
+    // Banear usuario usando función RPC con SECURITY DEFINER
+    const { data: banResult, error: updateError } = await supabase
+      .rpc('ban_user', {
+        target_user_id: userId,
+        admin_reason: reason
       })
-      .eq('user_id', userId)
 
-    if (updateError) {
+    if (updateError || !banResult) {
       throw new Error('Error al banear usuario')
     }
 
@@ -258,16 +254,14 @@ export const unbanUser = async (userId, reason, adminId) => {
       throw new Error('El usuario no está baneado')
     }
 
-    // Desbanear usuario
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ 
-        banned: false,
-        updatedt: new Date().toISOString()
+    // Desbanear usuario usando función RPC con SECURITY DEFINER
+    const { data: unbanResult, error: updateError } = await supabase
+      .rpc('unban_user', {
+        target_user_id: userId,
+        admin_reason: reason || 'Desbaneo administrativo'
       })
-      .eq('user_id', userId)
 
-    if (updateError) {
+    if (updateError || !unbanResult) {
       throw new Error('Error al desbanear usuario')
     }
 
@@ -344,17 +338,14 @@ export const verifyUser = async (userId, reason, adminId) => {
       throw new Error('El usuario ya está verificado')
     }
 
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ 
-        verified: true,
-        verified_at: new Date().toISOString(),
-        verified_by: adminId,
-        updatedt: new Date().toISOString()
+    // Verificar usuario usando función RPC con SECURITY DEFINER
+    const { data: verifyResult, error: updateError } = await supabase
+      .rpc('verify_user', {
+        target_user_id: userId,
+        admin_user_id: adminId
       })
-      .eq('user_id', userId)
 
-    if (updateError) {
+    if (updateError || !verifyResult) {
       throw new Error('Error al verificar usuario')
     }
 
@@ -397,17 +388,14 @@ export const unverifyUser = async (userId, reason, adminId) => {
       throw new Error('El usuario no está verificado')
     }
 
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ 
-        verified: false,
-        verified_at: null,
-        verified_by: null,
-        updatedt: new Date().toISOString()
+    // Desverificar usuario usando función RPC con SECURITY DEFINER
+    const { data: unverifyResult, error: updateError } = await supabase
+      .rpc('unverify_user', {
+        target_user_id: userId,
+        admin_user_id: adminId
       })
-      .eq('user_id', userId)
 
-    if (updateError) {
+    if (updateError || !unverifyResult) {
       throw new Error('Error al desverificar usuario')
     }
 

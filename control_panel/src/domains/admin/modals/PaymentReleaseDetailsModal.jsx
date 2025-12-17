@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -10,7 +11,9 @@ import {
   Chip,
   Stack,
   Link,
-  Paper
+  Paper,
+  Alert,
+  CircularProgress
 } from '@mui/material'
 import {
   Info as InfoIcon,
@@ -24,14 +27,50 @@ import {
   daysBetween,
   STATUS,
   STATUS_COLORS,
-  STATUS_LABELS
+  STATUS_LABELS,
+  getSupplierBankInfo
 } from '../services/adminPaymentReleaseService'
 
 const PaymentReleaseDetailsModal = ({ open, onClose, release }) => {
   if (!release) return null
 
-  const daysSinceDelivery = release.delivered_at
-    ? daysBetween(release.delivered_at, new Date())
+  const [bankInfo, setBankInfo] = useState(null)
+  const [bankInfoLoading, setBankInfoLoading] = useState(false)
+  const [bankInfoError, setBankInfoError] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const run = async () => {
+      if (!open || !release?.supplier_id) return
+      setBankInfoLoading(true)
+      setBankInfoError(null)
+      try {
+        const response = await getSupplierBankInfo(release.supplier_id)
+        if (cancelled) return
+        if (response?.success) {
+          setBankInfo(response.data || null)
+        } else {
+          setBankInfo(null)
+          setBankInfoError(response?.error || 'No fue posible cargar la información bancaria')
+        }
+      } catch (err) {
+        if (cancelled) return
+        setBankInfo(null)
+        setBankInfoError(err?.message || 'No fue posible cargar la información bancaria')
+      } finally {
+        if (!cancelled) setBankInfoLoading(false)
+      }
+    }
+
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [open, release?.supplier_id])
+
+  const daysSinceDelivery = release.delivery_confirmed_at
+    ? daysBetween(release.delivery_confirmed_at, new Date())
     : 0
 
   const daysSinceRelease = release.released_at
@@ -164,6 +203,58 @@ const PaymentReleaseDetailsModal = ({ open, onClose, release }) => {
           </Stack>
         </Paper>
 
+        {/* Información de transferencia */}
+        <Paper sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
+          <Typography variant="subtitle2" gutterBottom fontWeight={600}>
+            Información de Transferencia
+          </Typography>
+          <Divider sx={{ my: 1.5 }} />
+
+          {bankInfoLoading ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CircularProgress size={18} />
+              <Typography variant="body2" color="text.secondary">
+                Cargando información bancaria...
+              </Typography>
+            </Box>
+          ) : bankInfoError ? (
+            <Alert severity="error">
+              {bankInfoError}
+            </Alert>
+          ) : bankInfo ? (
+            <Stack spacing={1.5}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                <Typography variant="body2" color="text.secondary">Titular:</Typography>
+                <Typography variant="body2" fontWeight={500}>{bankInfo.account_holder || 'N/A'}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                <Typography variant="body2" color="text.secondary">RUT:</Typography>
+                <Typography variant="body2" fontWeight={500}>{bankInfo.transfer_rut || 'N/A'}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                <Typography variant="body2" color="text.secondary">Banco:</Typography>
+                <Typography variant="body2" fontWeight={500}>{bankInfo.bank || 'N/A'}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                <Typography variant="body2" color="text.secondary">Tipo de cuenta:</Typography>
+                <Typography variant="body2" fontWeight={500}>{bankInfo.account_type || 'N/A'}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                <Typography variant="body2" color="text.secondary">N° de cuenta:</Typography>
+                <Typography variant="body2" fontWeight={500}>{bankInfo.account_number || 'N/A'}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                <Typography variant="body2" color="text.secondary">Email confirmación:</Typography>
+                <Typography variant="body2" fontWeight={500}>{bankInfo.confirmation_email || 'N/A'}</Typography>
+              </Box>
+            </Stack>
+          ) : (
+            <Alert severity="warning">
+              El proveedor no tiene información de transferencia registrada.
+            </Alert>
+          )}
+        </Paper>
+
         {/* Fechas importantes */}
         <Paper sx={{ p: 2, mb: 3 }}>
           <Typography variant="subtitle2" gutterBottom fontWeight={600}>
@@ -186,7 +277,7 @@ const PaymentReleaseDetailsModal = ({ open, onClose, release }) => {
                 Fecha de entrega:
               </Typography>
               <Typography variant="body2">
-                {formatDate(release.delivered_at)}
+                {formatDate(release.delivery_confirmed_at)}
               </Typography>
             </Box>
 

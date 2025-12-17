@@ -130,6 +130,7 @@ export function splitOrderBySupplier(order) {
       if (node) {
   if (node.status) part.status = pickMoreAdvanced(part.status, node.status);
         if (node.estimated_delivery_date) part.estimated_delivery_date = node.estimated_delivery_date;
+        if (node.delivered_at) part.delivered_at = node.delivered_at;
       }
     }
     if (DEBUG_SPLIT_SUPPLIERS) {
@@ -243,6 +244,7 @@ export function splitOrderBySupplier(order) {
       const node = supplierMeta[entry.sid];
   if (node.status) part.status = pickMoreAdvanced(part.status, node.status);
       if (node.estimated_delivery_date) part.estimated_delivery_date = node.estimated_delivery_date;
+      if (node.delivered_at) part.delivered_at = node.delivered_at;
     }
   // debug disabled in production
     parts.push(part);

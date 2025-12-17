@@ -46,6 +46,7 @@ import {
   replaceLoadingWithError,
 } from '../../../../utils/toastHelpers';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../../../../infrastructure/providers';
 
 // Error Boundaries
 import {
@@ -408,6 +409,21 @@ const AddProduct = () => {
   const editProductId = searchParams.get('edit');
   const isEditMode = Boolean(editProductId);
   const supplierId = localStorage.getItem('user_id');
+
+  // Autenticación y verificación
+  const { userProfile, loadingUserStatus } = useAuth();
+
+  // Route Guard: Redirigir si no está verificado
+  useEffect(() => {
+    // No redirigir mientras está cargando el perfil
+    if (loadingUserStatus) return;
+
+    // Si el perfil está cargado y verified es false, redirigir a home
+    if (userProfile && !userProfile.verified) {
+      console.warn('⚠️ Usuario no verificado, redirigiendo a /supplier/home');
+      navigate('/supplier/home', { replace: true });
+    }
+  }, [userProfile, loadingUserStatus, navigate]);
 
   // Hooks modularizados
   const {
