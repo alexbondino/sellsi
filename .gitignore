@@ -6,3 +6,6 @@ scripts/
 sellsi/Documentacion/
 sellsi/scripts/
 sellsi/sql/
+
+# Ignore folio folder generated files
+/sellsi/src/workspaces/invoicer/folio/

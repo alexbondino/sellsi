@@ -38,6 +38,7 @@ import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import useCartStore from '../../../shared/stores/cart/cartStore';
 import { useAdvancedPriceCalculation, useCartStats } from '../../../shared/stores/cart';
 import { calculateRealShippingCost } from '../../../utils/shippingCalculation';
+import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 import {
   CartHeader,
   ShippingProgressBar,
@@ -144,6 +145,61 @@ const BuyerCart = () => {
   };
 
   const cartStats = useCartStats(items);
+
+  // ===== VALIDACIÓN DE COMPRA MÍNIMA POR PROVEEDOR =====
+  const supplierMinimumValidation = useMemo(() => {
+    // Agrupar productos por proveedor y calcular totales
+    const bySupplier = items.reduce((acc, item) => {
+      const supplierId = item.supplier_id || item.supplierId;
+      const supplierName = item.proveedor || item.supplier || `Proveedor #${supplierId}`;
+      const minimumAmount = item.minimum_purchase_amount || 0;
+      
+      if (!supplierId) return acc; // Skip items sin supplier_id
+      
+      if (!acc[supplierId]) {
+        acc[supplierId] = {
+          name: supplierName,
+          minimumAmount: minimumAmount,
+          currentTotal: 0,
+          products: []
+        };
+      }
+      
+      // Sumar total del producto SIN incluir envío
+      // Considerar price tiers si existen (misma lógica que sumSubtotal)
+      let itemTotal = 0;
+      if (item.price_tiers && item.price_tiers.length > 0) {
+        const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0;
+        const calculatedPrice = calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
+        itemTotal = calculatedPrice * (item.quantity || 0);
+      } else {
+        itemTotal = (Number(item.price) || 0) * (item.quantity || 0);
+      }
+      
+      acc[supplierId].currentTotal += itemTotal;
+      acc[supplierId].products.push(item);
+      
+      return acc;
+    }, {});
+    
+    // Filtrar solo los proveedores que NO cumplen con el mínimo
+    const violations = Object.entries(bySupplier)
+      .filter(([id, data]) => data.minimumAmount > 0 && data.currentTotal < data.minimumAmount)
+      .map(([id, data]) => ({
+        supplierId: id,
+        supplierName: data.name,
+        minimumAmount: data.minimumAmount,
+        currentTotal: data.currentTotal,
+        missing: data.minimumAmount - data.currentTotal,
+        products: data.products
+      }));
+    
+    return {
+      hasViolations: violations.length > 0,
+      violations: violations,
+      count: violations.length
+    };
+  }, [items]);
 
   // ===== CALCULAR COSTO REAL DE ENVÍO (SOLO MODO SIMPLE) =====
   useEffect(() => {
@@ -609,6 +665,8 @@ const BuyerCart = () => {
                 onSelectAll={handleSelectAll}
                 onDeleteSelected={handleDeleteSelected}
                 totalItems={items.length}
+                // Validación de compra mínima por proveedor
+                supplierMinimumValidation={supplierMinimumValidation}
               />
               
               {/* Barra de progreso hacia envío gratis */}

@@ -216,6 +216,14 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         invalidateBillingInfoCache();
       }
       
+      // ✅ INVALIDAR CACHE DE PRODUCTOS si se actualizó compra mínima o descripción de proveedor
+      const supplierFields = ['minimum_purchase_amount', 'descripcion_proveedor', 'minimumPurchaseAmount', 'descripcionProveedor'];
+      const hasSupplierUpdate = supplierFields.some(field => profileData.hasOwnProperty(field));
+      if (hasSupplierUpdate) {
+        console.log('🛒 Invalidando cache de productos del marketplace por cambio en datos de proveedor');
+        try { window.invalidateProductsCache?.(); } catch(e) {}
+      }
+      
       // Recargar perfil después de actualizar
       await fetchUserProfile();
       

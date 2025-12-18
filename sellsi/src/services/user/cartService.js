@@ -172,7 +172,8 @@ class CartService {
               users!products_supplier_id_fkey (
                 user_nm,
                 logo_url,
-                verified
+                verified,
+                minimum_purchase_amount
               )
             )
           `
@@ -221,7 +222,8 @@ class CartService {
               users!products_supplier_id_fkey (
                 user_nm,
                 logo_url,
-                verified
+                verified,
+                minimum_purchase_amount
               )
             )
           `
@@ -325,6 +327,11 @@ class CartService {
             negotiable: item.products?.negotiable,
             description: item.products?.description,
             supplier_id: item.products?.supplier_id,
+            supplierId: item.products?.supplier_id,
+            
+            // Compra mínima del proveedor (monto en CLP)
+            minimum_purchase_amount: item.products?.users?.minimum_purchase_amount ?? 0,
+            minimumPurchaseAmount: item.products?.users?.minimum_purchase_amount ?? 0,
           };
         });
 
@@ -776,7 +783,7 @@ class CartService {
             productqty,
             product_images (image_url, thumbnail_url, thumbnails, thumbnail_signature),
             product_delivery_regions (id, region, price, delivery_days),
-            users!products_supplier_id_fkey (user_nm, logo_url, verified)
+            users!products_supplier_id_fkey (user_nm, logo_url, verified, minimum_purchase_amount)
           )
         `
         )
@@ -843,6 +850,11 @@ class CartService {
         negotiable: data.products?.negotiable,
         description: data.products?.description,
         supplier_id: data.products?.supplier_id,
+        supplierId: data.products?.supplier_id,
+        
+        // Compra mínima del proveedor (monto en CLP)
+        minimum_purchase_amount: data.products?.users?.minimum_purchase_amount ?? 0,
+        minimumPurchaseAmount: data.products?.users?.minimum_purchase_amount ?? 0,
       };
     } catch (_) {
       return null;

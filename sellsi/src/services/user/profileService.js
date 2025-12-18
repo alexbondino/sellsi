@@ -109,9 +109,10 @@ export const getUserProfile = async (userId, options = {}) => {
         billing_address: billRel?.billing_address || '',
         billing_region: billRel?.billing_region || '',
         billing_commune: billRel?.billing_commune || '',
-        // Defaults
+        // Defaults (preservar campos de tabla users como minimum_purchase_amount, descripcion_proveedor)
         descripcion_proveedor: data?.descripcion_proveedor || '',
         document_types: data?.document_types || [],
+        minimum_purchase_amount: data?.minimum_purchase_amount ?? 0,
       };
 
       profileCache.set(userId, { data: completeProfile, ts: Date.now() });
@@ -155,6 +156,7 @@ export const getUserProfile = async (userId, options = {}) => {
             billing_commune: billingData?.billing_commune || '',
             descripcion_proveedor: userData?.descripcion_proveedor || '',
             document_types: userData?.document_types || [],
+            minimum_purchase_amount: userData?.minimum_purchase_amount ?? 0,
         };
         profileCache.set(userId, { data: completeProfile, ts: Date.now() });
         return completeProfile;
@@ -219,6 +221,10 @@ export const updateUserProfile = async (userId, profileData) => {
       document_types: profileData.document_types !== undefined
         ? profileData.document_types
         : (profileData.documentTypes || []),
+      // Compra mínima (para proveedores)
+      minimum_purchase_amount: profileData.minimum_purchase_amount !== undefined
+        ? profileData.minimum_purchase_amount
+        : (profileData.minimumPurchaseAmount || 0),
     };
 
     // Agregar logo_url solo si se proporciona

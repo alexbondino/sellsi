@@ -111,7 +111,7 @@ const ProductMetadata = ({
       {/* Fila 3: Compra mínima */}
       <Box sx={METADATA_STYLES.stockRow}>
         <Typography variant="body2" sx={METADATA_STYLES.stockText}>
-          <b>Compra mínima producto:</b> {formatNumber(compraMinima)} unidades
+          <b>Unidades mínimas a comprar:</b> {formatNumber(compraMinima)}
         </Typography>
       </Box>
 

@@ -139,25 +139,7 @@ const CollapsibleSummary = ({
             />
           </Stack>
           
-          {/* Mensaje de envío gratis */}
-          {(calculations.shipping || 0) === 0 && (
-            <Box 
-              sx={{ 
-                mt: 2, 
-                p: 1.5, 
-                backgroundColor: 'success.light',
-                borderRadius: 2 
-              }}
-            >
-              <Typography 
-                variant="caption" 
-                color="success.contrastText"
-                sx={{ fontWeight: 600 }}
-              >
-                🎉 ¡Felicidades! Tu envío es gratis
-              </Typography>
-            </Box>
-          )}
+          {/* Mensaje de envío gratis eliminado por petición de UX */}
         </Box>
       </Collapse>
     </Card>

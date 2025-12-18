@@ -14,6 +14,22 @@ function isCacheFresh() {
   return productsCache.data && (Date.now() - productsCache.fetchedAt) < PRODUCTS_CACHE_TTL;
 }
 
+/**
+ * Invalidar cache de productos - útil cuando se actualiza información del proveedor
+ * (ej: minimum_purchase_amount, descripcion_proveedor, etc.)
+ */
+export function invalidateProductsCache() {
+  productsCache.data = null;
+  productsCache.fetchedAt = 0;
+  productsCache.inFlight = null;
+  console.log('🛒 Cache de productos invalidado');
+}
+
+// Exponer globalmente para poder invalidar desde Profile
+if (typeof window !== 'undefined' && !window.invalidateProductsCache) {
+  window.invalidateProductsCache = invalidateProductsCache;
+}
+
 // --- Cache GLOBAL para price summaries (persiste entre navegaciones) ---
 const PRICE_SUMMARY_TTL = Number(ENV.VITE_PRICE_SUMMARY_TTL_MS) || 3 * 60_000; // 3 minutes default
 const globalSummariesCache = new Map(); // id -> { data: summaryObj, ts }

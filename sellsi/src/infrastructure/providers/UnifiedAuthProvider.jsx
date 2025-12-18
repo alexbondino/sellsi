@@ -132,6 +132,9 @@ const performNuclearCleanup = () => {
   try {
     window.invalidateShippingInfoCache?.();
   } catch (e) {}
+  try {
+    window.invalidateProductsCache?.();
+  } catch (e) {}
 
   console.log('✅ Nuclear Cleanup Completado');
 };
@@ -587,6 +590,8 @@ export const UnifiedAuthProvider = ({ children }) => {
     // Product detail pages under marketplace should also use the dashboard layout
     // so the SideBar appears when viewing a product (this was previously shown)
     if (p.startsWith('/marketplace/product')) return true;
+    // Provider catalog should also show the sidebar for consistent navigation
+    if (p.startsWith('/catalog/')) return true;
     return false;
   }, [location.pathname]);
 

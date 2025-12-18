@@ -864,21 +864,18 @@ const ProviderCatalog = () => {
                   gridTemplateColumns: {
                     xs: 'repeat(2, 1fr)', // Móvil: 2 columnas
                     sm: 'repeat(2, 1fr)', // Tablet: 2 columnas
-                    md: 'repeat(4, 1fr)', // Desktop: 4 columnas flexibles
-                    lg: 'repeat(4, 1fr)',
-                    xl: 'repeat(4, 1fr)',
+                    md: 'repeat(4, 1fr)', // Desktop: 4 columnas
+                    lg: 'repeat(4, 1fr)', // Desktop: 4 columnas
+                    xl: 'repeat(4, 1fr)', // Desktop: 4 columnas
                   },
-                  // Separar gap en columnGap (lateral) y rowGap (vertical) para controlar solo espacio horizontal
-                  columnGap: { xs: 1, sm: 1, md: 2, lg: 0, xl: 4 },
+                  columnGap: { xs: 1, sm: 1, md: 2, lg: 3, xl: 1.5 },
                   rowGap: { xs: 1, sm: 1, md: 2, lg: 4, xl: 4 },
                   width: '100%',
                   justifyItems: 'center',
-                  // Ajuste fino: desplazar la grilla ligeramente a la izquierda en pantallas mayores
-                  ml: { xs: 0, sm: 0, md: -2, lg: -3, xl: -5 },
                 }}
               >
                 {filteredProducts.map(product => (
-                  <Box key={product.id} sx={{ width: '100%', maxWidth: '240px' }}>
+                  <Box key={product.id} sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
                     <ProductCard product={product} type="buyer" onAddToCart={handleAddToCart} />
                   </Box>
                 ))}

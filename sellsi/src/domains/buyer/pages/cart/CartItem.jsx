@@ -83,6 +83,37 @@ const CartItem = ({
 }) => {
   // Hook de navegación debe ir dentro del cuerpo del componente
   const navigate = useNavigate();
+
+  // Normaliza nombre de proveedor para slug de URL
+  const normalizeProviderSlug = (providerName) => {
+    return providerName
+      ?.toLowerCase()
+      ?.replace(/\s+/g, '-')
+      ?.replace(/[^\w-]/g, '');
+  };
+
+  // Handler para click en nombre del proveedor
+  const handleSupplierClick = React.useCallback(() => {
+    const providerName = item.proveedor || item.supplier;
+    const supplierId = item.supplier_id || item.supplierId;
+    
+    console.log('🔍 [CartItem] Click en proveedor:', {
+      providerName,
+      supplierId,
+      item
+    });
+    
+    if (!providerName || !supplierId) {
+      console.error('❌ Falta información del proveedor:', { providerName, supplierId });
+      return;
+    }
+    
+    const proveedorSlug = normalizeProviderSlug(providerName);
+    const catalogUrl = `/catalog/${proveedorSlug}/${supplierId}`;
+    console.log('✅ Navegando a:', catalogUrl);
+    navigate(catalogUrl);
+  }, [navigate, item]);
+
   // Construir slug SEO a partir del nombre del producto
   const getProductSlug = (name) => {
     if (!name) return '';
@@ -332,10 +363,18 @@ const CartItem = ({
               >
                 <Typography
                   variant="body1"
+                  onClick={handleSupplierClick}
                   sx={{
                     color: 'primary.main',
                     fontWeight: 600,
                     fontSize: { xs: '0.9rem', md: '0.8rem', lg: '0.9rem' },
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                      color: 'primary.dark',
+                      transform: 'translateX(2px)',
+                    },
                   }}
                 >
                   {item.proveedor || 'Proveedor no encontrado'}
