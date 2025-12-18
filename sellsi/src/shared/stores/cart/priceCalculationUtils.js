@@ -8,7 +8,8 @@ export const sumSubtotal = (items = []) => {
     if (!item) return sum
     if (item.price_tiers && item.price_tiers.length > 0) {
       const price_tiers = item.price_tiers || []
-      const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0
+      // ⚠️ CRÍTICO: Convertir a Number para evitar bypass con valores falsy
+      const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0
       const calculatedPrice = calculatePriceForQuantity(item.quantity, price_tiers, basePrice)
       return sum + calculatedPrice * (item.quantity || 0)
     }

@@ -36,7 +36,8 @@ const CompactCheckoutSummary = ({
   // Compute prices using tier-aware logic (same as desktop CheckoutSummary)
   const getItemPrice = item => {
     if (item.price_tiers && item.price_tiers.length > 0) {
-      const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0;
+      // ⚠️ CRÍTICO: Convertir a Number para evitar bypass con valores falsy
+      const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
       return calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
     }
     return item.price || 0;

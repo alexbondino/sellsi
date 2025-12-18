@@ -7,6 +7,7 @@ import { PAYMENT_STATUS } from '../constants/paymentMethods';
 import { trackUserAction } from '../../../services/security';
 import { default as khipuService } from './khipuService';
 import { default as flowService } from './flowService';
+import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 
 class CheckoutService {
   // ===== ÓRDENES =====
@@ -127,12 +128,130 @@ class CheckoutService {
   }
 
   /**
+   * Validar que el carrito pertenece al usuario
+   * @param {string} cartId - ID del carrito
+   * @param {string} userId - ID del usuario
+   * @throws {Error} Si el carrito no pertenece al usuario
+   */
+  async validateCartOwnership(cartId, userId) {
+    if (!cartId || !userId) return;
+    
+    try {
+      const { data: cart, error } = await supabase
+        .from('carts')
+        .select('user_id')
+        .eq('cart_id', cartId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('[CheckoutService] Error validating cart ownership:', error);
+        throw new Error(`Cart lookup failed: ${error.message}`);
+      }
+      
+      if (!cart) {
+        throw new Error('CART_NOT_FOUND');
+      }
+      
+      if (cart.user_id !== userId) {
+        // Log security violation
+        await trackUserAction('cart_ownership_violation', { 
+          cartId, 
+          userId,
+          cart_owner: cart.user_id 
+        });
+        throw new Error('CART_OWNERSHIP_VIOLATION');
+      }
+    } catch (error) {
+      if (error.message === 'CART_NOT_FOUND' || error.message === 'CART_OWNERSHIP_VIOLATION') {
+        throw error;
+      }
+      console.error('[CheckoutService] Unexpected error in validateCartOwnership:', error);
+      throw new Error(`Cart validation failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Validar compra mínima por proveedor
+   * @param {Array} items - Items del carrito
+   * @throws {Error} Si algún proveedor no cumple su compra mínima
+   */
+  async validateMinimumPurchase(items) {
+    if (!items || items.length === 0) return;
+
+    // Agrupar items por supplier y calcular totales
+    const supplierTotals = items.reduce((acc, item) => {
+      const supplierId = item.supplier_id || item.supplierId;
+      const supplierName = item.proveedor || item.supplier || `Proveedor #${supplierId}`;
+      const minimumAmount = Number(item.minimum_purchase_amount) || 0;
+      
+      if (!supplierId) return acc;
+      
+      if (!acc[supplierId]) {
+        acc[supplierId] = {
+          name: supplierName,
+          minimumAmount: minimumAmount,
+          currentTotal: 0,
+        };
+      }
+      
+      // Calcular total del item (sin envío)
+      // Usar price_effective si existe (ya calculado con tiers/offers), sino calcular
+      let itemTotal = 0;
+      
+      // ⚠️ CRÍTICO: Usar comparación estricta !== (price_effective=0 es válido)
+      if (item.price_effective !== undefined && item.price_effective !== null) {
+        // Frontend ya calculó el precio efectivo
+        itemTotal = Number(item.price_effective) * (Number(item.quantity) || 0);
+      } else if (item.unit_price_effective !== undefined && item.unit_price_effective !== null) {
+        // Viene de finalize_order_pricing
+        itemTotal = Number(item.unit_price_effective) * (Number(item.quantity) || 0);
+      } else if (item.price_tiers && item.price_tiers.length > 0) {
+        // Calcular con tiers - MISMA LÓGICA QUE BuyerCart y PaymentMethod
+        // ⚠️ VALIDAR: Si no hay basePrice válido, usar 0 (será rechazado por SQL)
+        const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
+        const calculatedPrice = calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
+        itemTotal = calculatedPrice * (item.quantity || 0);
+      } else {
+        // Fallback: precio base
+        itemTotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+      }
+      
+      acc[supplierId].currentTotal += itemTotal;
+      
+      return acc;
+    }, {});
+
+    // Verificar cada proveedor
+    const violations = Object.entries(supplierTotals)
+      .filter(([id, data]) => data.minimumAmount > 0 && data.currentTotal < data.minimumAmount)
+      .map(([id, data]) => ({
+        supplierId: id,
+        supplierName: data.name,
+        minimumAmount: data.minimumAmount,
+        currentTotal: data.currentTotal,
+        missing: data.minimumAmount - data.currentTotal,
+      }));
+
+    if (violations.length > 0) {
+      const error = new Error('MINIMUM_PURCHASE_VIOLATION');
+      error.violations = violations;
+      throw error;
+    }
+  }
+
+  /**
    * Crear orden de compra
    * @param {Object} orderData - Datos de la orden
    * @returns {Object} Orden creada
    */
   async createOrder(orderData) {
     try {
+      // ===== VALIDAR PROPIEDAD DEL CARRITO =====
+      await this.validateCartOwnership(orderData.cartId, orderData.userId);
+
+      // ===== VALIDAR COMPRA MÍNIMA POR PROVEEDOR =====
+      await this.validateMinimumPurchase(orderData.items);
+
       // ===== VERIFICAR SI EXISTE ORDEN PENDING REUTILIZABLE =====
       const existingOrder = await this.getOrReuseExistingOrder(
         orderData.cartId, 
@@ -285,6 +404,35 @@ class CheckoutService {
         const { data: sealed, error: sealErr } = await supabase.rpc('finalize_order_pricing', { p_order_id: paymentData.orderId });
         if (sealErr) {
           console.error('[CheckoutService] finalize_order_pricing error:', sealErr);
+          
+          // ⭐ Detección específica de TODOS los errores de validación SQL
+          const errorMessage = sealErr.message || '';
+          
+          if (errorMessage.includes('INSUFFICIENT_STOCK')) {
+            throw new Error('INSUFFICIENT_STOCK');
+          }
+          if (errorMessage.includes('PRODUCT_NOT_FOUND')) {
+            throw new Error('PRODUCT_NOT_FOUND');
+          }
+          if (errorMessage.includes('INVALID_ITEM')) {
+            throw new Error('INVALID_ITEM');
+          }
+          if (errorMessage.includes('INVALID_QUANTITY')) {
+            throw new Error('INVALID_QUANTITY');
+          }
+          if (errorMessage.includes('INVALID_PRODUCT')) {
+            throw new Error('INVALID_PRODUCT');
+          }
+          if (errorMessage.includes('INVALID_SUPPLIER')) {
+            throw new Error('INVALID_SUPPLIER');
+          }
+          if (errorMessage.includes('MINIMUM_PURCHASE_NOT_MET')) {
+            throw new Error('MINIMUM_PURCHASE_NOT_MET');
+          }
+          if (errorMessage.includes('INVALID_ORDER')) {
+            throw new Error('INVALID_ORDER');
+          }
+          
           throw sealErr;
         }
         // sealed puede venir como objeto o como array según supabase client; normalizar
@@ -295,6 +443,20 @@ class CheckoutService {
         console.log('[CheckoutService] Sealed pricing received', { sealedTotalBase, sealedPaymentFee, sealedAmount, request_id: sealedOrder?.request_id });
       } catch (sealEx) {
         console.error('[CheckoutService] No se pudo sellar el precio antes de invocar Khipu:', sealEx);
+        // Re-lanzar errores específicos de validación
+        const validationErrors = [
+          'INSUFFICIENT_STOCK',
+          'PRODUCT_NOT_FOUND',
+          'INVALID_ITEM',
+          'INVALID_QUANTITY',
+          'INVALID_PRODUCT',
+          'INVALID_SUPPLIER',
+          'MINIMUM_PURCHASE_NOT_MET',
+          'INVALID_ORDER'
+        ];
+        if (validationErrors.includes(sealEx.message)) {
+          throw sealEx;
+        }
         throw new Error('No se pudo verificar el precio sellado');
       }
 
@@ -397,6 +559,35 @@ class CheckoutService {
         const { data: sealed, error: sealErr } = await supabase.rpc('finalize_order_pricing', { p_order_id: paymentData.orderId });
         if (sealErr) {
           console.error('[CheckoutService] finalize_order_pricing error (Flow):', sealErr);
+          
+          // ⭐ Detección específica de TODOS los errores de validación SQL
+          const errorMessage = sealErr.message || '';
+          
+          if (errorMessage.includes('INSUFFICIENT_STOCK')) {
+            throw new Error('INSUFFICIENT_STOCK');
+          }
+          if (errorMessage.includes('PRODUCT_NOT_FOUND')) {
+            throw new Error('PRODUCT_NOT_FOUND');
+          }
+          if (errorMessage.includes('INVALID_ITEM')) {
+            throw new Error('INVALID_ITEM');
+          }
+          if (errorMessage.includes('INVALID_QUANTITY')) {
+            throw new Error('INVALID_QUANTITY');
+          }
+          if (errorMessage.includes('INVALID_PRODUCT')) {
+            throw new Error('INVALID_PRODUCT');
+          }
+          if (errorMessage.includes('INVALID_SUPPLIER')) {
+            throw new Error('INVALID_SUPPLIER');
+          }
+          if (errorMessage.includes('MINIMUM_PURCHASE_NOT_MET')) {
+            throw new Error('MINIMUM_PURCHASE_NOT_MET');
+          }
+          if (errorMessage.includes('INVALID_ORDER')) {
+            throw new Error('INVALID_ORDER');
+          }
+          
           throw sealErr;
         }
         const sealedOrder = Array.isArray(sealed) ? sealed[0] : sealed;
@@ -406,6 +597,20 @@ class CheckoutService {
         console.log('[CheckoutService] Flow sealed pricing received', { sealedTotalBase, sealedPaymentFee, sealedAmount });
       } catch (sealEx) {
         console.error('[CheckoutService] No se pudo sellar el precio antes de invocar Flow:', sealEx);
+        // Re-lanzar errores específicos de validación
+        const validationErrors = [
+          'INSUFFICIENT_STOCK',
+          'PRODUCT_NOT_FOUND',
+          'INVALID_ITEM',
+          'INVALID_QUANTITY',
+          'INVALID_PRODUCT',
+          'INVALID_SUPPLIER',
+          'MINIMUM_PURCHASE_NOT_MET',
+          'INVALID_ORDER'
+        ];
+        if (validationErrors.includes(sealEx.message)) {
+          throw sealEx;
+        }
         throw new Error('No se pudo verificar el precio sellado');
       }
 

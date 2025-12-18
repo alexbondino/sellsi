@@ -169,7 +169,8 @@ const BuyerCart = () => {
       // Considerar price tiers si existen (misma lógica que sumSubtotal)
       let itemTotal = 0;
       if (item.price_tiers && item.price_tiers.length > 0) {
-        const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0;
+        // ⚠️ VALIDAR: Convertir a Number explícitamente para evitar bypass con valores falsy
+        const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
         const calculatedPrice = calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
         itemTotal = calculatedPrice * (item.quantity || 0);
       } else {
@@ -623,6 +624,7 @@ const BuyerCart = () => {
               onRemoveItem={handleRemoveWithAnimation}
               formatPrice={formatPrice}
               isCheckingOut={isCheckingOut}
+              supplierMinimumValidation={supplierMinimumValidation}
             />
           </Box>
         ) : (
@@ -783,6 +785,7 @@ const BuyerCart = () => {
                         isCalculatingShipping={isCalculatingShippingCombined}
                         cartItems={items}
                         userRegion={stableUserRegion}
+                        supplierMinimumValidation={supplierMinimumValidation}
                         formatPrice={formatPrice}
                         formatDate={formatDate}
                         onCheckout={handleCheckout}

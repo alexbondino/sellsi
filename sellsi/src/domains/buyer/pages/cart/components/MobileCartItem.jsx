@@ -51,7 +51,8 @@ const MobileCartItem = ({
   const quantity = Number(item.quantity || 1);
   const price_tiers = item.price_tiers || item.priceTiers || item.price_tier || [];
   const basePrice = Number(
-    item.originalPrice || item.precioOriginal || item.price || item.precio || item.price_at_addition || 0
+    // ⚠️ CRÍTICO: Convertir a Number para evitar bypass con valores falsy
+    Number(item.originalPrice || item.precioOriginal || item.price || item.precio || item.price_at_addition) || 0
   );
 
   // calcularPriceForQuantity maneja ausencia de tramos y devuelve basePrice si no hay tramos

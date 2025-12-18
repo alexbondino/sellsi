@@ -245,6 +245,15 @@ export const addItemWithBackend = async (
 ) => {
   const state = get();
 
+  // ⚠️ CRÍTICO: Validar quantity antes de cualquier operación
+  if (!quantity || quantity <= 0) {
+    console.warn('[cartStore.backend] Cantidad inválida, debe ser mayor a 0:', quantity);
+    set({
+      error: 'La cantidad debe ser mayor a 0',
+    });
+    return false;
+  }
+
   // Si no hay usuario autenticado, usar función local
   if (!state.userId || !state.cartId) {
     return false;

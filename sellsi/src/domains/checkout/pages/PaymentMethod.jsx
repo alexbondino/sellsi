@@ -24,6 +24,9 @@ import { useCheckout } from '../hooks'
 // Utilidades de cálculo de envío
 import { calculateRealShippingCost } from '../../../utils/shippingCalculation'
 
+// Utilidades de cálculo de precios (para validar compra mínima con tiers)
+import { calculatePriceForQuantity } from '../../../utils/priceCalculation'
+
 // Servicios
 import { getUserProfileData } from '../../../services/user/profileService'
 
@@ -53,6 +56,48 @@ const PaymentMethod = () => {
     // Verificar que haya productos en el carrito
     if (!items || items.length === 0) {
       // Silenciosamente redirigir al carrito sin mostrar toast
+      navigate('/buyer/cart', { replace: true })
+      return
+    }
+
+    // ⭐ NEW: Validar compra mínima por proveedor
+    const supplierMinimumValidation = items.reduce((acc, item) => {
+      const supplierId = item.supplier_id || item.supplierId;
+      const minimumAmount = Number(item.minimum_purchase_amount) || 0;
+      
+      if (!supplierId) return acc;
+      
+      if (!acc[supplierId]) {
+        acc[supplierId] = {
+          name: item.proveedor || item.supplier || `Proveedor #${supplierId}`,
+          minimumAmount: minimumAmount,
+          currentTotal: 0,
+        };
+      }
+      
+      // Calcular total del item (sin envío) - MISMA LÓGICA QUE BuyerCart
+      let itemTotal = 0;
+      if (item.price_tiers && item.price_tiers.length > 0) {
+        // ⚠️ VALIDAR: Convertir a Number explícitamente para evitar bypass con valores falsy
+        const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
+        const calculatedPrice = calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
+        itemTotal = calculatedPrice * (item.quantity || 0);
+      } else {
+        itemTotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+      }
+      
+      acc[supplierId].currentTotal += itemTotal;
+      
+      return acc;
+    }, {});
+
+    // Verificar violaciones
+    const hasViolations = Object.values(supplierMinimumValidation).some(
+      data => data.minimumAmount > 0 && data.currentTotal < data.minimumAmount
+    );
+
+    // Si hay violaciones, redirigir al carrito silenciosamente
+    if (hasViolations) {
       navigate('/buyer/cart', { replace: true })
       return
     }

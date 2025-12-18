@@ -40,7 +40,8 @@ const MobilePaymentLayout = ({
     const items = orderData?.items || [];
     // Use tier-aware price calculation
     const totalBruto = items.reduce((acc, item) => {
-      const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0;
+      // ⚠️ CRÍTICO: Convertir a Number para evitar bypass con valores falsy
+      const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
       const unit = item.price_tiers && item.price_tiers.length > 0
         ? calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice)
         : (item.price || 0);

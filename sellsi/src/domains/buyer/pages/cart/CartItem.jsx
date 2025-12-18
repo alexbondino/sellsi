@@ -152,7 +152,8 @@ const CartItem = ({
     image: item.image || item.imagen || '/placeholder-product.jpg',
     price_tiers: item.price_tiers || [],
     minimum_purchase: item.minimum_purchase || item.compraMinima || 1,
-    basePrice: item.originalPrice || item.precioOriginal || item.price || item.precio || 0,
+    // ⚠️ CRÍTICO: Convertir a Number para evitar bypass con valores falsy
+    basePrice: Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0,
     maxStock: item.maxStock || item.stock || 50
   }), [item])
 

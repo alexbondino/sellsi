@@ -7,6 +7,7 @@ import MobileCartHeader from './MobileCartHeader';
 import CollapsibleSummary from './CollapsibleSummary';
 import MobileCartItem from './MobileCartItem';
 import MobileCheckoutBar from './MobileCheckoutBar';
+import MinimumPurchaseWarning from './MinimumPurchaseWarning';
 
 const MobileCartLayout = ({ 
   items = [],
@@ -17,7 +18,8 @@ const MobileCartLayout = ({
   onQuantityChange,
   onRemoveItem,
   formatPrice,
-  isCheckingOut = false
+  isCheckingOut = false,
+  supplierMinimumValidation = null
 }) => {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
 
@@ -37,6 +39,13 @@ const MobileCartLayout = ({
           onToggle={() => setSummaryExpanded(!summaryExpanded)}
           formatPrice={formatPrice}
           itemCount={items.length}
+        />
+        
+        {/* Validación de compra mínima por proveedor */}
+        <MinimumPurchaseWarning
+          validation={supplierMinimumValidation}
+          isSelectionMode={false}
+          formatPrice={formatPrice}
         />
         
         {/* Lista de productos */}
