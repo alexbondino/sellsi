@@ -5,17 +5,23 @@ const pad = n => (n < 10 ? `0${n}` : `${n}`);
 
 const toISODate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-// Feriados configurables por año (vacío por defecto para evitar falsos positivos)
+// Feriados configurables por año (agregar los feriados oficiales)
 const CHILE_HOLIDAYS_2025 = new Set([
-  // Ejemplos (agregar según necesidad):
-  // '2025-01-01', // Año Nuevo
-  // '2025-03-24', // (Ej) Día trasladado
-  // '2025-04-18', // Viernes Santo
-  // '2025-05-01', // Día del Trabajador
-  // '2025-05-21', // Glorias Navales
-  // '2025-09-18', // Independencia
-  // '2025-09-19', // Glorias del Ejército
-  // '2025-12-25', // Navidad
+  '2025-01-01', // Año Nuevo
+  '2025-04-18', // Viernes Santo
+  '2025-04-19', // Sábado Santo (si aplica)
+  '2025-05-01', // Día del Trabajador
+  '2025-05-21', // Glorias Navales
+  '2025-06-29', // San Pedro y San Pablo (si aplica)
+  '2025-07-16', // Virgen del Carmen (si aplica)
+  '2025-08-15', // Asunción de la Virgen
+  '2025-09-18', // Independencia
+  '2025-09-19', // Glorias del Ejército
+  '2025-10-12', // Día del Descubrimiento de Dos Mundos
+  '2025-10-31', // Día de las Iglesias Evangélicas y Protestantes
+  '2025-11-01', // Día de Todos los Santos
+  '2025-12-08', // Inmaculada Concepción
+  '2025-12-25', // Navidad
 ]);
 
 const HOLIDAYS_BY_YEAR = {
