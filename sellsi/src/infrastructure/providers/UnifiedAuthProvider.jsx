@@ -27,6 +27,7 @@ import useProductSpecifications from '../../workspaces/supplier/shared-hooks/use
 import useProductPriceTiers from '../../workspaces/supplier/shared-hooks/useProductPriceTiers';
 import useProductBackground from '../../workspaces/supplier/shared-hooks/useProductBackground';
 import useProductCleanup from '../../workspaces/supplier/shared-hooks/useProductCleanup';
+import { STORAGE_KEY } from '../../shared/stores/cart/cartStore.constants';
 
 // Unified Auth + Role Context
 const UnifiedAuthContext = createContext();
@@ -155,7 +156,7 @@ const performNuclearCleanup = () => {
     'access_token',
     'auth_token',
     'currentAppRole',
-    'sellsi-cart-v3-refactored',
+    STORAGE_KEY,
     'notifications_forced_read',
     'notifications_read_buffer',
   ].forEach(k => {
