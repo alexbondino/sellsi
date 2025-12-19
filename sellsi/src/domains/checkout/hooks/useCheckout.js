@@ -23,10 +23,8 @@ const useCheckout = create(
       orderData: {
         items: [],
         subtotal: 0,
-        tax: 0,
-        serviceFee: 0,
         shipping: 0,
-        total: 0,
+        total: 0, // Total base: subtotal + shipping (sin fee de pago)
         currency: 'CLP'
       },
       
@@ -43,10 +41,8 @@ const useCheckout = create(
           orderData: {
             items: cartData.items || [],
             subtotal: cartData.subtotal || 0,
-            tax: cartData.tax || Math.round((cartData.subtotal || 0) * 0.19), // IVA 19%
-            serviceFee: cartData.serviceFee || Math.round((cartData.subtotal || 0) * 0.03), // Comisión 3%
             shipping: cartData.shipping || 0,
-            total: cartData.total || 0,
+            total: cartData.total || 0, // Total base: subtotal + shipping
             currency: 'CLP',
             // ✅ CRÍTICO: Guardar direcciones del perfil
             shippingAddress: cartData.shippingAddress || null,

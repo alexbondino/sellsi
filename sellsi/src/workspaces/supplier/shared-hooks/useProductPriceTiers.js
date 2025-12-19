@@ -389,6 +389,17 @@ const useProductPriceTiers = create((set, get) => ({
       tierCost,
     };
   },
+
+  /**
+   * Reset del store
+   */
+  reset: () => {
+    set({
+      loading: false,
+      error: null,
+      processingTiers: {},
+    });
+  },
 }));
 
 export default useProductPriceTiers;

@@ -1043,6 +1043,7 @@ const useSupplierProductsBase = create((set, get) => ({
         deleting: {},
         updating: {},
         creating: false,
+        processing: {},
       },
     });
   },
@@ -1090,6 +1091,50 @@ try {
       }
     });
     __BASE_THUMBS_LISTENER_ATTACHED = true;
+  }
+} catch (_) {
+  /* noop */
+}
+
+// Listener para limpiar productos cuando cambia el usuario (logout/login)
+let __BASE_USER_CHANGED_LISTENER_ATTACHED = false;
+try {
+  if (
+    typeof window !== 'undefined' &&
+    !__BASE_USER_CHANGED_LISTENER_ATTACHED
+  ) {
+    window.addEventListener('user-changed', event => {
+      try {
+        const newUserId = event?.detail?.userId;
+        const currentProducts = useSupplierProductsBase.getState().products;
+
+        // Si cambió el usuario y hay productos en memoria, verificar si son del usuario correcto
+        if (currentProducts && currentProducts.length > 0) {
+          const firstProductSupplierId = currentProducts[0]?.supplier_id;
+
+          // Si el supplier_id de los productos actuales no coincide con el nuevo userId, limpiar
+          if (
+            firstProductSupplierId &&
+            newUserId &&
+            firstProductSupplierId !== newUserId
+          ) {
+            console.log(
+              '🧹 User changed - Clearing supplier products (different user detected)'
+            );
+            useSupplierProductsBase.getState().reset();
+          }
+        }
+
+        // Si se hizo logout (userId === null), limpiar también
+        if (newUserId === null && currentProducts.length > 0) {
+          console.log('🧹 User logged out - Clearing supplier products');
+          useSupplierProductsBase.getState().reset();
+        }
+      } catch (e) {
+        console.debug('Error in user-changed listener:', e);
+      }
+    });
+    __BASE_USER_CHANGED_LISTENER_ATTACHED = true;
   }
 } catch (_) {
   /* noop */

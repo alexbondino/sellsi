@@ -126,7 +126,9 @@ const PaymentMethodSelector = () => {
     try {
       setSelectedMethodId(methodId);
       selectMethod(methodId);
-      const isValid = await validateMethod(methodId, orderData.total);
+      // ✅ FIX: Validar con baseTotal (sin fee de pago) ya que el fee se agrega después
+      // baseTotal es el total que se usa para calcular el fee del método de pago
+      const isValid = await validateMethod(methodId, baseTotal);
       if (isValid) {
         selectPaymentMethod(availableMethods.find(m => m.id === methodId));
         const currentSelectedMethod = availableMethods.find(

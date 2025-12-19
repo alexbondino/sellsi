@@ -455,6 +455,22 @@ const useSupplierProductsCRUD = create((set, get) => ({
   clearError: () => set({ error: null }),
 
   /**
+   * Reset del store
+   */
+  reset: () => {
+    set({
+      products: [],
+      loading: false,
+      error: null,
+      operationStates: {
+        deleting: {},
+        updating: {},
+        creating: false,
+      },
+    });
+  },
+
+  /**
    * Actualizar parcialmente un producto en memoria (optimista, sin I/O)
    */
   updateLocalProduct: (productId, partial) => {
@@ -567,6 +583,50 @@ try {
       }
     });
     __CRUD_THUMBS_LISTENER_ATTACHED = true;
+  }
+} catch (_) {
+  /* noop */
+}
+
+// Listener para limpiar productos cuando cambia el usuario (logout/login)
+let __CRUD_USER_CHANGED_LISTENER_ATTACHED = false;
+try {
+  if (
+    typeof window !== 'undefined' &&
+    !__CRUD_USER_CHANGED_LISTENER_ATTACHED
+  ) {
+    window.addEventListener('user-changed', event => {
+      try {
+        const newUserId = event?.detail?.userId;
+        const currentProducts = useSupplierProductsCRUD.getState().products;
+
+        // Si cambió el usuario y hay productos en memoria, verificar si son del usuario correcto
+        if (currentProducts && currentProducts.length > 0) {
+          const firstProductSupplierId = currentProducts[0]?.supplier_id;
+
+          // Si el supplier_id de los productos actuales no coincide con el nuevo userId, limpiar
+          if (
+            firstProductSupplierId &&
+            newUserId &&
+            firstProductSupplierId !== newUserId
+          ) {
+            console.log(
+              '🧹 User changed - Clearing supplier products CRUD (different user detected)'
+            );
+            useSupplierProductsCRUD.getState().reset();
+          }
+        }
+
+        // Si se hizo logout (userId === null), limpiar también
+        if (newUserId === null && currentProducts.length > 0) {
+          console.log('🧹 User logged out - Clearing supplier products CRUD');
+          useSupplierProductsCRUD.getState().reset();
+        }
+      } catch (e) {
+        console.debug('Error in user-changed listener (CRUD):', e);
+      }
+    });
+    __CRUD_USER_CHANGED_LISTENER_ATTACHED = true;
   }
 } catch (_) {
   /* noop */

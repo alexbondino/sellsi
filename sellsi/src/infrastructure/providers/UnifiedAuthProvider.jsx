@@ -19,6 +19,14 @@ import { useOfferStore } from '../../stores/offerStore';
 import useCartHistory from '../../shared/stores/cart/useCartHistory';
 import { useNotificationsStore } from '../../domains/notifications/store/notificationsStore';
 import { queryClient } from '../../utils/queryClient';
+import useSupplierProductsBase from '../../workspaces/supplier/shared-hooks/useSupplierProductsBase';
+import useSupplierProductsCRUD from '../../workspaces/supplier/shared-hooks/useSupplierProductsCRUD';
+import useSupplierProductFilters from '../../workspaces/supplier/shared-hooks/useSupplierProductFilters';
+import useProductImages from '../../workspaces/supplier/shared-hooks/useProductImages';
+import useProductSpecifications from '../../workspaces/supplier/shared-hooks/useProductSpecifications';
+import useProductPriceTiers from '../../workspaces/supplier/shared-hooks/useProductPriceTiers';
+import useProductBackground from '../../workspaces/supplier/shared-hooks/useProductBackground';
+import useProductCleanup from '../../workspaces/supplier/shared-hooks/useProductCleanup';
 
 // Unified Auth + Role Context
 const UnifiedAuthContext = createContext();
@@ -70,6 +78,48 @@ const performNuclearCleanup = () => {
     useNotificationsStore.getState().reset?.();
   } catch (e) {
     console.debug('notifications reset:', e);
+  }
+
+  // 2.1 Stores de Productos del Proveedor (Bug: productos de cuenta anterior visibles)
+  try {
+    useSupplierProductsBase.getState().reset?.();
+  } catch (e) {
+    console.debug('supplier products base reset:', e);
+  }
+  try {
+    useSupplierProductsCRUD.getState().reset?.();
+  } catch (e) {
+    console.debug('supplier products CRUD reset:', e);
+  }
+  try {
+    useSupplierProductFilters.getState().reset?.();
+  } catch (e) {
+    console.debug('supplier filters reset:', e);
+  }
+  try {
+    useProductImages.getState().reset?.();
+  } catch (e) {
+    console.debug('product images reset:', e);
+  }
+  try {
+    useProductSpecifications.getState().reset?.();
+  } catch (e) {
+    console.debug('product specifications reset:', e);
+  }
+  try {
+    useProductPriceTiers.getState().reset?.();
+  } catch (e) {
+    console.debug('product price tiers reset:', e);
+  }
+  try {
+    useProductBackground.getState().reset?.();
+  } catch (e) {
+    console.debug('product background reset:', e);
+  }
+  try {
+    useProductCleanup.getState().reset?.();
+  } catch (e) {
+    console.debug('product cleanup reset:', e);
   }
 
   // 3. React Query (Bug 20) - Cache de 15-30min

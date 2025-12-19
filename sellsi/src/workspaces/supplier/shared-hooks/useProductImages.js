@@ -259,8 +259,19 @@ const useProductImages = create((set, get) => ({
     } catch (error) {
       return {
         error: error.message,
-      };
-    }
+      };    }
+  },
+
+  /**
+   * Reset del store
+   */
+  reset: () => {
+    set({
+      loading: false,
+      error: null,
+      processingImages: {},
+      cacheService: null,
+    });
   },
 }));
 

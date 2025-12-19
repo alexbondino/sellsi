@@ -142,13 +142,13 @@ const PaymentMethod = () => {
         // En caso de error, dejamos que el flujo continue y la validación server-side la confirme
       }
 
-      const subtotal = getSubtotal()
-      const tax = Math.round(subtotal * 0.19) // IVA 19%
-      const serviceFee = Math.round(subtotal * 0.03) // Comisión por servicio 3%
+      const subtotal = getSubtotal() // Subtotal YA incluye IVA (precios en Chile tienen IVA incluido)
       
       // ✅ NUEVO: Calcular costo REAL de envío basado en regiones de despacho
       const shipping = await calculateRealShippingCost(items)
-      const total = subtotal + tax + serviceFee + shipping
+      // Total base (sin fee de método de pago): subtotal + shipping
+      // El fee del método de pago se calculará después en CheckoutSummary
+      const total = subtotal + shipping
       
       // ✅ CRÍTICO: Obtener datos del perfil para direcciones
       const userId = localStorage.getItem('user_id')
@@ -221,10 +221,8 @@ const PaymentMethod = () => {
       const cartData = {
         items: items,
         subtotal: subtotal,
-        tax: tax,
-        serviceFee: serviceFee,
         shipping: shipping,
-        total: total,
+        total: total, // Total base: subtotal + shipping (sin fee de pago)
         currency: 'CLP',
         // ✅ NUEVO: Incluir direcciones capturadas del perfil
         shippingAddress: shippingAddress,

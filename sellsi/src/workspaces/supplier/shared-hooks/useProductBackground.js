@@ -564,6 +564,16 @@ const useProductBackground = create((set, get) => ({
 
     return Math.max(0, remaining);
   },
+
+  /**
+   * Reset del store
+   */
+  reset: () => {
+    set({
+      backgroundTasks: {},
+      error: null,
+    });
+  },
 }));
 
 export default useProductBackground;
