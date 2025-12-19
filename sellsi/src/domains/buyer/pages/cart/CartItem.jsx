@@ -420,32 +420,59 @@ const CartItem = ({
               }}
             >
               {/* Controles de cantidad centrados */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  width: '100%',
-                  opacity: isSelectionMode ? 0.5 : 1,
-                }}
-              >
-                <QuantitySelector
-                  value={item.quantity}
-                  onChange={handleQuantityChange}
-                  min={item.minimum_purchase || item.compraMinima || 1}
-                  max={item.maxStock}
-                  showStockLimit={true}
-                  size="small"
-                  disabled={isSelectionMode}
+              {/* ⚠️ CRÍTICO: Ocultar quantity selector si el producto está ofertado */}
+              {/* Los productos ofertados tienen cantidad fija que no puede modificarse */}
+              {!item.offer_id && !item.offerId && (
+                <Box
                   sx={{
-                    alignSelf: 'center',
-                    justifyContent: 'center',
                     display: 'flex',
-                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    opacity: isSelectionMode ? 0.5 : 1,
                   }}
-                  stockText={undefined}
-                />
-              </Box>
+                >
+                  <QuantitySelector
+                    value={item.quantity}
+                    onChange={handleQuantityChange}
+                    min={item.minimum_purchase || item.compraMinima || 1}
+                    max={item.maxStock}
+                    showStockLimit={true}
+                    size="small"
+                    disabled={isSelectionMode}
+                    sx={{
+                      alignSelf: 'center',
+                      justifyContent: 'center',
+                      display: 'flex',
+                      flexDirection: 'row',
+                    }}
+                    stockText={undefined}
+                  />
+                </Box>
+              )}
+              {/* Mostrar cantidad fija para productos ofertados */}
+              {(item.offer_id || item.offerId) && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    py: 1,
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 600,
+                      color: 'text.primary',
+                      fontSize: { xs: '0.9rem', md: '0.85rem', lg: '0.9rem' },
+                    }}
+                  >
+                    Cantidad: {item.quantity} uds (oferta)
+                  </Typography>
+                </Box>
+              )}
               {/* Información de stock centrada */}
               <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
                 <StockIndicator

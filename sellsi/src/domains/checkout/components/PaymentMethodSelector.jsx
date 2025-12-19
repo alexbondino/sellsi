@@ -30,6 +30,7 @@ import checkoutService from '../services/checkoutService'; // Corregido
 import { trackUserAction } from '../../../services/security';
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 import useCartStore from '../../../shared/stores/cart/cartStore';
+import { useAuth } from '../../../infrastructure/providers/UnifiedAuthProvider';
 
 // Componentes UI
 import CheckoutSummary from './CheckoutSummary';
@@ -44,6 +45,7 @@ import MobilePaymentLayout from './MobilePaymentLayout';
 const PaymentMethodSelector = () => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const { session } = useAuth();
 
   // ===== DETECCIÓN DE MOBILE =====
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -134,9 +136,13 @@ const PaymentMethodSelector = () => {
         const currentSelectedMethod = availableMethods.find(
           m => m.id === methodId
         );
-        await trackUserAction(
-          `payment_method_selected_${currentSelectedMethod?.name || methodId}`
-        );
+        // Solo trackear si hay usuario autenticado
+        if (session?.user?.id) {
+          await trackUserAction(
+            session.user.id,
+            `payment_method_selected_${currentSelectedMethod?.name || methodId}`
+          );
+        }
         clearError();
       }
     } catch (error) {

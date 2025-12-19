@@ -201,14 +201,34 @@ const MobileCartItem = ({
             
             {/* Controles derecha */}
             <Stack alignItems="center" spacing={1.5} sx={{ flexShrink: 0 }}>
-              {/* Control cantidad */}
-              <MobileQuantityControl
-                value={item.quantity || 1}
-                onChange={(qty) => onUpdate(item.id, qty)}
-                min={1}
-                max={item.stock || 99}
-                size="small"
-              />
+              {/* Control cantidad - oculto si el producto está ofertado */}
+              {!item.offer_id && !item.offerId && (
+                <MobileQuantityControl
+                  value={item.quantity || 1}
+                  onChange={(qty) => onUpdate(item.id, qty)}
+                  min={1}
+                  max={item.stock || 99}
+                  size="small"
+                />
+              )}
+              
+              {/* Mostrar cantidad fija para productos ofertados */}
+              {(item.offer_id || item.offerId) && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: 'text.primary',
+                    fontSize: '0.85rem',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    bgcolor: 'rgba(0,0,0,0.04)',
+                  }}
+                >
+                  {item.quantity} uds
+                </Typography>
+              )}
               
               {/* Botones en fila horizontal */}
               <Stack direction="row" spacing={1} alignItems="center">

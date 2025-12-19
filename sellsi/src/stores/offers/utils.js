@@ -38,6 +38,7 @@ export function getOfferStatusConfig(offer) {
     case OFFER_STATES.PENDING:
       return { color: 'warning', label: 'Pendiente', description: 'Esperando respuesta del proveedor', actionable: true };
     case OFFER_STATES.ACCEPTED:
+    case 'accepted': // Backend puede devolver 'accepted' antes de normalizar
       return { color: 'success', label: 'Aceptada', description: 'Tienes 24h para agregar al carrito', actionable: true };
     case OFFER_STATES.RESERVED:
       return { color: 'info', label: 'Reservada', description: 'Agregada al carrito (pendiente de pago)', actionable: false };

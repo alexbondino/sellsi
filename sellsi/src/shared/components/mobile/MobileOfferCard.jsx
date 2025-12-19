@@ -83,8 +83,9 @@ const MobileOfferCard = ({ variant, data, fullOffer, onAction, isMobile }) => {
     if (variant === 'supplier') {
       return {
         ...base,
-        approved: { color: 'success', label: 'Aceptada' }, // Desktop: Aceptada
-        paid: { color: 'success', label: 'Aceptada' }, // Desktop: Aceptada
+        accepted: { color: 'success', label: 'Aceptada' }, // Backend devuelve 'accepted'
+        approved: { color: 'success', label: 'Aceptada' }, // Normalizado a 'approved'
+        paid: { color: 'success', label: 'Aceptada' },
       }
     }
 

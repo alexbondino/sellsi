@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
-import { useRole } from '../../infrastructure/providers';
-import { useAuth } from '../../infrastructure/providers';
+import { useRole, useAuth } from '../../infrastructure/providers/UnifiedAuthProvider';
 
 /**
  * Hook personalizado para sincronizar el rol del usuario entre diferentes componentes

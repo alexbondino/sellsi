@@ -67,33 +67,42 @@ const PaymentMethod = () => {
       
       if (!supplierId) return acc;
       
+      // ⭐ NUEVO: Excluir productos ofertados del cálculo de compra mínima
+      const hasOffer = item.offer_id || item.offerId;
+      
       if (!acc[supplierId]) {
         acc[supplierId] = {
           name: item.proveedor || item.supplier || `Proveedor #${supplierId}`,
           minimumAmount: minimumAmount,
           currentTotal: 0,
+          hasNonOfferedProducts: false // ⭐ Track si hay productos NO ofertados
         };
       }
       
-      // Calcular total del item (sin envío) - MISMA LÓGICA QUE BuyerCart
-      let itemTotal = 0;
-      if (item.price_tiers && item.price_tiers.length > 0) {
-        // ⚠️ VALIDAR: Convertir a Number explícitamente para evitar bypass con valores falsy
-        const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
-        const calculatedPrice = calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
-        itemTotal = calculatedPrice * (item.quantity || 0);
-      } else {
-        itemTotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+      // Solo acumular total si NO es producto ofertado
+      if (!hasOffer) {
+        acc[supplierId].hasNonOfferedProducts = true; // ⭐ Hay al menos un producto normal
+        // Calcular total del item (sin envío) - MISMA LÓGICA QUE BuyerCart
+        let itemTotal = 0;
+        if (item.price_tiers && item.price_tiers.length > 0) {
+          // ⚠️ VALIDAR: Convertir a Number explícitamente para evitar bypass con valores falsy
+          const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
+          const calculatedPrice = calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
+          itemTotal = calculatedPrice * (item.quantity || 0);
+        } else {
+          itemTotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+        }
+        
+        acc[supplierId].currentTotal += itemTotal;
       }
-      
-      acc[supplierId].currentTotal += itemTotal;
       
       return acc;
     }, {});
 
-    // Verificar violaciones
+    // ⭐ NUEVO: Solo validar si hay productos NO ofertados
+    // Si solo hay ofertas de un proveedor, ignorar compra mínima completamente
     const hasViolations = Object.values(supplierMinimumValidation).some(
-      data => data.minimumAmount > 0 && data.currentTotal < data.minimumAmount
+      data => data.hasNonOfferedProducts && data.minimumAmount > 0 && data.currentTotal < data.minimumAmount
     );
 
     // Si hay violaciones, redirigir al carrito silenciosamente

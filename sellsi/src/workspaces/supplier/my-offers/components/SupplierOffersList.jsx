@@ -35,8 +35,10 @@ import { useThumbnailsBatch } from '../../../../hooks/useThumbnailQueries'
 // Map de estados internos -> label/color
 const STATUS_MAP = {
   pending: { label: 'Pendiente', color: 'warning' },
+  accepted: { label: 'Aceptada', color: 'success' },
   approved: { label: 'Aceptada', color: 'success' },
-  paid: { label: 'Aceptada', color: 'success' },
+  reserved: { label: 'Aceptada', color: 'success' },
+  paid: { label: 'Aceptada', color: 'success' }, // Proveedor no necesita saber si fue pagada
   rejected: { label: 'Rechazada', color: 'error' },
   expired: { label: 'Caducada', color: 'error' },
 }
@@ -536,6 +538,12 @@ const SupplierOffersList = ({
                       o && o.status && STATUS_MAP[o.status]
                         ? STATUS_MAP[o.status]
                         : { label: 'Desconocido', color: 'default' }
+                    
+                    // DEBUG: Log para encontrar status no contemplado
+                    if (!STATUS_MAP[o.status]) {
+                      console.warn('🔴 [SupplierOffersList] Status no encontrado en STATUS_MAP:', o.status, 'offer_id:', o.id)
+                    }
+                    
                     return (
                       <SafeChip
                         label={statusInfo.label}

@@ -186,44 +186,63 @@ class CheckoutService {
       
       if (!supplierId) return acc;
       
+      // ⭐ NUEVO: Excluir productos ofertados del cálculo de compra mínima
+      // Detectar si el producto tiene oferta aplicada:
+      // 1. offer_id presente (antes de finalize_order_pricing)
+      // 2. tier_band_used === 'offer' (después de finalize_order_pricing)
+      const hasOffer = item.offer_id || item.offerId || item.tier_band_used === 'offer';
+      
       if (!acc[supplierId]) {
         acc[supplierId] = {
           name: supplierName,
           minimumAmount: minimumAmount,
           currentTotal: 0,
+          hasNonOfferedProducts: false, // ⭐ NUEVO: Track si hay productos NO ofertados
         };
       }
       
-      // Calcular total del item (sin envío)
-      // Usar price_effective si existe (ya calculado con tiers/offers), sino calcular
-      let itemTotal = 0;
-      
-      // ⚠️ CRÍTICO: Usar comparación estricta !== (price_effective=0 es válido)
-      if (item.price_effective !== undefined && item.price_effective !== null) {
-        // Frontend ya calculó el precio efectivo
-        itemTotal = Number(item.price_effective) * (Number(item.quantity) || 0);
-      } else if (item.unit_price_effective !== undefined && item.unit_price_effective !== null) {
-        // Viene de finalize_order_pricing
-        itemTotal = Number(item.unit_price_effective) * (Number(item.quantity) || 0);
-      } else if (item.price_tiers && item.price_tiers.length > 0) {
-        // Calcular con tiers - MISMA LÓGICA QUE BuyerCart y PaymentMethod
-        // ⚠️ VALIDAR: Si no hay basePrice válido, usar 0 (será rechazado por SQL)
-        const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
-        const calculatedPrice = calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
-        itemTotal = calculatedPrice * (item.quantity || 0);
-      } else {
-        // Fallback: precio base
-        itemTotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+      // Solo acumular total si NO es producto ofertado
+      if (!hasOffer) {
+        acc[supplierId].hasNonOfferedProducts = true; // ⭐ Hay al menos un producto normal
+        
+        // Calcular total del item (sin envío)
+        // Usar price_effective si existe (ya calculado con tiers/offers), sino calcular
+        let itemTotal = 0;
+        
+        // ⚠️ CRÍTICO: Usar comparación estricta !== (price_effective=0 es válido)
+        if (item.price_effective !== undefined && item.price_effective !== null) {
+          // Frontend ya calculó el precio efectivo
+          itemTotal = Number(item.price_effective) * (Number(item.quantity) || 0);
+        } else if (item.unit_price_effective !== undefined && item.unit_price_effective !== null) {
+          // Viene de finalize_order_pricing
+          itemTotal = Number(item.unit_price_effective) * (Number(item.quantity) || 0);
+        } else if (item.price_tiers && item.price_tiers.length > 0) {
+          // Calcular con tiers - MISMA LÓGICA QUE BuyerCart y PaymentMethod
+          // ⚠️ VALIDAR: Si no hay basePrice válido, usar 0 (será rechazado por SQL)
+          const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
+          const calculatedPrice = calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
+          itemTotal = calculatedPrice * (item.quantity || 0);
+        } else {
+          // Fallback: precio base
+          itemTotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+        }
+        
+        acc[supplierId].currentTotal += itemTotal;
       }
-      
-      acc[supplierId].currentTotal += itemTotal;
       
       return acc;
     }, {});
 
-    // Verificar cada proveedor
+    // ⭐ NUEVO: Solo verificar proveedores que tienen productos NO ofertados
+    // Si un proveedor solo tiene ofertas, ignorar compra mínima completamente
     const violations = Object.entries(supplierTotals)
-      .filter(([id, data]) => data.minimumAmount > 0 && data.currentTotal < data.minimumAmount)
+      .filter(([id, data]) => {
+        // Solo validar si hay productos normales (no ofertados) del proveedor
+        if (!data.hasNonOfferedProducts) return false;
+        
+        // Si hay productos normales, validar compra mínima
+        return data.minimumAmount > 0 && data.currentTotal < data.minimumAmount;
+      })
       .map(([id, data]) => ({
         supplierId: id,
         supplierName: data.name,

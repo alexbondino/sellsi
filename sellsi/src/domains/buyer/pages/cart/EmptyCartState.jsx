@@ -18,7 +18,7 @@ import {
 } from '@mui/icons-material'
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
-import { useRole } from '../../../../infrastructure/providers';
+import { useRole } from '../../../../infrastructure/providers/UnifiedAuthProvider';
 
 // Mensajes aleatorios para el carrito vacío
 const EMPTY_CART_MESSAGES = [

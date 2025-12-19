@@ -10,7 +10,7 @@ import { Box } from '@mui/material';
 // Hook centralizado
 // 🔄 Migrado: usar hook compartido parametrizable
 import { useMarketplaceLogic } from '../../../shared/hooks';
-import { useLayout } from '../../../infrastructure/providers';
+import { useLayout } from '../../../infrastructure/providers/LayoutProvider';
 
 // Componentes de secciones
 import SearchSection from '../components/sections/SearchSection.jsx';

@@ -16,7 +16,7 @@
 import React from 'react';
 import { Box, Typography, Link } from '@mui/material';
 import { Modal, MODAL_TYPES } from '../../feedback';
-import { useAuth } from '../../../../infrastructure/providers';
+import { useAuth } from '../../../../infrastructure/providers/UnifiedAuthProvider';
 
 /**
  * Hook personalizado para manejar la lógica del modal de verificación

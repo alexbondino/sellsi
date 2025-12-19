@@ -53,7 +53,7 @@ import ShippingCompatibilityModal from './cart/components/ShippingCompatibilityM
 // ============================================================================
 // ULTRA-PREMIUM BUYER CART COMPONENT - NIVEL 11/10
 import { useNavigate } from 'react-router-dom';
-import { useRole } from '../../../infrastructure/providers';
+import { useRole } from '../../../infrastructure/providers/UnifiedAuthProvider';
 // ============================================================================
 
 // Lazy loading components para optimización
@@ -156,36 +156,53 @@ const BuyerCart = () => {
       
       if (!supplierId) return acc; // Skip items sin supplier_id
       
+      // ⭐ NUEVO: Excluir productos ofertados del cálculo de compra mínima
+      // Los productos con offer_id NO cuentan para validación de compra mínima
+      const hasOffer = item.offer_id || item.offerId;
+      
       if (!acc[supplierId]) {
         acc[supplierId] = {
           name: supplierName,
           minimumAmount: minimumAmount,
           currentTotal: 0,
-          products: []
+          products: [],
+          hasNonOfferedProducts: false // ⭐ Track si hay productos NO ofertados
         };
       }
       
-      // Sumar total del producto SIN incluir envío
-      // Considerar price tiers si existen (misma lógica que sumSubtotal)
-      let itemTotal = 0;
-      if (item.price_tiers && item.price_tiers.length > 0) {
-        // ⚠️ VALIDAR: Convertir a Number explícitamente para evitar bypass con valores falsy
-        const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
-        const calculatedPrice = calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
-        itemTotal = calculatedPrice * (item.quantity || 0);
-      } else {
-        itemTotal = (Number(item.price) || 0) * (item.quantity || 0);
+      // Solo acumular total si NO es producto ofertado
+      if (!hasOffer) {
+        acc[supplierId].hasNonOfferedProducts = true; // ⭐ Hay al menos un producto normal
+        // Sumar total del producto SIN incluir envío
+        // Considerar price tiers si existen (misma lógica que sumSubtotal)
+        let itemTotal = 0;
+        if (item.price_tiers && item.price_tiers.length > 0) {
+          // ⚠️ VALIDAR: Convertir a Number explícitamente para evitar bypass con valores falsy
+          const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
+          const calculatedPrice = calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
+          itemTotal = calculatedPrice * (item.quantity || 0);
+        } else {
+          itemTotal = (Number(item.price) || 0) * (item.quantity || 0);
+        }
+        
+        acc[supplierId].currentTotal += itemTotal;
       }
       
-      acc[supplierId].currentTotal += itemTotal;
       acc[supplierId].products.push(item);
       
       return acc;
     }, {});
     
-    // Filtrar solo los proveedores que NO cumplen con el mínimo
+    // ⭐ NUEVO: Solo validar proveedores con productos NO ofertados
+    // Si un proveedor solo tiene ofertas, ignorar compra mínima completamente
     const violations = Object.entries(bySupplier)
-      .filter(([id, data]) => data.minimumAmount > 0 && data.currentTotal < data.minimumAmount)
+      .filter(([id, data]) => {
+        // Solo validar si hay productos normales (no ofertados) del proveedor
+        if (!data.hasNonOfferedProducts) return false;
+        
+        // Si hay productos normales, validar compra mínima
+        return data.minimumAmount > 0 && data.currentTotal < data.minimumAmount;
+      })
       .map(([id, data]) => ({
         supplierId: id,
         supplierName: data.name,

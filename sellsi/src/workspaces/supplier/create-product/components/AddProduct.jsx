@@ -46,7 +46,7 @@ import {
   replaceLoadingWithError,
 } from '../../../../utils/toastHelpers';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../../../infrastructure/providers';
+import { useAuth } from '../../../../infrastructure/providers/UnifiedAuthProvider';
 
 // Error Boundaries
 import {
