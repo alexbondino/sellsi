@@ -7,13 +7,13 @@
  * Se enfoca únicamente en la gestión de datos sin lógica de UI.
  */
 
-import { create } from 'zustand';
-import { supabase } from '../../../services/supabase';
-import { getOrFetchMainThumbnail } from '../../../services/phase1ETAGThumbnailService.js';
-import { FeatureFlags } from '../../../workspaces/supplier/shared-utils/featureFlags.js';
-import { updateProductSpecifications } from '../../../workspaces/marketplace';
-import { queryClient, QUERY_KEYS } from '../../../utils/queryClient.js';
-import { UploadService } from '../../../shared/services/upload';
+import { create } from 'zustand'
+import { supabase } from '../../../services/supabase'
+import { getOrFetchMainThumbnail } from '../../../services/phase1ETAGThumbnailService.js'
+import { FeatureFlags } from '../../../workspaces/supplier/shared-utils/featureFlags.js'
+import { updateProductSpecifications } from '../../../workspaces/marketplace'
+import { queryClient, QUERY_KEYS } from '../../../utils/queryClient.js'
+import { UploadService } from '../../../shared/services/upload'
 
 const useSupplierProductsBase = create((set, get) => ({
   // ============================================================================
@@ -38,83 +38,99 @@ const useSupplierProductsBase = create((set, get) => ({
   /**
    * Cargar productos del proveedor
    */
-  loadProducts: async supplierId => {
-    set({ loading: true, error: null });
+  loadProducts: async (supplierId) => {
+    set({ loading: true, error: null })
 
     // Helper: deterministic fingerprint for query keys
-    const fingerprint = obj => {
+    const fingerprint = (obj) => {
       try {
         const normalized =
           typeof obj === 'string'
             ? obj
-            : JSON.stringify(obj, Object.keys(obj || {}).sort());
-        let hash = 5381;
+            : JSON.stringify(obj, Object.keys(obj || {}).sort())
+        let hash = 5381
         for (let i = 0; i < normalized.length; i++) {
-          hash = (hash << 5) + hash + normalized.charCodeAt(i);
-          hash = hash & hash;
+          hash = (hash << 5) + hash + normalized.charCodeAt(i)
+          hash = hash & hash
         }
-        return `fp_${Math.abs(hash)}`;
+        return `fp_${Math.abs(hash)}`
       } catch (e) {
-        return `fp_${String(obj)}`;
+        return `fp_${String(obj)}`
       }
-    };
+    }
 
     const inFlightMap =
       typeof window !== 'undefined'
         ? (window.__inFlightSupabaseQueries =
             window.__inFlightSupabaseQueries || new Map())
-        : new Map();
+        : new Map()
 
-    const productsKey = fingerprint({ type: 'products', supplierId });
+    const productsKey = fingerprint({ type: 'products', supplierId })
 
     // Short TTL guard: avoid repeating a full products fetch within a small window
     // This prevents immediate retry loops that cause UI flicker and duplicated calls.
     try {
       if (typeof window !== 'undefined') {
         window.__inFlightSupabaseLastFetched =
-          window.__inFlightSupabaseLastFetched || new Map();
-        const last = window.__inFlightSupabaseLastFetched.get(productsKey);
+          window.__inFlightSupabaseLastFetched || new Map()
+        const last = window.__inFlightSupabaseLastFetched.get(productsKey)
         if (last && Date.now() - last < 3000) {
           // Skip heavy re-fetch within TTL; return current store value instead
-          const currentProducts = get().products || [];
-          return { success: true, data: currentProducts };
+          const currentProducts = get().products || []
+          return { success: true, data: currentProducts }
         }
       }
-      let productsRes;
+      let productsRes
       if (inFlightMap.has(productsKey)) {
-        productsRes = await inFlightMap.get(productsKey);
+        productsRes = await inFlightMap.get(productsKey)
       } else {
         const p = (async () => {
-          return await supabase
-            .from('products')
-            .select(
-              '*, product_images(image_url,thumbnail_url,thumbnails,image_order), product_quantity_ranges(*), product_delivery_regions(*)'
-            )
-            .eq('supplier_id', supplierId)
-            .order('updateddt', { ascending: false });
-        })();
-        inFlightMap.set(productsKey, p);
+          let lastError
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              const res = await supabase
+                .from('products')
+                .select(
+                  '*, product_images(image_url,thumbnail_url,thumbnails,image_order), product_quantity_ranges(*), product_delivery_regions(*)'
+                )
+                .eq('supplier_id', supplierId)
+                .order('updateddt', { ascending: false })
+
+              if (res.error) throw res.error
+              return res
+            } catch (err) {
+              console.warn(`[loadProducts] Attempt ${attempt} failed:`, err)
+              lastError = err
+              if (attempt < 3) {
+                const delay = attempt === 1 ? 1000 : 2000
+                await new Promise((resolve) => setTimeout(resolve, delay))
+              }
+            }
+          }
+          throw lastError
+        })()
+        inFlightMap.set(productsKey, p)
         try {
-          productsRes = await p;
+          productsRes = await p
           if (typeof window !== 'undefined') {
             window.__inFlightSupabaseLastFetched =
-              window.__inFlightSupabaseLastFetched || new Map();
-            window.__inFlightSupabaseLastFetched.set(productsKey, Date.now());
+              window.__inFlightSupabaseLastFetched || new Map()
+            window.__inFlightSupabaseLastFetched.set(productsKey, Date.now())
           }
         } finally {
-          inFlightMap.delete(productsKey);
+          inFlightMap.delete(productsKey)
         }
       }
 
-      const products = productsRes?.data || [];
+      const products = productsRes?.data || []
 
       // Procesar productos para incluir tramos de precio y regiones de despacho
       const processedProducts =
-        products?.map(product => {
+        products?.map((product) => {
           const images = (product.product_images || [])
             .slice()
-            .sort((a, b) => (a.image_order || 0) - (b.image_order || 0));
-          const main = images.find(img => (img.image_order || 0) === 0);
+            .sort((a, b) => (a.image_order || 0) - (b.image_order || 0))
+          const main = images.find((img) => (img.image_order || 0) === 0)
           return {
             ...product,
             priceTiers: product.product_quantity_ranges || [],
@@ -122,64 +138,64 @@ const useSupplierProductsBase = create((set, get) => ({
             delivery_regions: product.product_delivery_regions || [],
             thumbnails: main?.thumbnails || null,
             thumbnail_url: main?.thumbnail_url || product.thumbnail_url || null,
-          };
-        }) || [];
+          }
+        }) || []
 
       // Fallback: si algunos productos vienen sin product_quantity_ranges, hacer una sola
       // consulta deduplicada por fingerprint para obtener rangos por product_id
       const productIds = processedProducts
-        .map(p => p.productid || p.id)
-        .filter(Boolean);
+        .map((p) => p.productid || p.id)
+        .filter(Boolean)
       if (productIds.length > 0) {
         const needFallback = processedProducts.some(
-          p =>
+          (p) =>
             !p.product_quantity_ranges || p.product_quantity_ranges.length === 0
-        );
+        )
         if (needFallback) {
           const rangesKey = fingerprint({
             type: 'product_quantity_ranges',
             productIds: productIds.slice().sort(),
-          });
-          let rangesRes;
+          })
+          let rangesRes
           if (inFlightMap.has(rangesKey)) {
-            rangesRes = await inFlightMap.get(rangesKey);
+            rangesRes = await inFlightMap.get(rangesKey)
           } else {
             const r = (async () => {
               return await supabase
                 .from('product_quantity_ranges')
                 .select('*')
                 .in('product_id', productIds)
-                .order('min_quantity', { ascending: true });
-            })();
-            inFlightMap.set(rangesKey, r);
+                .order('min_quantity', { ascending: true })
+            })()
+            inFlightMap.set(rangesKey, r)
             try {
-              rangesRes = await r;
+              rangesRes = await r
             } finally {
-              inFlightMap.delete(rangesKey);
+              inFlightMap.delete(rangesKey)
             }
           }
 
-          const ranges = rangesRes?.data || [];
+          const ranges = rangesRes?.data || []
           const rangesByProduct = ranges.reduce((acc, r) => {
-            const pid = r.product_id || r.productid || r.productId;
-            acc[pid] = acc[pid] || [];
-            acc[pid].push(r);
-            return acc;
-          }, {});
-          processedProducts.forEach(p => {
+            const pid = r.product_id || r.productid || r.productId
+            acc[pid] = acc[pid] || []
+            acc[pid].push(r)
+            return acc
+          }, {})
+          processedProducts.forEach((p) => {
             if (
               !p.product_quantity_ranges ||
               p.product_quantity_ranges.length === 0
             ) {
               p.product_quantity_ranges =
-                rangesByProduct[p.productid] || rangesByProduct[p.id] || [];
-              p.priceTiers = p.product_quantity_ranges || [];
+                rangesByProduct[p.productid] || rangesByProduct[p.id] || []
+              p.priceTiers = p.product_quantity_ranges || []
             }
-          });
+          })
         }
       }
 
-      set(state => ({
+      set((state) => ({
         products: processedProducts,
         loading: false,
         // Preservar estados de procesamiento existentes
@@ -187,29 +203,29 @@ const useSupplierProductsBase = create((set, get) => ({
           ...state.operationStates,
           // No resetear processing, solo actualizar si ya no está procesando
         },
-      }));
+      }))
 
-      return { success: true, data: processedProducts };
+      return { success: true, data: processedProducts }
     } catch (error) {
       set({
         error: error.message || 'Error al cargar productos',
         loading: false,
-      });
-      return { success: false, error: error.message };
+      })
+      return { success: false, error: error.message }
     }
   },
 
   /**
    * Crear nuevo producto de forma asíncrona
    */
-  createProduct: async productData => {
-    set(state => ({
+  createProduct: async (productData) => {
+    set((state) => ({
       operationStates: {
         ...state.operationStates,
         creating: true,
       },
       error: null,
-    }));
+    }))
 
     try {
       // Validaciones básicas
@@ -220,7 +236,7 @@ const useSupplierProductsBase = create((set, get) => ({
       ) {
         throw new Error(
           'Faltan campos requeridos: nombre, descripción y categoría'
-        );
+        )
       }
 
       // 1. Insertar producto principal INMEDIATAMENTE
@@ -243,9 +259,9 @@ const useSupplierProductsBase = create((set, get) => ({
           },
         ])
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
       // 2. Agregar producto al estado inmediatamente con flag de procesamiento
       const tempProduct = {
@@ -258,9 +274,9 @@ const useSupplierProductsBase = create((set, get) => ({
         imagenes: [],
         isProcessing: true, // Flag para mostrar spinner
         processingStartTime: Date.now(),
-      };
+      }
 
-      set(state => ({
+      set((state) => ({
         products: [tempProduct, ...state.products],
         operationStates: {
           ...state.operationStates,
@@ -270,34 +286,34 @@ const useSupplierProductsBase = create((set, get) => ({
             [product.productid]: true,
           },
         },
-      }));
+      }))
 
       // 3. Procesar imágenes, especificaciones y tramos EN BACKGROUND
-      get().processProductInBackground(product.productid, productData);
+      get().processProductInBackground(product.productid, productData)
 
       // 4. Invalidar caches iniciales (lista de productos del supplier)
       try {
-        const supplierId = localStorage.getItem('user_id');
+        const supplierId = localStorage.getItem('user_id')
         if (supplierId) {
           queryClient.invalidateQueries({
             queryKey: QUERY_KEYS.PRODUCTS_BY_SUPPLIER(supplierId),
-          });
+          })
         }
         queryClient.invalidateQueries({
           queryKey: ['productPriceTiers', product.productid],
-        });
+        })
       } catch (_) {}
 
-      return { success: true, product: tempProduct };
+      return { success: true, product: tempProduct }
     } catch (error) {
-      set(state => ({
+      set((state) => ({
         operationStates: {
           ...state.operationStates,
           creating: false,
         },
         error: error.message || 'Error al crear producto',
-      }));
-      return { success: false, error: error.message };
+      }))
+      return { success: false, error: error.message }
     }
   },
 
@@ -308,13 +324,13 @@ const useSupplierProductsBase = create((set, get) => ({
     try {
       // Procesar imágenes si existen (reemplazo atómico completo)
       if (productData.imagenes?.length > 0) {
-        const supplierId = localStorage.getItem('user_id');
+        const supplierId = localStorage.getItem('user_id')
         await UploadService.replaceAllProductImages(
           productData.imagenes,
           productId,
           supplierId,
           { cleanup: true }
-        );
+        )
       }
 
       // Procesar especificaciones si existen
@@ -322,22 +338,22 @@ const useSupplierProductsBase = create((set, get) => ({
         await get().processProductSpecifications(
           productId,
           productData.specifications
-        );
+        )
       }
 
       // Procesar tramos de precio si existen
       if (productData.priceTiers?.length > 0) {
-        await get().processPriceTiers(productId, productData.priceTiers);
+        await get().processPriceTiers(productId, productData.priceTiers)
       }
 
       // Recargar producto actualizado
-      const supplierId = localStorage.getItem('user_id');
+      const supplierId = localStorage.getItem('user_id')
       if (supplierId) {
-        await get().loadProducts(supplierId);
+        await get().loadProducts(supplierId)
       }
 
       // Actualizar estado de procesamiento
-      set(state => ({
+      set((state) => ({
         operationStates: {
           ...state.operationStates,
           processing: {
@@ -345,10 +361,10 @@ const useSupplierProductsBase = create((set, get) => ({
             [productId]: false,
           },
         },
-      }));
+      }))
     } catch (error) {
       // Actualizar estado de error
-      set(state => ({
+      set((state) => ({
         operationStates: {
           ...state.operationStates,
           processing: {
@@ -357,7 +373,7 @@ const useSupplierProductsBase = create((set, get) => ({
           },
         },
         error: `Error procesando producto: ${error.message}`,
-      }));
+      }))
     }
   },
 
@@ -369,18 +385,18 @@ const useSupplierProductsBase = create((set, get) => ({
    * Maneja correctamente la transición entre modos de pricing
    */
   updateProduct: async (productId, updates) => {
-    set(state => ({
+    set((state) => ({
       operationStates: {
         ...state.operationStates,
         updating: { ...state.operationStates.updating, [productId]: true },
       },
       error: null,
-    }));
+    }))
 
     try {
       // 1. Separar imágenes de otros updates
       const { imagenes, specifications, priceTiers, ...productUpdates } =
-        updates;
+        updates
 
       // 2. Actualizar producto en la base de datos (sin imágenes)
       const { data, error } = await supabase
@@ -391,29 +407,29 @@ const useSupplierProductsBase = create((set, get) => ({
         })
         .eq('productid', productId)
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
       // 3. Actualizar producto en el estado local
-      set(state => ({
-        products: state.products.map(p =>
+      set((state) => ({
+        products: state.products.map((p) =>
           p.productid === productId ? { ...p, ...data } : p
         ),
         operationStates: {
           ...state.operationStates,
           updating: { ...state.operationStates.updating, [productId]: false },
         },
-      }));
+      }))
 
       // 4. 🔧 FIX CRÍTICO: Procesar imágenes en background igual que en createProduct
       console.log(
         '🔄 [updateProduct] Procesando imágenes en background para producto:',
         productId
-      );
-      console.log('🔍 [updateProduct] imagenes recibidas:', imagenes);
-      console.log('🔍 [updateProduct] tipo de imagenes:', typeof imagenes);
-      console.log('🔍 [updateProduct] es array:', Array.isArray(imagenes));
+      )
+      console.log('🔍 [updateProduct] imagenes recibidas:', imagenes)
+      console.log('🔍 [updateProduct] tipo de imagenes:', typeof imagenes)
+      console.log('🔍 [updateProduct] es array:', Array.isArray(imagenes))
 
       // 🚨 SIEMPRE procesar imágenes (reemplazo atómico) si el caller envía el array (aunque vacío)
       if (imagenes !== undefined) {
@@ -421,34 +437,34 @@ const useSupplierProductsBase = create((set, get) => ({
           `📸 [updateProduct] Reemplazo atómico de imágenes, total=${
             imagenes?.length || 0
           }`
-        );
-        const supplierId = localStorage.getItem('user_id');
+        )
+        const supplierId = localStorage.getItem('user_id')
         const replaceResult = await UploadService.replaceAllProductImages(
           imagenes || [],
           productId,
           supplierId,
           { cleanup: true }
-        );
+        )
 
         // 🚨 FORCE IMMEDIATE CACHE INVALIDATION AFTER IMAGE UPDATE
         try {
           const thumbnailInvalidationService = await import(
             '../../../services/thumbnailInvalidationService'
-          );
+          )
           thumbnailInvalidationService.default.manualInvalidation.onImageUploaded(
             productId
-          );
+          )
           console.log(
             `🔥 MANUAL invalidation triggered for product ${productId}`
-          );
+          )
         } catch (e) {
-          console.warn('⚠️ Manual invalidation failed:', e);
+          console.warn('⚠️ Manual invalidation failed:', e)
         }
 
         // Sincronizar inmediatamente el estado local para evitar flicker / duplicados
         if (replaceResult?.success) {
-          set(state => ({
-            products: state.products.map(p =>
+          set((state) => ({
+            products: state.products.map((p) =>
               p.productid === productId
                 ? {
                     ...p,
@@ -465,12 +481,12 @@ const useSupplierProductsBase = create((set, get) => ({
                   }
                 : p
             ),
-          }));
+          }))
         } else if (replaceResult?.error) {
           console.warn(
             '[updateProduct] Error en replaceAllProductImages:',
             replaceResult.error
-          );
+          )
         }
       }
 
@@ -478,61 +494,61 @@ const useSupplierProductsBase = create((set, get) => ({
       if (specifications && specifications.length > 0) {
         console.log(
           `📋 [updateProduct] Procesando ${specifications.length} especificaciones`
-        );
-        await get().processProductSpecifications(productId, specifications);
+        )
+        await get().processProductSpecifications(productId, specifications)
       }
 
       // Procesar tramos de precio si existen
       if (priceTiers && priceTiers.length > 0) {
         console.log(
           `💰 [updateProduct] Procesando ${priceTiers.length} tramos de precio`
-        );
-        await get().processPriceTiers(productId, priceTiers);
+        )
+        await get().processPriceTiers(productId, priceTiers)
       }
 
       // Invalidar caches relacionados al producto (datos base + tramos + imágenes)
       try {
         queryClient.invalidateQueries({
           queryKey: QUERY_KEYS.PRODUCT(productId),
-        });
+        })
         queryClient.invalidateQueries({
           queryKey: ['productPriceTiers', productId],
-        });
-        const supplierId = localStorage.getItem('user_id');
+        })
+        const supplierId = localStorage.getItem('user_id')
         if (supplierId) {
           queryClient.invalidateQueries({
             queryKey: QUERY_KEYS.PRODUCTS_BY_SUPPLIER(supplierId),
-          });
+          })
         }
       } catch (_) {}
-      return { success: true, data };
+      return { success: true, data }
     } catch (error) {
-      set(state => ({
+      set((state) => ({
         operationStates: {
           ...state.operationStates,
           updating: { ...state.operationStates.updating, [productId]: false },
         },
         error: error.message || 'Error al actualizar producto',
-      }));
-      return { success: false, error: error.message };
+      }))
+      return { success: false, error: error.message }
     }
   },
 
   /**
    * Eliminar producto
    */
-  deleteProduct: async productId => {
-    console.log('[deleteProduct] INIT v2 path productId=', productId);
-    set(state => ({
+  deleteProduct: async (productId) => {
+    console.log('[deleteProduct] INIT v2 path productId=', productId)
+    set((state) => ({
       operationStates: {
         ...state.operationStates,
         deleting: { ...state.operationStates.deleting, [productId]: true },
       },
       error: null,
-    }));
+    }))
 
     try {
-      const supplierId = localStorage.getItem('user_id');
+      const supplierId = localStorage.getItem('user_id')
       // Ejecutar RPC robusta
       const { data: result, error: rpcError } = await supabase.rpc(
         'request_delete_product_v1',
@@ -540,51 +556,51 @@ const useSupplierProductsBase = create((set, get) => ({
           p_product_id: productId,
           p_supplier_id: supplierId,
         }
-      );
-      if (rpcError) throw rpcError;
+      )
+      if (rpcError) throw rpcError
       if (!result?.success)
-        throw new Error(result?.error || 'Fallo eliminación');
+        throw new Error(result?.error || 'Fallo eliminación')
 
       // Actualizar estado según acción (pero UI siempre mostrará 'Producto eliminado')
-      const { products } = get();
-      let updatedProducts = products;
+      const { products } = get()
+      let updatedProducts = products
       if (result.action === 'deleted') {
-        updatedProducts = products.filter(p => p.productid !== productId);
+        updatedProducts = products.filter((p) => p.productid !== productId)
       } else {
         // soft_deleted u otros futuros
-        updatedProducts = products.map(p =>
+        updatedProducts = products.map((p) =>
           p.productid === productId
             ? { ...p, is_active: false, deletion_status: 'pending_delete' }
             : p
-        );
+        )
       }
 
-      set(state => ({
+      set((state) => ({
         products: updatedProducts,
         operationStates: {
           ...state.operationStates,
           deleting: { ...state.operationStates.deleting, [productId]: false },
         },
-      }));
+      }))
 
       // Fire & forget edge function
-      console.log('[deleteProduct] invoking edge cleanup-product');
+      console.log('[deleteProduct] invoking edge cleanup-product')
       supabase.functions.invoke('cleanup-product', {
         body: { productId, action: result.action, supplierId },
-      });
+      })
 
-      console.log('[deleteProduct] completed with normalized action deleted');
-      return { success: true, action: 'deleted' }; // Normalizamos para la capa de UI
+      console.log('[deleteProduct] completed with normalized action deleted')
+      return { success: true, action: 'deleted' } // Normalizamos para la capa de UI
     } catch (error) {
-      console.error('[deleteProduct] ERROR', error);
-      set(state => ({
+      console.error('[deleteProduct] ERROR', error)
+      set((state) => ({
         operationStates: {
           ...state.operationStates,
           deleting: { ...state.operationStates.deleting, [productId]: false },
         },
         error: error.message || 'Error al eliminar producto',
-      }));
-      return { success: false, error: error.message };
+      }))
+      return { success: false, error: error.message }
     }
   },
 
@@ -606,84 +622,82 @@ const useSupplierProductsBase = create((set, get) => ({
     try {
       console.log(
         `🎯 [processPriceTiers] Procesando tramos de precio para producto ${productId}`
-      );
+      )
 
       if (!priceTiers?.length) {
         console.log(
           '📊 [processPriceTiers] No hay tramos de precio que procesar'
-        );
-        return;
+        )
+        return
       }
 
       // Eliminar tramos existentes
       const { error: deleteError } = await supabase
         .from('product_quantity_ranges')
         .delete()
-        .eq('product_id', productId);
+        .eq('product_id', productId)
 
       if (deleteError) {
         console.error(
           '❌ [processPriceTiers] Error al eliminar tramos existentes:',
           deleteError
-        );
-        throw deleteError;
+        )
+        throw deleteError
       }
 
       // Insertar nuevos tramos
-      const tierData = priceTiers.map(tier => ({
+      const tierData = priceTiers.map((tier) => ({
         product_id: productId,
         min_quantity: tier.quantity_from,
         max_quantity: tier.quantity_to,
         price: tier.price,
-      }));
+      }))
 
       const { error: insertError } = await supabase
         .from('product_quantity_ranges')
-        .insert(tierData);
+        .insert(tierData)
 
       if (insertError) {
         console.error(
           '❌ [processPriceTiers] Error al insertar tramos:',
           insertError
-        );
-        throw insertError;
+        )
+        throw insertError
       }
 
       console.log(
         '✅ [processPriceTiers] Tramos de precio procesados exitosamente'
-      );
+      )
       try {
         queryClient.invalidateQueries({
           queryKey: ['productPriceTiers', productId],
-        });
+        })
         queryClient.invalidateQueries({
           queryKey: QUERY_KEYS.PRODUCT(productId),
-        });
+        })
       } catch (_) {}
     } catch (error) {
-      console.error('🔥 [processPriceTiers] Error procesando tramos:', error);
-      throw error;
+      console.error('🔥 [processPriceTiers] Error procesando tramos:', error)
+      throw error
     }
   },
 
   /**
    * Limpiar imágenes usando URLs directas (más eficiente)
    */
-  cleanupImagesFromUrls: async imageRecords => {
+  cleanupImagesFromUrls: async (imageRecords) => {
     try {
       // Limpiar imágenes originales
       for (const record of imageRecords) {
         if (record.image_url) {
           try {
-            const urlParts = record.image_url.split('/product-images/');
+            const urlParts = record.image_url.split('/product-images/')
             if (urlParts.length > 1) {
-              const filePath = urlParts[1];
+              const filePath = urlParts[1]
 
               // Intentar eliminar directamente sin verificación previa
               const { data: deleteData, error: deleteError } =
-                await supabase.storage
-                  .from('product-images')
-                  .remove([filePath]);
+                await supabase.storage.from('product-images').remove([filePath])
               // No logs ni objetos huérfanos
             }
           } catch (error) {}
@@ -694,14 +708,14 @@ const useSupplierProductsBase = create((set, get) => ({
           try {
             const urlParts = record.thumbnail_url.split(
               '/product-images-thumbnails/'
-            );
+            )
             if (urlParts.length > 1) {
-              const filePath = urlParts[1];
+              const filePath = urlParts[1]
               // Intentar eliminar directamente
               const { data: deleteData, error: deleteError } =
                 await supabase.storage
                   .from('product-images-thumbnails')
-                  .remove([filePath]);
+                  .remove([filePath])
               // No logs ni objetos huérfanos
               if (deleteError) {
                 // Manejo de error silenciado
@@ -722,27 +736,27 @@ const useSupplierProductsBase = create((set, get) => ({
       // Limpiar thumbnails huérfanos del directorio
       try {
         // Obtener el directorio base del supplier/product
-        const firstRecord = imageRecords[0];
+        const firstRecord = imageRecords[0]
         if (firstRecord && firstRecord.image_url) {
-          const urlParts = firstRecord.image_url.split('/product-images/');
+          const urlParts = firstRecord.image_url.split('/product-images/')
           if (urlParts.length > 1) {
-            const directory = urlParts[1].split('/').slice(0, -1).join('/');
+            const directory = urlParts[1].split('/').slice(0, -1).join('/')
 
             // Listar todos los thumbnails en el directorio
             const { data: thumbnailFiles, error: listError } =
               await supabase.storage
                 .from('product-images-thumbnails')
-                .list(directory);
+                .list(directory)
 
             if (!listError && thumbnailFiles && thumbnailFiles.length > 0) {
               // Eliminar todos los thumbnails del directorio
               const filesToDelete = thumbnailFiles.map(
-                file => `${directory}/${file.name}`
-              );
+                (file) => `${directory}/${file.name}`
+              )
               const { data: bulkDeleteData, error: bulkDeleteError } =
                 await supabase.storage
                   .from('product-images-thumbnails')
-                  .remove(filesToDelete);
+                  .remove(filesToDelete)
 
               if (bulkDeleteError) {
                 // Error en eliminación masiva
@@ -761,30 +775,30 @@ const useSupplierProductsBase = create((set, get) => ({
       // Verificar si realmente se eliminaron
       for (const record of imageRecords) {
         if (record.image_url) {
-          const urlParts = record.image_url.split('/product-images/');
+          const urlParts = record.image_url.split('/product-images/')
           if (urlParts.length > 1) {
-            const filePath = urlParts[1];
-            const fileName = filePath.split('/').pop();
-            const directory = filePath.split('/').slice(0, -1).join('/');
+            const filePath = urlParts[1]
+            const fileName = filePath.split('/').pop()
+            const directory = filePath.split('/').slice(0, -1).join('/')
             const { data: checkData, error: checkError } =
-              await supabase.storage.from('product-images').list(directory);
-            const fileExists = checkData?.some(file => file.name === fileName);
+              await supabase.storage.from('product-images').list(directory)
+            const fileExists = checkData?.some((file) => file.name === fileName)
             // ...log removed...
           }
         }
         if (record.thumbnail_url) {
           const urlParts = record.thumbnail_url.split(
             '/product-images-thumbnails/'
-          );
+          )
           if (urlParts.length > 1) {
-            const filePath = urlParts[1];
-            const fileName = filePath.split('/').pop();
-            const directory = filePath.split('/').slice(0, -1).join('/');
+            const filePath = urlParts[1]
+            const fileName = filePath.split('/').pop()
+            const directory = filePath.split('/').slice(0, -1).join('/')
             const { data: checkData, error: checkError } =
               await supabase.storage
                 .from('product-images-thumbnails')
-                .list(directory);
-            const fileExists = checkData?.some(file => file.name === fileName);
+                .list(directory)
+            const fileExists = checkData?.some((file) => file.name === fileName)
             // ...log removed...
           }
         }
@@ -792,23 +806,23 @@ const useSupplierProductsBase = create((set, get) => ({
       // ...log removed...
     } catch (error) {
       // ...log removed...
-      throw error;
+      throw error
     }
   },
 
   /**
    * Limpiar imágenes del producto (método híbrido - BD + búsqueda directa)
    */
-  cleanupProductImages: async productId => {
-    const supplierId = localStorage.getItem('user_id');
-    const folderPrefix = `${supplierId}/${productId}/`;
+  cleanupProductImages: async (productId) => {
+    const supplierId = localStorage.getItem('user_id')
+    const folderPrefix = `${supplierId}/${productId}/`
 
     try {
       // MÉTODO 1: Eliminar usando registros de la BD (más confiable)
       const { data: imageRecords, error: dbError } = await supabase
         .from('product_images')
         .select('image_url, thumbnail_url')
-        .eq('product_id', productId);
+        .eq('product_id', productId)
 
       if (dbError) {
         // ...log removed...
@@ -819,12 +833,12 @@ const useSupplierProductsBase = create((set, get) => ({
         for (const record of imageRecords) {
           if (record.image_url) {
             try {
-              const urlParts = record.image_url.split('/product-images/');
+              const urlParts = record.image_url.split('/product-images/')
               if (urlParts.length > 1) {
-                const filePath = urlParts[1];
+                const filePath = urlParts[1]
                 const { error: deleteError } = await supabase.storage
                   .from('product-images')
-                  .remove([filePath]);
+                  .remove([filePath])
                 // ...log removed...
               }
             } catch (error) {
@@ -837,12 +851,12 @@ const useSupplierProductsBase = create((set, get) => ({
             try {
               const thumbParts = record.thumbnail_url.split(
                 '/product-images-thumbnails/'
-              );
+              )
               if (thumbParts.length > 1) {
-                const thumbPath = thumbParts[1];
+                const thumbPath = thumbParts[1]
                 const { error: thumbError } = await supabase.storage
                   .from('product-images-thumbnails')
-                  .remove([thumbPath]);
+                  .remove([thumbPath])
                 // ...log removed...
               }
             } catch (error) {
@@ -859,19 +873,19 @@ const useSupplierProductsBase = create((set, get) => ({
       // Buscar en bucket principal
       const { data: bucketFiles, error: listError } = await supabase.storage
         .from('product-images')
-        .list(folderPrefix, { limit: 100 });
+        .list(folderPrefix, { limit: 100 })
 
       if (listError) {
         // Error listando bucket principal
       } else {
         if (bucketFiles?.length > 0) {
           const toDeleteFromBucket = bucketFiles.map(
-            file => folderPrefix + file.name
-          );
+            (file) => folderPrefix + file.name
+          )
 
           const { error: deleteError } = await supabase.storage
             .from('product-images')
-            .remove(toDeleteFromBucket);
+            .remove(toDeleteFromBucket)
 
           if (deleteError) {
             // Error eliminando archivos adicionales
@@ -885,19 +899,19 @@ const useSupplierProductsBase = create((set, get) => ({
       const { data: thumbnailFiles, error: listThumbError } =
         await supabase.storage
           .from('product-images-thumbnails')
-          .list(folderPrefix, { limit: 100 });
+          .list(folderPrefix, { limit: 100 })
 
       if (listThumbError) {
         // Error listando bucket de thumbnails
       } else {
         if (thumbnailFiles?.length > 0) {
           const toDeleteFromThumbnails = thumbnailFiles.map(
-            file => folderPrefix + file.name
-          );
+            (file) => folderPrefix + file.name
+          )
 
           const { error: deleteThumbError } = await supabase.storage
             .from('product-images-thumbnails')
-            .remove(toDeleteFromThumbnails);
+            .remove(toDeleteFromThumbnails)
 
           if (deleteThumbError) {
             // Error eliminando thumbnails adicionales
@@ -911,13 +925,13 @@ const useSupplierProductsBase = create((set, get) => ({
       const { error: dbDeleteError } = await supabase
         .from('product_images')
         .delete()
-        .eq('product_id', productId);
+        .eq('product_id', productId)
 
       if (dbDeleteError) {
-        throw dbDeleteError;
+        throw dbDeleteError
       }
     } catch (error) {
-      throw error;
+      throw error
     }
   },
 
@@ -926,24 +940,24 @@ const useSupplierProductsBase = create((set, get) => ({
    */
   processProductSpecifications: async (productId, specifications) => {
     if (!specifications?.length) {
-      return;
+      return
     }
 
     // 🔧 Actualizar especificaciones del producto usando el servicio seguro
-    await updateProductSpecifications(productId, specifications);
+    await updateProductSpecifications(productId, specifications)
   },
   /**
    * FUNCIÓN PELIGROSA: Eliminar TODAS las imágenes existentes del producto (bucket + BD)
    */
-  deleteExistingImages: async productId => {
+  deleteExistingImages: async (productId) => {
     try {
       const { data: existingImages, error: fetchError } = await supabase
         .from('product_images')
         .select('image_url')
-        .eq('product_id', productId);
+        .eq('product_id', productId)
 
       if (fetchError) {
-        return;
+        return
       }
 
       if (existingImages && existingImages.length > 0) {
@@ -951,19 +965,19 @@ const useSupplierProductsBase = create((set, get) => ({
         for (const imageRecord of existingImages) {
           try {
             // Extraer la ruta del archivo de la URL
-            const url = imageRecord.image_url;
-            const urlParts = url.split('/product-images/');
+            const url = imageRecord.image_url
+            const urlParts = url.split('/product-images/')
             if (urlParts.length > 1) {
-              const filePath = urlParts[1]; // ej: "supplierId/productId/filename.png"
+              const filePath = urlParts[1] // ej: "supplierId/productId/filename.png"
               // Eliminar del bucket principal
               const { error: deleteError } = await supabase.storage
                 .from('product-images')
-                .remove([filePath]);
+                .remove([filePath])
 
               // Eliminar del bucket de thumbnails
               const { error: thumbnailDeleteError } = await supabase.storage
                 .from('product-images-thumbnails')
-                .remove([filePath]);
+                .remove([filePath])
             }
           } catch (error) {}
         }
@@ -972,7 +986,7 @@ const useSupplierProductsBase = create((set, get) => ({
         const { error: dbDeleteError } = await supabase
           .from('product_images')
           .delete()
-          .eq('product_id', productId);
+          .eq('product_id', productId)
       }
     } catch (error) {}
   },
@@ -985,18 +999,18 @@ const useSupplierProductsBase = create((set, get) => ({
       // 1. Eliminar archivos del bucket principal y thumbnails
       for (const url of urlsToDelete) {
         try {
-          const urlParts = url.split('/product-images/');
+          const urlParts = url.split('/product-images/')
           if (urlParts.length > 1) {
-            const filePath = urlParts[1];
+            const filePath = urlParts[1]
             // Eliminar del bucket principal
             const { error: deleteError } = await supabase.storage
               .from('product-images')
-              .remove([filePath]);
+              .remove([filePath])
 
             // Eliminar del bucket de thumbnails
             const { error: thumbnailDeleteError } = await supabase.storage
               .from('product-images-thumbnails')
-              .remove([filePath]);
+              .remove([filePath])
           }
         } catch (error) {}
       }
@@ -1007,7 +1021,7 @@ const useSupplierProductsBase = create((set, get) => ({
           .from('product_images')
           .delete()
           .eq('product_id', productId)
-          .in('image_url', urlsToDelete);
+          .in('image_url', urlsToDelete)
       }
     } catch (error) {}
   },
@@ -1019,16 +1033,16 @@ const useSupplierProductsBase = create((set, get) => ({
   /**
    * Obtener producto por ID
    */
-  getProductById: productId => {
-    const { products } = get();
-    return products.find(product => product.productid === productId);
+  getProductById: (productId) => {
+    const { products } = get()
+    return products.find((product) => product.productid === productId)
   },
 
   /**
    * Limpiar errores
    */
   clearError: () => {
-    set({ error: null });
+    set({ error: null })
   },
 
   /**
@@ -1045,25 +1059,25 @@ const useSupplierProductsBase = create((set, get) => ({
         creating: false,
         processing: {},
       },
-    });
+    })
   },
-}));
+}))
 
-export default useSupplierProductsBase;
+export default useSupplierProductsBase
 
 // Listener global para hidratar thumbnails en este store también
-let __BASE_THUMBS_LISTENER_ATTACHED = false;
+let __BASE_THUMBS_LISTENER_ATTACHED = false
 try {
   if (typeof window !== 'undefined' && !__BASE_THUMBS_LISTENER_ATTACHED) {
-    window.addEventListener('productImagesReady', async ev => {
+    window.addEventListener('productImagesReady', async (ev) => {
       try {
-        const detail = ev?.detail;
-        if (!detail || !detail.productId) return;
-        if (detail.phase && !/^thumbnails_/.test(detail.phase)) return;
-        const productId = detail.productId;
-        let data = null;
+        const detail = ev?.detail
+        if (!detail || !detail.productId) return
+        if (detail.phase && !/^thumbnails_/.test(detail.phase)) return
+        const productId = detail.productId
+        let data = null
         if (FeatureFlags?.FEATURE_PHASE1_THUMBS) {
-          data = await getOrFetchMainThumbnail(productId, { silent: true });
+          data = await getOrFetchMainThumbnail(productId, { silent: true })
         }
         if (!data) {
           const { data: legacy } = await supabase
@@ -1071,12 +1085,12 @@ try {
             .select('thumbnails, thumbnail_url')
             .eq('product_id', productId)
             .eq('image_order', 0)
-            .single();
-          data = legacy;
+            .single()
+          data = legacy
         }
-        if (!data || !data.thumbnails) return;
-        useSupplierProductsBase.setState(state => ({
-          products: state.products.map(p =>
+        if (!data || !data.thumbnails) return
+        useSupplierProductsBase.setState((state) => ({
+          products: state.products.map((p) =>
             p.productid === productId
               ? {
                   ...p,
@@ -1085,12 +1099,12 @@ try {
                 }
               : p
           ),
-        }));
+        }))
       } catch (_) {
         /* noop */
       }
-    });
-    __BASE_THUMBS_LISTENER_ATTACHED = true;
+    })
+    __BASE_THUMBS_LISTENER_ATTACHED = true
   }
 } catch (_) {
   /* noop */
