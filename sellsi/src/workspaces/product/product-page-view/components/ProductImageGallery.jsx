@@ -93,8 +93,7 @@ const ProductImageGallery = ({
           mb: 2,
           overflow: 'hidden',
           borderRadius: { xs: 0, sm: 3 }, // Sin border radius en móvil
-          width: '100%', // Full width en todos los tamaños
-          maxWidth: { xs: '100%', md: 500 }, // Sin límite en móvil, 500px en desktop
+          width: '72%', // Full width en todos los tamaños
           display: 'flex',
           justifyContent: 'center',
           mx: 'auto',
@@ -252,7 +251,6 @@ const ProductImageGallery = ({
           </Card>
         ))}
       </Box>
-
       {/* Modal de zoom para mobile */}
       <ImageZoomModal
         open={isZoomModalOpen}
