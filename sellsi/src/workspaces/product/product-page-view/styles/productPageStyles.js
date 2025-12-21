@@ -201,7 +201,7 @@ export const PRICING_STYLES = {
   },
 
   tableContainer: {
-    maxWidth: DIMENSIONS.maxTableWidth,
+    maxWidth: { xs: '100%', md: DIMENSIONS.maxTableWidth }, // ✅ Full width en mobile
     mx: { xs: 'auto', md: 0 }, // Centrado en mobile, alineado a la izquierda en desktop
     mb: 2,
   },

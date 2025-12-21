@@ -92,8 +92,9 @@ const PurchaseActions = ({
       <Box
         sx={{
           display: 'flex',
-          width: '77.5%', // ✅ Ocupa todo el ancho del contenedor padre
+          width: { xs: '100%', md: '77.5%' }, // ✅ Full width en mobile, 77.5% en desktop
           alignItems: 'center',
+          justifyContent: 'center', // ✅ Centrado
           gap: { xs: 1, md: 2 }, // ✅ Gap uniforme entre botones
           mt: 3, // Margen superior para separar de precios
         }}
