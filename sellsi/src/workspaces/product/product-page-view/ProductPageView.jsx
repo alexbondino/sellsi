@@ -272,7 +272,11 @@ const ProductPageView = memo(
             backgroundColor: 'background.default',
             pt: { xs: 1, md: 4 },
             pb: SPACING_BOTTOM_MAIN,
-            // ✅ Ancho calculado descontando el sidebar
+            // ✅ Flexbox para centrado automático
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+            // ✅ Ancho total disponible descontando el sidebar
             width: {
               xs: '100%',
               md: sideBarCollapsed ? 'calc(100% - 80px)' : 'calc(100% - 240px)',
@@ -280,129 +284,141 @@ const ProductPageView = memo(
             // ✅ Margen izquierdo = ancho del sidebar
             ml: {
               xs: 0,
-              md: sideBarCollapsed ? '80px' : '240px',
+              md: sideBarCollapsed ? '110px' : '180px',
             },
-            // ✅ Padding horizontal simétrico
-            px: { xs: 0.75, md: 3 },
             transition: 'all 0.3s ease',
           }}
         >
-          {/* Paper padre con estilos condicionales */}
+          {/* Contenedor interno con ancho fijo */}
           <Box
             sx={{
-              // Estilos condicionales del container
-              backgroundColor: { xs: 'transparent', md: 'white' },
-              border: { xs: 'none', md: '1.5px solid #e0e0e0' },
-              boxShadow: { xs: 'none', md: 6 },
-              borderRadius: { xs: 0, md: 3 },
-              p: { xs: 0, md: 3 },
-              mb: { xs: 0, md: 6 },
-              maxWidth: '1450px',
-              mx: 'auto', // ✅ Centrado en el espacio disponible
-              width: '100%',
+              width: {
+                xs: '100%',
+                md: '90%', // Ancho del contenido (ajustable)
+              },
+              px: { xs: 0.75, md: 0 },
             }}
           >
-            {/* 1. Breadcrumbs responsivos */}
+            {/* Paper padre con estilos condicionales */}
             <Box
               sx={{
-                px: { xs: 0.75, md: 0 },
-                mb: { xs: 1, md: 2 },
+                // Estilos condicionales del container
+                backgroundColor: { xs: 'transparent', md: 'white' },
+                border: { xs: 'none', md: '1.5px solid #e0e0e0' },
+                boxShadow: { xs: 'none', md: 6 },
+                borderRadius: { xs: 0, md: 3 },
+                p: { xs: 0, md: 3 },
+                mb: { xs: 0, md: 6 },
+                maxWidth: '1450px',
+                mx: 'auto', // ✅ Centrado en el espacio disponible
                 width: '100%',
               }}
             >
-              <Breadcrumbs
-                sx={{ fontSize: '0.875rem', color: 'text.secondary' }}
+              {/* 1. Breadcrumbs responsivos */}
+              <Box
+                sx={{
+                  px: { xs: 0.75, md: 0 },
+                  mb: { xs: 1, md: 2 },
+                  width: '100%',
+                }}
               >
-                <Link
-                  underline="hover"
-                  color="inherit"
-                  onClick={onGoHome}
-                  sx={{
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                  }}
+                <Breadcrumbs
+                  sx={{ fontSize: '0.875rem', color: 'text.secondary' }}
                 >
-                  <Home fontSize="small" />
-                  Inicio
-                </Link>
-                <Link
-                  underline="hover"
-                  color="inherit"
-                  onClick={onGoToMarketplace}
-                  sx={{
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                  }}
-                >
-                  {fromMyProducts ? (
-                    <Inventory2Outlined fontSize="small" />
-                  ) : (
-                    <StorefrontOutlined fontSize="small" />
+                  <Link
+                    underline="hover"
+                    color="inherit"
+                    onClick={onGoHome}
+                    sx={{
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                    }}
+                  >
+                    <Home fontSize="small" />
+                    Inicio
+                  </Link>
+                  <Link
+                    underline="hover"
+                    color="inherit"
+                    onClick={onGoToMarketplace}
+                    sx={{
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                    }}
+                  >
+                    {fromMyProducts ? (
+                      <Inventory2Outlined fontSize="small" />
+                    ) : (
+                      <StorefrontOutlined fontSize="small" />
+                    )}
+                    {fromMyProducts
+                      ? 'Mis Productos'
+                      : isFromSupplierMarketplace
+                      ? 'Marketplace'
+                      : 'Marketplace'}
+                  </Link>
+                  {product && (
+                    <Typography color="primary.main" sx={{ fontWeight: 600 }}>
+                      {isMobile ? 'Ficha Técnica' : product.nombre}
+                    </Typography>
                   )}
-                  {fromMyProducts
-                    ? 'Mis Productos'
-                    : isFromSupplierMarketplace
-                    ? 'Marketplace'
-                    : 'Marketplace'}
-                </Link>
-                {product && (
-                  <Typography color="primary.main" sx={{ fontWeight: 600 }}>
-                    {isMobile ? 'Ficha Técnica' : product.nombre}
-                  </Typography>
-                )}
-              </Breadcrumbs>
-            </Box>
+                </Breadcrumbs>
+              </Box>
 
-            {/* 2. ProductHeader con prop de responsividad */}
-            <Box sx={{ width: '100%' }}>
-              <Suspense
-                fallback={
-                  <ProductHeaderSkeleton
-                    isMobile={isMobile}
-                    showTiers={!!product?.priceTiers?.length}
-                    showPurchaseActions={
-                      !product?.fromMyProducts &&
-                      !product?.isFromSupplierMarketplace &&
-                      !product?.isSupplier
-                    }
-                  />
-                }
-              >
-                <ProductHeader
-                  product={product}
-                  selectedImageIndex={selectedImageIndex}
-                  onImageSelect={setSelectedImageIndex}
-                  onAddToCart={handleAddToCart}
-                  isLoggedIn={isLoggedIn}
-                  fromMyProducts={fromMyProducts}
-                  isMobile={isMobile}
-                />
-              </Suspense>
-            </Box>
-
-            {/* 2.5. Descripción del Producto */}
-            <Suspense fallback={<ProductInfoSkeleton />}>
-              <ProductInfo product={product} isMobile={isMobile} />
-            </Suspense>
-
-            {/* 3. ProductShipping - Regiones de Despacho */}
-            {isLoggedIn && (
+              {/* 2. ProductHeader con prop de responsividad */}
               <Box sx={{ width: '100%' }}>
-                <Suspense fallback={<ProductShippingSkeleton />}>
-                  <ProductShipping
+                <Suspense
+                  fallback={
+                    <ProductHeaderSkeleton
+                      isMobile={isMobile}
+                      showTiers={!!product?.priceTiers?.length}
+                      showPurchaseActions={
+                        !product?.fromMyProducts &&
+                        !product?.isFromSupplierMarketplace &&
+                        !product?.isSupplier
+                      }
+                    />
+                  }
+                >
+                  <ProductHeader
                     product={product}
-                    isMobile={isMobile}
+                    selectedImageIndex={selectedImageIndex}
+                    onImageSelect={setSelectedImageIndex}
+                    onAddToCart={handleAddToCart}
                     isLoggedIn={isLoggedIn}
+                    fromMyProducts={fromMyProducts}
+                    isMobile={isMobile}
                   />
                 </Suspense>
               </Box>
-            )}
+
+              {/* 2.5. Descripción del Producto */}
+              <Suspense fallback={<ProductInfoSkeleton />}>
+                <ProductInfo product={product} isMobile={isMobile} />
+              </Suspense>
+
+              {/* 3. ProductShipping - Regiones de Despacho */}
+              {isLoggedIn && (
+                <Box sx={{ width: '100%' }}>
+                  <Suspense fallback={<ProductShippingSkeleton />}>
+                    <ProductShipping
+                      product={product}
+                      isMobile={isMobile}
+                      isLoggedIn={isLoggedIn}
+                    />
+                  </Suspense>
+                </Box>
+              )}
+            </Box>
+            {/* Cierre del Paper padre */}
           </Box>
+          {/* Cierre del contenedor interno con ancho fijo */}
         </Box>
+        {/* Cierre del contenedor flex externo */}
       </ThemeProvider>
     );
   }
