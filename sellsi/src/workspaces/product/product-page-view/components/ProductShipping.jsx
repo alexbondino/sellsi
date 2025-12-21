@@ -217,12 +217,14 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                         >
                           {getRegionRomanNumber(region.region)}
                         </Typography>
+                        {/* Mostrar nombre de región solo en desktop */}
                         <Typography
                           variant="body2"
                           sx={{
                             fontWeight: 500,
                             fontSize: { xs: '0.875rem', md: '1rem' },
                             textAlign: { xs: 'center', sm: 'left' },
+                            display: { xs: 'none', md: 'block' }, // Ocultar en mobile
                           }}
                         >
                           {region.regionLabel || region.region}
