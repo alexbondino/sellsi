@@ -272,6 +272,7 @@ const ProductPageView = memo(
             backgroundColor: 'background.default',
             pt: { xs: 1, md: 4 },
             pb: SPACING_BOTTOM_MAIN,
+            px: { xs: '7%', md: 0 }, // ✅ Padding lateral solo en mobile
             // ✅ Flexbox para centrado automático
             display: 'flex',
             justifyContent: 'center',
