@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, Suspense, memo } from 'react';
-// Si tienes un contexto de vista, importa aquí:
-// import { useViewType } from '../../context/ViewTypeContext'
+import { useLocation } from 'react-router-dom';
+import { showErrorToast, showCartSuccess } from '../../../utils/toastHelpers';
+import { useLayout } from '../../../infrastructure/providers/LayoutProvider';
 
 // Imports principales optimizados (solo lo esencial)
 import {
@@ -36,8 +37,6 @@ import {
   StorefrontOutlined,
   Inventory2Outlined,
 } from '@mui/icons-material';
-import { useLocation } from 'react-router-dom';
-import { showErrorToast, showCartSuccess } from '../../../utils/toastHelpers';
 
 // Lazy imports para componentes pesados - simplificados para evitar errores
 const ProductImageGallery = React.lazy(() =>
@@ -102,6 +101,9 @@ const ProductPageView = memo(
     // Hook para responsividad
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+    // Hook para estado del sidebar
+    const { sideBarCollapsed } = useLayout();
 
     // Mover useCallback ANTES de cualquier return condicional para seguir las reglas de los Hooks
     const handleAddToCart = useCallback(
@@ -268,10 +270,21 @@ const ProductPageView = memo(
         <Box
           sx={{
             backgroundColor: 'background.default',
-            pt: { xs: 1, md: 4 }, // Menos padding top en móvil
-            px: { xs: 0.75, md: 3 }, // small mobile gutter
+            pt: { xs: 1, md: 4 },
             pb: SPACING_BOTTOM_MAIN,
-            width: '100%',
+            // ✅ Ancho calculado descontando el sidebar
+            width: {
+              xs: '100%',
+              md: sideBarCollapsed ? 'calc(100% - 80px)' : 'calc(100% - 240px)',
+            },
+            // ✅ Margen izquierdo = ancho del sidebar
+            ml: {
+              xs: 0,
+              md: sideBarCollapsed ? '80px' : '240px',
+            },
+            // ✅ Padding horizontal simétrico
+            px: { xs: 0.75, md: 3 },
+            transition: 'all 0.3s ease',
           }}
         >
           {/* Paper padre con estilos condicionales */}
@@ -285,7 +298,7 @@ const ProductPageView = memo(
               p: { xs: 0, md: 3 },
               mb: { xs: 0, md: 6 },
               maxWidth: '1450px',
-              mx: 'auto',
+              mx: 'auto', // ✅ Centrado en el espacio disponible
               width: '100%',
             }}
           >
