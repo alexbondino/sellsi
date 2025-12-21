@@ -1,24 +1,27 @@
-import React from 'react'
-import { Box, Paper, Typography } from '@mui/material'
+import React from 'react';
+import { Box, Paper, Typography } from '@mui/material';
 
 const ProductInfo = ({ product, isMobile = false }) => {
-  const { descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.' } = product
+  const {
+    descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.',
+  } = product;
 
   return (
-    <Box sx={{ 
-      px: { xs: 0, md: 0 }, 
-      mt: { xs: 4, md: 6 }, 
-      mb: 6,
-      width: '100%' 
-    }}>
+    <Box
+      sx={{
+        px: { xs: 0, md: 0 },
+        mt: { xs: 4, md: 6 },
+        mb: 6,
+        width: '100%',
+      }}
+    >
       <Paper
         elevation={2}
         sx={{
           // Remove mobile internal padding: AppShell provides canonical gutter
           p: { xs: 1, md: 5 },
           borderRadius: 3,
-          width: { xs: '100%', md: '70%' },
-          maxWidth: '900px',
+          width: { xs: '100%', md: '77%' },
           textAlign: 'center',
           background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
           border: '1px solid #e2e8f0',
@@ -68,9 +71,9 @@ const ProductInfo = ({ product, isMobile = false }) => {
         </Typography>
       </Paper>
     </Box>
-  )
-}
+  );
+};
 
-ProductInfo.displayName = 'ProductInfo'
+ProductInfo.displayName = 'ProductInfo';
 
-export default ProductInfo
+export default ProductInfo;

@@ -13,7 +13,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 
-
 /**
  * Componente para mostrar las regiones de despacho del producto
  * Muestra regiones, precios y días de entrega en formato de tabla
@@ -25,36 +24,37 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
   const isActuallyMobile = isMobile || isMobileBreakpoint;
 
   // Extraer las regiones de despacho del producto
-  const shippingRegions = product?.shippingRegions || 
-                         product?.delivery_regions || 
-                         product?.shipping_regions || 
-                         product?.product_delivery_regions ||
-                         [];
+  const shippingRegions =
+    product?.shippingRegions ||
+    product?.delivery_regions ||
+    product?.shipping_regions ||
+    product?.product_delivery_regions ||
+    [];
 
   // Mapeo de regiones a números romanos según el orden tradicional chileno
-  const getRegionRomanNumber = (regionValue) => {
+  const getRegionRomanNumber = regionValue => {
     const romanMap = {
       'arica-parinacota': 'XV',
-      'tarapaca': 'I',
-      'antofagasta': 'II',
-      'atacama': 'III',
-      'coquimbo': 'IV',
-      'valparaiso': 'V',
-      'metropolitana': 'RM',
-      'ohiggins': 'VI',
-      'maule': 'VII',
-      'nuble': 'XVI',
-      'biobio': 'VIII',
-      'araucania': 'IX',
+      tarapaca: 'I',
+      antofagasta: 'II',
+      atacama: 'III',
+      coquimbo: 'IV',
+      valparaiso: 'V',
+      metropolitana: 'RM',
+      ohiggins: 'VI',
+      maule: 'VII',
+      nuble: 'XVI',
+      biobio: 'VIII',
+      araucania: 'IX',
       'los-rios': 'XIV',
       'los-lagos': 'X',
-      'aysen': 'XI',
-      'magallanes': 'XII',
+      aysen: 'XI',
+      magallanes: 'XII',
     };
     return romanMap[regionValue] || '';
   };
 
-  const formatCurrency = (value) => {
+  const formatCurrency = value => {
     const numericValue = value || 0;
     if (numericValue === 0) {
       return 'GRATIS';
@@ -66,7 +66,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
     }).format(numericValue);
   };
 
-  const formatDeliveryDays = (days) => {
+  const formatDeliveryDays = days => {
     if (days === undefined || days === null) return 'N/A';
     return `${days} ${days === 1 ? 'día' : 'días'}`;
   };
@@ -77,20 +77,21 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
   }
 
   return (
-    <Box sx={{ 
-      px: { xs: 0, md: 0 }, 
-      mt: { xs: 4, md: 6 }, 
-      mb: 6,
-      width: '100%' 
-    }}>
+    <Box
+      sx={{
+        px: { xs: 0, md: 0 },
+        mt: { xs: 4, md: 6 },
+        mb: 6,
+        width: '100%',
+      }}
+    >
       <Paper
         elevation={2}
         sx={{
           // Reduce internal padding on mobile to reduce lateral spacing
           p: { xs: 1, md: 5 },
           borderRadius: 3,
-          width: { xs: '100%', md: '70%' },
-          maxWidth: '900px',
+          width: { xs: '100%', md: '77%' },
           textAlign: 'center',
           background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
           border: '1px solid #e2e8f0',
@@ -131,48 +132,48 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
         </Typography>
 
         <Box sx={{ mt: { xs: 2, md: 3 }, px: { xs: 0, md: 0 } }}>
-          <TableContainer 
-            component={Paper} 
+          <TableContainer
+            component={Paper}
             elevation={0}
-            sx={{ 
+            sx={{
               border: '1px solid',
               borderColor: 'grey.300',
               borderRadius: 2,
               backgroundColor: 'white',
             }}
           >
-            <Table size={isActuallyMobile ? "small" : "medium"}>
+            <Table size={isActuallyMobile ? 'small' : 'medium'}>
               <TableHead>
                 <TableRow sx={{ bgcolor: 'grey.50' }}>
-                  <TableCell 
-                    sx={{ 
-                      fontWeight: 600, 
+                  <TableCell
+                    sx={{
+                      fontWeight: 600,
                       py: { xs: 1, md: 1.5 },
                       px: { xs: 0.5, md: 2 },
                       fontSize: { xs: '0.875rem', md: '1rem' },
-                      textAlign: 'center'
+                      textAlign: 'center',
                     }}
                   >
                     Región
                   </TableCell>
-                  <TableCell 
-                    sx={{ 
-                      fontWeight: 600, 
+                  <TableCell
+                    sx={{
+                      fontWeight: 600,
                       py: { xs: 1, md: 1.5 },
                       px: { xs: 0.5, md: 2 },
                       fontSize: { xs: '0.875rem', md: '1rem' },
-                      textAlign: 'center'
+                      textAlign: 'center',
                     }}
                   >
                     Precio
                   </TableCell>
-                  <TableCell 
-                    sx={{ 
-                      fontWeight: 600, 
+                  <TableCell
+                    sx={{
+                      fontWeight: 600,
                       py: { xs: 1, md: 1.5 },
                       px: { xs: 0.5, md: 2 },
                       fontSize: { xs: '0.875rem', md: '1rem' },
-                      textAlign: 'center'
+                      textAlign: 'center',
                     }}
                   >
                     Tiempo despacho
@@ -181,67 +182,92 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
               </TableHead>
               <TableBody>
                 {shippingRegions.map((region, index) => (
-                  <TableRow 
+                  <TableRow
                     key={region.region || region.id || index}
-                    sx={{ 
+                    sx={{
                       '&:hover': { bgcolor: 'grey.50' },
-                      '&:last-child td': { border: 0 }
+                      '&:last-child td': { border: 0 },
                     }}
                   >
-                    <TableCell sx={{ py: { xs: 1, md: 1.5 }, px: { xs: 0.5, md: 2 }, textAlign: 'center' }}>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: { xs: 0.5, md: 1 },
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        justifyContent: 'center'
-                      }}>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
+                    <TableCell
+                      sx={{
+                        py: { xs: 1, md: 1.5 },
+                        px: { xs: 0.5, md: 2 },
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: { xs: 0.5, md: 1 },
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{
                             fontWeight: 700,
                             color: 'primary.main',
                             minWidth: '32px',
                             textAlign: 'center',
-                            fontSize: { xs: '0.875rem', md: '1rem' }
+                            fontSize: { xs: '0.875rem', md: '1rem' },
                           }}
                         >
                           {getRegionRomanNumber(region.region)}
                         </Typography>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
+                        <Typography
+                          variant="body2"
+                          sx={{
                             fontWeight: 500,
                             fontSize: { xs: '0.875rem', md: '1rem' },
-                            textAlign: { xs: 'center', sm: 'left' }
+                            textAlign: { xs: 'center', sm: 'left' },
                           }}
                         >
                           {region.regionLabel || region.region}
                         </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell sx={{ py: { xs: 1, md: 1.5 }, px: { xs: 0.5, md: 2 }, textAlign: 'center' }}>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
+                    <TableCell
+                      sx={{
+                        py: { xs: 1, md: 1.5 },
+                        px: { xs: 0.5, md: 2 },
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
                           fontWeight: 500,
                           fontSize: { xs: '0.875rem', md: '1rem' },
-                          color: (region.shippingValue || region.price) === 0 ? 'success.main' : 'black'
+                          color:
+                            (region.shippingValue || region.price) === 0
+                              ? 'success.main'
+                              : 'black',
                         }}
                       >
                         {formatCurrency(region.shippingValue || region.price)}
                       </Typography>
                     </TableCell>
-                    <TableCell sx={{ py: { xs: 1, md: 1.5 }, px: { xs: 0.5, md: 2 }, textAlign: 'center' }}>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
+                    <TableCell
+                      sx={{
+                        py: { xs: 1, md: 1.5 },
+                        px: { xs: 0.5, md: 2 },
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
                           fontWeight: 500,
                           fontSize: { xs: '0.875rem', md: '1rem' },
-                          color: 'text.primary'
+                          color: 'text.primary',
                         }}
                       >
-                        {formatDeliveryDays(region.maxDeliveryDays ?? region.delivery_days)}
+                        {formatDeliveryDays(
+                          region.maxDeliveryDays ?? region.delivery_days
+                        )}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -250,15 +276,15 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
             </Table>
           </TableContainer>
         </Box>
-        
+
         {/* Nota explicativa */}
-        <Typography 
-          variant="body2" 
-          sx={{ 
+        <Typography
+          variant="body2"
+          sx={{
             mt: { xs: 2, md: 3 },
             color: 'text.secondary',
             fontSize: '0.85rem',
-            textAlign: 'center'
+            textAlign: 'center',
           }}
         >
           <i>Tiempo de despacho estimado en días hábiles.</i>
