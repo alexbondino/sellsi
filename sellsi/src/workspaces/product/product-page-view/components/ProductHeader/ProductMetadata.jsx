@@ -7,8 +7,8 @@
  * - Compra mínima
  */
 import React from 'react';
-import { Box, Typography, Chip } from '@mui/material';
-import { Assignment } from '@mui/icons-material';
+import { Box, Typography, Chip, Tooltip } from '@mui/material';
+import { Assignment, InfoOutlined } from '@mui/icons-material';
 import { useSmartSkeleton } from '../../hooks/useSmartSkeleton';
 import { DocumentTypesChipsSkeleton } from '../skeletons/DocumentTypesChipsSkeleton';
 import { formatNumber } from '../../../../../shared/utils/formatters/numberFormatters';
@@ -115,10 +115,27 @@ const ProductMetadata = ({
         </Typography>
       </Box>
 
-      {/* Fila 4: Compra Mínima Proveedor - Siempre visible */}
+      {/* Fila 4: Monto Mínimo de Compra - Siempre visible */}
       <Box sx={METADATA_STYLES.stockRow}>
-        <Typography variant="body2" sx={METADATA_STYLES.stockText}>
-          <b>Compra mínima proveedor:</b> ${formatNumber(supplierMinimumAmount)}
+        <Typography
+          variant="body2"
+          sx={{
+            ...METADATA_STYLES.stockText,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+          }}
+        >
+          <b>Monto mínimo de compra:</b> ${formatNumber(supplierMinimumAmount)}
+          <Tooltip
+            title="El proveedor no despacha productos si el monto total entre todos los productos que compres es inferior al indicado"
+            arrow
+            placement="right"
+          >
+            <InfoOutlined
+              sx={{ fontSize: 16, color: 'action.active', cursor: 'help' }}
+            />
+          </Tooltip>
         </Typography>
       </Box>
     </Box>
