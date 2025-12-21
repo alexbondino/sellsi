@@ -21,15 +21,14 @@ import {
   Grid,
   useMediaQuery,
   useTheme,
+  Divider,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import IconButton from '@mui/material/IconButton';
 import PriceDisplay from '../../../../../shared/components/display/price/PriceDisplay';
-import {
-  PriceTiersSkeleton,
-} from '../skeletons/PriceSkeletons';
+import { PriceTiersSkeleton } from '../skeletons/PriceSkeletons';
 import { useSmartSkeleton } from '../../hooks/useSmartSkeleton';
 import {
   PRICING_STYLES,
@@ -94,36 +93,54 @@ const ProductPricing = ({
     // Layout Mobile: Stack vertical con mejor separación visual
     if (isMobile) {
       return (
-        <Box sx={{ ...ACTION_STYLES.containerWithMargin, display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
+        <Box
+          sx={{
+            ...ACTION_STYLES.containerWithMargin,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            alignItems: 'center',
+          }}
+        >
           {/* Opción 1: Contacto */}
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 0.75,
-            p: 1.5,
-            borderRadius: 1,
-            bgcolor: 'grey.50',
-            border: '1px solid',
-            borderColor: 'grey.200',
-            width: '100%',
-            maxWidth: '90%'
-          }}>
-            <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8125rem', lineHeight: 1.4, textAlign: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0.75,
+              p: 1.5,
+              borderRadius: 1,
+              bgcolor: 'grey.50',
+              border: '1px solid',
+              borderColor: 'grey.200',
+              width: '100%',
+              maxWidth: '90%',
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.secondary',
+                fontSize: '0.8125rem',
+                lineHeight: 1.4,
+                textAlign: 'center',
+              }}
+            >
               ¿Necesitas solicitar alguna condición especial?
             </Typography>
             <Button
               variant="outlined"
               size="small"
               fullWidth
-              sx={{ 
+              sx={{
                 ...ACTION_STYLES.textButton,
                 borderColor: 'primary.main',
                 color: 'primary.main',
                 fontWeight: 600,
                 '&:hover': {
                   borderColor: 'primary.dark',
-                  bgcolor: 'primary.50'
-                }
+                  bgcolor: 'primary.50',
+                },
               }}
               onClick={onOpenContactModal}
             >
@@ -132,34 +149,44 @@ const ProductPricing = ({
           </Box>
 
           {/* Opción 2: Cotización */}
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 0.75,
-            p: 1.5,
-            borderRadius: 1,
-            bgcolor: 'grey.50',
-            border: '1px solid',
-            borderColor: 'grey.200',
-            width: '100%',
-            maxWidth: '90%'
-          }}>
-            <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8125rem', lineHeight: 1.4, textAlign: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0.75,
+              p: 1.5,
+              borderRadius: 1,
+              bgcolor: 'grey.50',
+              border: '1px solid',
+              borderColor: 'grey.200',
+              width: '100%',
+              maxWidth: '90%',
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.secondary',
+                fontSize: '0.8125rem',
+                lineHeight: 1.4,
+                textAlign: 'center',
+              }}
+            >
               ¿Quieres saber los detalles de todo?
             </Typography>
             <Button
               variant="outlined"
               size="small"
               fullWidth
-              sx={{ 
+              sx={{
                 ...ACTION_STYLES.textButton,
                 borderColor: 'primary.main',
                 color: 'primary.main',
                 fontWeight: 600,
                 '&:hover': {
                   borderColor: 'primary.dark',
-                  bgcolor: 'primary.50'
-                }
+                  bgcolor: 'primary.50',
+                },
               }}
               onClick={onOpenQuotationModal}
             >
@@ -233,7 +260,15 @@ const ProductPricing = ({
   // Tabla de tramos (si existen)
   if (tiers && tiers.length > 0) {
     return (
-      <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', md: 'flex-start' }, width: '100%' }}>
+      <Box
+        sx={{
+          mb: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: { xs: 'center', md: 'flex-start' },
+          width: '100%',
+        }}
+      >
         <Box sx={PRICING_STYLES.header}>
           <Typography variant="h6" sx={PRICING_STYLES.title}>
             Precios por volumen
