@@ -7,7 +7,7 @@
  * - Compra mínima
  */
 import React from 'react';
-import { Box, Typography, Chip, Tooltip } from '@mui/material';
+import { Box, Typography, Chip, Tooltip, Paper } from '@mui/material';
 import { Assignment, InfoOutlined } from '@mui/icons-material';
 import { useSmartSkeleton } from '../../hooks/useSmartSkeleton';
 import { DocumentTypesChipsSkeleton } from '../skeletons/DocumentTypesChipsSkeleton';
@@ -102,42 +102,109 @@ const ProductMetadata = ({
 
   return (
     <Box sx={METADATA_STYLES.container}>
-      {/* Fila 1: Chips de facturación dinámicos */}
-      <Box sx={METADATA_STYLES.chipsContainer}>{renderDocumentChips()}</Box>
-
-      {/* Fila 2: Stock */}
-      <Box sx={METADATA_STYLES.stockRow}>{renderStock()}</Box>
-
-      {/* Fila 3: Compra mínima */}
-      <Box sx={METADATA_STYLES.stockRow}>
-        <Typography variant="body2" sx={METADATA_STYLES.stockText}>
-          <b>Unidades mínimas a comprar:</b> {formatNumber(compraMinima)}
-        </Typography>
-      </Box>
-
-      {/* Fila 4: Monto Mínimo de Compra - Siempre visible */}
-      <Box sx={METADATA_STYLES.stockRow}>
-        <Typography
-          variant="body2"
+      {/* Mobile: Contenedor con estilo Paper */}
+      <Box
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          width: '100%',
+        }}
+      >
+        <Paper
+          elevation={2}
           sx={{
-            ...METADATA_STYLES.stockText,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
+            p: 2,
+            borderRadius: 3,
+            width: '100%',
+            background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
+            border: '1px solid #e2e8f0',
+            position: 'relative',
+            overflow: 'hidden',
           }}
         >
-          <b>Monto mínimo de compra:</b> ${formatNumber(supplierMinimumAmount)}
-          <Tooltip
-            title="El proveedor no despacha productos si el monto total entre todos los productos que compres es inferior al indicado"
-            arrow
-            placement="right"
-          >
-            <InfoOutlined
-              sx={{ fontSize: 16, color: 'action.active', cursor: 'help' }}
-            />
-          </Tooltip>
-        </Typography>
+          {/* Chips de facturación dinámicos */}
+          <Box sx={METADATA_STYLES.chipsContainer}>{renderDocumentChips()}</Box>
+
+          {/* Unidades mínimas a comprar */}
+          <Box sx={METADATA_STYLES.infoRow}>
+            <Typography variant="body2" sx={METADATA_STYLES.stockText}>
+              <b>Unidades mínimas a comprar:</b> {formatNumber(compraMinima)}
+            </Typography>
+          </Box>
+
+          {/* Monto Mínimo de Compra */}
+          <Box sx={METADATA_STYLES.infoRow}>
+            <Typography
+              variant="body2"
+              sx={{
+                ...METADATA_STYLES.stockText,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+              }}
+            >
+              <b>Monto mínimo de compra:</b> $
+              {formatNumber(supplierMinimumAmount)}
+              <Tooltip
+                title="El proveedor no despacha productos si el monto total entre todos los productos que compres es inferior al indicado"
+                arrow
+                placement="right"
+              >
+                <InfoOutlined
+                  sx={{ fontSize: 16, color: 'action.active', cursor: 'help' }}
+                />
+              </Tooltip>
+            </Typography>
+          </Box>
+        </Paper>
       </Box>
+
+      {/* Desktop: Sin contenedor Paper (versión anterior) */}
+      <Box
+        sx={{
+          display: { xs: 'none', md: 'flex' },
+          flexDirection: 'column',
+          gap: 1,
+          width: '100%',
+        }}
+      >
+        {/* Chips de facturación dinámicos */}
+        <Box sx={METADATA_STYLES.chipsContainer}>{renderDocumentChips()}</Box>
+
+        {/* Unidades mínimas a comprar */}
+        <Box sx={METADATA_STYLES.stockRow}>
+          <Typography variant="body2" sx={METADATA_STYLES.stockText}>
+            <b>Unidades mínimas a comprar:</b> {formatNumber(compraMinima)}
+          </Typography>
+        </Box>
+
+        {/* Monto Mínimo de Compra */}
+        <Box sx={METADATA_STYLES.stockRow}>
+          <Typography
+            variant="body2"
+            sx={{
+              ...METADATA_STYLES.stockText,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+            }}
+          >
+            <b>Monto mínimo de compra:</b> $
+            {formatNumber(supplierMinimumAmount)}
+            <Tooltip
+              title="El proveedor no despacha productos si el monto total entre todos los productos que compres es inferior al indicado"
+              arrow
+              placement="right"
+            >
+              <InfoOutlined
+                sx={{ fontSize: 16, color: 'action.active', cursor: 'help' }}
+              />
+            </Tooltip>
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Stock - Siempre visible fuera del Paper */}
+      <Box sx={METADATA_STYLES.stockRow}>{renderStock()}</Box>
     </Box>
   );
 };

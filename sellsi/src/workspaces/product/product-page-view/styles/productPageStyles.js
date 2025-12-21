@@ -288,9 +288,10 @@ export const METADATA_STYLES = {
     flexDirection: 'column',
     alignItems: 'flex-start',
     mb: 3,
+    mt: { xs: 4, md: 0 }, // Aumentar margen superior en mobile
     width: '100%',
     maxWidth: { xs: 'none', md: 500 },
-    gap: { xs: 2, md: 1 },
+    gap: { xs: 3, md: 2 },
   },
 
   chipsContainer: {
@@ -299,6 +300,7 @@ export const METADATA_STYLES = {
     flexWrap: 'wrap',
     width: '100%',
     justifyContent: { xs: 'flex-start', md: 'flex-start' },
+    mb: { xs: 2, md: 1.5 },
   },
 
   chip: {
@@ -308,8 +310,14 @@ export const METADATA_STYLES = {
     '&:hover': { backgroundColor: 'primary.main' },
   },
 
+  infoRow: {
+    width: '100%',
+    mt: { xs: 1.5, md: 1 },
+  },
+
   stockRow: {
     width: '100%',
+    mt: { xs: 1, md: 0.5 },
   },
 
   stockText: {
