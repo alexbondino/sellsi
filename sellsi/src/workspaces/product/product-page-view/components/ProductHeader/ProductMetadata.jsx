@@ -124,6 +124,9 @@ const ProductMetadata = ({
           {/* Chips de facturación dinámicos */}
           <Box sx={METADATA_STYLES.chipsContainer}>{renderDocumentChips()}</Box>
 
+          {/* Stock */}
+          <Box sx={METADATA_STYLES.infoRow}>{renderStock()}</Box>
+
           {/* Unidades mínimas a comprar */}
           <Box sx={METADATA_STYLES.infoRow}>
             <Typography variant="body2" sx={METADATA_STYLES.stockText}>
@@ -170,15 +173,18 @@ const ProductMetadata = ({
         {/* Chips de facturación dinámicos */}
         <Box sx={METADATA_STYLES.chipsContainer}>{renderDocumentChips()}</Box>
 
+        {/* Stock */}
+        <Box sx={METADATA_STYLES.infoRow}>{renderStock()}</Box>
+
         {/* Unidades mínimas a comprar */}
-        <Box sx={METADATA_STYLES.stockRow}>
+        <Box sx={METADATA_STYLES.infoRow}>
           <Typography variant="body2" sx={METADATA_STYLES.stockText}>
             <b>Unidades mínimas a comprar:</b> {formatNumber(compraMinima)}
           </Typography>
         </Box>
 
         {/* Monto Mínimo de Compra */}
-        <Box sx={METADATA_STYLES.stockRow}>
+        <Box sx={METADATA_STYLES.infoRow}>
           <Typography
             variant="body2"
             sx={{
@@ -202,9 +208,6 @@ const ProductMetadata = ({
           </Typography>
         </Box>
       </Box>
-
-      {/* Stock - Siempre visible fuera del Paper */}
-      <Box sx={METADATA_STYLES.stockRow}>{renderStock()}</Box>
     </Box>
   );
 };

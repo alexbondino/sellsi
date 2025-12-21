@@ -242,6 +242,7 @@ export const SUPPLIER_STYLES = {
     alignItems: 'center',
     mb: 3,
     gap: 1.5,
+    width: { xs: '100%', md: 'auto' }, // ✅ 100% en mobile
   },
 
   avatar: {

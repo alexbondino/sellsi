@@ -80,6 +80,7 @@ const ProductSupplier = ({
           borderRadius: '12px', // ✅ Border radius reducido
           cursor: isLoggedIn ? 'pointer' : 'default',
           transition: 'all 0.2s ease',
+          width: { xs: '100%', md: 'auto' }, // ✅ 100% en mobile, auto en desktop
           '&:hover': isLoggedIn
             ? {
                 bgcolor: 'primary.dark', // ✅ Azul más oscuro al hover
