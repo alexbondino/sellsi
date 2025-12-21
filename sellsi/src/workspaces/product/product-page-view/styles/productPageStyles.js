@@ -68,8 +68,8 @@ export const SPACING = {
 export const DIMENSIONS = {
   // Anchos máximos
   maxContentWidth: 1450,
-  maxHeaderWidth: 580,
-  maxTableWidth: 400,
+  maxHeaderWidth: '41%',
+  maxTableWidth: '74%',
 
   // Alturas
   galleryHeight: 400,
