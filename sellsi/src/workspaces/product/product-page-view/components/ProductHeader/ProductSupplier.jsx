@@ -3,12 +3,15 @@
  *
  * Muestra:
  * - Avatar del proveedor
- * - Nombre (clickeable si está logueado)
+ * - Nombre (clickeable si está logueado) en un contenedor tipo tag
  * - Badge de verificado
  */
 import React from 'react';
-import { Box, Typography, Avatar, Tooltip } from '@mui/material';
-import { Verified as VerifiedIcon } from '@mui/icons-material';
+import { Box, Typography, Avatar, Tooltip, Chip } from '@mui/material';
+import {
+  Verified as VerifiedIcon,
+  Store as StoreIcon,
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import {
   SUPPLIER_STYLES,
@@ -33,31 +36,67 @@ const ProductSupplier = ({
 
   return (
     <Box sx={SUPPLIER_STYLES.container}>
-      <Avatar src={logoUrl} sx={SUPPLIER_STYLES.avatar}>
-        {proveedor?.charAt(0)}
-      </Avatar>
-
-      <Typography
-        variant="body1"
-        sx={
-          isLoggedIn
-            ? SUPPLIER_STYLES.nameClickable
-            : SUPPLIER_STYLES.nameNotClickable
+      <Chip
+        avatar={
+          <Avatar
+            src={logoUrl}
+            sx={{
+              width: 28,
+              height: 28,
+              bgcolor: 'white',
+              color: 'primary.main',
+            }}
+          >
+            {proveedor?.charAt(0)}
+          </Avatar>
+        }
+        label={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {' '}
+            {/* ✅ Aumentado de 0.5 a 1 (8px) */}
+            {proveedor}
+            {isVerified && (
+              <Tooltip
+                title="Este Proveedor ha sido verificado por Sellsi."
+                placement="right"
+                arrow
+              >
+                <VerifiedIcon sx={{ fontSize: 18, color: 'white', ml: 0.5 }} />{' '}
+                {/* ✅ Margen adicional */}
+              </Tooltip>
+            )}
+          </Box>
         }
         onClick={isLoggedIn ? handleSupplierClick : undefined}
-      >
-        {proveedor}
-      </Typography>
-
-      {isVerified && (
-        <Tooltip
-          title="Este Proveedor ha sido verificado por Sellsi."
-          placement="right"
-          arrow
-        >
-          <VerifiedIcon sx={SUPPLIER_STYLES.verifiedIcon} />
-        </Tooltip>
-      )}
+        clickable={isLoggedIn}
+        sx={{
+          py: 2.5,
+          px: 1.5, // ✅ Aumentado de 1 a 1.5
+          fontSize: '0.95rem',
+          fontWeight: 600,
+          color: 'white', // ✅ Texto blanco
+          bgcolor: 'primary.main', // ✅ Fondo azul principal
+          border: 'none',
+          borderRadius: '12px', // ✅ Border radius reducido
+          cursor: isLoggedIn ? 'pointer' : 'default',
+          transition: 'all 0.2s ease',
+          '&:hover': isLoggedIn
+            ? {
+                bgcolor: 'primary.dark', // ✅ Azul más oscuro al hover
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(46, 82, 178, 0.4)',
+              }
+            : {},
+          '& .MuiChip-label': {
+            px: 1.5, // ✅ Aumentado de 1 a 1.5
+            fontWeight: 600,
+            color: 'white', // ✅ Asegurar texto blanco
+          },
+          '& .MuiChip-avatar': {
+            ml: 1, // ✅ Aumentado de 0.5 a 1 (margen entre avatar y texto)
+          },
+        }}
+      />
     </Box>
   );
 };
