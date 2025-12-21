@@ -91,7 +91,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
           // Reduce internal padding on mobile to reduce lateral spacing
           p: { xs: 1, md: 5 },
           borderRadius: 3,
-          width: { xs: '100%', md: '77%' },
+          width: { xs: '100%', md: '80%' },
           textAlign: 'center',
           background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
           border: '1px solid #e2e8f0',
