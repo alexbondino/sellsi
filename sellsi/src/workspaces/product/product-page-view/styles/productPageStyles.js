@@ -105,6 +105,7 @@ export const HEADER_STYLES = {
     flexDirection: { xs: 'column', md: 'row' },
     width: '100%',
     gap: { xs: 2, md: 0 },
+    ml: { xs: 0, md: 2 },
   },
 
   section: {
@@ -393,9 +394,9 @@ export const INFO_STYLES = {
     flexDirection: 'column',
     alignItems: 'flex-start',
     textAlign: 'left',
-    px: { xs: 0, md: 1 },
-    width: { xs: '100%', md: '80%' },
-    maxWidth: { xs: 'none', md: DIMENSIONS.maxHeaderWidth },
+    px: { xs: 0, md: 0 },
+    width: { xs: '100%', md: '50%' },
+    maxWidth: { xs: 'none', md: '50%' },
     mx: { xs: 0, md: 0 },
   },
 
