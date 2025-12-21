@@ -10,7 +10,7 @@ const ProductInfo = ({ product, isMobile = false }) => {
     <Box
       sx={{
         px: { xs: 0, md: 0 },
-        mt: { xs: 2, md: 3 }, // Reducido margen superior
+        mt: { xs: 0, md: 2.5 }, // Reducido más el margen superior
         mb: { xs: 2, md: 3 }, // Reducido margen inferior
         width: '100%',
       }}

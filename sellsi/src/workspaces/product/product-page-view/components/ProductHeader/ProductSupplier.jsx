@@ -43,8 +43,8 @@ const ProductSupplier = ({
             sx={{
               width: 28,
               height: 28,
-              bgcolor: 'white',
-              color: 'primary.main',
+              bgcolor: 'primary.main', // Fondo azul
+              color: 'white !important', // Texto blanco en avatar con !important
             }}
           >
             {proveedor?.charAt(0)}
@@ -52,8 +52,6 @@ const ProductSupplier = ({
         }
         label={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {' '}
-            {/* ✅ Aumentado de 0.5 a 1 (8px) */}
             {proveedor}
             {isVerified && (
               <Tooltip
@@ -61,8 +59,9 @@ const ProductSupplier = ({
                 placement="right"
                 arrow
               >
-                <VerifiedIcon sx={{ fontSize: 18, color: 'white', ml: 0.5 }} />{' '}
-                {/* ✅ Margen adicional */}
+                <VerifiedIcon
+                  sx={{ fontSize: 18, color: 'primary.main', ml: 0.5 }}
+                />
               </Tooltip>
             )}
           </Box>
@@ -71,30 +70,31 @@ const ProductSupplier = ({
         clickable={isLoggedIn}
         sx={{
           py: 2.5,
-          px: 1.5, // ✅ Aumentado de 1 a 1.5
+          px: 1.5,
           fontSize: '0.95rem',
           fontWeight: 600,
-          color: 'white', // ✅ Texto blanco
-          bgcolor: 'primary.main', // ✅ Fondo azul principal
-          border: 'none',
-          borderRadius: '12px', // ✅ Border radius reducido
+          color: 'primary.main', // Texto azul
+          bgcolor: 'white', // Fondo blanco
+          border: '2px solid', // Borde azul
+          borderColor: 'primary.main',
+          borderRadius: '12px',
           cursor: isLoggedIn ? 'pointer' : 'default',
           transition: 'all 0.2s ease',
-          width: { xs: '100%', md: 'auto' }, // ✅ 100% en mobile, auto en desktop
+          width: { xs: '100%', md: 'auto' },
           '&:hover': isLoggedIn
             ? {
-                bgcolor: 'primary.dark', // ✅ Azul más oscuro al hover
+                bgcolor: 'rgba(46, 82, 178, 0.05)', // Fondo azul muy claro al hover
                 transform: 'translateY(-2px)',
-                boxShadow: '0 4px 12px rgba(46, 82, 178, 0.4)',
+                boxShadow: '0 4px 12px rgba(46, 82, 178, 0.2)',
               }
             : {},
           '& .MuiChip-label': {
-            px: 1.5, // ✅ Aumentado de 1 a 1.5
+            px: 1.5,
             fontWeight: 600,
-            color: 'white', // ✅ Asegurar texto blanco
+            color: 'primary.main', // Asegurar texto azul
           },
           '& .MuiChip-avatar': {
-            ml: 1, // ✅ Aumentado de 0.5 a 1 (margen entre avatar y texto)
+            ml: 1,
           },
         }}
       />
