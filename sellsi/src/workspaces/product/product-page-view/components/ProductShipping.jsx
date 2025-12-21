@@ -80,8 +80,8 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
     <Box
       sx={{
         px: { xs: 0, md: 0 },
-        mt: { xs: 4, md: 6 },
-        mb: 6,
+        mt: { xs: 2, md: 3 }, // Reducido margen superior
+        mb: { xs: 2, md: 3 }, // Reducido margen inferior
         width: '100%',
       }}
     >

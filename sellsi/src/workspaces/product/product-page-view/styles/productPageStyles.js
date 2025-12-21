@@ -240,7 +240,7 @@ export const SUPPLIER_STYLES = {
   container: {
     display: 'flex',
     alignItems: 'center',
-    mb: 3,
+    mb: { xs: 2, md: 3 }, // Reducido margen inferior en mobile
     gap: 1.5,
     width: { xs: '100%', md: 'auto' }, // ✅ 100% en mobile
   },
@@ -288,11 +288,11 @@ export const METADATA_STYLES = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    mb: 3,
-    mt: { xs: 4, md: 0 }, // Aumentar margen superior en mobile
+    mb: { xs: 2, md: 3 }, // Reducido en mobile
+    mt: { xs: 2.5, md: 0 }, // Reducido margen superior en mobile
     width: '100%',
     maxWidth: { xs: 'none', md: 500 },
-    gap: { xs: 3, md: 2 },
+    gap: { xs: 2.5, md: 2 }, // Reducido gap en mobile
   },
 
   chipsContainer: {
@@ -301,7 +301,7 @@ export const METADATA_STYLES = {
     flexWrap: 'wrap',
     width: '100%',
     justifyContent: { xs: 'flex-start', md: 'flex-start' },
-    mb: { xs: 2, md: 1.5 },
+    mb: { xs: 1.5, md: 1.5 }, // Reducido en mobile
   },
 
   chip: {
@@ -313,7 +313,7 @@ export const METADATA_STYLES = {
 
   infoRow: {
     width: '100%',
-    mt: { xs: 1.5, md: 1 },
+    mt: { xs: 1, md: 1 }, // Reducido en mobile
   },
 
   stockRow: {
