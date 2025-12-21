@@ -1,10 +1,5 @@
 /**
  * ProductPricing - Muestra precios por volumen o precio único
- *
- * Renderiza:
- * - Tabla de tramos de precio (si existen)
- * - Precio único (si no hay tramos)
- * - Botones de cotización/contacto (si corresponde)
  */
 import React from 'react';
 import {
@@ -18,10 +13,8 @@ import {
   Paper,
   Button,
   Tooltip,
-  Grid,
   useMediaQuery,
   useTheme,
-  Divider,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -32,7 +25,6 @@ import { PriceTiersSkeleton } from '../skeletons/PriceSkeletons';
 import { useSmartSkeleton } from '../../hooks/useSmartSkeleton';
 import {
   PRICING_STYLES,
-  ACTION_STYLES,
   ICON_BUTTON_CLEAN,
 } from '../../styles/productPageStyles';
 
@@ -52,176 +44,100 @@ const ProductPricing = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  /**
-   * Genera el texto del rango y tooltip para cada tramo
-   */
   const getTierDisplay = (tier, idx, allTiers) => {
-    const isLastTier = idx === allTiers.length - 1;
+    const isLast = idx === allTiers.length - 1;
 
-    if (isLastTier) {
+    if (isLast) {
       return {
         rangeText: `${tier.min_quantity}+ uds`,
-        tooltipMessage: `Si compras ${
+        tooltipMessage: `Desde ${
           tier.min_quantity
-        } unidades o más, el precio unitario es $${tier.price.toLocaleString(
+        } unidades el precio unitario es $${tier.price.toLocaleString(
           'es-CL'
         )}`,
       };
     }
 
     const nextTier = allTiers[idx + 1];
-    const maxQuantity = nextTier
-      ? nextTier.min_quantity - 1
-      : tier.max_quantity;
+    const maxQty = nextTier.min_quantity - 1;
 
     return {
-      rangeText: `${tier.min_quantity} - ${maxQuantity} uds`,
-      tooltipMessage: `Si compras entre ${
+      rangeText: `${tier.min_quantity} - ${maxQty} uds`,
+      tooltipMessage: `Entre ${
         tier.min_quantity
-      } y ${maxQuantity} unidades, el precio unitario es de $${tier.price.toLocaleString(
+      } y ${maxQty} unidades el precio unitario es $${tier.price.toLocaleString(
         'es-CL'
       )}`,
     };
   };
 
-  /**
-   * Renderiza los botones de cotización/contacto
-   */
-  const renderQuotationButtons = () => {
+  const renderQuotationButtonsDesktop = () => {
     if (!isLoggedIn || isOwnProduct) return null;
 
-    // Layout Mobile: Stack vertical con mejor separación visual
-    if (isMobile) {
-      return (
+    return (
+      <Box
+        sx={{
+          mt: 2, // ✅ Espacio desde la tabla de precios
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.5, // 🔥 distancia entre filas
+        }}
+      >
+        {/* Fila 1 */}
         <Box
           sx={{
-            ...ACTION_STYLES.containerWithMargin,
             display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
             alignItems: 'center',
+            gap: 0.75, // 🔥 texto ↔ botón
+            lineHeight: 1.2,
           }}
         >
-          {/* Opción 1: Contacto */}
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 0.75,
-              p: 1.5,
-              borderRadius: 1,
-              bgcolor: 'grey.50',
-              border: '1px solid',
-              borderColor: 'grey.200',
-              width: '100%',
-              maxWidth: '90%',
-            }}
+          <Typography
+            variant="body2"
+            sx={{ color: 'text.secondary', lineHeight: 1.2 }}
           >
-            <Typography
-              variant="body2"
-              sx={{
-                color: 'text.secondary',
-                fontSize: '0.8125rem',
-                lineHeight: 1.4,
-                textAlign: 'center',
-              }}
-            >
-              ¿Necesitas solicitar alguna condición especial?
-            </Typography>
-            <Button
-              variant="outlined"
-              size="small"
-              fullWidth
-              sx={{
-                ...ACTION_STYLES.textButton,
-                borderColor: 'primary.main',
-                color: 'primary.main',
-                fontWeight: 600,
-                '&:hover': {
-                  borderColor: 'primary.dark',
-                  bgcolor: 'primary.50',
-                },
-              }}
-              onClick={onOpenContactModal}
-            >
-              Contáctanos
-            </Button>
-          </Box>
-
-          {/* Opción 2: Cotización */}
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 0.75,
-              p: 1.5,
-              borderRadius: 1,
-              bgcolor: 'grey.50',
-              border: '1px solid',
-              borderColor: 'grey.200',
-              width: '100%',
-              maxWidth: '90%',
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                color: 'text.secondary',
-                fontSize: '0.8125rem',
-                lineHeight: 1.4,
-                textAlign: 'center',
-              }}
-            >
-              ¿Quieres saber los detalles de todo?
-            </Typography>
-            <Button
-              variant="outlined"
-              size="small"
-              fullWidth
-              sx={{
-                ...ACTION_STYLES.textButton,
-                borderColor: 'primary.main',
-                color: 'primary.main',
-                fontWeight: 600,
-                '&:hover': {
-                  borderColor: 'primary.dark',
-                  bgcolor: 'primary.50',
-                },
-              }}
-              onClick={onOpenQuotationModal}
-            >
-              Cotiza aquí
-            </Button>
-          </Box>
-        </Box>
-      );
-    }
-
-    // Layout Desktop: Original (filas horizontales)
-    return (
-      <Box sx={ACTION_STYLES.containerWithMargin}>
-        <Box sx={ACTION_STYLES.row}>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             ¿Necesitas solicitar alguna condición especial?
           </Typography>
+
           <Button
             variant="text"
             size="small"
-            sx={ACTION_STYLES.textButton}
             onClick={onOpenContactModal}
+            sx={{
+              fontWeight: 600,
+              minHeight: 'auto',
+              py: 0,
+            }}
           >
             Contáctanos
           </Button>
         </Box>
-        <Box sx={ACTION_STYLES.row}>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+
+        {/* Fila 2 */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.75,
+            lineHeight: 1.2,
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ color: 'text.secondary', lineHeight: 1.2 }}
+          >
             ¿Quieres saber los detalles de todo?
           </Typography>
+
           <Button
             variant="text"
             size="small"
-            sx={ACTION_STYLES.textButton}
             onClick={onOpenQuotationModal}
+            sx={{
+              fontWeight: 600,
+              minHeight: 'auto',
+              py: 0,
+            }}
           >
             Cotiza aquí
           </Button>
@@ -230,61 +146,29 @@ const ProductPricing = ({
     );
   };
 
-  // Loading state
-  if (showPriceSkeleton) {
-    return <PriceTiersSkeleton rows={4} />;
-  }
+  if (showPriceSkeleton) return <PriceTiersSkeleton rows={4} />;
 
-  // Error state
   if (errorTiers) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 1,
-          mb: 2,
-        }}
-      >
-        <Typography variant="body2" color="error.main">
-          Error al cargar precios
-        </Typography>
-        <Tooltip title="Reintenta o revisa tu conexión" arrow>
-          <ContentCopyIcon color="disabled" fontSize="small" />
-        </Tooltip>
-      </Box>
+      <Typography variant="body2" color="error.main" align="center" mb={2}>
+        Error al cargar precios
+      </Typography>
     );
   }
 
-  // Tabla de tramos (si existen)
-  if (tiers && tiers.length > 0) {
+  if (tiers.length > 0) {
     return (
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: { xs: 'center', md: 'flex-start' },
-          width: '100%',
-        }}
-      >
+      <Box sx={{ mb: 3, width: '100%' }}>
         <Box sx={PRICING_STYLES.header}>
           <Typography variant="h6" sx={PRICING_STYLES.title}>
             Precios por volumen
           </Typography>
-          <Tooltip
-            title="El precio varía según la cantidad que compres. Cada tramo indica el precio unitario para ese rango de unidades."
-            arrow
-            placement="right"
-          >
-            <InfoOutlinedIcon
-              color="action"
-              fontSize="small"
-              sx={{ cursor: 'pointer' }}
-            />
+
+          <Tooltip title="El precio varía según la cantidad" arrow>
+            <InfoOutlinedIcon fontSize="small" />
           </Tooltip>
-          <Tooltip title="Copiar todos los precios" arrow placement="right">
+
+          <Tooltip title="Copiar todos los precios" arrow>
             <IconButton
               size="small"
               onClick={onCopyAllTiers}
@@ -299,7 +183,13 @@ const ProductPricing = ({
           </Tooltip>
         </Box>
 
-        <TableContainer component={Paper} sx={PRICING_STYLES.tableContainer}>
+        <TableContainer
+          component={Paper}
+          sx={{
+            ...PRICING_STYLES.tableContainer,
+            mb: 0, // 🔥 elimina espacio inferior de la tabla
+          }}
+        >
           <Table size="small">
             <TableBody>
               {tiers.map((tier, idx) => {
@@ -310,12 +200,7 @@ const ProductPricing = ({
                 );
 
                 return (
-                  <Tooltip
-                    key={idx}
-                    title={tooltipMessage}
-                    arrow
-                    placement="right"
-                  >
+                  <Tooltip key={idx} title={tooltipMessage} arrow>
                     <TableRow hover sx={{ cursor: 'help' }}>
                       <TableCell
                         align="center"
@@ -324,7 +209,7 @@ const ProductPricing = ({
                         {rangeText}
                       </TableCell>
                       <TableCell align="center">
-                        <Typography color="text.primary" fontWeight={700}>
+                        <Typography fontWeight={700}>
                           ${tier.price.toLocaleString('es-CL')}
                         </Typography>
                       </TableCell>
@@ -336,50 +221,28 @@ const ProductPricing = ({
           </Table>
         </TableContainer>
 
-        {renderQuotationButtons()}
+        {!isMobile && renderQuotationButtonsDesktop()}
       </Box>
     );
   }
 
-  // Precio único (sin tramos)
+  // Precio único (por completitud)
   return (
-    <Box
-      sx={{
-        mb: 3,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: { xs: 'center', md: 'flex-start' },
-        justifyContent: 'flex-start',
-        width: '100%',
-      }}
-    >
-      <Box sx={PRICING_STYLES.headerLeft}>
-        <Typography variant="h6" sx={PRICING_STYLES.title}>
-          Precio
-        </Typography>
-      </Box>
-
-      <TableContainer component={Paper} sx={PRICING_STYLES.tableContainerLeft}>
+    <Box sx={{ mb: 3, width: '100%' }}>
+      <TableContainer component={Paper} sx={{ mb: 0 }}>
         <Table size="small">
           <TableBody>
-            <TableRow hover>
-              <TableCell align="center" sx={PRICING_STYLES.quantityCell}>
-                Por unidad
-              </TableCell>
+            <TableRow>
+              <TableCell align="center">Por unidad</TableCell>
               <TableCell align="center">
-                <PriceDisplay
-                  price={product.precio}
-                  originalPrice={product.precioOriginal}
-                  variant="body1"
-                  sx={PRICING_STYLES.singlePriceDisplay}
-                />
+                <PriceDisplay price={product.precio} />
               </TableCell>
             </TableRow>
           </TableBody>
         </Table>
       </TableContainer>
 
-      {renderQuotationButtons()}
+      {!isMobile && renderQuotationButtonsDesktop()}
     </Box>
   );
 };
