@@ -396,9 +396,19 @@ const ProductPageView = memo(
                 </Suspense>
               </Box>
 
-              {/* 2.5. Descripción del Producto */}
+              {/* 2.5. Descripción del Producto con Botones de Compra */}
               <Suspense fallback={<ProductInfoSkeleton />}>
-                <ProductInfo product={product} isMobile={isMobile} />
+                <ProductInfo 
+                  product={product} 
+                  isMobile={isMobile}
+                  // Props para PurchaseActions
+                  stock={product?.stock || 0}
+                  tiers={product?.priceTiers || []}
+                  isLoggedIn={isLoggedIn}
+                  userRegion={null}
+                  isLoadingUserProfile={false}
+                  showPurchaseActions={!fromMyProducts && !isFromSupplierMarketplace && !isSupplier}
+                />
               </Suspense>
 
               {/* 3. ProductShipping - Regiones de Despacho */}

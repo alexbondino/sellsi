@@ -395,8 +395,8 @@ export const INFO_STYLES = {
     alignItems: 'flex-start',
     textAlign: 'left',
     px: { xs: 0, md: 0 },
-    width: { xs: '100%', md: '50%' },
-    maxWidth: { xs: 'none', md: '50%' },
+    width: { xs: '100%', md: '80%' }, // ✅ Mismo ancho que descripción/despacho
+    maxWidth: { xs: 'none', md: '80%' }, // ✅ Mismo maxWidth
     mx: { xs: 0, md: 0 },
   },
 
