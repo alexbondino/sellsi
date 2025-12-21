@@ -324,7 +324,13 @@ const ProductPageView = memo(
                 }}
               >
                 <Breadcrumbs
-                  sx={{ fontSize: '0.875rem', color: 'text.secondary' }}
+                  sx={{
+                    fontSize: '0.875rem',
+                    color: 'text.secondary',
+                    '& .MuiBreadcrumbs-ol': {
+                      flexWrap: 'nowrap', // ✅ Evita que se divida en múltiples líneas
+                    },
+                  }}
                 >
                   <Link
                     underline="hover"
@@ -335,6 +341,7 @@ const ProductPageView = memo(
                       display: 'flex',
                       alignItems: 'center',
                       gap: 0.5,
+                      flexShrink: 0, // ✅ No se encoge
                     }}
                   >
                     <Home fontSize="small" />
@@ -349,6 +356,7 @@ const ProductPageView = memo(
                       display: 'flex',
                       alignItems: 'center',
                       gap: 0.5,
+                      flexShrink: 0, // ✅ No se encoge
                     }}
                   >
                     {fromMyProducts ? (
@@ -363,8 +371,18 @@ const ProductPageView = memo(
                       : 'Marketplace'}
                   </Link>
                   {product && (
-                    <Typography color="primary.main" sx={{ fontWeight: 600 }}>
-                      {isMobile ? 'Ficha Técnica' : product.nombre}
+                    <Typography
+                      sx={{
+                        color: 'text.secondary', // ✅ Mismo color gris
+                        fontSize: '0.875rem', // ✅ Mismo tamaño de fuente
+                        fontWeight: 400, // ✅ Mismo peso
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: { xs: '120px', sm: '200px', md: '350px' }, // ✅ Ancho máximo ajustado
+                      }}
+                    >
+                      {product.nombre}
                     </Typography>
                   )}
                 </Breadcrumbs>

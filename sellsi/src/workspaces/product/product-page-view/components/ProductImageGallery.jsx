@@ -93,7 +93,7 @@ const ProductImageGallery = ({
           mb: 2,
           overflow: 'hidden',
           borderRadius: { xs: 0, sm: 3 }, // Sin border radius en móvil
-          width: '72%', // Full width en todos los tamaños
+          width: { xs: '100%', md: '72%' }, // ✅ Full width en mobile, 72% en desktop
           display: 'flex',
           justifyContent: 'center',
           mx: 'auto',
