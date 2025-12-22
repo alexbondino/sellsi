@@ -80,42 +80,58 @@ const ProviderCatalog = () => {
         // 1. Obtener información del proveedor
         const { data: providerData, error: providerError } = await supabase
           .from('users')
-          .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
+          .select(
+            'user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified'
+          )
           .eq('user_id', userId)
           .single();
 
         if (providerError) {
-          throw new Error(`Error al obtener proveedor: ${providerError.message}`);
+          throw new Error(
+            `Error al obtener proveedor: ${providerError.message}`
+          );
         }
 
         if (!providerData) {
           throw new Error('Proveedor no encontrado');
         }
 
+        // Verificar si el proveedor está verificado
+        if (!providerData.verified) {
+          throw new Error(
+            'Este proveedor no está verificado. Los productos no están disponibles.'
+          );
+        }
+
         // 2. Obtener productos del proveedor
         const { data: productsData, error: productsError } = await supabase
           .from('products')
-          .select(`
+          .select(
+            `
             *,
             product_images (image_url)
-          `)
+          `
+          )
           .eq('supplier_id', userId)
           .eq('is_active', true)
           .order('createddt', { ascending: false });
 
         if (productsError) {
-          throw new Error(`Error al obtener productos: ${productsError.message}`);
+          throw new Error(
+            `Error al obtener productos: ${productsError.message}`
+          );
         }
 
         // 3. Obtener quantity ranges (price tiers) por separado si es necesario
         let allQuantityRanges = [];
         if (productsData && productsData.length > 0) {
           const productIds = productsData.map(p => p.productid);
-          const { data: quantityRangesData, error: quantityRangesError } = await supabase
-            .from('product_quantity_ranges')
-            .select('*')
-            .in('product_id', productIds)
-            .order('min_quantity', { ascending: true });
+          const { data: quantityRangesData, error: quantityRangesError } =
+            await supabase
+              .from('product_quantity_ranges')
+              .select('*')
+              .in('product_id', productIds)
+              .order('min_quantity', { ascending: true });
 
           if (!quantityRangesError) {
             allQuantityRanges = quantityRangesData || [];
@@ -124,15 +140,17 @@ const ProviderCatalog = () => {
 
         // 4. Formatear productos para compatibilidad
         const formattedProducts = (productsData || []).map(product => {
-          const productQuantityRanges = allQuantityRanges.filter(range => range.product_id === product.productid);
-          
+          const productQuantityRanges = allQuantityRanges.filter(
+            range => range.product_id === product.productid
+          );
+
           // ✅ FIX: Convertir quantity ranges a formato de price tiers con propiedades correctas
           // Usar min_quantity y max_quantity (no quantity_from/quantity_to)
           const priceTiers = productQuantityRanges.map(range => ({
             min_quantity: range.min_quantity,
             max_quantity: range.max_quantity,
             price: range.price,
-            id: range.id // Incluir id del rango para key única
+            id: range.id, // Incluir id del rango para key única
           }));
 
           // ✅ FIX: Calcular minPrice y maxPrice para ordenamiento
@@ -147,11 +165,15 @@ const ProviderCatalog = () => {
           // Obtener la primera imagen del producto y thumbnail
           let imagenPrincipal = null;
           let thumbnailUrl = null;
-          if (product.product_images && Array.isArray(product.product_images) && product.product_images.length > 0) {
+          if (
+            product.product_images &&
+            Array.isArray(product.product_images) &&
+            product.product_images.length > 0
+          ) {
             imagenPrincipal = product.product_images[0].image_url;
             thumbnailUrl = product.product_images[0].thumbnail_url; // ✅ NUEVO: Obtener thumbnail_url
           }
-          
+
           return {
             ...product,
             id: product.productid, // Mapear productid a id para compatibilidad
@@ -189,7 +211,6 @@ const ProviderCatalog = () => {
         // No extraer categorías dinámicamente, se usan las estandarizadas
         // setAvailableCategories(CATEGORIAS); // No necesario
         setFilteredProducts(activeProducts);
-
       } catch (err) {
         console.error('Error en fetchProviderAndProducts:', err);
         setError(err.message);
@@ -210,15 +231,18 @@ const ProviderCatalog = () => {
     // Filtrar por búsqueda
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(product =>
-        product.nombre.toLowerCase().includes(search) ||
-        product.categoria.toLowerCase().includes(search)
+      filtered = filtered.filter(
+        product =>
+          product.nombre.toLowerCase().includes(search) ||
+          product.categoria.toLowerCase().includes(search)
       );
     }
 
     // Filtrar por categoría
     if (categoryFilter && categoryFilter !== 'all') {
-      filtered = filtered.filter(product => product.categoria === categoryFilter);
+      filtered = filtered.filter(
+        product => product.categoria === categoryFilter
+      );
     }
 
     // Ordenar por precio (considerando priceTiers)
@@ -242,45 +266,48 @@ const ProviderCatalog = () => {
   }, [products, searchTerm, categoryFilter, priceOrder]);
 
   // Manejar agregar al carrito
-  const handleAddToCart = useMemo(() => (product) => {
-    addToCart(product);
-    
-    // Mostrar toast de confirmación
-    toast.success(
-      `${product.nombre || product.name || 'Producto'} agregado al carrito`,
-      {
-        icon: '🛒',
-        duration: 3000,
+  const handleAddToCart = useMemo(
+    () => product => {
+      addToCart(product);
+
+      // Mostrar toast de confirmación
+      toast.success(
+        `${product.nombre || product.name || 'Producto'} agregado al carrito`,
+        {
+          icon: '🛒',
+          duration: 3000,
+        }
+      );
+
+      // Navegar al carrito si estamos en contexto de buyer (con delay para mostrar toast)
+      if (isFromBuyer) {
+        setTimeout(() => {
+          navigate('/buyer/cart');
+        }, 1500); // 1.5 segundos de delay para ver el toast
       }
-    );
-    
-    // Navegar al carrito si estamos en contexto de buyer (con delay para mostrar toast)
-    if (isFromBuyer) {
-      setTimeout(() => {
-        navigate('/buyer/cart');
-      }, 1500); // 1.5 segundos de delay para ver el toast
-    }
-  }, [addToCart, isFromBuyer, navigate]);
+    },
+    [addToCart, isFromBuyer, navigate]
+  );
 
   // Manejar navegación hacia atrás
   const handleGoBack = () => {
     if (isFromBuyer) {
-      navigate('/buyer/marketplace', { 
-        state: { 
-          providerSwitchActive: true // Indicar que el switch de proveedores debe estar activo
-        } 
+      navigate('/buyer/marketplace', {
+        state: {
+          providerSwitchActive: true, // Indicar que el switch de proveedores debe estar activo
+        },
       });
     } else if (isFromSupplier) {
-      navigate('/supplier/marketplace', { 
-        state: { 
-          providerSwitchActive: true 
-        } 
+      navigate('/supplier/marketplace', {
+        state: {
+          providerSwitchActive: true,
+        },
       });
     } else {
       navigate('/marketplace', {
-        state: { 
-          providerSwitchActive: true 
-        } 
+        state: {
+          providerSwitchActive: true,
+        },
       });
     }
   };
@@ -291,12 +318,26 @@ const ProviderCatalog = () => {
       {
         label: 'Inicio',
         icon: <Home fontSize="small" />,
-        onClick: () => navigate(isFromBuyer ? '/buyer/marketplace' : isFromSupplier ? '/supplier/marketplace' : '/marketplace'),
+        onClick: () =>
+          navigate(
+            isFromBuyer
+              ? '/buyer/marketplace'
+              : isFromSupplier
+              ? '/supplier/marketplace'
+              : '/marketplace'
+          ),
       },
       {
         label: 'Marketplace',
         icon: <StorefrontOutlined fontSize="small" />,
-        onClick: () => navigate(isFromBuyer ? '/buyer/marketplace' : isFromSupplier ? '/supplier/marketplace' : '/marketplace'),
+        onClick: () =>
+          navigate(
+            isFromBuyer
+              ? '/buyer/marketplace'
+              : isFromSupplier
+              ? '/supplier/marketplace'
+              : '/marketplace'
+          ),
       },
       {
         label: provider?.user_nm || 'Catálogo',
@@ -308,8 +349,8 @@ const ProviderCatalog = () => {
   }, [provider, isFromBuyer, isFromSupplier, navigate]);
 
   // Descripción real del proveedor
-  const providerDescription = useMemo(() => 
-    provider?.descripcion_proveedor || 'Proveedor sin descripción.',
+  const providerDescription = useMemo(
+    () => provider?.descripcion_proveedor || 'Proveedor sin descripción.',
     [provider?.descripcion_proveedor]
   );
 
@@ -405,41 +446,45 @@ const ProviderCatalog = () => {
           }}
         >
           {/* Header con botón de volver y breadcrumbs */}
-          <Box sx={{ 
-            mb: { xs: 2, md: 4 }, 
-            boxShadow: 'none', 
-            border: 'none', 
-            outline: 'none', 
-            backgroundImage: 'none' 
-          }}>
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: { xs: 1, md: 2 }, 
-              mb: { xs: 1, md: 2 } 
-            }}>
+          <Box
+            sx={{
+              mb: { xs: 2, md: 4 },
+              boxShadow: 'none',
+              border: 'none',
+              outline: 'none',
+              backgroundImage: 'none',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: { xs: 1, md: 2 },
+                mb: { xs: 1, md: 2 },
+              }}
+            >
               <Button
                 startIcon={<ArrowBack />}
                 onClick={handleGoBack}
                 size="small"
-                sx={{ 
+                sx={{
                   textTransform: 'none',
                   fontSize: { xs: '0.75rem', md: '0.875rem' },
                   minWidth: { xs: 'auto', md: '64px' },
-                  px: { xs: 1, md: 2 }
+                  px: { xs: 1, md: 2 },
                 }}
               >
                 Volver
               </Button>
             </Box>
 
-            <Breadcrumbs 
-              sx={{ 
-                fontSize: { xs: '0.75rem', md: '0.875rem' }, 
+            <Breadcrumbs
+              sx={{
+                fontSize: { xs: '0.75rem', md: '0.875rem' },
                 color: 'text.secondary',
                 '& .MuiBreadcrumbs-separator': {
-                  mx: { xs: 1 }
-                }
+                  mx: { xs: 1 },
+                },
               }}
             >
               {breadcrumbs.map((item, index) => (
@@ -448,26 +493,28 @@ const ProviderCatalog = () => {
                   underline="hover"
                   color={item.active ? 'primary' : 'inherit'}
                   onClick={item.onClick}
-                  sx={{ 
+                  sx={{
                     cursor: item.onClick ? 'pointer' : 'default',
-                    display: 'flex', 
-                    alignItems: 'center', 
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: { xs: 0.3, md: 0.5 },
                     fontWeight: item.active ? 600 : 400,
                     fontSize: { xs: '0.75rem', md: '0.875rem' },
                     // Ocultar iconos en móvil para ahorrar espacio
                     '& svg': {
                       display: { xs: 'none', sm: 'block' },
-                      fontSize: { xs: '1rem', md: '1.125rem' }
-                    }
+                      fontSize: { xs: '1rem', md: '1.125rem' },
+                    },
                   }}
                 >
                   {item.icon}
-                  <span style={{ 
-                    overflow: 'hidden', 
-                    textOverflow: 'ellipsis', 
-                    maxWidth: '120px'
-                  }}>
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '120px',
+                    }}
+                  >
                     {item.label}
                   </span>
                 </Link>
@@ -485,13 +532,15 @@ const ProviderCatalog = () => {
               background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
             }}
           >
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: { xs: 'flex-start', sm: 'center' }, 
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: { xs: 2, sm: 2, md: 3 }, 
-              mb: { xs: 2, md: 3 }
-            }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: { xs: 2, sm: 2, md: 3 },
+                mb: { xs: 2, md: 3 },
+              }}
+            >
               <Avatar
                 src={provider?.logo_url || undefined}
                 alt={provider?.user_nm}
@@ -500,29 +549,31 @@ const ProviderCatalog = () => {
                   height: { xs: 60, sm: 80, md: 120 },
                   border: '3px solid',
                   borderColor: 'primary.main',
-                  alignSelf: { xs: 'center', sm: 'flex-start' }
+                  alignSelf: { xs: 'center', sm: 'flex-start' },
                 }}
               >
                 {provider?.user_nm?.charAt(0)?.toUpperCase() || '🏢'}
               </Avatar>
-              
+
               <Box sx={{ flex: 1, width: '100%' }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: { xs: 0.5, md: 1 }, 
-                  mb: { xs: 0.5, md: 1 },
-                  flexWrap: 'wrap',
-                  justifyContent: { xs: 'center', sm: 'flex-start' }
-                }}>
-                  <Typography 
-                    variant="h5" 
-                    sx={{ 
-                      fontWeight: 600, 
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: { xs: 0.5, md: 1 },
+                    mb: { xs: 0.5, md: 1 },
+                    flexWrap: 'wrap',
+                    justifyContent: { xs: 'center', sm: 'flex-start' },
+                  }}
+                >
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 600,
                       color: 'primary.main',
                       fontSize: { xs: '1.1rem', sm: '1.3rem', md: '2rem' },
                       textAlign: { xs: 'center', sm: 'left' },
-                      lineHeight: 1.2
+                      lineHeight: 1.2,
                     }}
                   >
                     {provider?.user_nm || 'Proveedor'}
@@ -534,7 +585,11 @@ const ProviderCatalog = () => {
                       arrow
                     >
                       <Chip
-                        icon={<VerifiedUser sx={{ fontSize: { xs: '0.8rem', md: '1rem' } }} />}
+                        icon={
+                          <VerifiedUser
+                            sx={{ fontSize: { xs: '0.8rem', md: '1rem' } }}
+                          />
+                        }
                         label="Verificado"
                         color="primary"
                         size="small"
@@ -543,36 +598,37 @@ const ProviderCatalog = () => {
                         onClick={() => {}}
                         sx={{
                           fontSize: { xs: '0.65rem', md: '0.75rem' },
-                          height: { xs: 20, md: 24 }
+                          height: { xs: 20, md: 24 },
                         }}
                       />
                     </Tooltip>
                   )}
                 </Box>
-                
+
                 <Typography
                   variant="body1"
                   color="text.secondary"
-                  sx={{ 
-                    mb: { xs: 1, md: 2 }, 
+                  sx={{
+                    mb: { xs: 1, md: 2 },
                     lineHeight: 1.6,
                     fontSize: { xs: '0.8rem', md: '1rem' },
-                    textAlign: { xs: 'center', sm: 'left' }
+                    textAlign: { xs: 'center', sm: 'left' },
                   }}
                 >
                   {providerDescription}
                 </Typography>
-                
-                <Typography 
-                  variant="h6" 
-                  color="primary.main" 
-                  sx={{ 
+
+                <Typography
+                  variant="h6"
+                  color="primary.main"
+                  sx={{
                     fontWeight: 600,
                     fontSize: { xs: '0.9rem', sm: '1rem', md: '1.25rem' },
-                    textAlign: { xs: 'center', sm: 'left' }
+                    textAlign: { xs: 'center', sm: 'left' },
                   }}
                 >
-                  Este proveedor actualmente tiene {provider?.productCount || 0} productos activos publicados
+                  Este proveedor actualmente tiene {provider?.productCount || 0}{' '}
+                  productos activos publicados
                 </Typography>
               </Box>
             </Box>
@@ -588,22 +644,24 @@ const ProviderCatalog = () => {
               border: '1px solid #e0e0e0',
             }}
           >
-            <Box sx={{ 
-              display: 'flex', 
-              gap: { xs: 1, sm: 1.5, md: 2 }, 
-              alignItems: { xs: 'stretch', md: 'center' }, 
-              flexDirection: { xs: 'column', md: 'row' },
-              flexWrap: { md: 'wrap' },
-              // Prevenir desplazamiento de la página al abrir dropdowns
-              overflow: 'visible',
-              position: 'relative',
-            }}>
+            <Box
+              sx={{
+                display: 'flex',
+                gap: { xs: 1, sm: 1.5, md: 2 },
+                alignItems: { xs: 'stretch', md: 'center' },
+                flexDirection: { xs: 'column', md: 'row' },
+                flexWrap: { md: 'wrap' },
+                // Prevenir desplazamiento de la página al abrir dropdowns
+                overflow: 'visible',
+                position: 'relative',
+              }}
+            >
               {/* Barra de búsqueda */}
               <TextField
                 size="small"
                 placeholder="Buscar productos..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 variant="outlined"
                 InputProps={{
                   startAdornment: (
@@ -627,31 +685,36 @@ const ProviderCatalog = () => {
                   width: { xs: '100%', md: 200 },
                   flexShrink: 0,
                   '& .MuiInputBase-input': {
-                    fontSize: { xs: '0.875rem', md: '1rem' }
-                  }
+                    fontSize: { xs: '0.875rem', md: '1rem' },
+                  },
                 }}
               />
 
               {/* Filtros en mobile: row layout para ahorrar espacio vertical */}
-              <Box sx={{
-                display: 'flex',
-                gap: { xs: 0.5, md: 2 },
-                flexDirection: { xs: 'row', md: 'row' },
-                width: { xs: '100%', md: 'auto' },
-                '& > *': {
-                  flex: { xs: 1, md: 'none' },
-                  maxWidth: { xs: 'calc(50% - 4px)', md: 'none' }
-                }
-              }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: { xs: 0.5, md: 2 },
+                  flexDirection: { xs: 'row', md: 'row' },
+                  width: { xs: '100%', md: 'auto' },
+                  '& > *': {
+                    flex: { xs: 1, md: 'none' },
+                    maxWidth: { xs: 'calc(50% - 4px)', md: 'none' },
+                  },
+                }}
+              >
                 {/* Dropdown de ordenamiento por precio */}
-                <FormControl size="small" sx={{ 
-                  minWidth: { xs: 0, md: 193 },
-                  width: { xs: '100%', md: 193 },
-                  flexShrink: 0 
-                }}>
+                <FormControl
+                  size="small"
+                  sx={{
+                    minWidth: { xs: 0, md: 193 },
+                    width: { xs: '100%', md: 193 },
+                    flexShrink: 0,
+                  }}
+                >
                   <Select
                     value={priceOrder}
-                    onChange={(e) => {
+                    onChange={e => {
                       const v = e.target.value;
                       // Cuando el usuario selecciona orden por precio, aplicar en todas las categorías
                       if (v === 'asc' || v === 'desc') setCategoryFilter('all');
@@ -667,8 +730,8 @@ const ProviderCatalog = () => {
                       '& .MuiSelect-select': {
                         fontSize: { xs: '0.7rem', md: '0.875rem' },
                         py: { xs: 0.5, md: 1 },
-                        px: { xs: 0, md: 1 }
-                      }
+                        px: { xs: 0, md: 1 },
+                      },
                     }}
                     MenuProps={{
                       PaperProps: {
@@ -692,29 +755,44 @@ const ProviderCatalog = () => {
                     }}
                   >
                     <MenuItem value="none">
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Ordenar por precio</Box>
-                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>Precio</Box>
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                        Ordenar por precio
+                      </Box>
+                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+                        Precio
+                      </Box>
                     </MenuItem>
                     <MenuItem value="asc">
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Menor a mayor precio</Box>
-                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>↑ Precio</Box>
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                        Menor a mayor precio
+                      </Box>
+                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+                        ↑ Precio
+                      </Box>
                     </MenuItem>
                     <MenuItem value="desc">
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Mayor a menor precio</Box>
-                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>↓ Precio</Box>
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                        Mayor a menor precio
+                      </Box>
+                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+                        ↓ Precio
+                      </Box>
                     </MenuItem>
                   </Select>
                 </FormControl>
 
                 {/* Dropdown de categorías */}
-                <FormControl size="small" sx={{ 
-                  minWidth: { xs: 0, md: 214 },
-                  width: { xs: '100%', md: 214 },
-                  flexShrink: 0 
-                }}>
+                <FormControl
+                  size="small"
+                  sx={{
+                    minWidth: { xs: 0, md: 214 },
+                    width: { xs: '100%', md: 214 },
+                    flexShrink: 0,
+                  }}
+                >
                   <Select
                     value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    onChange={e => setCategoryFilter(e.target.value)}
                     displayEmpty
                     startAdornment={
                       <InputAdornment position="start">
@@ -725,8 +803,8 @@ const ProviderCatalog = () => {
                       '& .MuiSelect-select': {
                         fontSize: { xs: '0.7rem', md: '0.875rem' },
                         py: { xs: 0.5, md: 1 },
-                        px: { xs: 0, md: 1 }
-                      }
+                        px: { xs: 0, md: 1 },
+                      },
                     }}
                     MenuProps={{
                       PaperProps: {
@@ -750,10 +828,14 @@ const ProviderCatalog = () => {
                     }}
                   >
                     <MenuItem value="all">
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Todas las categorías</Box>
-                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>Categorías</Box>
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                        Todas las categorías
+                      </Box>
+                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+                        Categorías
+                      </Box>
                     </MenuItem>
-                    {availableCategories.map((category) => (
+                    {availableCategories.map(category => (
                       <MenuItem key={category} value={category}>
                         {category}
                       </MenuItem>
@@ -763,13 +845,15 @@ const ProviderCatalog = () => {
               </Box>
 
               {/* Indicadores de filtros activos */}
-              <Box sx={{ 
-                display: 'flex', 
-                gap: 1, 
-                flexWrap: 'wrap', 
-                flex: { xs: 'none', md: 1 },
-                width: { xs: '100%', md: 'auto' }
-              }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 1,
+                  flexWrap: 'wrap',
+                  flex: { xs: 'none', md: 1 },
+                  width: { xs: '100%', md: 'auto' },
+                }}
+              >
                 {searchTerm && (
                   <Chip
                     label={`Búsqueda: "${searchTerm}"`}
@@ -779,20 +863,22 @@ const ProviderCatalog = () => {
                     variant="outlined"
                     sx={{
                       fontSize: { xs: '0.7rem', md: '0.75rem' },
-                      height: { xs: 24, md: 32 }
+                      height: { xs: 24, md: 32 },
                     }}
                   />
                 )}
                 {priceOrder !== 'none' && (
                   <Chip
-                    label={`Orden: ${priceOrder === 'asc' ? 'Menor a mayor' : 'Mayor a menor'}`}
+                    label={`Orden: ${
+                      priceOrder === 'asc' ? 'Menor a mayor' : 'Mayor a menor'
+                    }`}
                     onDelete={() => setPriceOrder('none')}
                     size="small"
                     color="primary"
                     variant="outlined"
                     sx={{
                       fontSize: { xs: '0.7rem', md: '0.75rem' },
-                      height: { xs: 24, md: 32 }
+                      height: { xs: 24, md: 32 },
                     }}
                   />
                 )}
@@ -805,7 +891,7 @@ const ProviderCatalog = () => {
                     variant="outlined"
                     sx={{
                       fontSize: { xs: '0.7rem', md: '0.75rem' },
-                      height: { xs: 24, md: 32 }
+                      height: { xs: 24, md: 32 },
                     }}
                   />
                 )}
@@ -815,42 +901,58 @@ const ProviderCatalog = () => {
 
           {/* Productos del proveedor */}
           <Box>
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                mb: { xs: 2, md: 3 }, 
+            <Typography
+              variant="h5"
+              sx={{
+                mb: { xs: 2, md: 3 },
                 fontWeight: 600,
-                fontSize: { xs: '1.1rem', md: '1.5rem' }
+                fontSize: { xs: '1.1rem', md: '1.5rem' },
               }}
             >
               Productos Disponibles
-              {(searchTerm || categoryFilter !== 'all' || priceOrder !== 'none') && (
-                <Typography 
-                  component="span" 
-                  variant="body2" 
-                  color="text.secondary" 
-                  sx={{ 
+              {(searchTerm ||
+                categoryFilter !== 'all' ||
+                priceOrder !== 'none') && (
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
                     ml: 1,
-                    fontSize: { xs: '0.75rem', md: '0.875rem' }
+                    fontSize: { xs: '0.75rem', md: '0.875rem' },
                   }}
                 >
                   ({filteredProducts.length} de {products.length})
                 </Typography>
               )}
             </Typography>
-            
+
             {filteredProducts.length === 0 ? (
-              <Paper elevation={1} sx={{ p: { xs: 2, md: 4 }, textAlign: 'center', borderRadius: 2 }}>
+              <Paper
+                elevation={1}
+                sx={{
+                  p: { xs: 2, md: 4 },
+                  textAlign: 'center',
+                  borderRadius: 2,
+                }}
+              >
                 <Typography variant="h6" color="text.secondary">
-                  {searchTerm || categoryFilter !== 'all' || priceOrder !== 'none'
+                  {searchTerm ||
+                  categoryFilter !== 'all' ||
+                  priceOrder !== 'none'
                     ? 'No se encontraron productos que coincidan con los filtros'
-                    : 'Este proveedor no tiene productos disponibles en este momento'
-                  }
+                    : 'Este proveedor no tiene productos disponibles en este momento'}
                 </Typography>
-                {(searchTerm || categoryFilter !== 'all' || priceOrder !== 'none') && (
+                {(searchTerm ||
+                  categoryFilter !== 'all' ||
+                  priceOrder !== 'none') && (
                   <Button
                     variant="outlined"
-                    onClick={() => { setSearchTerm(''); setCategoryFilter('all'); setPriceOrder('none'); }}
+                    onClick={() => {
+                      setSearchTerm('');
+                      setCategoryFilter('all');
+                      setPriceOrder('none');
+                    }}
                     sx={{ mt: 2 }}
                   >
                     Limpiar filtros
@@ -875,8 +977,19 @@ const ProviderCatalog = () => {
                 }}
               >
                 {filteredProducts.map(product => (
-                  <Box key={product.id} sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                    <ProductCard product={product} type="buyer" onAddToCart={handleAddToCart} />
+                  <Box
+                    key={product.id}
+                    sx={{
+                      width: '100%',
+                      display: 'flex',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <ProductCard
+                      product={product}
+                      type="buyer"
+                      onAddToCart={handleAddToCart}
+                    />
                   </Box>
                 ))}
               </Box>
