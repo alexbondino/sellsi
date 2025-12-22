@@ -21,6 +21,8 @@ import {
   useMediaQuery,
   Grow,
   CircularProgress,
+  Modal as MuiModal,
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -31,6 +33,7 @@ import {
   KeyboardArrowUp as KeyboardArrowUpIcon,
   Storefront as StorefrontIcon,
   CloudUpload as CloudUploadIcon,
+  Share as ShareIcon,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import {
@@ -61,6 +64,7 @@ const MassiveProductImport = lazy(() =>
 import { SupplierErrorBoundary } from '../../error-boundary';
 
 // Hooks y stores
+import { useAuth } from '../../../../infrastructure/providers';
 import { useSupplierProducts } from '../../shared-hooks/useSupplierProducts';
 import {
   useLazyProducts,
@@ -103,6 +107,7 @@ const MyProducts = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
+  const { userProfile } = useAuth();
 
   const supplierId = localStorage.getItem('user_id');
 
@@ -155,6 +160,10 @@ const MyProducts = () => {
 
   // 🆕 Estado para modal de Massive Import
   const [massiveImportOpen, setMassiveImportOpen] = useState(false);
+
+  // 🆕 Estado para modal de compartir catálogo
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [catalogUrl, setCatalogUrl] = useState('');
 
   const {
     checkAndProceed,
@@ -240,6 +249,39 @@ const MyProducts = () => {
 
   const handleCloseMassiveImport = () => {
     setMassiveImportOpen(false);
+  };
+
+  // Manejar apertura del modal de compartir catálogo
+  const handleOpenShareModal = () => {
+    if (userProfile && supplierId) {
+      // Crear slug del nombre del usuario
+      const userNmSlug = (userProfile.user_nm || `proveedor-${supplierId}`)
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+
+      // Construir URL completa del catálogo
+      const baseUrl = window.location.origin;
+      const url = `${baseUrl}/catalog/${userNmSlug}/${supplierId}`;
+      setCatalogUrl(url);
+      setShareModalOpen(true);
+    }
+  };
+
+  const handleCloseShareModal = () => {
+    setShareModalOpen(false);
+  };
+
+  const handleCopyUrl = () => {
+    navigator.clipboard
+      .writeText(catalogUrl)
+      .then(() => {
+        showSuccessToast('Enlace copiado al portapapeles');
+      })
+      .catch(() => {
+        showErrorToast('Error al copiar el enlace');
+      });
   };
 
   useEffect(() => {
@@ -379,7 +421,7 @@ const MyProducts = () => {
                   </Typography>
                 </Box>
 
-                {/* Acciones: Agregar + Importar Excel (abre modal) */}
+                {/* Acciones: Agregar + Importar Excel + Compartir Catálogo */}
                 <Box
                   sx={{
                     display: 'flex',
@@ -421,6 +463,30 @@ const MyProducts = () => {
                   >
                     Carga Masiva
                   </Button>
+                  <Tooltip
+                    title={
+                      userProfile?.verified
+                        ? 'Compartir catálogo'
+                        : 'Para compartir tu catálogo debes estar verificado'
+                    }
+                    arrow
+                  >
+                    <span>
+                      <Button
+                        variant="outlined"
+                        size="large"
+                        onClick={handleOpenShareModal}
+                        disabled={!userProfile?.verified}
+                        sx={{
+                          borderRadius: 2,
+                          minWidth: 0,
+                          px: 2,
+                        }}
+                      >
+                        <ShareIcon />
+                      </Button>
+                    </span>
+                  </Tooltip>
                 </Box>
               </Box>
 
@@ -480,13 +546,21 @@ const MyProducts = () => {
                               sx={{ fontSize: { xs: 32, sm: 40 } }}
                             />
                             <Box>
-                              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                              <Typography
+                                variant="h6"
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                                }}
+                              >
                                 {stats.total}
                               </Typography>
                               <Typography
                                 variant="body2"
                                 color="text.secondary"
-                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                                sx={{
+                                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                }}
                               >
                                 Total de productos
                               </Typography>
@@ -530,13 +604,21 @@ const MyProducts = () => {
                               ✓
                             </Box>
                             <Box>
-                              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                              <Typography
+                                variant="h6"
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                                }}
+                              >
                                 {stats.active}
                               </Typography>
                               <Typography
                                 variant="body2"
                                 color="text.secondary"
-                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                                sx={{
+                                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                }}
                               >
                                 Productos activos
                               </Typography>
@@ -546,8 +628,19 @@ const MyProducts = () => {
                       </Grid>
 
                       {/* Segunda fila mobile: Valor inventario (100%) */}
-                      <Grid item xs={12} sm={4} width={{ xs: '100%', sm: '31%' }}>
-                        <Box sx={{ p: 2, width: '100%', minHeight: { xs: '90px', sm: 'auto' } }}>
+                      <Grid
+                        item
+                        xs={12}
+                        sm={4}
+                        width={{ xs: '100%', sm: '31%' }}
+                      >
+                        <Box
+                          sx={{
+                            p: 2,
+                            width: '100%',
+                            minHeight: { xs: '90px', sm: 'auto' },
+                          }}
+                        >
                           <Box
                             sx={{
                               display: 'flex',
@@ -560,7 +653,13 @@ const MyProducts = () => {
                               sx={{ fontSize: { xs: 32, sm: 40 } }}
                             />
                             <Box>
-                              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                              <Typography
+                                variant="h6"
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                                }}
+                              >
                                 {stats.inventoryRange &&
                                 stats.inventoryRange.min !==
                                   stats.inventoryRange.max
@@ -579,7 +678,9 @@ const MyProducts = () => {
                               <Typography
                                 variant="body2"
                                 color="text.secondary"
-                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                                sx={{
+                                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                }}
                               >
                                 Valor del inventario
                               </Typography>
@@ -662,7 +763,9 @@ const MyProducts = () => {
                 />
 
                 {/* Botón limpiar filtros - solo si hay filtros activos */}
-                {(searchTerm || categoryFilter !== 'all' || sortBy !== 'updatedAt') && (
+                {(searchTerm ||
+                  categoryFilter !== 'all' ||
+                  sortBy !== 'updatedAt') && (
                   <Button
                     fullWidth
                     variant="outlined"
@@ -681,7 +784,9 @@ const MyProducts = () => {
 
                 {/* Chips de filtros activos */}
                 {(searchTerm || categoryFilter !== 'all') && (
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Box
+                    sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}
+                  >
                     {searchTerm && (
                       <Chip
                         label={`"${searchTerm}"`}
@@ -692,7 +797,10 @@ const MyProducts = () => {
                     )}
                     {categoryFilter !== 'all' && (
                       <Chip
-                        label={CATEGORIES.find(c => c.value === categoryFilter)?.label}
+                        label={
+                          CATEGORIES.find(c => c.value === categoryFilter)
+                            ?.label
+                        }
                         onDelete={() => setCategoryFilter('all')}
                         size="small"
                         color="primary"
@@ -789,7 +897,9 @@ const MyProducts = () => {
 
                 {/* Chips de filtros activos */}
                 {(searchTerm || categoryFilter !== 'all') && (
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Box
+                    sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}
+                  >
                     {searchTerm && (
                       <Chip
                         label={`Búsqueda: "${searchTerm}"`}
@@ -802,7 +912,8 @@ const MyProducts = () => {
                     {categoryFilter !== 'all' && (
                       <Chip
                         label={`Categoría: ${
-                          CATEGORIES.find(c => c.value === categoryFilter)?.label
+                          CATEGORIES.find(c => c.value === categoryFilter)
+                            ?.label
                         }`}
                         onDelete={() => setCategoryFilter('all')}
                         size="small"
@@ -1032,6 +1143,78 @@ const MyProducts = () => {
             />
           </Suspense>
         </BigModal>
+
+        {/* Modal para compartir catálogo */}
+        <MuiModal
+          open={shareModalOpen}
+          onClose={handleCloseShareModal}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Box
+            sx={{
+              bgcolor: 'background.paper',
+              borderRadius: 2,
+              boxShadow: 24,
+              p: 4,
+              maxWidth: 600,
+              width: '90%',
+              outline: 'none',
+            }}
+          >
+            <Typography
+              variant="h6"
+              component="h2"
+              sx={{ mb: 2, fontWeight: 600 }}
+            >
+              Compartir Catálogo
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+              Comparte este enlace para que puedan ver tu catálogo de productos:
+            </Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 1,
+                alignItems: 'center',
+                bgcolor: 'grey.100',
+                p: 2,
+                borderRadius: 1,
+                mb: 3,
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  flex: 1,
+                  wordBreak: 'break-all',
+                  fontFamily: 'monospace',
+                }}
+              >
+                {catalogUrl}
+              </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleCopyUrl}
+                sx={{ textTransform: 'none', whiteSpace: 'nowrap' }}
+              >
+                Copiar
+              </Button>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                onClick={handleCloseShareModal}
+                sx={{ textTransform: 'none' }}
+              >
+                Cerrar
+              </Button>
+            </Box>
+          </Box>
+        </MuiModal>
 
         {/* Modal validación bancaria */}
         <TransferInfoValidationModal
