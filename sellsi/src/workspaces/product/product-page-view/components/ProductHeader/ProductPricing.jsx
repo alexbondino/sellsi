@@ -158,7 +158,9 @@ const ProductPricing = ({
 
   if (tiers.length > 0) {
     return (
-      <Box sx={{ mb: 3, width: '100%' }}>
+      <Box
+        sx={{ mb: { xs: 2.5, md: 3 }, mt: { xs: 2.5, md: 0 }, width: '100%' }}
+      >
         <Box sx={PRICING_STYLES.header}>
           <Typography variant="h6" sx={PRICING_STYLES.title}>
             Precios por volumen
@@ -228,14 +230,20 @@ const ProductPricing = ({
 
   // Precio único (por completitud)
   return (
-    <Box sx={{ mb: 3, width: '100%' }}>
+    <Box
+      sx={{
+        mb: { xs: 2.5, md: 3 },
+        mt: { xs: 2.5, md: 0 },
+        width: { xs: '100%', md: '77.5%' },
+      }}
+    >
       <TableContainer component={Paper} sx={{ mb: 0 }}>
         <Table size="small">
           <TableBody>
             <TableRow>
               <TableCell align="center">Por unidad</TableCell>
               <TableCell align="center">
-                <PriceDisplay price={product.precio} />
+                <PriceDisplay price={product.precio} variant="body1" />
               </TableCell>
             </TableRow>
           </TableBody>
