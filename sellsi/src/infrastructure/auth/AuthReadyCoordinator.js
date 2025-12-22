@@ -130,6 +130,14 @@ const markAuthStable = (reason) => {
  * Resetea todos los caches a "not ready" y comienza el timeout
  */
 export const onAuthStarted = () => {
+  // ✅ DEBOUNCE: Si acabamos de iniciar auth (< 2s), ignorar llamadas duplicadas
+  // Esto previene el bug donde al minimizar navegador, Supabase dispara SIGNED_IN de nuevo
+  const timeSinceLastStart = Date.now() - (state.lastSignInAt || 0);
+  if (timeSinceLastStart < 2000) {
+    log('🔄 Auth iniciado IGNORADO - debounce activo (llamada duplicada en < 2s)');
+    return;
+  }
+  
   log('🔄 Auth iniciado - reseteando estado de caches');
   
   state.isAuthenticating = true;

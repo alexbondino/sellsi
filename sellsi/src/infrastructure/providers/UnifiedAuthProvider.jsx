@@ -191,6 +191,12 @@ const performNuclearCleanup = () => {
 };
 
 export const UnifiedAuthProvider = ({ children }) => {
+  // DEBUG: Detect mount/unmount cycles
+  React.useEffect(() => {
+    console.warn('[UnifiedAuthProvider] 🔴 PROVIDER MOUNTED');
+    return () => console.warn('[UnifiedAuthProvider] 🔴 PROVIDER UNMOUNTED');
+  }, []);
+
   // Auth state
   const [session, setSession] = useState(null);
   const [userProfile, setUserProfile] = useState(null);

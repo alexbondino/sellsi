@@ -25,7 +25,7 @@ import { useProfileImage } from '../hooks/useProfileImage';
 import { useSensitiveFields } from '../hooks/useSensitiveFields';
 import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserShippingRegion';
 import { useRoleSync } from '../../../shared/hooks';
-import { useAuth } from '../../../infrastructure/providers/UnifiedAuthProvider';
+import { useAuth } from '../../../infrastructure/providers';
 
 // Secciones modulares
 import TransferInfoSection from '../components/sections/TransferInfoSection';

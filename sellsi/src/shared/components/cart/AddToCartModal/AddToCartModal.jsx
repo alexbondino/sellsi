@@ -20,8 +20,9 @@ import {
   Close as CloseIcon,
   CheckCircle as CheckIcon,
   Warning as WarningIcon,
+  LocalShipping as ShippingIcon,
 } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 // Imports de componentes compartidos
 import QuantitySelector from '../../forms/QuantitySelector/QuantitySelector';
@@ -48,7 +49,6 @@ import { useQuantityManagement } from './logic/hooks/useQuantityManagement';
 import { PriceTiersDisplay } from './components/PriceTiersDisplay';
 import { OfferPriceDisplay } from './components/OfferPriceDisplay';
 import { DocumentTypeSelector } from './components/DocumentTypeSelector';
-import { ShippingStatus } from './components/ShippingStatus';
 import { SubtotalSection } from './components/SubtotalSection';
 import useCartStore from '../../../stores/cart/cartStore';
 
@@ -130,11 +130,40 @@ const ProductSummary = React.memo(function ProductSummary({
   maxQuantity,
   isOfferMode = false,
   offer = null,
+  shippingRegions = [], // Nueva prop para regiones de despacho
+  effectiveUserRegion = null, // Nueva prop para región del usuario
 }) {
+  // Calcular tiempo de despacho para la región del usuario
+  const deliveryInfo = React.useMemo(() => {
+    if (!shippingRegions || shippingRegions.length === 0 || !effectiveUserRegion) {
+      return null;
+    }
+
+    // Buscar la región del usuario en las regiones de despacho del producto
+    const userRegionConfig = shippingRegions.find(
+      r => r.region === effectiveUserRegion
+    );
+
+    if (!userRegionConfig) {
+      return null;
+    }
+
+    // Obtener días de entrega
+    const days = userRegionConfig.delivery_days ?? userRegionConfig.maxDeliveryDays ?? userRegionConfig.days;
+    
+    if (!days || days <= 0) {
+      return null;
+    }
+
+    // Formatear texto según cantidad de días
+    const daysText = days === 1 ? 'día hábil' : 'días hábiles';
+    return `Disponible ${days} ${daysText}`;
+  }, [shippingRegions, effectiveUserRegion]);
+
   return (
     <Paper
       variant="outlined"
-      sx={{ p: { xs: 1.3, sm: 2 } }}
+      sx={{ p: 0, overflow: 'hidden' }}
       onClick={e => {
         e.stopPropagation();
       }}
@@ -142,7 +171,30 @@ const ProductSummary = React.memo(function ProductSummary({
         e.stopPropagation();
       }}
     >
-      <Stack direction="row" spacing={2} alignItems="center">
+      {/* Header con nombre del producto */}
+      <Box
+        sx={{
+          width: '100%',
+          px: 2,
+          py: 1,
+        }}
+      >
+        <Typography
+          variant="body1"
+          sx={{
+            fontWeight: 600,
+            color: 'text.primary',
+            fontSize: { xs: '0.875rem', sm: '1rem' },
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {productData.name}
+        </Typography>
+      </Box>
+
+      <Stack direction="row" spacing={2} alignItems="center" sx={{ p: { xs: 1.3, sm: 2 } }}>
         <Box
           sx={{
             width: 50,
@@ -157,28 +209,49 @@ const ProductSummary = React.memo(function ProductSummary({
             sx={checkoutSummaryImageSx}
           />
         </Box>
+        
+        {/* Información de disponibilidad a la derecha de la imagen, centrada verticalmente */}
+        {deliveryInfo && (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              justifyContent: 'center',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.3 }}>
+              <ShippingIcon sx={{ fontSize: 16, color: 'success.main', mr: 0.5 }} />
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 'bold',
+                  color: 'success.main',
+                  fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                }}
+              >
+                Disponible
+              </Typography>
+            </Box>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
+            >
+              {deliveryInfo.replace('Disponible ', '')}
+            </Typography>
+          </Box>
+        )}
+        
         <Box sx={{ flex: 1 }}>
           <Stack
             direction="row"
             justifyContent="space-between"
             alignItems="flex-start"
-            sx={{ mb: 0.5 }}
           >
-            <Typography
-              variant="body1"
-              sx={{ 
-                fontWeight: 600, 
-                flex: 1, 
-                pointerEvents: 'none',
-                fontSize: { xs: '0.8rem', sm: '1rem' }
-              }}
-            >
-              {productData.name}
-            </Typography>
-
             {/* Mostrar selector de cantidad solo si NO es modo oferta */}
             {!isOfferMode && (
-              <Box sx={{ ml: 2, pointerEvents: 'auto', position: 'relative' }}>
+              <Box sx={{ ml: 'auto', pointerEvents: 'auto', position: 'relative' }}>
                 <QuantitySelector
                   value={quantity}
                   onChange={onQuantityChange}
@@ -230,7 +303,7 @@ const ProductSummary = React.memo(function ProductSummary({
 
             {/* Mostrar información de cantidad fija si ES modo oferta */}
             {isOfferMode && offer && (
-              <Box sx={{ ml: 2, textAlign: 'right' }}>
+              <Box sx={{ ml: 'auto', textAlign: 'right' }}>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   Cantidad fija: {offer.offered_quantity}
                 </Typography>
@@ -293,18 +366,18 @@ const AddToCartModal = ({
     isComplete: isBillingComplete,
     isLoading: isLoadingBilling,
     missingFieldLabels: missingBillingLabels,
-    refresh, // ✅ FIX: Usar refresh() en lugar de refreshIfStale() para F5/race condition
+    refreshIfStale, // ✅ OPTIMIZACIÓN: Usar refreshIfStale para evitar recargas innecesarias
     state: billingState, // Para detectar si hay error
   } = useBillingInfoValidation();
 
-  // ✅ FIX: Refresh billing info cuando el modal se abre
-  // Siempre forzar recarga al abrir para evitar race condition en F5 (producción rápida)
-  // Esto asegura datos frescos incluso si el load() inicial falló por timing de auth
+  // ✅ OPTIMIZACIÓN: Solo recargar billing info si fue invalidada
+  // refreshIfStale verifica si hubo cambios desde la última carga
+  // Esto elimina el flash de "Completar Facturación" → "Agregar al Carrito"
   useEffect(() => {
     if (open) {
-      refresh();
+      refreshIfStale();
     }
-  }, [open, refresh]);
+  }, [open, refreshIfStale]);
 
   // ============================================================================
   // ESTADOS LOCALES
@@ -431,46 +504,27 @@ const AddToCartModal = ({
     enrichProductWithRegions();
   }, [open, product, loadProductShippingRegions]);
 
-  // Controlar scroll del body cuando el modal está abierto (misma receta que ShippingRegionsModal)
+  // ============================================================================
+  // SCROLL LOCK SIMPLIFICADO - Evita desmontajes al minimizar navegador
+  // ============================================================================
+  
   useEffect(() => {
+    // Diagnostic: log open changes to trace unexpected unmounts
+    try { if (process && process.env && process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.debug('[AddToCartModal] useEffect(open) - open=', open);
+    }} catch (e) {}
+
     if (open) {
-      const scrollY = window.scrollY;
-
-      document.documentElement.style.position = 'fixed';
-      document.documentElement.style.top = `-${scrollY}px`;
-      document.documentElement.style.left = '0';
-      document.documentElement.style.right = '0';
-      document.documentElement.style.overflow = 'hidden';
-
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.left = '0';
-      document.body.style.right = '0';
+      // Aplicar scroll lock mínimo: solo overflow
+      document.body.dataset.scrollY = String(window.scrollY || 0);
       document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-
-      document.body.dataset.scrollY = scrollY.toString();
-
-      return () => {
-        const savedScrollY = parseInt(document.body.dataset.scrollY || '0');
-
-        document.documentElement.style.position = '';
-        document.documentElement.style.top = '';
-        document.documentElement.style.left = '';
-        document.documentElement.style.right = '';
-        document.documentElement.style.overflow = '';
-
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.left = '';
-        document.body.style.right = '';
-        document.body.style.overflow = '';
-        document.body.style.touchAction = '';
-
-        window.scrollTo(0, savedScrollY);
-
-        delete document.body.dataset.scrollY;
-      };
+    } else {
+      // Restaurar overflow cuando se cierra
+      const savedScrollY = parseInt(document.body.dataset.scrollY || '0', 10);
+      document.body.style.overflow = '';
+      try { window.scrollTo(0, savedScrollY); } catch (e) {}
+      delete document.body.dataset.scrollY;
     }
   }, [open]);
 
@@ -685,17 +739,15 @@ const AddToCartModal = ({
   // ============================================================================
 
   return (
-    <AnimatePresence mode="wait">
-      {open && (
-        <Drawer
-          anchor="right"
-          open={open}
-          onClose={handleClose} // Permitir cierre normal con X
-          hideBackdrop={false}
-          disableEscapeKeyDown={false} // Permitir cerrar con Escape
-          PaperProps={drawerPaperProps}
-          ModalProps={{
-            keepMounted: false,
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={handleClose} // Permitir cierre normal con X
+      hideBackdrop={false}
+      disableEscapeKeyDown={false} // Permitir cerrar con Escape
+      PaperProps={drawerPaperProps}
+      ModalProps={{
+        keepMounted: true, // ✅ CRÍTICO: Evita desmontaje completo del componente
             BackdropProps: {
               sx: {
                 zIndex: 9998, // Backdrop justo debajo del modal
@@ -761,7 +813,25 @@ const AddToCartModal = ({
                   maxQuantity={quantityBounds.maxQ}
                   isOfferMode={isOfferMode}
                   offer={offer}
+                  shippingRegions={enrichedProduct?.shippingRegions || enrichedProduct?.delivery_regions || enrichedProduct?.shipping_regions || enrichedProduct?.product_delivery_regions || []}
+                  effectiveUserRegion={effectiveUserRegion}
                 />
+
+                {/* Mensaje de compra mínima del proveedor */}
+                {(enrichedProduct?.minimum_purchase_amount || product?.minimum_purchase_amount || 0) > 0 && (
+                  <Alert
+                    severity="info"
+                    sx={{
+                      fontSize: '0.75rem',
+                      '& .MuiAlert-icon': {
+                        fontSize: '1.1rem',
+                      },
+                    }}
+                  >
+                    Proveedor exige una compra mínima de:{' '}
+                    <strong>${(enrichedProduct?.minimum_purchase_amount || product?.minimum_purchase_amount || 0).toLocaleString('es-CL')}</strong> en el total de sus productos
+                  </Alert>
+                )}
 
                 {/* 3. Tipo de documento (solo XS, antes del aviso) */}
                 {isXs && (!isOfferMode || availableOptions?.length > 0) && (
@@ -795,16 +865,6 @@ const AddToCartModal = ({
                     onChange={handleDocumentTypeChange}
                   />
                 )}
-
-                {/* 6. Estado de despacho */}
-                <ShippingStatus
-                  isLoadingRegions={isLoadingRegions}
-                  isLoadingUserProfile={isLoadingUserProfile}
-                  effectiveUserRegion={effectiveUserRegion}
-                  justOpened={justOpened}
-                  shippingValidation={shippingValidation}
-                  getUserRegionName={getUserRegionName}
-                />
               </Stack>
             </Box>
 
@@ -871,9 +931,7 @@ const AddToCartModal = ({
               </Button>
             </Box>
           </Box>
-        </Drawer>
-      )}
-    </AnimatePresence>
+    </Drawer>
   );
 };
 

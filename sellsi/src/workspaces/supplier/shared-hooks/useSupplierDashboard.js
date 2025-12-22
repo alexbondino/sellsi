@@ -186,41 +186,69 @@ export const useSupplierDashboard = () => {
           1
         ).toISOString();
         // Monthly revenue cache (5 min TTL) via SmartMetricCache
+        // 🔒 SOLO ventas confirmadas (accepted, in_transit, delivered)
         const { data: monthlyRevenue } = await smartMetricCache.ensure(
           'monthlyRevenue',
           { supplierId, month: monthStart.substring(0, 7) },
           async () => {
             const { data: psRows, error: psErr } = await supabase
-              .from('product_sales')
+              .from('product_sales_confirmed')  // 👈 Vista materializada (solo ventas aceptadas+)
               .select('amount, trx_date')
               .eq('supplier_id', supplierId)
               .gte('trx_date', monthStart)
               .lt('trx_date', nextMonth);
             if (psErr) {
-              const prev = smartMetricCache.get('monthlyRevenue', {
-                supplierId,
-                month: monthStart.substring(0, 7),
-              });
-              return prev?.data ?? 0;
+              console.warn('⚠️ Error consultando product_sales_confirmed, intentando fallback:', psErr);
+              // Fallback: consultar tabla original con JOIN para filtrar en una sola query
+              const { data: fallbackRows, error: fallbackErr } = await supabase
+                .from('product_sales')
+                .select('amount, trx_date, orders!inner(status, payment_status, cancelled_at)')
+                .eq('supplier_id', supplierId)
+                .eq('orders.payment_status', 'paid')
+                .in('orders.status', ['accepted', 'in_transit', 'delivered'])
+                .is('orders.cancelled_at', null)
+                .gte('trx_date', monthStart)
+                .lt('trx_date', nextMonth);
+              
+              if (fallbackErr) {
+                const prev = smartMetricCache.get('monthlyRevenue', {
+                  supplierId,
+                  month: monthStart.substring(0, 7),
+                });
+                return prev?.data ?? 0;
+              }
+              
+              const grossRevenue = (fallbackRows || []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+              const SERVICE_RATE = 0.03;
+              const IVA_RATE = 0.19;
+              const netMultiplier = (1 - SERVICE_RATE) * (1 - IVA_RATE * SERVICE_RATE);
+              return grossRevenue * netMultiplier;
             }
-            return (psRows || []).reduce(
+            const grossRevenue = (psRows || []).reduce(
               (sum, r) => sum + (Number(r.amount) || 0),
               0
             );
+            // Descontar comisión Sellsi 3% + IVA sobre comisión (19% de 3% = 0.57%)
+            // Total descuento: 3.57% → Multiplicador: 0.9643
+            const SERVICE_RATE = 0.03; // 3% comisión Sellsi
+            const IVA_RATE = 0.19; // 19% IVA sobre la comisión
+            const netMultiplier = (1 - SERVICE_RATE) * (1 - IVA_RATE * SERVICE_RATE);
+            const netRevenue = grossRevenue * netMultiplier;
+            return netRevenue;
           },
           5 * 60 * 1000
         );
 
         const orderMetrics = [];
 
-        // Contar solicitudes semanales (últimos 7 días) basado en órdenes pagadas (product_sales)
+        // Contar solicitudes semanales (últimos 7 días) basado en órdenes confirmadas
         let weeklyRequestsCount = 0;
         try {
           const last7 = new Date(
             Date.now() - 7 * 24 * 60 * 60 * 1000
           ).toISOString();
           const { data: psWindow, error: psWinErr } = await supabase
-            .from('product_sales')
+            .from('product_sales_confirmed')
             .select('order_id, trx_date')
             .eq('supplier_id', supplierId)
             .gte('trx_date', last7)

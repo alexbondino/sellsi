@@ -9,8 +9,11 @@ import useCartStore from '../../../shared/stores/cart/cartStore';
 import { extractProductIdFromSlug } from '../../../shared/utils/product/productUrl';
 import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils';
 
-const ProductPageWrapper = ({ isLoggedIn }) => {
+const ProductPageWrapper = () => {
   const { session, currentAppRole } = useAuth();
+  
+  // ✅ Derivar isLoggedIn del hook useAuth reactivo
+  const isLoggedIn = !!session;
 
   let isSupplier = false;
   const effectiveRole =

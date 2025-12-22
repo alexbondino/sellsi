@@ -216,7 +216,8 @@ const ProductHeader = React.memo(
     const shouldHidePurchaseActions =
       product.fromMyProducts ||
       product.isFromSupplierMarketplace ||
-      product.isSupplier ||
+      // ✅ REMOVIDO: product.isSupplier - Los proveedores también pueden comprar
+      // La verificación de isOwnProduct ya previene comprar tu propio producto
       isOwnProduct;
 
     // ========================================================================
