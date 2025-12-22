@@ -21,6 +21,7 @@ function AppContent() {
   const isPublicRoute =
     location.pathname === '/' ||
     location.pathname.startsWith('/marketplace') ||
+    location.pathname.startsWith('/catalog') ||
     location.pathname === '/login' ||
     location.pathname === '/crear-cuenta' ||
     location.pathname === '/tailwind';
@@ -42,8 +43,8 @@ function AppContent() {
           zIndex: 2000,
         }}
       >
-  <Loader />
-  <KhipuButton />
+        <Loader />
+        <KhipuButton />
       </Box>
     );
   }
