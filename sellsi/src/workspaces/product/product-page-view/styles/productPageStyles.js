@@ -68,8 +68,8 @@ export const SPACING = {
 export const DIMENSIONS = {
   // Anchos máximos
   maxContentWidth: 1450,
-  maxHeaderWidth: 580,
-  maxTableWidth: 400,
+  maxHeaderWidth: '41%',
+  maxTableWidth: '77.5%',
 
   // Alturas
   galleryHeight: 400,
@@ -105,6 +105,7 @@ export const HEADER_STYLES = {
     flexDirection: { xs: 'column', md: 'row' },
     width: '100%',
     gap: { xs: 2, md: 0 },
+    ml: { xs: 0, md: 2 },
   },
 
   section: {
@@ -200,7 +201,7 @@ export const PRICING_STYLES = {
   },
 
   tableContainer: {
-    maxWidth: DIMENSIONS.maxTableWidth,
+    maxWidth: { xs: '100%', md: DIMENSIONS.maxTableWidth }, // ✅ Full width en mobile
     mx: { xs: 'auto', md: 0 }, // Centrado en mobile, alineado a la izquierda en desktop
     mb: 2,
   },
@@ -239,8 +240,9 @@ export const SUPPLIER_STYLES = {
   container: {
     display: 'flex',
     alignItems: 'center',
-    mb: 3,
+    mb: { xs: 2, md: 3 }, // Reducido margen inferior en mobile
     gap: 1.5,
+    width: { xs: '100%', md: 'auto' }, // ✅ 100% en mobile
   },
 
   avatar: {
@@ -286,10 +288,11 @@ export const METADATA_STYLES = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    mb: 3,
+    mb: { xs: 2, md: 3 }, // Reducido en mobile
+    mt: { xs: 2.5, md: 0 }, // Reducido margen superior en mobile
     width: '100%',
     maxWidth: { xs: 'none', md: 500 },
-    gap: { xs: 2, md: 1 },
+    gap: { xs: 2.5, md: 2 }, // Reducido gap en mobile
   },
 
   chipsContainer: {
@@ -298,6 +301,7 @@ export const METADATA_STYLES = {
     flexWrap: 'wrap',
     width: '100%',
     justifyContent: { xs: 'flex-start', md: 'flex-start' },
+    mb: { xs: 1.5, md: 1.5 }, // Reducido en mobile
   },
 
   chip: {
@@ -307,8 +311,14 @@ export const METADATA_STYLES = {
     '&:hover': { backgroundColor: 'primary.main' },
   },
 
+  infoRow: {
+    width: '100%',
+    mt: { xs: 1, md: 1 }, // Reducido en mobile
+  },
+
   stockRow: {
     width: '100%',
+    mt: { xs: 1, md: 0.5 },
   },
 
   stockText: {
@@ -393,9 +403,9 @@ export const INFO_STYLES = {
     flexDirection: 'column',
     alignItems: 'flex-start',
     textAlign: 'left',
-    px: { xs: 0, md: 1 },
-    width: { xs: '100%', md: '80%' },
-    maxWidth: { xs: 'none', md: DIMENSIONS.maxHeaderWidth },
+    px: { xs: 0, md: 0 },
+    width: { xs: '100%', md: '50%' },
+    maxWidth: { xs: 'none', md: '50%' },
     mx: { xs: 0, md: 0 },
   },
 

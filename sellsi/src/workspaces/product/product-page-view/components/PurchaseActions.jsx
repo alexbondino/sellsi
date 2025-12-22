@@ -92,31 +92,32 @@ const PurchaseActions = ({
       <Box
         sx={{
           display: 'flex',
-          width: '100%',
+          width: { xs: '100%', md: '77.5%' }, // ✅ Full width en mobile, 77.5% en desktop
           alignItems: 'center',
-          columnGap: { xs: 1, md: 3 },
+          justifyContent: 'center', // ✅ Centrado
+          gap: { xs: 1, md: 2 }, // ✅ Gap uniforme entre botones
+          mt: 3, // Margen superior para separar de precios
         }}
       >
         {isLoggedIn && (
-          <Box sx={{ 
-            flex: isMobile ? 1 : 1, 
-            display: 'flex', 
-            justifyContent: isMobile ? 'center' : 'flex-start',
-            width: isMobile ? '50%' : 'auto'
-          }}>
+          <Box
+            sx={{
+              flex: 1, // ✅ Ambos botones ocupan el mismo espacio (50% cada uno)
+              display: 'flex',
+            }}
+          >
             <Tooltip title={getOfferTooltip()} arrow>
-              <span style={{ width: isMobile ? '100%' : 'auto' }}>
+              <span style={{ width: '100%' }}>
                 {' '}
                 {/* Necesario para que el tooltip funcione con botón deshabilitado */}
                 <Button
                   variant="contained"
                   startIcon={<GavelIcon />}
                   size="large"
-                  fullWidth={isMobile}
+                  fullWidth // ✅ Ocupa todo el ancho del contenedor flex
                   disabled={!isLoggedIn || isOfferDisabled}
                   onClick={openOffer}
                   sx={theme => ({
-                    minWidth: isMobile ? 'auto' : { xs: 140, sm: 160, md: 180 },
                     whiteSpace: 'nowrap',
                     py: 1.5,
                     fontSize: '1.1rem',
@@ -129,8 +130,10 @@ const PurchaseActions = ({
                     backgroundColor: '#fff',
                     color: 'primary.main',
                     border: `1px solid ${theme.palette.primary.main}`,
+                    // ✅ Asegurar que el ícono no agregue padding extra
                     '& .MuiButton-startIcon': {
                       color: 'primary.main',
+                      marginRight: 0.5, // Reducir margen del ícono
                     },
                     '&:hover': {
                       boxShadow:
@@ -159,12 +162,12 @@ const PurchaseActions = ({
           </Box>
         )}
 
-        <Box sx={{ 
-          flex: isMobile ? 1 : 1, 
-          display: 'flex', 
-          justifyContent: 'center',
-          width: isMobile ? '50%' : 'auto'
-        }}>
+        <Box
+          sx={{
+            flex: 1, // ✅ Mismo tamaño que el botón Ofertar
+            display: 'flex',
+          }}
+        >
           <AddToCart
             product={product}
             variant="button"
@@ -172,9 +175,8 @@ const PurchaseActions = ({
             disabled={!isLoggedIn || stock === 0}
             userRegion={userRegion}
             isLoadingUserProfile={isLoadingUserProfile}
+            fullWidth // ✅ Forzar fullWidth
             sx={{
-              minWidth: isMobile ? 'auto' : { xs: 120, sm: 160, md: 180 },
-              width: isMobile ? '100%' : 'auto',
               whiteSpace: 'nowrap',
               py: 1.5,
               fontSize: '1.1rem',
@@ -183,6 +185,10 @@ const PurchaseActions = ({
                 isLoggedIn && stock > 0
                   ? '0 3px 10px rgba(25, 118, 210, 0.3)'
                   : 'none',
+              // ✅ Asegurar que el ícono del carrito tenga el mismo margen
+              '& .MuiButton-startIcon': {
+                marginRight: 0.5,
+              },
               '&:hover': {
                 boxShadow:
                   isLoggedIn && stock > 0
@@ -194,14 +200,16 @@ const PurchaseActions = ({
             }}
           >
             {!isLoggedIn
-              ? (isMobile ? 'Inicia sesión' : 'Inicia sesión para agregar')
+              ? isMobile
+                ? 'Inicia sesión'
+                : 'Inicia sesión para agregar'
               : stock === 0
               ? 'Sin stock'
-              : (isMobile ? 'Agregar' : 'Agregar al Carrito')}
+              : isMobile
+              ? 'Agregar'
+              : 'Agregar al Carrito'}
           </AddToCart>
         </Box>
-
-        {!isMobile && <Box sx={{ flex: 1 }} />}
       </Box>
       <OfferModal
         open={isOfferOpen}

@@ -32,5 +32,6 @@ dist-ssr
 /coverage
 /Documentacion
 /sql supabase
+src/workspaces/invoicer/output/
 # Recovered folders
 /sql

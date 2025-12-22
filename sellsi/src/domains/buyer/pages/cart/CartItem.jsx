@@ -83,6 +83,37 @@ const CartItem = ({
 }) => {
   // Hook de navegación debe ir dentro del cuerpo del componente
   const navigate = useNavigate();
+
+  // Normaliza nombre de proveedor para slug de URL
+  const normalizeProviderSlug = (providerName) => {
+    return providerName
+      ?.toLowerCase()
+      ?.replace(/\s+/g, '-')
+      ?.replace(/[^\w-]/g, '');
+  };
+
+  // Handler para click en nombre del proveedor
+  const handleSupplierClick = React.useCallback(() => {
+    const providerName = item.proveedor || item.supplier;
+    const supplierId = item.supplier_id || item.supplierId;
+    
+    console.log('🔍 [CartItem] Click en proveedor:', {
+      providerName,
+      supplierId,
+      item
+    });
+    
+    if (!providerName || !supplierId) {
+      console.error('❌ Falta información del proveedor:', { providerName, supplierId });
+      return;
+    }
+    
+    const proveedorSlug = normalizeProviderSlug(providerName);
+    const catalogUrl = `/catalog/${proveedorSlug}/${supplierId}`;
+    console.log('✅ Navegando a:', catalogUrl);
+    navigate(catalogUrl);
+  }, [navigate, item]);
+
   // Construir slug SEO a partir del nombre del producto
   const getProductSlug = (name) => {
     if (!name) return '';
@@ -121,7 +152,8 @@ const CartItem = ({
     image: item.image || item.imagen || '/placeholder-product.jpg',
     price_tiers: item.price_tiers || [],
     minimum_purchase: item.minimum_purchase || item.compraMinima || 1,
-    basePrice: item.originalPrice || item.precioOriginal || item.price || item.precio || 0,
+    // ⚠️ CRÍTICO: Convertir a Number para evitar bypass con valores falsy
+    basePrice: Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0,
     maxStock: item.maxStock || item.stock || 50
   }), [item])
 
@@ -332,10 +364,18 @@ const CartItem = ({
               >
                 <Typography
                   variant="body1"
+                  onClick={handleSupplierClick}
                   sx={{
                     color: 'primary.main',
                     fontWeight: 600,
                     fontSize: { xs: '0.9rem', md: '0.8rem', lg: '0.9rem' },
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                      color: 'primary.dark',
+                      transform: 'translateX(2px)',
+                    },
                   }}
                 >
                   {item.proveedor || 'Proveedor no encontrado'}
@@ -380,32 +420,59 @@ const CartItem = ({
               }}
             >
               {/* Controles de cantidad centrados */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  width: '100%',
-                  opacity: isSelectionMode ? 0.5 : 1,
-                }}
-              >
-                <QuantitySelector
-                  value={item.quantity}
-                  onChange={handleQuantityChange}
-                  min={item.minimum_purchase || item.compraMinima || 1}
-                  max={item.maxStock}
-                  showStockLimit={true}
-                  size="small"
-                  disabled={isSelectionMode}
+              {/* ⚠️ CRÍTICO: Ocultar quantity selector si el producto está ofertado */}
+              {/* Los productos ofertados tienen cantidad fija que no puede modificarse */}
+              {!item.offer_id && !item.offerId && (
+                <Box
                   sx={{
-                    alignSelf: 'center',
-                    justifyContent: 'center',
                     display: 'flex',
-                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    opacity: isSelectionMode ? 0.5 : 1,
                   }}
-                  stockText={undefined}
-                />
-              </Box>
+                >
+                  <QuantitySelector
+                    value={item.quantity}
+                    onChange={handleQuantityChange}
+                    min={item.minimum_purchase || item.compraMinima || 1}
+                    max={item.maxStock}
+                    showStockLimit={true}
+                    size="small"
+                    disabled={isSelectionMode}
+                    sx={{
+                      alignSelf: 'center',
+                      justifyContent: 'center',
+                      display: 'flex',
+                      flexDirection: 'row',
+                    }}
+                    stockText={undefined}
+                  />
+                </Box>
+              )}
+              {/* Mostrar cantidad fija para productos ofertados */}
+              {(item.offer_id || item.offerId) && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    py: 1,
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 600,
+                      color: 'text.primary',
+                      fontSize: { xs: '0.9rem', md: '0.85rem', lg: '0.9rem' },
+                    }}
+                  >
+                    Cantidad: {item.quantity} uds (oferta)
+                  </Typography>
+                </Box>
+              )}
               {/* Información de stock centrada */}
               <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
                 <StockIndicator

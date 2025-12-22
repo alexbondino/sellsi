@@ -24,7 +24,7 @@ import {
 } from '@mui/icons-material';
 import { useBanner } from '../display/banners/BannerContext';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
-import { useAuth } from '../../../infrastructure/providers';
+import { useAuth } from '../../../infrastructure/providers/UnifiedAuthProvider';
 import { buildEnrichedContactMessage } from './helpers/buildEnrichedContactMessage';
 
 // ✅ 1. Definimos la URL de tu función de Supabase desde variable de entorno

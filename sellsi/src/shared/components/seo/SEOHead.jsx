@@ -27,7 +27,7 @@ const SITE_CONFIG = {
   title: 'Sellsi - Marketplace B2B de Repuestos y Suministros Industriales en Chile',
   description: 'Plataforma B2B líder en Chile para compra y venta de repuestos, suministros industriales y productos al por mayor. Conecta con proveedores verificados.',
   url: 'https://sellsi.cl',
-  image: 'https://sellsi.cl/og-image.jpg',
+  image: 'https://sellsi.cl/assets/social/sellsi_OGCard.webp',
   twitterHandle: '@sellsi_cl',
   locale: 'es_CL',
   type: 'website'
@@ -83,6 +83,11 @@ export default function SEOHead({
     updateMetaProperty('og:title', title || SITE_CONFIG.title)
     updateMetaProperty('og:description', pageDescription)
     updateMetaProperty('og:image', pageImage)
+    updateMetaProperty('og:image:secure_url', pageImage)
+    updateMetaProperty('og:image:type', 'image/webp')
+    updateMetaProperty('og:image:width', '1200')
+    updateMetaProperty('og:image:height', '630')
+    updateMetaProperty('og:image:alt', `${title || SITE_CONFIG.name} - Conecta. Vende. Crece.`)
     updateMetaProperty('og:url', pageUrl)
     updateMetaProperty('og:type', type)
     updateMetaProperty('og:site_name', SITE_CONFIG.name)
@@ -94,6 +99,7 @@ export default function SEOHead({
     updateMetaTag('twitter:title', title || SITE_CONFIG.title, 'name')
     updateMetaTag('twitter:description', pageDescription, 'name')
     updateMetaTag('twitter:image', pageImage, 'name')
+    updateMetaTag('twitter:image:alt', `${title || SITE_CONFIG.name} - Conecta. Vende. Crece.`, 'name')
     
     // Canonical
     updateLinkTag('canonical', canonicalUrl)

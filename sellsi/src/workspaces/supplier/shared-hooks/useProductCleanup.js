@@ -481,6 +481,17 @@ const useProductCleanup = create((set, get) => ({
       enabled: true,
     };
   },
+
+  /**
+   * Reset del store
+   */
+  reset: () => {
+    set({
+      loading: false,
+      error: null,
+      cleanupStats: null,
+    });
+  },
 }));
 
 export default useProductCleanup;

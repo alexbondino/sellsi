@@ -19,6 +19,15 @@ import { useOfferStore } from '../../stores/offerStore';
 import useCartHistory from '../../shared/stores/cart/useCartHistory';
 import { useNotificationsStore } from '../../domains/notifications/store/notificationsStore';
 import { queryClient } from '../../utils/queryClient';
+import useSupplierProductsBase from '../../workspaces/supplier/shared-hooks/useSupplierProductsBase';
+import useSupplierProductsCRUD from '../../workspaces/supplier/shared-hooks/useSupplierProductsCRUD';
+import useSupplierProductFilters from '../../workspaces/supplier/shared-hooks/useSupplierProductFilters';
+import useProductImages from '../../workspaces/supplier/shared-hooks/useProductImages';
+import useProductSpecifications from '../../workspaces/supplier/shared-hooks/useProductSpecifications';
+import useProductPriceTiers from '../../workspaces/supplier/shared-hooks/useProductPriceTiers';
+import useProductBackground from '../../workspaces/supplier/shared-hooks/useProductBackground';
+import useProductCleanup from '../../workspaces/supplier/shared-hooks/useProductCleanup';
+import { STORAGE_KEY } from '../../shared/stores/cart/cartStore.constants';
 
 // Unified Auth + Role Context
 const UnifiedAuthContext = createContext();
@@ -72,6 +81,48 @@ const performNuclearCleanup = () => {
     console.debug('notifications reset:', e);
   }
 
+  // 2.1 Stores de Productos del Proveedor (Bug: productos de cuenta anterior visibles)
+  try {
+    useSupplierProductsBase.getState().reset?.();
+  } catch (e) {
+    console.debug('supplier products base reset:', e);
+  }
+  try {
+    useSupplierProductsCRUD.getState().reset?.();
+  } catch (e) {
+    console.debug('supplier products CRUD reset:', e);
+  }
+  try {
+    useSupplierProductFilters.getState().reset?.();
+  } catch (e) {
+    console.debug('supplier filters reset:', e);
+  }
+  try {
+    useProductImages.getState().reset?.();
+  } catch (e) {
+    console.debug('product images reset:', e);
+  }
+  try {
+    useProductSpecifications.getState().reset?.();
+  } catch (e) {
+    console.debug('product specifications reset:', e);
+  }
+  try {
+    useProductPriceTiers.getState().reset?.();
+  } catch (e) {
+    console.debug('product price tiers reset:', e);
+  }
+  try {
+    useProductBackground.getState().reset?.();
+  } catch (e) {
+    console.debug('product background reset:', e);
+  }
+  try {
+    useProductCleanup.getState().reset?.();
+  } catch (e) {
+    console.debug('product cleanup reset:', e);
+  }
+
   // 3. React Query (Bug 20) - Cache de 15-30min
   try {
     queryClient.clear();
@@ -105,7 +156,7 @@ const performNuclearCleanup = () => {
     'access_token',
     'auth_token',
     'currentAppRole',
-    'sellsi-cart-v3-refactored',
+    STORAGE_KEY,
     'notifications_forced_read',
     'notifications_read_buffer',
   ].forEach(k => {
@@ -131,6 +182,9 @@ const performNuclearCleanup = () => {
   } catch (e) {}
   try {
     window.invalidateShippingInfoCache?.();
+  } catch (e) {}
+  try {
+    window.invalidateProductsCache?.();
   } catch (e) {}
 
   console.log('✅ Nuclear Cleanup Completado');
@@ -587,6 +641,8 @@ export const UnifiedAuthProvider = ({ children }) => {
     // Product detail pages under marketplace should also use the dashboard layout
     // so the SideBar appears when viewing a product (this was previously shown)
     if (p.startsWith('/marketplace/product')) return true;
+    // Provider catalog should also show the sidebar for consistent navigation
+    if (p.startsWith('/catalog/')) return true;
     return false;
   }, [location.pathname]);
 

@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../../services/supabase';
 import { trackLoginIP } from '../../../../services/security';
-import { useRole } from '../../../../infrastructure/providers';
+import { useRole } from '../../../../infrastructure/providers/UnifiedAuthProvider';
 
 export default function AuthCallback() {
   const navigate = useNavigate();

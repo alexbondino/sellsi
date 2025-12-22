@@ -4,7 +4,7 @@ import { Box, Container, Typography, Button, Paper } from '@mui/material';
 import { StorefrontOutlined } from '@mui/icons-material';
 import ProductPageView from './ProductPageView';
 import { supabase } from '../../../services/supabase';
-import { useAuth } from '../../../infrastructure/providers';
+import { useAuth } from '../../../infrastructure/providers/UnifiedAuthProvider';
 import useCartStore from '../../../shared/stores/cart/cartStore';
 import { extractProductIdFromSlug } from '../../../shared/utils/product/productUrl';
 import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils';

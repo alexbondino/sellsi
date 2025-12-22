@@ -302,6 +302,17 @@ const useProductSpecifications = create((set, get) => ({
     'meses',
     'días',
   ],
+
+  /**
+   * Reset del store
+   */
+  reset: () => {
+    set({
+      loading: false,
+      error: null,
+      processingSpecs: {},
+    });
+  },
 }));
 
 export default useProductSpecifications;

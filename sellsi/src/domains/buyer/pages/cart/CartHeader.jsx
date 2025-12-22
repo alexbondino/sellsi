@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback' // Asegúrate de importar tu componente Modal correctamente
+import MinimumPurchaseWarning from './components/MinimumPurchaseWarning'
 
 /**
  * ============================================================================
@@ -58,6 +59,8 @@ const CartHeader = ({
   onSelectAll,
   onDeleteSelected,
   totalItems,
+  // Validación de compra mínima por proveedor
+  supplierMinimumValidation,
 }) => {
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
 
@@ -325,6 +328,14 @@ const CartHeader = ({
           </Stack>{' '}
         </Grid>
       </Grid>
+
+      {/* Advertencia de compra mínima por proveedor */}
+      <MinimumPurchaseWarning 
+        validation={supplierMinimumValidation}
+        isSelectionMode={isSelectionMode}
+        formatPrice={formatPrice}
+      />
+
       <Modal
         isOpen={openDeleteModal}
         onClose={() => setOpenDeleteModal(false)}

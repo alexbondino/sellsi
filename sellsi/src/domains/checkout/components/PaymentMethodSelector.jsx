@@ -30,6 +30,7 @@ import checkoutService from '../services/checkoutService'; // Corregido
 import { trackUserAction } from '../../../services/security';
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 import useCartStore from '../../../shared/stores/cart/cartStore';
+import { useAuth } from '../../../infrastructure/providers/UnifiedAuthProvider';
 
 // Componentes UI
 import CheckoutSummary from './CheckoutSummary';
@@ -44,6 +45,7 @@ import MobilePaymentLayout from './MobilePaymentLayout';
 const PaymentMethodSelector = () => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const { session } = useAuth();
 
   // ===== DETECCIÓN DE MOBILE =====
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -93,7 +95,8 @@ const PaymentMethodSelector = () => {
     
     const getItemPrice = item => {
       if (item.price_tiers && item.price_tiers.length > 0) {
-        const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0;
+        // ⚠️ CRÍTICO: Convertir a Number para evitar bypass con valores falsy
+        const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
         return calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
       }
       return item.price || 0;
@@ -125,15 +128,21 @@ const PaymentMethodSelector = () => {
     try {
       setSelectedMethodId(methodId);
       selectMethod(methodId);
-      const isValid = await validateMethod(methodId, orderData.total);
+      // ✅ FIX: Validar con baseTotal (sin fee de pago) ya que el fee se agrega después
+      // baseTotal es el total que se usa para calcular el fee del método de pago
+      const isValid = await validateMethod(methodId, baseTotal);
       if (isValid) {
         selectPaymentMethod(availableMethods.find(m => m.id === methodId));
         const currentSelectedMethod = availableMethods.find(
           m => m.id === methodId
         );
-        await trackUserAction(
-          `payment_method_selected_${currentSelectedMethod?.name || methodId}`
-        );
+        // Solo trackear si hay usuario autenticado
+        if (session?.user?.id) {
+          await trackUserAction(
+            session.user.id,
+            `payment_method_selected_${currentSelectedMethod?.name || methodId}`
+          );
+        }
         clearError();
       }
     } catch (error) {
@@ -314,8 +323,35 @@ const PaymentMethodSelector = () => {
     } catch (error) {
       console.error('Error processing payment:', error);
       
+      // ⭐ MANEJO COMPLETO DE ERRORES DE VALIDACIÓN SQL
+      const errorMessages = {
+        'MINIMUM_PURCHASE_VIOLATION': 'No se cumple la compra mínima de uno o más proveedores.',
+        'MINIMUM_PURCHASE_NOT_MET': 'No se cumple la compra mínima requerida por el proveedor.',
+        'INSUFFICIENT_STOCK': 'Stock insuficiente para uno o más productos.',
+        'PRODUCT_NOT_FOUND': 'Uno o más productos ya no están disponibles.',
+        'INVALID_ITEM': 'Hay items inválidos en el carrito.',
+        'INVALID_QUANTITY': 'La cantidad de uno o más productos es inválida.',
+        'INVALID_PRODUCT': 'Uno o más productos no tienen proveedor asignado.',
+        'INVALID_SUPPLIER': 'El proveedor de uno o más productos no existe.',
+        'INVALID_ORDER': 'La orden está vacía o es inválida.',
+      };
+      
+      // Buscar mensaje de error conocido
+      const knownError = Object.keys(errorMessages).find(key => 
+        error.message?.includes(key)
+      );
+      
+      if (knownError) {
+        const userMessage = errorMessages[knownError];
+        console.log(`[PaymentMethodSelector] Error de validación: ${knownError}`);
+        
+        // Todos los errores de validación redirigen al carrito para corrección
+        toast.error(userMessage + ' Revisa tu carrito.');
+        navigate('/buyer/cart');
+        return;
+      }
+      
       // Detectar error de constraint duplicada por mensaje
-      // (error.code se pierde en checkoutService.createOrder)
       const isDuplicateOrder = 
         error.message?.includes('uniq_orders_cart_pending') ||
         error.message?.includes('duplicate key');
@@ -327,6 +363,7 @@ const PaymentMethodSelector = () => {
         return;
       }
       
+      // Error desconocido
       setError(error.message);
       toast.error(error.message);
       failPayment(error.message);

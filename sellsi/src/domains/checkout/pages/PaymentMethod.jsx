@@ -24,6 +24,9 @@ import { useCheckout } from '../hooks'
 // Utilidades de cálculo de envío
 import { calculateRealShippingCost } from '../../../utils/shippingCalculation'
 
+// Utilidades de cálculo de precios (para validar compra mínima con tiers)
+import { calculatePriceForQuantity } from '../../../utils/priceCalculation'
+
 // Servicios
 import { getUserProfileData } from '../../../services/user/profileService'
 
@@ -53,6 +56,57 @@ const PaymentMethod = () => {
     // Verificar que haya productos en el carrito
     if (!items || items.length === 0) {
       // Silenciosamente redirigir al carrito sin mostrar toast
+      navigate('/buyer/cart', { replace: true })
+      return
+    }
+
+    // ⭐ NEW: Validar compra mínima por proveedor
+    const supplierMinimumValidation = items.reduce((acc, item) => {
+      const supplierId = item.supplier_id || item.supplierId;
+      const minimumAmount = Number(item.minimum_purchase_amount) || 0;
+      
+      if (!supplierId) return acc;
+      
+      // ⭐ NUEVO: Excluir productos ofertados del cálculo de compra mínima
+      const hasOffer = item.offer_id || item.offerId;
+      
+      if (!acc[supplierId]) {
+        acc[supplierId] = {
+          name: item.proveedor || item.supplier || `Proveedor #${supplierId}`,
+          minimumAmount: minimumAmount,
+          currentTotal: 0,
+          hasNonOfferedProducts: false // ⭐ Track si hay productos NO ofertados
+        };
+      }
+      
+      // Solo acumular total si NO es producto ofertado
+      if (!hasOffer) {
+        acc[supplierId].hasNonOfferedProducts = true; // ⭐ Hay al menos un producto normal
+        // Calcular total del item (sin envío) - MISMA LÓGICA QUE BuyerCart
+        let itemTotal = 0;
+        if (item.price_tiers && item.price_tiers.length > 0) {
+          // ⚠️ VALIDAR: Convertir a Number explícitamente para evitar bypass con valores falsy
+          const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
+          const calculatedPrice = calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
+          itemTotal = calculatedPrice * (item.quantity || 0);
+        } else {
+          itemTotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+        }
+        
+        acc[supplierId].currentTotal += itemTotal;
+      }
+      
+      return acc;
+    }, {});
+
+    // ⭐ NUEVO: Solo validar si hay productos NO ofertados
+    // Si solo hay ofertas de un proveedor, ignorar compra mínima completamente
+    const hasViolations = Object.values(supplierMinimumValidation).some(
+      data => data.hasNonOfferedProducts && data.minimumAmount > 0 && data.currentTotal < data.minimumAmount
+    );
+
+    // Si hay violaciones, redirigir al carrito silenciosamente
+    if (hasViolations) {
       navigate('/buyer/cart', { replace: true })
       return
     }
@@ -97,13 +151,13 @@ const PaymentMethod = () => {
         // En caso de error, dejamos que el flujo continue y la validación server-side la confirme
       }
 
-      const subtotal = getSubtotal()
-      const tax = Math.round(subtotal * 0.19) // IVA 19%
-      const serviceFee = Math.round(subtotal * 0.03) // Comisión por servicio 3%
+      const subtotal = getSubtotal() // Subtotal YA incluye IVA (precios en Chile tienen IVA incluido)
       
       // ✅ NUEVO: Calcular costo REAL de envío basado en regiones de despacho
       const shipping = await calculateRealShippingCost(items)
-      const total = subtotal + tax + serviceFee + shipping
+      // Total base (sin fee de método de pago): subtotal + shipping
+      // El fee del método de pago se calculará después en CheckoutSummary
+      const total = subtotal + shipping
       
       // ✅ CRÍTICO: Obtener datos del perfil para direcciones
       const userId = localStorage.getItem('user_id')
@@ -176,10 +230,8 @@ const PaymentMethod = () => {
       const cartData = {
         items: items,
         subtotal: subtotal,
-        tax: tax,
-        serviceFee: serviceFee,
         shipping: shipping,
-        total: total,
+        total: total, // Total base: subtotal + shipping (sin fee de pago)
         currency: 'CLP',
         // ✅ NUEVO: Incluir direcciones capturadas del perfil
         shippingAddress: shippingAddress,

@@ -23,6 +23,7 @@ import { useBanner } from '../../../../shared/components/display/banners/BannerC
 import PrimaryButton from '../../../../shared/components/forms/PrimaryButton';
 import CountrySelector from '../../../../shared/components/forms/CountrySelector';
 import { validatePhone, normalizePhone } from '../../../../utils/validators';
+import { invalidateUserProfileCache } from '../../../../services/user/profileService';
 import {
   TaxDocumentSelector,
   BillingInfoForm,
@@ -365,7 +366,9 @@ const Onboarding = () => {
       // 🔒 Evita el bucle del guard:
       // 1) Refresca sesión (opcional pero recomendado)
       await supabase.auth.refreshSession().catch(() => {});
-      // 2) Refresca el perfil en el Auth Provider para que `needsOnboarding` se actualice
+      // 2) Invalida cache de profile para forzar refetch con datos actualizados
+      invalidateUserProfileCache(user.id);
+      // 3) Refresca el perfil en el Auth Provider para que `needsOnboarding` se actualice
       await refreshUserProfile();
 
       // Prime de región (si aplica) - ahora de formData ya que billing va a otra tabla

@@ -7,11 +7,14 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 const FRONTEND_URLS: Record<string, string> = {
   production: 'https://sellsi.cl',
   sandbox: 'https://staging-sellsi.vercel.app',
+  development: 'http://localhost:3000', // ⭐ Soporte para desarrollo local
 };
 
 serve(async (req: Request) => {
-  const flowEnv = Deno.env.get('FLOW_ENV') || 'sandbox';
-  const FRONTEND_URL = FRONTEND_URLS[flowEnv] || FRONTEND_URLS.sandbox;
+  const flowEnv = Deno.env.get('FLOW_ENV') || 'development'; // Default a development
+  const FRONTEND_URL = FRONTEND_URLS[flowEnv] || FRONTEND_URLS.development;
+  
+  console.log('[flow-return] Environment:', { flowEnv, FRONTEND_URL });
 
   try {
     // Flow envía POST con token en body (form-urlencoded)
@@ -20,17 +23,27 @@ serve(async (req: Request) => {
 
     // Extraer token del body
     const contentType = req.headers.get('content-type') || '';
+    console.log('[flow-return] Content-Type:', contentType);
+    
     if (contentType.includes('application/x-www-form-urlencoded')) {
       const text = await req.text();
       const params = new URLSearchParams(text);
       token = params.get('token');
+      console.log('[flow-return] Token extracted:', token?.substring(0, 20) + '...');
+    } else {
+      console.warn('[flow-return] Unexpected content type:', contentType);
     }
 
     // Extraer order_id del query string (lo pasamos en la URL)
     const url = new URL(req.url);
     orderId = url.searchParams.get('order');
 
-    console.log('[flow-return] Received:', { token: token?.substring(0, 20), orderId });
+    console.log('[flow-return] Received:', { 
+      token: token?.substring(0, 20) + '...', 
+      orderId,
+      method: req.method,
+      url: req.url
+    });
 
     // Construir URL de redirección al frontend
     const redirectUrl = new URL(`${FRONTEND_URL}/buyer/orders`);
@@ -54,11 +67,16 @@ serve(async (req: Request) => {
 
   } catch (error) {
     console.error('[flow-return] Error:', error);
-    // En caso de error, redirigir al home
+    console.error('[flow-return] Error stack:', error?.stack);
+    
+    // En caso de error, redirigir al home con parámetros de error
+    const errorUrl = `${FRONTEND_URL}/buyer/orders?payment=flow&error=redirect_failed&message=${encodeURIComponent(error?.message || 'Unknown error')}`;
+    console.log('[flow-return] Error redirect to:', errorUrl);
+    
     return new Response(null, {
       status: 303,
       headers: {
-        'Location': `${FRONTEND_URL}/buyer/orders?payment=flow&error=redirect_failed`,
+        'Location': errorUrl,
       },
     });
   }

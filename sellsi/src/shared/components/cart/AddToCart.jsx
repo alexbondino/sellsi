@@ -18,7 +18,7 @@ import {
 import useCartStore from '../../stores/cart/cartStore';
 import { formatProductForCart } from '../../../utils/priceCalculation';
 import { supabase } from '../../../services/supabase';
-import { useAuth } from '../../../infrastructure/providers';
+import { useAuth } from '../../../infrastructure/providers/UnifiedAuthProvider';
 import { waitForAuthStable } from '../../../infrastructure/auth/AuthReadyCoordinator';
 
 /**

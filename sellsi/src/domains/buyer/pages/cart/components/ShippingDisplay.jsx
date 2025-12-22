@@ -149,7 +149,7 @@ const ShippingDisplay = ({
             </Typography>
           </Box>
           <Typography variant="caption" color="text.secondary" component="span" sx={{ fontSize: '0.8rem' }}>
-            {validation.shippingInfo?.days} días hábiles
+            {validation.shippingInfo?.days === 1 ? '1 día hábil' : `${validation.shippingInfo?.days} días hábiles`}
           </Typography>
           <Typography
             variant="body1"
@@ -162,6 +162,27 @@ const ShippingDisplay = ({
           >
             {(validation.shippingInfo?.cost || 0) === 0 ? 'Gratis' : formatPrice(validation.shippingInfo?.cost || 0)}
           </Typography>
+          {/* Chip de documento tributario */}
+          {(() => {
+            const docType = (product?.document_type || product?.documentType || '').toLowerCase();
+            if (docType === 'boleta' || docType === 'factura') {
+              return (
+                <Chip
+                  label={docType === 'boleta' ? 'Boleta' : 'Factura'}
+                  size="small"
+                  sx={{
+                    mt: 1,
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                    fontSize: '0.7rem',
+                    height: 22,
+                    fontWeight: 600,
+                  }}
+                />
+              );
+            }
+            return null;
+          })()}
         </Box>
       );
 

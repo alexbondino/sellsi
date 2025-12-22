@@ -3,7 +3,7 @@ import { Box, Typography } from '@mui/material';
 import { Modal, MODAL_TYPES } from '../../feedback';
 import { useNavigate } from 'react-router-dom';
 import { useShippingInfoValidation } from '../../../hooks/profile/useShippingInfoValidation';
-import { useAuth } from '../../../../infrastructure/providers';
+import { useAuth } from '../../../../infrastructure/providers/UnifiedAuthProvider';
 
 // Hook para controlar apertura del modal de shipping
 export const useShippingInfoModal = () => {

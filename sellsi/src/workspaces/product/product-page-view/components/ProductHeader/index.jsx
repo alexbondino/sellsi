@@ -38,7 +38,11 @@ import { useSupplierDocumentTypes } from '../../../../../shared/utils/supplierDo
 import { getProductImageUrl } from '../../../../../utils/getProductImageUrl';
 
 // Estilos
-import { HEADER_STYLES, INFO_STYLES, GALLERY_STYLES } from '../../styles/productPageStyles';
+import {
+  HEADER_STYLES,
+  INFO_STYLES,
+  GALLERY_STYLES,
+} from '../../styles/productPageStyles';
 
 const ProductHeader = React.memo(
   ({
@@ -84,10 +88,12 @@ const ProductHeader = React.memo(
     } = useProductHeaderState();
 
     // Thumbnail responsivo
-    const { thumbnailUrl: mainImageThumbnail } = useResponsiveThumbnail(product);
+    const { thumbnailUrl: mainImageThumbnail } =
+      useResponsiveThumbnail(product);
 
     // Región de envío del usuario
-    const { userRegion, isLoadingUserRegion } = useOptimizedUserShippingRegion();
+    const { userRegion, isLoadingUserRegion } =
+      useOptimizedUserShippingRegion();
 
     // Verificación de propiedad del producto
     const { isProductOwnedByUser, isUserDataReady, isLoadingOwnership } =
@@ -95,10 +101,8 @@ const ProductHeader = React.memo(
 
     // Tipos de documentos del proveedor
     const supplierId = product?.supplier_id || product?.supplierId;
-    const {
-      availableOptions,
-      loading: loadingDocumentTypes,
-    } = useSupplierDocumentTypes(supplierId);
+    const { availableOptions, loading: loadingDocumentTypes } =
+      useSupplierDocumentTypes(supplierId);
 
     // ========================================================================
     // OWNERSHIP VERIFICATION
@@ -188,7 +192,13 @@ const ProductHeader = React.memo(
         }
       } catch (_) {}
       _initialImageSyncRef.current = true;
-    }, [orderedImages, onImageSelect, resolveImageSrc, mainImageRecord, imagen]);
+    }, [
+      orderedImages,
+      onImageSelect,
+      resolveImageSrc,
+      mainImageRecord,
+      imagen,
+    ]);
 
     // ========================================================================
     // QUOTATION DEFAULTS
@@ -245,24 +255,32 @@ const ProductHeader = React.memo(
             {/* Nombre del Producto - Solo en desktop */}
             {!isMobile && <ProductName nombre={nombre} />}
 
-            {/* Metadata: Stock, Compra mínima, Chips */}
-            <ProductMetadata
-              stock={stock}
-              compraMinima={compraMinima}
-              availableOptions={availableOptions}
-              loadingDocumentTypes={loadingDocumentTypes}
-              isMobile={isMobile}
-              supplierMinimumAmount={product.minimum_purchase_amount || product.supplier_minimum_purchase_amount || 0}
-            />
+            {/* Metadata: Stock, Compra mínima, Chips - Solo en desktop */}
+            {!isMobile && (
+              <ProductMetadata
+                stock={stock}
+                compraMinima={compraMinima}
+                availableOptions={availableOptions}
+                loadingDocumentTypes={loadingDocumentTypes}
+                isMobile={isMobile}
+                supplierMinimumAmount={
+                  product.minimum_purchase_amount ||
+                  product.supplier_minimum_purchase_amount ||
+                  0
+                }
+              />
+            )}
 
-            {/* Proveedor */}
-            <ProductSupplier
-              proveedor={proveedor}
-              logoUrl={product?.logo_url || product?.supplier_logo_url}
-              isVerified={product?.proveedorVerificado || product?.verified}
-              isLoggedIn={isLoggedIn}
-              supplierId={product.supplier_id || product.supplierId}
-            />
+            {/* Proveedor - Solo en desktop */}
+            {!isMobile && (
+              <ProductSupplier
+                proveedor={proveedor}
+                logoUrl={product?.logo_url || product?.supplier_logo_url}
+                isVerified={product?.proveedorVerificado || product?.verified}
+                isLoggedIn={isLoggedIn}
+                supplierId={product.supplier_id || product.supplierId}
+              />
+            )}
 
             {/* Precios y/o tramos */}
             <ProductPricing
@@ -299,6 +317,33 @@ const ProductHeader = React.memo(
 
               return null;
             })()}
+
+            {/* Metadata: Stock, Compra mínima, Chips - Solo en mobile (después de botones) */}
+            {isMobile && (
+              <ProductMetadata
+                stock={stock}
+                compraMinima={compraMinima}
+                availableOptions={availableOptions}
+                loadingDocumentTypes={loadingDocumentTypes}
+                isMobile={isMobile}
+                supplierMinimumAmount={
+                  product.minimum_purchase_amount ||
+                  product.supplier_minimum_purchase_amount ||
+                  0
+                }
+              />
+            )}
+
+            {/* Proveedor - Solo en mobile (después de metadata) */}
+            {isMobile && (
+              <ProductSupplier
+                proveedor={proveedor}
+                logoUrl={product?.logo_url || product?.supplier_logo_url}
+                isVerified={product?.proveedorVerificado || product?.verified}
+                isLoggedIn={isLoggedIn}
+                supplierId={product.supplier_id || product.supplierId}
+              />
+            )}
           </Box>
         </Box>
 

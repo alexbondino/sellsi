@@ -463,19 +463,36 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
               }
             }
             if (maxDays === 0) maxDays = 7; // fallback
-            // Calcular sumando días hábiles (simple business day add: saltar sábado/domingo)
+
+            // Feriados Chile 2025 (coincidente con frontend)
+            const CHILE_HOLIDAYS_2025 = new Set([
+              '2025-01-01','2025-04-18','2025-04-19','2025-05-01',
+              '2025-05-21','2025-06-29','2025-07-16','2025-08-15',
+              '2025-09-18','2025-09-19','2025-10-12','2025-10-31',
+              '2025-11-01','2025-12-08','2025-12-25'
+            ]);
+
+            const isBusinessDay = (date: Date) => {
+              const dow = date.getDay();
+              if (dow === 0 || dow === 6) return false; // fin de semana
+              const iso = date.toISOString().slice(0, 10);
+              if (CHILE_HOLIDAYS_2025.has(iso)) return false; // feriado
+              return true;
+            };
+
+            // Calcular sumando días hábiles (saltar sábado/domingo/feriados)
             const addBusinessDays = (start: Date, days: number) => {
               const d = new Date(start);
               let added = 0;
               while (added < days) {
                 d.setDate(d.getDate() + 1);
-                const dow = d.getDay();
-                if (dow !== 0 && dow !== 6) added++;
+                if (isBusinessDay(d)) added++;
               }
               return d;
             };
-            const createdAt = new Date(ord.created_at);
-            const deadline = addBusinessDays(createdAt, maxDays);
+            // Usar fecha de pago si está disponible, sino created_at
+            const paymentDate = new Date(paidAt || ord.created_at);
+            const deadline = addBusinessDays(paymentDate, maxDays);
             const isoDate = deadline.toISOString().slice(0,10);
             const { error: slaErr } = await supabase
               .from('orders')

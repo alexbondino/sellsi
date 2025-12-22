@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Paper,
   Typography,
@@ -12,6 +12,7 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import PriceBreakdown from './PriceBreakdown'
 import { prefetchForPath } from '../../../../infrastructure/prefetch/prefetch';
+import MinimumPurchaseModal from '../../../../components/cart/MinimumPurchaseModal';
 
 const OrderSummary = ({
   // Data props
@@ -35,12 +36,18 @@ const OrderSummary = ({
   cartItems = [],
   userRegion,
 
+  // ⭐ NEW: Minimum purchase validation
+  supplierMinimumValidation,
+
   // Functions
   formatPrice,
   formatDate,
   onCheckout,
 }) => {
   const navigate = useNavigate()
+  
+  // Estado para controlar el modal de compra mínima
+  const [showMinimumPurchaseModal, setShowMinimumPurchaseModal] = useState(false)
 
   // Handler para navegar al checkout
   const handleCheckout = () => {
@@ -48,6 +55,13 @@ const OrderSummary = ({
     if (!cartStats || cartStats.isEmpty) {
       return
     }
+    
+    // ⭐ NEW: Validar compra mínima por proveedor
+    if (supplierMinimumValidation && supplierMinimumValidation.hasViolations) {
+      setShowMinimumPurchaseModal(true)
+      return
+    }
+    
     // Validar compatibilidad de envío si está en modo avanzado
     if (isAdvancedShippingMode && shippingValidation && !shippingValidation.isCartCompatible) {
       // Notificar al componente padre para mostrar el modal
@@ -87,8 +101,7 @@ const OrderSummary = ({
     
     return disabled
   }
-  return (
-    <Paper
+  return (    <>    <Paper
       elevation={3}
       sx={{
         p: { xs: 2, sm: 2.25, md: 2, lg: 3, xl: 3 },
@@ -177,6 +190,14 @@ const OrderSummary = ({
       </Stack>
       </Stack>
     </Paper>
+    
+    {/* Modal de compra mínima */}
+    <MinimumPurchaseModal
+      open={showMinimumPurchaseModal}
+      onClose={() => setShowMinimumPurchaseModal(false)}
+      violations={supplierMinimumValidation?.violations || []}
+    />
+  </>
   )
 }
 

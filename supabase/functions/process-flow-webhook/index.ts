@@ -356,6 +356,69 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
         price_at_addition: Number(it.price_at_addition || it.price || 0),
       })).filter(it => it.product_id && it.supplier_id);
 
+      // Calcular estimated_delivery_date si falta
+      if (!preOrder.estimated_delivery_date && normItems.length > 0) {
+        try {
+          const productIds = [...new Set(normItems.map(it => it.product_id))];
+          const { data: prodRows } = await supabase
+            .from('products')
+            .select('productid, product_delivery_regions')
+            .in('productid', productIds);
+          const productMap = new Map((prodRows || []).map(p => [p.productid, p]));
+          const norm = (v:string) => (v || '').toString().trim().toLowerCase();
+          const buyerRegion = norm(preOrder.shipping_address?.shipping_region || preOrder.shipping_address?.region || '');
+          let maxDays = 0;
+          for (const it of normItems) {
+            const prod = productMap.get(it.product_id);
+            const regions = (prod?.product_delivery_regions || []) as any[];
+            if (Array.isArray(regions)) {
+              const match = regions.find(r => norm(r.region) === buyerRegion);
+              if (match && Number(match.delivery_days) > maxDays) maxDays = Number(match.delivery_days);
+            }
+          }
+          if (maxDays === 0) maxDays = 7; // fallback
+
+          // Feriados Chile 2025 (coincidente con frontend)
+          const CHILE_HOLIDAYS_2025 = new Set([
+            '2025-01-01','2025-04-18','2025-04-19','2025-05-01',
+            '2025-05-21','2025-06-29','2025-07-16','2025-08-15',
+            '2025-09-18','2025-09-19','2025-10-12','2025-10-31',
+            '2025-11-01','2025-12-08','2025-12-25'
+          ]);
+
+          const isBusinessDay = (date: Date) => {
+            const dow = date.getDay();
+            if (dow === 0 || dow === 6) return false; // fin de semana
+            const iso = date.toISOString().slice(0, 10);
+            if (CHILE_HOLIDAYS_2025.has(iso)) return false; // feriado
+            return true;
+          };
+
+          // Calcular sumando días hábiles (saltar sábado/domingo/feriados)
+          const addBusinessDays = (start: Date, days: number) => {
+            const d = new Date(start);
+            let added = 0;
+            while (added < days) {
+              d.setDate(d.getDate() + 1);
+              if (isBusinessDay(d)) added++;
+            }
+            return d;
+          };
+          // Usar fecha de pago si está disponible, sino created_at
+          const paymentDate = new Date(paidAt || preOrder.created_at);
+          const deadline = addBusinessDays(paymentDate, maxDays);
+          const isoDate = deadline.toISOString().slice(0,10);
+          const { error: slaErr } = await supabase
+            .from('orders')
+            .update({ estimated_delivery_date: isoDate, updated_at: new Date().toISOString() })
+            .eq('id', orderId)
+            .is('estimated_delivery_date', null);
+          if (slaErr) log('sla_persist_error', { error: slaErr });
+        } catch(slaEx) {
+          log('sla_calculation_error', { error: String(slaEx) });
+        }
+      }
+
       // Descontar inventario y registrar ventas
       for (const it of normItems) {
         // Inventario

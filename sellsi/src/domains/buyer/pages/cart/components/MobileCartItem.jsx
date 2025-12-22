@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Card,
   Stack,
@@ -6,15 +6,19 @@ import {
   Box,
   IconButton,
   Chip,
-  Avatar
+  Avatar,
+  Tooltip
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
-  LocalShipping as ShippingIcon
+  LocalShipping as ShippingIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import MobileQuantityControl from './MobileQuantityControl';
 import { calculatePriceForQuantity } from '../../../../../utils/priceCalculation';
+import { Modal, MODAL_TYPES } from '../../../../../shared/components/feedback';
 
 const MobileCartItem = ({ 
   item, 
@@ -23,11 +27,32 @@ const MobileCartItem = ({
   formatPrice,
   showShipping = true
 }) => {
+  const navigate = useNavigate();
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+
+  // Construir slug SEO a partir del nombre del producto
+  const getProductSlug = (name) => {
+    if (!name) return '';
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  const handleViewFichaTecnica = useCallback(() => {
+    const id = item.product_id || item.id;
+    const slug = getProductSlug(item.name || item.nombre);
+    navigate(`/marketplace/product/${id}${slug ? `/${slug}` : ''}`, { state: { from: '/buyer/marketplace' } });
+  }, [navigate, item]);
+
   // Determinar precio unitario y total de forma defensiva
   const quantity = Number(item.quantity || 1);
   const price_tiers = item.price_tiers || item.priceTiers || item.price_tier || [];
   const basePrice = Number(
-    item.originalPrice || item.precioOriginal || item.price || item.precio || item.price_at_addition || 0
+    // ⚠️ CRÍTICO: Convertir a Number para evitar bypass con valores falsy
+    Number(item.originalPrice || item.precioOriginal || item.price || item.precio || item.price_at_addition) || 0
   );
 
   // calcularPriceForQuantity maneja ausencia de tramos y devuelve basePrice si no hay tramos
@@ -176,34 +201,80 @@ const MobileCartItem = ({
             
             {/* Controles derecha */}
             <Stack alignItems="center" spacing={1.5} sx={{ flexShrink: 0 }}>
-              {/* Control cantidad */}
-              <MobileQuantityControl
-                value={item.quantity || 1}
-                onChange={(qty) => onUpdate(item.id, qty)}
-                min={1}
-                max={item.stock || 99}
-                size="small"
-              />
+              {/* Control cantidad - oculto si el producto está ofertado */}
+              {!item.offer_id && !item.offerId && (
+                <MobileQuantityControl
+                  value={item.quantity || 1}
+                  onChange={(qty) => onUpdate(item.id, qty)}
+                  min={1}
+                  max={item.stock || 99}
+                  size="small"
+                />
+              )}
               
-              {/* Botón eliminar */}
-              <IconButton
-                className="delete-button"
-                onClick={() => onRemove(item.id)}
-                sx={{ 
-                  color: 'error.main',
-                  opacity: 0.7,
-                  transition: 'opacity 0.2s',
-                  width: 36,
-                  height: 36,
-                  '&:hover': {
-                    backgroundColor: 'error.light',
-                    color: 'white',
-                    opacity: 1
-                  }
-                }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
+              {/* Mostrar cantidad fija para productos ofertados */}
+              {(item.offer_id || item.offerId) && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: 'text.primary',
+                    fontSize: '0.85rem',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    bgcolor: 'rgba(0,0,0,0.04)',
+                  }}
+                >
+                  {item.quantity} uds
+                </Typography>
+              )}
+              
+              {/* Botones en fila horizontal */}
+              <Stack direction="row" spacing={1} alignItems="center">
+                {/* Botón eliminar - a la izquierda */}
+                <Tooltip title="Eliminar del carrito" placement="top">
+                  <IconButton
+                    className="delete-button"
+                    onClick={() => setOpenDeleteModal(true)}
+                    sx={{ 
+                      color: 'error.main',
+                      opacity: 0.7,
+                      transition: 'opacity 0.2s',
+                      width: 36,
+                      height: 36,
+                      '&:hover': {
+                        backgroundColor: 'error.light',
+                        color: 'white',
+                        opacity: 1
+                      }
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                
+                {/* Botón Ver Ficha Técnica - a la derecha */}
+                <Tooltip title="Ver Ficha Técnica" placement="top">
+                  <IconButton
+                    onClick={handleViewFichaTecnica}
+                    sx={{ 
+                      color: 'primary.main',
+                      opacity: 0.8,
+                      transition: 'all 0.2s',
+                      width: 36,
+                      height: 36,
+                      '&:hover': {
+                        backgroundColor: 'primary.light',
+                        color: 'primary.dark',
+                        opacity: 1
+                      }
+                    }}
+                  >
+                    <SearchIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
             </Stack>
           </Stack>
           
@@ -226,6 +297,33 @@ const MobileCartItem = ({
             </Box>
           )}
         </Box>
+
+        {/* Modal de confirmación para eliminar */}
+        <Modal
+          isOpen={openDeleteModal}
+          onClose={() => setOpenDeleteModal(false)}
+          onSubmit={() => {
+            onRemove(item.id);
+            setOpenDeleteModal(false);
+          }}
+          type={MODAL_TYPES.DELETE}
+          title="Eliminar producto del carrito"
+          submitButtonText="Eliminar"
+          cancelButtonText="Cancelar"
+          showCancelButton
+          sx={{
+            '& .MuiDialogContent-root': {
+              textAlign: 'center',
+            },
+            '& .MuiDialogActions-root': {
+              justifyContent: 'center',
+            },
+          }}
+        >
+          <Box sx={{ textAlign: 'center' }}>
+            ¿Estás seguro que deseas eliminar este producto del carrito?
+          </Box>
+        </Modal>
       </Card>
     </motion.div>
   );
