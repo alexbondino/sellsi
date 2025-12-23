@@ -1,14 +1,13 @@
 import React from 'react';
-import { render, act } from '@testing-library/react';
+import { render, act, screen, waitFor } from '@testing-library/react';
 
-// Mock useAuth to control session
-jest.mock('../../infrastructure/providers', () => ({ useAuth: () => ({ session: null, loadingUserStatus: false }) }));
+// Mock useAuth to control session (make it a jest.fn so tests can override per-case)
+jest.mock('../../infrastructure/providers', () => ({ useAuth: jest.fn() }));
+import { useAuth } from '../../infrastructure/providers';
 
 // Mock cart store
 const mockInit = jest.fn();
-jest.mock('../../shared/stores/cart/cartStore', () => {
-  return jest.fn(() => ({ initializeCartWithUser: mockInit }));
-});
+jest.mock('../../shared/stores/cart/cartStore', () => jest.fn(() => ({ initializeCartWithUser: mockInit })));
 
 import { useAppInitialization } from '../../shared/hooks/useAppInitialization';
 
@@ -17,19 +16,43 @@ const TestComponent = ({ onReady }) => {
   React.useEffect(() => {
     onReady && onReady(state);
   }, [state, onReady]);
-  return null;
+
+  // Render an observable node so tests can wait for initialization reliably
+  return state.isInitialized ? <div data-testid="initialized" /> : <div data-testid="not-initialized" />;
 };
 
 describe('useAppInitialization', () => {
-  test('exposes initialized state and sets up popstate listener', () => {
-    let received = null;
-    render(<TestComponent onReady={(s) => { received = s; }} />);
-    expect(received).not.toBeNull();
-    expect(received.isInitialized).toBe(true);
+  beforeEach(() => {
+    jest.clearAllMocks();
+    localStorage.clear();
+    // Default: not authenticated, not loading
+    useAuth.mockReturnValue({ session: null, loadingUserStatus: false });
+  });
 
-    // Dispatch popstate and ensure no exceptions thrown (listener exists)
-    act(() => {
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    });
+  test('exposes initialized state and sets up popstate listener', async () => {
+    render(<TestComponent />);
+
+    // Wait for initialized state to appear (robust against async init)
+    await screen.findByTestId('initialized');
+
+    // Dispatch popstate and assert it triggers closeAllModals event
+    const handler = jest.fn();
+    window.addEventListener('closeAllModals', handler);
+    act(() => window.dispatchEvent(new PopStateEvent('popstate')));
+    expect(handler).toHaveBeenCalled();
+    window.removeEventListener('closeAllModals', handler);
+  });
+
+  test('reports not initialized when loadingUserStatus is true', async () => {
+    useAuth.mockReturnValue({ session: null, loadingUserStatus: true });
+    render(<TestComponent />);
+    await screen.findByTestId('not-initialized');
+  });
+
+  test('initializes cart when session exists', async () => {
+    useAuth.mockReturnValue({ session: { user: { id: 'uid-1' } }, loadingUserStatus: false });
+    render(<TestComponent />);
+    await screen.findByTestId('initialized');
+    expect(mockInit).toHaveBeenCalledWith('uid-1');
   });
 });

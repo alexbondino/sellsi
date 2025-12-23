@@ -168,26 +168,28 @@ describe('Onboarding page - integration-ish tests', () => {
       .spyOn(console, 'error')
       .mockImplementation(() => {});
 
-    const { getByText, getByLabelText } = renderWithProviders(<Onboarding />);
+    try {
+      const { getByText, getByLabelText } = renderWithProviders(<Onboarding />);
 
-    // select provider and fill name
-    fireEvent.click(getByText(/Soy Proveedor/i));
-    const nameField = getByLabelText(/Nombre de Empresa o Personal \*/i);
-    fireEvent.change(nameField, { target: { value: 'ACME S.A.' } });
+      // select provider and fill name
+      fireEvent.click(getByText(/Soy Proveedor/i));
+      const nameField = getByLabelText(/Nombre de Empresa o Personal \*/i);
+      fireEvent.change(nameField, { target: { value: 'ACME S.A.' } });
 
-    // Click save
-    const saveBtn = getByText(/Guardar y Finalizar/i);
-    fireEvent.click(saveBtn);
+      // Click save
+      const saveBtn = getByText(/Guardar y Finalizar/i);
+      fireEvent.click(saveBtn);
 
-    await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalled();
-      // At least one of the calls should mention 'Error al actualizar el perfil' or user not found
-      const calls = consoleSpy.mock.calls.flat().join(' ');
-      expect(calls).toMatch(
-        /Usuario no encontrado|Error al actualizar el perfil/i
-      );
-    });
-
-    consoleSpy.mockRestore();
+      await waitFor(() => {
+        expect(consoleSpy).toHaveBeenCalled();
+        // At least one of the calls should mention 'Error al actualizar el perfil' or user not found
+        const calls = consoleSpy.mock.calls.flat().join(' ');
+        expect(calls).toMatch(
+          /Usuario no encontrado|Error al actualizar el perfil/i
+        );
+      });
+    } finally {
+      consoleSpy.mockRestore();
+    }
   });
 });

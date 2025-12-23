@@ -132,7 +132,8 @@ export const useBillingInfoValidation = () => {
     hookInstanceCount++;
     const currentInstance = hookInstanceCount;
     try {
-      if (process?.env?.NODE_ENV !== 'production') {
+      // Evitar ruido en CI/tests: no mostrar estos warnings en NODE_ENV === 'test'
+      if (process?.env?.NODE_ENV !== 'production' && process?.env?.NODE_ENV !== 'test') {
         console.warn(`[useBillingInfoValidation] 🔴 HOOK MOUNTED #${currentInstance} | Total activos: ${hookInstanceCount}`);
         return () => {
           hookInstanceCount--;
@@ -233,9 +234,20 @@ export const useBillingInfoValidation = () => {
       if (!force && globalBillingInfoCache.isLoading) {
         return new Promise(resolve => {
           const wait = () => {
-            if (!globalBillingInfoCache.isLoading)
-              resolve(globalBillingInfoCache.get());
-            else setTimeout(wait, 80);
+            if (!globalBillingInfoCache.isLoading) {
+              const cached = globalBillingInfoCache.get();
+              if (cached) {
+                setBillingInfo(cached.data);
+                const validation = validateBillingInfo(cached.data);
+                setMissingFields(validation.missing);
+                setState(
+                  validation.isComplete
+                    ? BILLING_INFO_STATES.COMPLETE
+                    : BILLING_INFO_STATES.INCOMPLETE
+                );
+              }
+              resolve(cached);
+            } else setTimeout(wait, 80);
           };
           wait();
         });
@@ -321,6 +333,65 @@ export const useBillingInfoValidation = () => {
       }
     } catch (e) {}
     loadRef.current();
+
+    // Escuchar invalidaciones globales para recargar automáticamente las instancias montadas
+    // Esto permite que Profile invalidando cache cause que componentes montados (p. ej. modal) se actualicen.
+    const handler = () => {
+      try {
+        if (process?.env?.NODE_ENV !== 'production') {
+          console.debug('[useBillingInfoValidation] 🔔 received billing-info-invalidated event - forcing reload');
+        }
+      } catch (e) {}
+      try {
+        if (loadRef && loadRef.current) loadRef.current(true);
+      } catch (err) {}
+    };
+
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('billing-info-invalidated', handler);
+    }
+
+    // Suscribirse a cambios de auth si la API está disponible (p. ej. supabase)
+    let authSubUnsubscribe = null;
+    try {
+      if (
+        supabase &&
+        supabase.auth &&
+        typeof supabase.auth.onAuthStateChange === 'function'
+      ) {
+        const res = supabase.auth.onAuthStateChange((event, session) => {
+          try {
+            // Si user cambia, forzar reload en instancias montadas
+            const newUserId = session?.user?.id || null;
+            const cachedUserId = globalBillingInfoCache.cachedUserId || null;
+            if (newUserId !== cachedUserId) {
+              try {
+                if (process?.env?.NODE_ENV !== 'production') {
+                  console.debug('[useBillingInfoValidation] 🔔 auth state changed - forcing reload');
+                }
+              } catch (e) {}
+              if (loadRef && loadRef.current) loadRef.current(true);
+            }
+          } catch (e) {}
+        });
+        // Compatibilidad con la forma que devuelve supabase: { data: { subscription } }
+        if (res && res.data && res.data.subscription && typeof res.data.subscription.unsubscribe === 'function') {
+          authSubUnsubscribe = () => res.data.subscription.unsubscribe();
+        } else if (typeof res === 'function') {
+          // Algunas implementaciones devuelven la función de unsubscribe directamente
+          authSubUnsubscribe = res;
+        }
+      }
+    } catch (e) {}
+
+    return () => {
+      if (typeof window !== 'undefined' && window.removeEventListener) {
+        window.removeEventListener('billing-info-invalidated', handler);
+      }
+      try {
+        if (authSubUnsubscribe) authSubUnsubscribe();
+      } catch (e) {}
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Solo al montar
 

@@ -259,6 +259,7 @@ const OfferModal = ({
   };
 
   const handleSubmit = async () => {
+    if (process.env.NODE_ENV === 'test') console.log('[OfferModal] handleSubmit invoked');
     if (!validateForm()) return;
 
     if (!userId) {

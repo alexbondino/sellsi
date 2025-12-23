@@ -330,24 +330,25 @@ describe('MobileOfferCard Component', () => {
   describe('Edge Cases & Validation', () => {
     it('debería manejar variant inválida sin crash', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-      
-      render(
-        <TestWrapper>
-          <MobileOfferCard
-            variant="invalid"
-            data={mockBuyerOffer}
-            fullOffer={mockBuyerOffer}
-            onAction={mockOnAction}
-            isMobile={true}
-          />
-        </TestWrapper>
-      );
+      try {
+        render(
+          <TestWrapper>
+            <MobileOfferCard
+              variant="invalid"
+              data={mockBuyerOffer}
+              fullOffer={mockBuyerOffer}
+              onAction={mockOnAction}
+              isMobile={true}
+            />
+          </TestWrapper>
+        );
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('variant "invalid" no válida')
-      );
-      
-      consoleSpy.mockRestore();
+        expect(consoleSpy).toHaveBeenCalledWith(
+          expect.stringContaining('variant "invalid" no válida')
+        );
+      } finally {
+        consoleSpy.mockRestore();
+      }
     });
 
     it('debería renderizar sin thumbnail_url', () => {

@@ -3,6 +3,8 @@
  * These tests heavily mock Supabase and the StorageCleanupService to validate branching, errors and success
  */
 
+import { act } from '@testing-library/react';
+
 describe('UploadService (robust flows)', () => {
   beforeEach(() => {
     jest.resetModules()
@@ -83,7 +85,7 @@ describe('UploadService (robust flows)', () => {
 
   const res = await UploadService.uploadMultipleImagesWithThumbnails(files, 'prodM', 'supM', { replaceExisting: false })
   // allow any synchronous dispatch to be processed
-  await new Promise(r => setTimeout(r, 0))
+  await act(() => Promise.resolve())
   window.removeEventListener('productImagesReady', handler)
 
     expect(res.success).toBe(true)
@@ -142,7 +144,7 @@ describe('UploadService (robust flows)', () => {
     expect(res.data).toEqual([])
   // Verify base_insert event emitted with 0 count and replace mode
   // allow sync dispatch
-  await new Promise(r => setTimeout(r, 0))
+  await act(() => Promise.resolve())
   // We can check by adding a temporary listener before the call, but here verify via a global spy
   })
 
@@ -203,7 +205,7 @@ describe('UploadService (robust flows)', () => {
 
   const res = await UploadService2.replaceAllProductImages(files, 'prodNonEmpty', 'supNonEmpty')
   // allow dispatched events
-  await new Promise(r => setTimeout(r, 0))
+  await act(() => Promise.resolve())
   window.removeEventListener('productImagesReady', ph)
 
   expect(res.success).toBe(true)

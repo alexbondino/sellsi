@@ -146,17 +146,19 @@ describe('Offer Hooks', () => {
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
-      mockLocalStorage.getItem.mockReturnValue('{"invalid": json}');
+      try {
+        mockLocalStorage.getItem.mockReturnValue('{"invalid": json}');
 
-      renderHook(() => useSupplierOffers());
+        renderHook(() => useSupplierOffers());
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Error parsing user from localStorage:',
-        expect.any(SyntaxError)
-      );
-      expect(mockOfferStore.fetchSupplierOffers).not.toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Error parsing user from localStorage:',
+          expect.any(SyntaxError)
+        );
+        expect(mockOfferStore.fetchSupplierOffers).not.toHaveBeenCalled();
+      } finally {
+        consoleSpy.mockRestore();
+      }
     });
 
     it('debería manejar usuario sin ID', () => {
