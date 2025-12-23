@@ -184,7 +184,7 @@ describe('ProductCard', () => {
     render(<ProductCard product={product} type="provider" registerProductNode={() => {}} />, { wrapper: createWrapper() })
     const btn = screen.getByRole('button', { name: /ver catálogo|catálogo/i })
     await userEvent.click(btn)
-    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining(`/catalog/mi-proveedor/${product.supplier_id}`), expect.any(Object))
+    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining(`/catalog/mi-proveedor/${product.supplier_id.slice(0,4)}`), expect.any(Object))
   })
 
   it('registerProductNode is called once on mount and not called with null on unmount', () => {

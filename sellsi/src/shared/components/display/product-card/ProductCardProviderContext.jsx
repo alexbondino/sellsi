@@ -187,7 +187,8 @@ const ProductCardProviderContext = React.memo(({ product }) => {
               .replace(/-+/g, '-')
               .replace(/^-|-$/g, '');
 
-            const catalogUrl = `/catalog/${userNmSlug}/${supplier_id}`;
+            const shortSupplierId = (supplier_id || '').toString().slice(0, 4);
+            const catalogUrl = `/catalog/${userNmSlug}/${shortSupplierId}`;
 
             navigate(catalogUrl, {
               state: { from: fromPath },
