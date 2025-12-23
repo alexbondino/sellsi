@@ -26,9 +26,9 @@ import { motion } from 'framer-motion';
 
 // Imports de componentes compartidos
 import QuantitySelector from '../../forms/QuantitySelector/QuantitySelector';
-// Helper de logging solo en desarrollo
+// Helper de logging solo en desarrollo (Vite-friendly)
 const devLog = (...args) => {
-  if (process.env.NODE_ENV === 'development') console.info(...args);
+  if (import.meta.env?.DEV) console.info(...args);
 };
 import { CheckoutSummaryImage } from '../../../../components/UniversalProductImage'; // Imagen universal con fallbacks
 // useUnifiedShippingValidation reemplazado por hook especializado interno
@@ -370,6 +370,8 @@ const AddToCartModal = ({
     state: billingState, // Para detectar si hay error
   } = useBillingInfoValidation();
 
+  // Debug billing state in tests (removed in final cleanup)
+
   // ✅ OPTIMIZACIÓN: Solo recargar billing info si fue invalidada
   // refreshIfStale verifica si hubo cambios desde la última carga
   // Esto elimina el flash de "Completar Facturación" → "Agregar al Carrito"
@@ -510,10 +512,15 @@ const AddToCartModal = ({
   
   useEffect(() => {
     // Diagnostic: log open changes to trace unexpected unmounts
-    try { if (process && process.env && process.env.NODE_ENV !== 'production') {
-      // eslint-disable-next-line no-console
-      console.debug('[AddToCartModal] useEffect(open) - open=', open);
-    }} catch (e) {}
+    try {
+      if (
+        (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production') ||
+        (import.meta.env?.DEV)
+      ) {
+        // eslint-disable-next-line no-console
+        console.debug('[AddToCartModal] useEffect(open) - open=', open);
+      }
+    } catch (e) {}
 
     if (open) {
       // Aplicar scroll lock mínimo: solo overflow
@@ -923,6 +930,8 @@ const AddToCartModal = ({
                   ? isOfferMode
                     ? 'Procesando oferta...'
                     : 'Agregando...'
+                  : isLoadingBilling
+                  ? 'Cargando...'
                   : isOfferMode
                   ? 'Confirmar Oferta'
                   : documentType === 'factura' && !isBillingComplete

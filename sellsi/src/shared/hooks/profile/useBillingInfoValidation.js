@@ -405,6 +405,13 @@ export const useBillingInfoValidation = () => {
   // ✅ MEJORA: Solo recarga si hubo invalidación desde la última carga
   // Evita llamadas innecesarias a DB cuando el modal se abre múltiples veces
   const refreshIfStale = useCallback(() => {
+    // ✅ FIX RACE CONDITION POST-F5: Si cache está vacío, forzar carga
+    // Escenario: Usuario hace F5 → cache limpio → modal abre → necesita cargar datos
+    const cached = globalBillingInfoCache.get();
+    if (!cached) {
+      return loadRef.current(true);
+    }
+    
     if (globalBillingInfoCache.wasInvalidatedSince(lastLoadedAt)) {
       return loadRef.current(true);
     }

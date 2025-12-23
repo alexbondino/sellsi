@@ -431,6 +431,7 @@ const AddToCart = ({
     if (variant === 'icon') {
       const el = (
         <IconButton
+          data-no-card-click="true"
           onClick={handleOpenModal}
           disabled={disabled || isOfferInCart}
           size={size}
@@ -446,6 +447,7 @@ const AddToCart = ({
     if (variant === 'text') {
       const el = (
         <Button
+          data-no-card-click="true"
           onClick={handleOpenModal}
           disabled={disabled || isOfferInCart}
           size={size}
@@ -462,6 +464,7 @@ const AddToCart = ({
     // Default: variant === 'button'
     const el = (
       <Button
+        data-no-card-click="true"
         variant="contained"
         onClick={handleOpenModal}
         disabled={disabled || isOfferInCart}

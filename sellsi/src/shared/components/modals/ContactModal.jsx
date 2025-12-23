@@ -28,7 +28,7 @@ import { useAuth } from '../../../infrastructure/providers/UnifiedAuthProvider';
 import { buildEnrichedContactMessage } from './helpers/buildEnrichedContactMessage';
 
 // ✅ 1. Definimos la URL de tu función de Supabase desde variable de entorno (compatible con Jest)
-const supabaseFunctionUrl = `${process.env.VITE_SUPABASE_URL}/functions/v1/contact-form`;
+const supabaseFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/contact-form`;
 
 const ContactModal = ({ open, onClose, context = null }) => {
   const theme = useTheme();
@@ -124,7 +124,7 @@ const ContactModal = ({ open, onClose, context = null }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         // Mapeamos los nombres del estado del formulario a los que espera la API
         // (nombre -> name, mensaje -> message)
