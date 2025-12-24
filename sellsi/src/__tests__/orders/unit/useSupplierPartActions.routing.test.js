@@ -30,6 +30,7 @@ jest.mock('../../../services/user', () => ({
   },
 }));
 
+
 import { useSupplierPartActions } from '../../../workspaces/supplier/my-requests/hooks/useSupplierPartActions';
 import { orderService } from '../../../services/user';
 
@@ -48,6 +49,7 @@ describe('useSupplierPartActions - routing mono vs multi supplier', () => {
     expect(orderService.updateOrderStatus).toHaveBeenCalled();
     expect(orderService.updateSupplierPartStatus).not.toHaveBeenCalled();
   });
+
   it('usa updateSupplierPartStatus cuando supplier_ids.length > 1', async () => {
     const part = {
       order_id: 'o2',
@@ -61,4 +63,57 @@ describe('useSupplierPartActions - routing mono vs multi supplier', () => {
     });
     expect(orderService.updateSupplierPartStatus).toHaveBeenCalled();
   });
+
+  it('revisa la rama que obtiene supplier_ids desde supabase cuando faltan en el part', async () => {
+    const part = {
+      order_id: 'o3',
+      parent_order_id: 'o3',
+      supplier_id: 'sup-1',
+      supplier_ids: undefined,
+    };
+    const { result } = renderHook(() => useSupplierPartActions('sup-1'));
+    await act(async () => {
+      await result.current.accept(part);
+    });
+    // Supabase mock devuelve ['sup-1','sup-2'] -> multi-supplier -> should call updateSupplierPartStatus
+    expect(orderService.updateSupplierPartStatus).toHaveBeenCalled();
+  });
+
+  it('dedupe: llamadas concurrentes devuelven la misma promesa y sólo hacen una llamada al backend', async () => {
+    const { createDeferred } = require('../../utils/deferred');
+    const deferred = createDeferred();
+    orderService.updateSupplierPartStatus.mockReset().mockImplementation(() => deferred.promise);
+
+    const part = { order_id: 'o4', parent_order_id: 'o4', supplier_id: 'sup-1', supplier_ids: ['sup-1','sup-2'] };
+    const { result } = renderHook(() => useSupplierPartActions('sup-1'));
+
+    let p1, p2;
+    await act(async () => {
+      p1 = result.current.accept(part);
+      p2 = result.current.accept(part);
+    });
+
+    expect(orderService.updateSupplierPartStatus.mock.calls.length).toBe(1);
+
+    await act(async () => {
+      deferred.resolve({ success: true });
+      await Promise.all([p1, p2]);
+    });
+
+    expect(result.current.error).toBe(null);
+  });
+
+  it('error en backend setea error y propaga la excepción', async () => {
+    orderService.updateSupplierPartStatus.mockReset().mockRejectedValueOnce(new Error('boom'));
+    const part = { order_id: 'o5', parent_order_id: 'o5', supplier_id: 'sup-1', supplier_ids: ['sup-1','sup-2'] };
+    const { result } = renderHook(() => useSupplierPartActions('sup-1'));
+
+    let err;
+    await act(async () => {
+      try { await result.current.accept(part); } catch(e) { err = e; }
+    });
+    expect(err).toBeTruthy();
+    expect(result.current.error).toMatch(/boom/);
+  });
+
 });

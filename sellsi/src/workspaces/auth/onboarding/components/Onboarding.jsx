@@ -187,7 +187,15 @@ const Onboarding = () => {
 
     setLogoError('');
     setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
+    try {
+      setLogoPreview(URL.createObjectURL(file));
+    } catch (e) {
+      // Graceful fallback if createObjectURL isn't available or throws
+      setLogoError('No se pudo procesar la imagen');
+      setLogoFile(null);
+      setLogoPreview(null);
+      return;
+    }
   }, []);
 
   useEffect(() => {

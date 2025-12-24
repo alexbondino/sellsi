@@ -61,4 +61,31 @@ describe('ordersStore - filtros y selectores', () => {
     expect(filtered).toHaveLength(1);
     expect(filtered[0].order_id).toBe('1');
   });
+
+  it('filtra estado Expirado y Todos incluye todos los estados', () => {
+    setState({ orders: [
+      { order_id: 'e1', status: 'Expirado' },
+      { order_id: 'a1', status: 'Aceptado' },
+      { order_id: 'c1', status: 'Cancelado' }
+    ]});
+
+    useOrdersStore.getState().setStatusFilter('Expirado');
+    const exp = useOrdersStore.getState().getFilteredOrders();
+    expect(exp).toHaveLength(1);
+    expect(exp[0].order_id).toBe('e1');
+
+    useOrdersStore.getState().setStatusFilter('Todos');
+    const all = useOrdersStore.getState().getFilteredOrders();
+    expect(all.length).toBe(3);
+  });
+
+  it('isLate responde false cuando estimated_delivery_date == today', () => {
+    const today = new Date().toISOString().slice(0,10);
+    setState({ orders: [
+      { order_id: 't1', status: 'Aceptado', estimated_delivery_date: new Date().toISOString(), isLate: false }
+    ]});
+    useOrdersStore.getState().setStatusFilter('Atrasado');
+    const filtered = useOrdersStore.getState().getFilteredOrders();
+    expect(filtered).toHaveLength(0);
+  });
 });

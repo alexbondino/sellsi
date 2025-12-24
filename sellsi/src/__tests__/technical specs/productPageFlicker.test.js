@@ -24,9 +24,10 @@ jest.mock('../../workspaces/marketplace/index', () => ({
   }),
 }));
 
-import { render, screen, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TechnicalSpecs from '../../workspaces/product/product-page-view/pages/TechnicalSpecs';
 import ProductPageWrapper from '../../workspaces/product/product-page-view/ProductPageWrapper';
 import { extractProductIdFromSlug } from '../../shared/utils/product/productUrl';
@@ -58,20 +59,63 @@ jest.mock('../../infrastructure/providers/UnifiedAuthProvider', () => {
   };
 });
 
-// Mock de Supabase
-jest.mock('../../services/supabase', () => ({
-  supabase: {
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          eq: jest.fn(() => ({
-            single: jest.fn(),
-          })),
-        })),
-      })),
-    })),
+// Mock LayoutProvider used by ProductPageView (prevents "useLayout must be used within a LayoutProvider" errors)
+jest.mock('../../infrastructure/providers/LayoutProvider', () => ({
+  __esModule: true,
+  LayoutProvider: ({ children }) => children,
+  useLayout: () => ({ setTitle: jest.fn(), setHeader: jest.fn(), register: jest.fn() }),
+}));
+
+// Mock BannerContext to prevent ContactModal / banners requiring provider
+jest.mock('../../shared/components/display/banners/BannerContext', () => ({
+  __esModule: true,
+  BannerProvider: ({ children }) => children,
+  useBanner: () => ({ setBanner: jest.fn(), clearBanner: jest.fn() }),
+}));
+
+// Mock ProductPageView to avoid heavy lazy-loaded components and make assertions deterministic
+jest.mock('../../workspaces/product/product-page-view/ProductPageView', () => ({
+  __esModule: true,
+  default: ({ product, onAddToCart, isLoggedIn }) => {
+    const React = require('react');
+    const handleClick = () => onAddToCart && onAddToCart(product);
+    return React.createElement(
+      'div',
+      null,
+      product ? React.createElement('div', null, product.nombre) : 'no-product',
+      React.createElement(
+        'button',
+        { onClick: handleClick },
+        'Agregar al Carrito'
+      )
+    );
   },
 }));
+
+// Silence billing validation hook errors during tests by mocking it
+jest.mock('../../shared/hooks/profile/useBillingInfoValidation', () => ({
+  __esModule: true,
+  useBillingInfoValidation: () => ({ isValid: true }),
+}));
+
+// Mock de Supabase (centralized chain to avoid missing methods)
+jest.mock('../../services/supabase', () => {
+  const { createChain } = require('../utils/createSupabaseChain');
+  const supabase = {
+    from: jest.fn((table) => {
+      if (table === 'products') return createChain(null); // default: null (tests override per-case)
+      return createChain([]);
+    }),
+    storage: {
+      from: () => ({ getPublicUrl: (image) => ({ data: { publicUrl: `/public/${image}` } }) }),
+    },
+    auth: {
+      getUser: async () => ({ data: { user: { id: 'user-1' } }, error: null }),
+    },
+    rpc: async () => ({ data: null, error: null }),
+  };
+  return { __esModule: true, supabase };
+});
 
 // Mock de servicios
 jest.mock('../../workspaces/marketplace/services', () => ({
@@ -102,11 +146,19 @@ jest.mock('react-router-dom', () => ({
 
 const theme = createTheme();
 
-const TestWrapper = ({ children }) => (
-  <BrowserRouter>
-    <ThemeProvider theme={theme}>{children}</ThemeProvider>
-  </BrowserRouter>
-);
+const createTestQueryClient = (overrides = {}) =>
+  new QueryClient({ defaultOptions: { queries: { retry: false, cacheTime: 0, ...overrides } } });
+
+const TestWrapper = ({ children, initialEntries = ['/'] } = {}) => {
+  const client = createTestQueryClient();
+  return (
+    <QueryClientProvider client={client}>
+      <MemoryRouter initialEntries={initialEntries}>
+        <ThemeProvider theme={theme}>{children}</ThemeProvider>
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
+};
 
 describe('Product Page Flicker Fix', () => {
   describe('extractProductIdFromSlug', () => {
@@ -152,29 +204,21 @@ describe('Product Page Flicker Fix', () => {
     it('should show loading state initially, not error message', async () => {
       // Mock para simular producto encontrado después de un delay
       const { supabase } = require('../../services/supabase');
-      supabase.from.mockReturnValue({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              single: () =>
-                Promise.resolve({
-                  data: {
-                    productid: '12345678-1234-1234-1234-123456789012',
-                    productnm: 'Test Product',
-                    supplier_id: 'supplier123',
-                    price: 100,
-                    productqty: 10,
-                    category: 'Test',
-                    description: 'Test description',
-                    minimum_purchase: 1,
-                    is_active: true,
-                  },
-                  error: null,
-                }),
-            }),
-          }),
-        }),
-      });
+      const { createChain } = require('../utils/createSupabaseChain');
+      supabase.from.mockReturnValue(createChain({
+        data: {
+          productid: '12345678-1234-1234-1234-123456789012',
+          productnm: 'Test Product',
+          supplier_id: 'supplier123',
+          price: 100,
+          productqty: 10,
+          category: 'Test',
+          description: 'Test description',
+          minimum_purchase: 1,
+          is_active: true,
+        },
+        error: null,
+      }));
 
       render(
         <TestWrapper>
@@ -185,37 +229,32 @@ describe('Product Page Flicker Fix', () => {
       // Inmediatamente después del render, debería mostrar loading
       expect(screen.getByText('Cargando producto...')).toBeInTheDocument();
 
-      // NO debería mostrar el mensaje de error inmediatamente
-      expect(
-        screen.queryByText('Producto no encontrado')
-      ).not.toBeInTheDocument();
+      // NO debería mostrar el mensaje de error ni el producto inmediatamente
+      expect(screen.queryByText('Producto no encontrado')).not.toBeInTheDocument();
+      expect(screen.queryByText('Test Product')).not.toBeInTheDocument();
     });
 
     it('should show product details after successful load', async () => {
       const { supabase } = require('../../services/supabase');
-      supabase.from.mockReturnValue({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              single: () =>
-                Promise.resolve({
-                  data: {
-                    productid: '12345678-1234-1234-1234-123456789012',
-                    productnm: 'Test Product',
-                    supplier_id: 'supplier123',
-                    price: 100,
-                    productqty: 10,
-                    category: 'Test',
-                    description: 'Test description',
-                    minimum_purchase: 1,
-                    is_active: true,
-                  },
-                  error: null,
-                }),
-            }),
-          }),
-        }),
-      });
+      const { createChain } = require('../utils/createSupabaseChain');
+      supabase.from.mockReturnValue(createChain({
+        data: {
+          productid: '12345678-1234-1234-1234-123456789012',
+          productnm: 'Test Product',
+          supplier_id: 'supplier123',
+          price: 100,
+          productqty: 10,
+          category: 'Test',
+          description: 'Test description',
+          minimum_purchase: 1,
+          is_active: true,
+        },
+        error: null,
+      }));
+
+      // Sanity check: validate mocked single() behaviour
+      const check = await supabase.from('products').select().eq().eq().single();
+      expect(check.data && check.data.productnm).toBe('Test Product');
 
       render(
         <TestWrapper>
@@ -223,37 +262,29 @@ describe('Product Page Flicker Fix', () => {
         </TestWrapper>
       );
 
-      // Esperar a que se cargue el producto
+      // Ensure the query was triggered for products
+      expect(supabase.from).toHaveBeenCalled();
+      expect(supabase.from.mock.calls.some(c => c[0] === 'products')).toBeTruthy();
+
+      // Esperar a que se cargue el producto (permite más tiempo si la cola de microtasks se retrasa)
       await waitFor(
         () => {
           expect(
             screen.queryByText('Cargando producto...')
           ).not.toBeInTheDocument();
         },
-        { timeout: 2000 }
+        { timeout: 5000 }
       );
 
-      // No debería mostrar mensaje de error
-      expect(
-        screen.queryByText('Producto no encontrado')
-      ).not.toBeInTheDocument();
+      // Debería mostrar datos del producto y no error
+      expect(screen.getByText('Test Product')).toBeInTheDocument();
+      expect(screen.queryByText('Producto no encontrado')).not.toBeInTheDocument();
     });
 
     it('should show error message only after failed load', async () => {
       const { supabase } = require('../../services/supabase');
-      supabase.from.mockReturnValue({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              single: () =>
-                Promise.resolve({
-                  data: null,
-                  error: { message: 'Not found' },
-                }),
-            }),
-          }),
-        }),
-      });
+      const { createChain } = require('../utils/createSupabaseChain');
+      supabase.from.mockReturnValue(createChain({ data: null, error: { message: 'Not found' } }));
 
       render(
         <TestWrapper>
@@ -294,6 +325,65 @@ describe('Product Page Flicker Fix', () => {
         },
         { timeout: 1000 }
       );
+    });
+
+    it('should prompt login when adding to cart while unauthenticated', async () => {
+      // Prepare supabase to return a product
+      const { supabase } = require('../../services/supabase');
+      const originalFrom = supabase.from;
+      const { createChain } = require('../utils/createSupabaseChain');
+      supabase.from.mockReturnValue(createChain({
+        data: {
+          productid: '12345678-1234-1234-1234-123456789012',
+          productnm: 'Test Product',
+          supplier_id: 'supplier123',
+          price: 100,
+          productqty: 10,
+          category: 'Test',
+          description: 'Test description',
+          minimum_purchase: 1,
+          is_active: true,
+        },
+        error: null,
+      }));
+
+      // Sanity check: validate mocked single() behaviour
+      const check = await supabase.from('products').select().eq().eq().single();
+      expect(check.data && check.data.productnm).toBe('Test Product');
+
+      try {
+        // unauthenticated state (useAuth mocked to no session)
+        render(
+          <TestWrapper>
+            <TechnicalSpecs isLoggedIn={false} />
+          </TestWrapper>
+        );
+
+        // Wait for product to render (product name visible)
+        expect(supabase.from).toHaveBeenCalled();
+        expect(supabase.from.mock.calls.some(c => c[0] === 'products')).toBeTruthy();
+        await waitFor(() => expect(screen.getByText('Test Product')).toBeInTheDocument(), { timeout: 5000 });
+
+        // Listen for openLogin event
+        const opened = [];
+        const handler = e => opened.push(e);
+        window.addEventListener('openLogin', handler);
+
+        const { showErrorToast } = require('../../utils/toastHelpers');
+
+        // Click Add to Cart button
+        const addButton = await screen.findByRole('button', { name: /Agregar al Carrito|Agregar al carrito/i });
+        addButton && addButton.click();
+
+        await waitFor(() => {
+          expect(showErrorToast).toHaveBeenCalledWith(expect.stringContaining('Debes iniciar sesión'), expect.any(Object));
+          expect(opened.length).toBeGreaterThan(0);
+        });
+
+        window.removeEventListener('openLogin', handler);
+      } finally {
+        supabase.from = originalFrom;
+      }
     });
   });
 

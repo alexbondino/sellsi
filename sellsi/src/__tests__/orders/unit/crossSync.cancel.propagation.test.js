@@ -79,4 +79,30 @@ describe('X-2 Cross Sync cancel propagation supplier', () => {
 
     expect(mockGetOrdersForSupplier).toHaveBeenCalledTimes(2);
   });
+
+  it('filtra entre multiple orders correctamente y reporta error on failure', async () => {
+    // Setup multi orders: one accepted, one accepted (later one changes to cancelled)
+    const base2 = { ...BASE_ORDER_BACKEND, order_id: 'cx-2' };
+    mockGetOrdersForSupplier.mockReset();
+    // first fetch: two accepted
+    mockGetOrdersForSupplier.mockResolvedValueOnce([BASE_ORDER_BACKEND, base2]);
+    // second fetch: cx-1 becomes cancelled, cx-2 remains accepted
+    mockGetOrdersForSupplier.mockResolvedValueOnce([{ ...BASE_ORDER_BACKEND, status: 'cancelled', cancelled_at: new Date().toISOString() }, base2]);
+
+    await act(async () => { await useOrdersStore.getState().fetchOrders(); });
+    // both present
+    expect(useOrdersStore.getState().orders.length).toBe(2);
+
+    await act(async () => { await useOrdersStore.getState().fetchOrders(); });
+    // now filter cancelled
+    act(() => { useOrdersStore.getState().setStatusFilter('Cancelado'); });
+    const filtered = useOrdersStore.getState().getFilteredOrders();
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].order_id).toBe('cx-1');
+
+    // error path: simulate backend failure
+    mockGetOrdersForSupplier.mockRejectedValueOnce(new Error('service fail'));
+    await act(async () => { await useOrdersStore.getState().fetchOrders(); });
+    expect(useOrdersStore.getState().error).toBeTruthy();
+  });
 });

@@ -108,15 +108,28 @@ const ImageUploader = ({
     onError?.(null);
 
     // Convertir archivos a URLs de objeto para preview
-    const newImages = imageFiles.map(file => ({
-      id: Date.now() + Math.random(),
-      file,
-      url: URL.createObjectURL(file),
-      name: file.name,
-      size: file.size,
-    }));
+    const failedToCreate = [];
+    const newImages = imageFiles.reduce((acc, file) => {
+      try {
+        const url = URL.createObjectURL(file);
+        acc.push({ id: Date.now() + Math.random(), file, url, name: file.name, size: file.size });
+      } catch (e) {
+        failedToCreate.push(file.name);
+      }
+      return acc;
+    }, []);
 
-    onImagesChange([...images, ...newImages]);
+    if (failedToCreate.length > 0) {
+      const msg = failedToCreate.length === 1
+        ? `No se pudo procesar la imagen "${failedToCreate[0]}". Intenta con otro archivo.`
+        : `No se pudieron procesar las imágenes: ${failedToCreate.join(', ')}. Intenta con otros archivos.`;
+      onError?.(msg);
+    }
+
+    if (newImages.length > 0) {
+      onImagesChange([...images, ...newImages]);
+    }
+    return;
   };
 
   const handleDragOver = event => {
@@ -217,6 +230,7 @@ const ImageUploader = ({
       {/* Input oculto */}
       <input
         ref={fileInputRef}
+        data-testid="image-uploader-input"
         type="file"
         accept={acceptedTypes}
         multiple

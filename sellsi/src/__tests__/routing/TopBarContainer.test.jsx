@@ -1,11 +1,17 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
-// Mock useCartStore to control badge counts
-jest.mock('../../shared/stores/cart/cartStore', () => {
-  return jest.fn(() => ({ length: 0 }));
-});
+// Robust mock for Zustand cart store (selector-aware)
+const mockCartStore = jest.fn(() => ({ cart: [] }));
+jest.mock('../../shared/stores/cart/cartStore', () => ({
+  __esModule: true,
+  default: (selector) => {
+    const state = { items: [], cart: [], length: 0, ...mockCartStore() };
+    return typeof selector === 'function' ? selector(state) : state;
+  }
+}));
 
 // Mock providers + hooks that TopBarContainer depends on to avoid rendering errors
 jest.mock('../../infrastructure/providers', () => ({
@@ -44,34 +50,78 @@ jest.mock('../../domains/notifications/components/NotificationProvider', () => (
 const TopBarContainer = require('../../shared/components/navigation/TopBar/TopBarContainer').default;
 
 describe('TopBarContainer - logic checks', () => {
-  test('logo click navigates to marketplace when role buyer', () => {
-    const onRoleChange = jest.fn();
-    // Render with isBuyer true
+  let originalUseNavigate;
+  beforeEach(() => {
+    // Spy on useNavigate so we can assert navigation path
+    originalUseNavigate = jest.requireActual('react-router-dom').useNavigate;
+  });
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('logo click navigates to marketplace when role buyer', async () => {
+    // Render a small router tree that shows current location so we can assert navigate() effects
+    const LocationDisplay = () => {
+      const { useLocation } = require('react-router-dom');
+      const loc = useLocation();
+      return <div data-testid="location">{loc.pathname + loc.search}</div>;
+    };
+
     render(
-      <MemoryRouter>
-        <TopBarContainer session={{ user: { id: 'u1' } }} isBuyer={true} logoUrl="/logo.png" onNavigate={jest.fn()} onRoleChange={onRoleChange} />
+      <MemoryRouter initialEntries={["/start"]}>
+        <TopBarContainer session={{ user: { id: 'u1' } }} isBuyer={true} logoUrl="/logo.png" onNavigate={jest.fn()} onRoleChange={jest.fn()} />
+        <LocationDisplay />
       </MemoryRouter>
     );
 
     const logo = screen.getByLabelText(/Ir a inicio/i);
-    fireEvent.click(logo);
+    await userEvent.click(logo);
 
-    // After clicking logo when logged in + buyer role, component should attempt navigation; we can't inspect internal navigate directly,
-    // but ensure logo exists and is interactive (smoke test).
-    expect(logo).toBeTruthy();
+    // Expect memory location to reflect buyer marketplace route
+    expect(screen.getByTestId('location').textContent).toBe('/buyer/marketplace');
   });
 
-  test('logout with no session simply navigates home (no errors)', () => {
+  test('logout when logged in navigates to home', async () => {
+    const LocationDisplay = () => {
+      const { useLocation } = require('react-router-dom');
+      const loc = useLocation();
+      return <div data-testid="location">{loc.pathname + loc.search}</div>;
+    };
+
+    // Render as logged-in user so mobile menu contains 'Cerrar sesión'
     render(
-      <MemoryRouter>
-        <TopBarContainer session={null} isBuyer={false} logoUrl="/logo.png" />
+      <MemoryRouter initialEntries={["/start"]}>
+        <TopBarContainer session={{ user: { id: 'u1' } }} isBuyer={false} logoUrl="/logo.png" />
+        <LocationDisplay />
       </MemoryRouter>
     );
 
-    // Open mobile menu then click logout item if present
+    // Open mobile menu and click 'Cerrar sesión'
     const mobileBtn = screen.getByLabelText(/Abrir menú móvil/i);
-    fireEvent.click(mobileBtn);
-    // We expect no throw; presence of mobile button is enough as smoke assertion
-    expect(mobileBtn).toBeInTheDocument();
+    await userEvent.click(mobileBtn);
+
+    const logoutItem = await screen.findByText(/Cerrar sesión/i);
+    await userEvent.click(logoutItem);
+
+    // Should navigate to home (logout handler is async, wait for location to update)
+    await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/'));
+  });
+
+  test('cart badge shows number of items when present', async () => {
+    // Override the cart store to simulate items present (selector expects `items`)
+    mockCartStore.mockReturnValue({ items: [{ id: 1 }, { id: 2 }, { id: 3 }] });
+
+    render(
+      <MemoryRouter>
+        <TopBarContainer session={{ user: { id: 'u1' } }} isBuyer={true} logoUrl="/logo.png" />
+      </MemoryRouter>
+    );
+
+    // Find the tooltip-wrapped cart button
+    const cartBtn = screen.getByLabelText(/Carrito/i);
+    const { getByText } = within(cartBtn);
+
+    // Badge should show the number 3
+    expect(getByText('3')).toBeInTheDocument();
   });
 });

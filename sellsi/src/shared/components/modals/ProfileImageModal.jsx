@@ -89,8 +89,15 @@ const ProfileImageModal = ({
     }
 
     setError('');
-    const imageUrl = URL.createObjectURL(file);
-    
+    let imageUrl;
+    try {
+      imageUrl = URL.createObjectURL(file);
+    } catch (e) {
+      // Graceful fallback if createObjectURL fails in certain environments (jsdom mocked or security)
+      setError('No se pudo procesar la imagen');
+      return;
+    }
+
     // Crear un nuevo objeto cada vez para evitar referencias cruzadas
     const newImageData = {
       file: file, // Usar el archivo original directamente
@@ -99,7 +106,7 @@ const ProfileImageModal = ({
       size: file.size,
       timestamp: Date.now(), // Agregar timestamp para unicidad
     };
-    
+
     setSelectedImage(newImageData);
   };
 
@@ -292,6 +299,8 @@ const ProfileImageModal = ({
           {currentImageUrl && !selectedImage && (
             <Tooltip title="Eliminar imagen actual">
               <IconButton
+                aria-label="Eliminar imagen actual"
+                data-testid="profile-image-delete-current"
                 onClick={() => {
                   setSelectedImage(null);
                   setLocalImageUrl(undefined);
@@ -351,7 +360,7 @@ const ProfileImageModal = ({
             Arrastra y suelta una imagen aquí o haz clic para seleccionar
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Máximo 300KB • JPG, PNG, GIF
+            Máximo 300KB • JPG, PNG, WEBP
           </Typography>
         </Paper>
 
@@ -367,7 +376,7 @@ const ProfileImageModal = ({
                   {formatFileSize(selectedImage.size)}
                 </Typography>
               </Box>
-              <IconButton size="small" onClick={handleRemoveImage} color="error">
+              <IconButton aria-label="Eliminar imagen seleccionada" data-testid="profile-image-remove-selected" size="small" onClick={handleRemoveImage} color="error">
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </Box>
@@ -385,7 +394,9 @@ const ProfileImageModal = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/png, image/jpeg, image/webp"
+          aria-label="Selecciona imagen de perfil"
+          data-testid="profile-image-input"
           onChange={handleFileChange}
           style={{ display: 'none' }}
         />

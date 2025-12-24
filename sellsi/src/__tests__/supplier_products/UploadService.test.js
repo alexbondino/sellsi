@@ -4,28 +4,28 @@
  */
 
 import { act } from '@testing-library/react';
+const { createSupabaseMock } = require('../utils/createSupabaseMock');
+const makeSupabaseMock = createSupabaseMock;
 
 describe('UploadService (robust flows)', () => {
   beforeEach(() => {
     jest.resetModules()
     jest.clearAllMocks()
+    jest.restoreAllMocks()
+    jest.useRealTimers()
   })
 
   test('uploadImageWithThumbnail - happy path main image -> uploads, inserts order 0, generates thumbnail', async () => {
     // Mock supabase behavior
-    jest.doMock('../../services/supabase', () => ({
-      supabase: {
-        storage: {
-          from: (bucket) => ({
-            upload: async () => ({ data: { id: 'uploaded-id' }, error: null }),
-            getPublicUrl: (fileName) => ({ data: { publicUrl: `https://cdn.test/${fileName}` } }),
-          }),
-        },
-        rpc: async (name, params) => ({ data: 0, error: null }),
-        from: (table) => ({
-          select: async () => ({ data: [], error: null }),
+    jest.doMock('../../services/supabase', () => createSupabaseMock({
+      storage: {
+        from: (bucket) => ({
+          upload: async () => ({ data: { id: 'uploaded-id' }, error: null }),
+          getPublicUrl: (fileName) => ({ data: { publicUrl: `https://cdn.test/${fileName}` } }),
         }),
       },
+      rpc: async (name, params) => ({ data: 0, error: null }),
+      from: (table) => ({ select: async () => ({ data: [], error: null }) }),
     }))
 
     const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
@@ -54,14 +54,10 @@ describe('UploadService (robust flows)', () => {
 
   test('uploadMultipleImagesWithThumbnails - normal mode uploads first sequential then parallel and dispatches ready', async () => {
     // Mock supabase minimal behaviors used in this flow
-    jest.doMock('../../services/supabase', () => ({
-      supabase: {
-        from: (table) => ({
-          select: async () => ({ data: [], error: null }),
-        }),
-        rpc: async () => ({ data: null, error: null }),
-        storage: { from: () => ({ upload: async () => ({ data: { id: 'id' }, error: null }), getPublicUrl: () => ({ data: { publicUrl: 'https://cdn.test/x' } }) }) },
-      },
+    jest.doMock('../../services/supabase', () => createSupabaseMock({
+      from: (table) => ({ select: async () => ({ data: [], error: null }) }),
+      rpc: async () => ({ data: null, error: null }),
+      storage: { from: () => ({ upload: async () => ({ data: { id: 'id' }, error: null }), getPublicUrl: () => ({ data: { publicUrl: 'https://cdn.test/x' } }) }) },
     }))
 
     const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
@@ -84,27 +80,29 @@ describe('UploadService (robust flows)', () => {
   window.addEventListener('productImagesReady', handler)
 
   const res = await UploadService.uploadMultipleImagesWithThumbnails(files, 'prodM', 'supM', { replaceExisting: false })
-  // allow any synchronous dispatch to be processed
-  await act(() => Promise.resolve())
-  window.removeEventListener('productImagesReady', handler)
+  // Wait for the dispatched event (or timeout) rather than using act hack
+  try {
+    await new Promise(resolve => {
+      const t = setTimeout(() => { window.removeEventListener('productImagesReady', check); resolve(); }, 500)
+      const check = (ev) => { if (ev.detail && ev.detail.productId === 'prodM' && ev.detail.mode === 'multiple') { clearTimeout(t); window.removeEventListener('productImagesReady', check); resolve(); } }
+      window.addEventListener('productImagesReady', check)
+    })
+  } finally {
+    window.removeEventListener('productImagesReady', handler)
+  }
 
     expect(res.success).toBe(true)
     expect(spyUpload).toHaveBeenCalled()
     expect(dispatchSpy).toHaveBeenCalled()
   // Strict: an event should have been dispatched for this product
-  expect(captured.some(d => d.productId === 'prodM' && d.mode === 'multiple')).toBe(true)
+  expect(captured.some(d => d.productId === 'prodM' && d.mode === 'multiple')).toBe(true) 
   })
 
   test('uploadMultipleImagesWithThumbnails - replaceExisting recreates references and returns early when no new files', async () => {
     // Mock supabase insert for recreating references and StorageCleanupService
-    jest.doMock('../../services/supabase', () => ({
-      supabase: {
-        from: (table) => ({
-          insert: async (obj) => ({ data: obj, error: null }),
-          select: async () => ({ data: [], error: null }),
-        }),
-        storage: { from: () => ({ upload: async () => ({ data: {}, error: null }), getPublicUrl: () => ({ data: { publicUrl: '' } }) }) },
-      },
+    jest.doMock('../../services/supabase', () => createSupabaseMock({
+      from: (table) => ({ insert: async (obj) => ({ data: obj, error: null }), select: async () => ({ data: [], error: null }) }),
+      storage: { from: () => ({ upload: async () => ({ data: {}, error: null }), getPublicUrl: () => ({ data: { publicUrl: '' } }) }) },
     }))
 
     jest.doMock('../../shared/services/storage/storageCleanupService', () => ({
@@ -138,14 +136,13 @@ describe('UploadService (robust flows)', () => {
 
     const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
 
+    const phaseSpy = jest.spyOn(UploadService, '_dispatchPhase')
     const res = await UploadService.replaceAllProductImages([], 'prodZ', 'supZ')
 
     expect(res.success).toBe(true)
     expect(res.data).toEqual([])
-  // Verify base_insert event emitted with 0 count and replace mode
-  // allow sync dispatch
-  await act(() => Promise.resolve())
-  // We can check by adding a temporary listener before the call, but here verify via a global spy
+    // Robust: assert that base_insert phase was emitted
+    expect(phaseSpy).toHaveBeenCalledWith('prodZ', 'base_insert', expect.any(Object))
   })
 
   test('replaceAllProductImages - non-empty: RPC success, verifies swap logic and returns rows', async () => {
@@ -161,30 +158,27 @@ describe('UploadService (robust flows)', () => {
     const updateCalls = []
 
     // Mock supabase fully BEFORE importing UploadService
-    jest.doMock('../../services/supabase', () => ({
-      supabase: {
-        storage: {
-          from: (bucket) => ({
-            upload: async (fileName, file) => ({ data: { id: `id-${file.name}` }, error: null }),
-            getPublicUrl: (fileName) => ({ data: { publicUrl: `https://cdn.test/${fileName.split('/').pop()}` } }),
-          }),
-        },
-        rpc: async () => ({ data: replacedRows, error: null }),
-        from: (table) => ({
-          // select chain used in recheck: .select(...).eq(...).order(...)
-          select: (cols) => ({
-            eq: () => ({
-              order: () => ({
-                select: async () => ({ data: replacedRows, error: null })
-              }),
-            }),
-            order: () => ({ select: async () => ({ data: replacedRows, error: null }) })
-          }),
-          order: () => ({ select: async () => ({ data: replacedRows, error: null }) }),
-          update: (payload) => ({ eq: async (field, val) => { updateCalls.push({ field, val, payload }); return { data: null } } }),
-          delete: () => ({ eq: async () => ({ data: null }) }),
+    jest.doMock('../../services/supabase', () => createSupabaseMock({
+      storage: {
+        from: (bucket) => ({
+          upload: async (fileName, file) => ({ data: { id: `id-${file.name}` }, error: null }),
+          getPublicUrl: (fileName) => ({ data: { publicUrl: `https://cdn.test/${fileName.split('/').pop()}` } }),
         }),
       },
+      rpc: async () => ({ data: replacedRows, error: null }),
+      from: (table) => ({
+        select: (cols) => ({
+          eq: () => ({
+            order: () => ({
+              select: async () => ({ data: replacedRows, error: null })
+            }),
+          }),
+          order: () => ({ select: async () => ({ data: replacedRows, error: null }) })
+        }),
+        order: () => ({ select: async () => ({ data: replacedRows, error: null }) }),
+        update: (payload) => ({ eq: async (field, val) => { updateCalls.push({ field, val, payload }); return { data: null } } }),
+        delete: () => ({ eq: async () => ({ data: null }) }),
+      }),
     }))
 
 
@@ -232,12 +226,10 @@ describe('UploadService (robust flows)', () => {
   test('replaceAllProductImages - RPC failure is reported', async () => {
     jest.resetModules()
 
-    jest.doMock('../../services/supabase', () => ({
-      supabase: {
-  storage: { from: () => ({ upload: async () => ({ data: null, error: null }), getPublicUrl: () => ({ data: { publicUrl: 'https://cdn.test/x' } }) }) },
-  rpc: async () => ({ data: null, error: { message: 'rpc failed' } }),
-  from: () => ({ select: async () => ({ data: [], error: null }) }),
-      },
+    jest.doMock('../../services/supabase', () => createSupabaseMock({
+      storage: { from: () => ({ upload: async () => ({ data: null, error: null }), getPublicUrl: () => ({ data: { publicUrl: 'https://cdn.test/x' } }) }) },
+      rpc: async () => ({ data: null, error: { message: 'rpc failed' } }),
+      from: () => ({ select: async () => ({ data: [], error: null }) }),
     }))
 
     const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
@@ -300,8 +292,16 @@ describe('UploadService (robust flows)', () => {
   window.addEventListener('productImagesReady', h)
 
   const res = await UploadService3.replaceAllProductImages(files, 'prodFinal', 'supFinal')
-  await new Promise(r => setTimeout(r, 0))
-  window.removeEventListener('productImagesReady', h)
+    // Wait for thumbnails event (or timeout)
+    try {
+      await new Promise(resolve => {
+        const t = setTimeout(() => { window.removeEventListener('productImagesReady', check); resolve(); }, 500)
+        const check = (ev) => { if (ev.detail && ev.detail.productId === 'prodFinal' && /thumbnails_/.test(ev.detail.phase || '')) { clearTimeout(t); window.removeEventListener('productImagesReady', check); resolve(); } }
+        window.addEventListener('productImagesReady', check)
+      })
+    } finally {
+      window.removeEventListener('productImagesReady', h)
+    }
 
   expect(res.success).toBe(true)
   // Detailed assertion on returned rows
@@ -358,4 +358,206 @@ describe('UploadService (robust flows)', () => {
     expect(res.status).toBe('ready')
     expect(UploadService.generateThumbnailWithRetry).toHaveBeenCalled()
   })
-})
+
+  test('uploadImageWithThumbnail - storage upload error reported', async () => {
+    jest.resetModules()
+    jest.doMock('../../services/supabase', () => ({
+      supabase: {
+        storage: { from: () => ({ upload: async () => ({ data: null, error: { message: 'upload failed' } }), getPublicUrl: () => ({ data: { publicUrl: 'https://cdn.test/x' } }) }) },
+        rpc: async () => ({ data: 0, error: null }),
+        from: () => ({ select: async () => ({ data: [], error: null }) }),
+      },
+    }))
+
+    const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
+
+    const file = { name: 'fail.png', type: 'image/png', size: 100 }
+    const res = await UploadService.uploadImageWithThumbnail(file, 'prodFail', 'supFail', true)
+
+    expect(res.success).toBe(false)
+    expect(res.error).toEqual(expect.stringContaining('upload failed'))
+  })
+
+  test('uploadImageWithThumbnail - missing file and invalid type', async () => {
+    const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
+
+    const resMissing = await UploadService.uploadImageWithThumbnail(undefined, 'p1', 's1', true)
+    expect(resMissing.success).toBe(false)
+    expect(resMissing.error).toEqual(expect.stringContaining('No se proporcionó archivo'))
+
+    const badType = { name: 'notimg.txt', type: 'text/plain', size: 10 }
+    const resBad = await UploadService.uploadImageWithThumbnail(badType, 'p1', 's1', true)
+    expect(resBad.success).toBe(false)
+    expect(resBad.error).toEqual(expect.stringContaining('Solo se permiten archivos de imagen'))
+
+    // Wrapper object scenario
+    jest.resetModules()
+    jest.doMock('../../services/supabase', () => ({
+      supabase: {
+        storage: { from: () => ({ upload: async () => ({ data: { id: 'ok' }, error: null }), getPublicUrl: () => ({ data: { publicUrl: 'https://cdn.test/x' } }) }) },
+        rpc: async () => ({ data: 0, error: null }),
+        from: () => ({ select: async () => ({ data: [], error: null }) }),
+      },
+    }))
+    const { default: UploadService2 } = await import('../../workspaces/supplier/shared-services/uploadService')
+    const wrapper = { file: { name: 'wrap.png', type: 'image/png', size: 50 } }
+    const resWrap = await UploadService2.uploadImageWithThumbnail(wrapper, 'p2', 's2', true)
+    expect(resWrap.success).toBe(true)
+    expect(resWrap.data.fileName).toBe('wrap.png')
+  })
+
+  test('uploadImageWithThumbnail - webp main image skips thumbnail generation', async () => {
+    jest.resetModules()
+    jest.doMock('../../services/supabase', () => ({
+      supabase: {
+        storage: { from: () => ({ upload: async () => ({ data: { id: 'ok' }, error: null }), getPublicUrl: () => ({ data: { publicUrl: 'https://cdn.test/orig.webp' } }) }) },
+        rpc: async () => ({ data: 0, error: null }),
+        from: () => ({ select: async () => ({ data: [], error: null }) }),
+      },
+    }))
+
+    const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
+    const spyGen = jest.spyOn(UploadService, 'generateThumbnailWithRetry')
+
+    const file = { name: 'w.webp', type: 'image/webp', size: 100 }
+    const res = await UploadService.uploadImageWithThumbnail(file, 'pweb', 'sweb', true)
+
+    expect(res.success).toBe(true)
+    expect(res.data.thumbnailUrl).toBeNull()
+    expect(spyGen).not.toHaveBeenCalled()
+  })
+
+  test('generateThumbnailWithRetry - retries succeed and fail appropriately', async () => {
+    jest.resetModules()
+    const mod = await import('../../workspaces/supplier/shared-services/uploadService')
+    const UploadService = mod.default
+
+    // first attempt fails, second succeeds
+    const genSpy = jest.spyOn(UploadService, 'generateThumbnail')
+      .mockImplementationOnce(async () => ({ success: false, error: 'boom' }))
+      .mockImplementationOnce(async () => ({ success: true, thumbnailUrl: 'https://cdn.test/ok' }))
+
+    const res = await UploadService.generateThumbnailWithRetry('url', 'p', 's', { maxRetries: 2 })
+    expect(res.success).toBe(true)
+    expect(res.wasRetried).toBe(true)
+    expect(res.attemptUsed).toBe(2)
+
+    // now both attempts fail
+    genSpy.mockReset()
+    genSpy.mockImplementation(async () => ({ success: false, error: 'still' }))
+    const res2 = await UploadService.generateThumbnailWithRetry('url', 'p', 's', { maxRetries: 2 })
+    expect(res2.success).toBe(false)
+    expect(res2.attemptUsed).toBe(2)
+    expect(res2.error).toEqual(expect.stringContaining('Max retries'))
+  })
+
+  test('_autoRepairIf404 - HEAD 404 triggers force regeneration and dispatch', async () => {
+    jest.resetModules()
+    let headCalled = false
+    jest.doMock('../../services/supabase', () => ({
+      supabase: {
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                single: async () => ({ data: { image_url: 'https://cdn.test/orig.jpg', thumbnail_url: 'https://cdn.test/thumb.jpg' } })
+              })
+            })
+          })
+        })
+      },
+    }))
+
+    global.fetch = jest.fn(async (url, opts) => {
+      headCalled = true
+      return { status: 404 }
+    })
+
+    const mod = await import('../../workspaces/supplier/shared-services/uploadService')
+    const UploadService = mod.default
+    const genSpy = jest.spyOn(UploadService, 'generateThumbnailWithRetry').mockResolvedValue({ success: true })
+    const phaseSpy = jest.spyOn(UploadService, '_dispatchPhase')
+
+    await UploadService._autoRepairIf404('pr', 'su')
+
+    expect(headCalled).toBe(true)
+    expect(genSpy).toHaveBeenCalledWith('https://cdn.test/orig.jpg', 'pr', 'su', expect.objectContaining({ force: true }))
+    expect(phaseSpy).toHaveBeenCalledWith('pr', 'repair', expect.any(Object))
+
+    // restore fetch
+    global.fetch = fetch
+  })
+
+  test('_autoRepairIf404 - HEAD abort/timeout handled gracefully', async () => {
+    jest.resetModules()
+    jest.doMock('../../services/supabase', () => ({
+      supabase: {
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                single: async () => ({ data: { image_url: 'https://cdn.test/orig.jpg', thumbnail_url: 'https://cdn.test/thumb.jpg' } })
+              })
+            })
+          })
+        })
+      },
+    }))
+
+    global.fetch = jest.fn(async () => { throw new Error('aborted') })
+    const mod = await import('../../workspaces/supplier/shared-services/uploadService')
+    const UploadService = mod.default
+    const genSpy = jest.spyOn(UploadService, 'generateThumbnailWithRetry')
+
+    await expect(UploadService._autoRepairIf404('pr2', 'su2')).resolves.not.toThrow()
+    expect(genSpy).not.toHaveBeenCalled()
+
+    global.fetch = fetch
+  })
+
+  test('uploadMultipleImagesWithThumbnails - partial parallel failure reported', async () => {
+    jest.resetModules()
+    jest.doMock('../../services/supabase', () => ({
+      supabase: {
+        from: (table) => ({ select: async () => ({ data: [], error: null }) }),
+        rpc: async () => ({ data: null, error: null }),
+        storage: { from: () => ({ upload: async () => ({ data: { id: 'id' }, error: null }), getPublicUrl: () => ({ data: { publicUrl: 'https://cdn.test/x' } }) }) },
+      },
+    }))
+
+    const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
+
+    const spyUpload = jest.spyOn(UploadService, 'uploadImageWithThumbnail')
+      .mockImplementationOnce(async (file, p, s, isMain) => ({ success: true, data: { fileName: file.name } }))
+      .mockImplementationOnce(async (file, p, s, isMain) => ({ success: false, error: 'boom' }))
+
+    const files = [ { file: { name: 'a.png', type: 'image/png', size: 100 } }, { file: { name: 'b.png', type: 'image/png', size: 200 } } ]
+    const res = await UploadService.uploadMultipleImagesWithThumbnails(files, 'prodP', 'supP')
+
+    expect(res.success).toBe(true)
+    expect(Array.isArray(res.errors)).toBe(true)
+    expect(res.errors[0]).toMatch(/Archivo/)
+  })
+
+  test('uploadMultipleImagesWithThumbnails - cleanup throws but flow continues', async () => {
+    jest.resetModules()
+    jest.doMock('../../shared/services/storage/storageCleanupService', () => ({
+      StorageCleanupService: { deleteAllProductImages: async () => { throw new Error('cleanup fail') } }
+    }))
+    jest.doMock('../../services/supabase', () => ({
+      supabase: {
+        from: (table) => ({ select: async () => ({ data: [], error: null }) }),
+        rpc: async () => ({ data: null, error: null }),
+        storage: { from: () => ({ upload: async () => ({ data: { id: 'id' }, error: null }), getPublicUrl: () => ({ data: { publicUrl: 'https://cdn.test/x' } }) }) },
+      },
+    }))
+
+    const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
+
+    const files = [ { file: { name: 'a.png', type: 'image/png', size: 100 } } ]
+    const res = await UploadService.uploadMultipleImagesWithThumbnails(files, 'prodC', 'supC', { replaceExisting: true })
+
+    expect(res.success).toBe(true)
+  })
+}
+)

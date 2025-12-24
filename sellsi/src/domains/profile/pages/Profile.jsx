@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom'; // Para manejar parámetros de URL
 import {
   Box,
@@ -329,7 +329,12 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
     }
   };
 
+  const inFlightUpdateRef = useRef(false);
+
   const handleUpdate = async () => {
+    // Prevent duplicate rapid submissions
+    if (inFlightUpdateRef.current) return;
+    inFlightUpdateRef.current = true;
     // Verificar si hay cambios en formulario (excluyendo imagen y nombre que se guardan automáticamente)
     const hasFormChanges = hasChanges;
 
@@ -437,6 +442,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       
     } finally {
       setLoading(false);
+      inFlightUpdateRef.current = false;
     }
   };
 

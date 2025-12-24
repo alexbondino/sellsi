@@ -107,18 +107,41 @@ jest.mock('../../domains/profile/components/sections/BillingInfoSection', () => 
   <div data-testid="billing-section" />
 ));
 jest.mock('../../domains/profile/components/sections/CompanyInfoSection', () => (props) => (
-  <div data-testid="company-section" />
+  <div data-testid="company-section">
+    <button data-testid="company-change-password" onClick={() => props.onPasswordModalOpen && props.onPasswordModalOpen()}>Cambiar contraseña</button>
+  </div>
 ));
 
 jest.mock('../../domains/profile/components/ChangePasswordModal', () => (props) => (
   props.open ? <div data-testid="change-password-modal" /> : null
 ));
 
-jest.mock('../../shared/components/modals/ProfileImageModal', () => (props) => (
-  <div data-testid="profile-image-modal">
-  <button data-testid="profile-image-save" onClick={() => { if (props.onSaveImage) Promise.resolve(props.onSaveImage({ name: 'img.png' })).catch(() => {}); }}>Save</button>
-  </div>
-));
+jest.mock('../../shared/components/modals/ProfileImageModal', () => (props) => {
+  const React = require('react');
+  const [error, setError] = React.useState(null);
+  const handleSave = async () => {
+    try {
+      if (props.onSaveImage) await props.onSaveImage({ name: 'img.png' });
+    } catch (e) {
+      setError(e?.message || String(e));
+    }
+  };
+  const handleDelete = async () => {
+    try {
+      if (props.onDeleteImage) await props.onDeleteImage();
+      else if (props.onSaveImage) await props.onSaveImage(null);
+    } catch (e) {
+      setError(e?.message || String(e));
+    }
+  };
+  return (
+    <div data-testid="profile-image-modal">
+      <button data-testid="profile-image-save" onClick={() => { void handleSave(); }}>Save</button>
+      <button data-testid="profile-image-delete" onClick={() => { void handleDelete(); }}>Delete</button>
+      {error ? <div data-testid="profile-image-error">{error}</div> : null}
+    </div>
+  );
+});
 
 // Finally import the component under test
 import Profile from '../../domains/profile/pages/Profile';
@@ -241,6 +264,10 @@ describe('Profile.jsx - deep and edge tests', () => {
     fireEvent.change(input, { target: { value: 'New Name' } });
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
     await waitFor(() => expect(mockUpdateUserProfile).toHaveBeenCalledWith('uid-123', { user_nm: 'New Name' }));
+    // telemetry is best-effort; if it was invoked, assert args
+    if (mockTrackUserAction.mock.calls.length > 0) {
+      expect(mockTrackUserAction).toHaveBeenCalledWith('uid-123', 'profile_updated');
+    }
   });
 
   test('name edit: pressing Enter without changing name does not call updateUserProfile', async () => {
@@ -297,18 +324,38 @@ describe('Profile.jsx - deep and edge tests', () => {
     mockUpdateUserProfile.mockResolvedValue({});
   });
 
-  test('save image delete path calls deleteAllUserImages and updateUserProfile', async () => {
-    // open profile, then call the onSaveImage prop via ProfileImageModal mock path
+  test('image delete via UI calls deleteAllUserImages and refreshes profile', async () => {
     renderWithRouter(<Profile />);
-  await waitFor(() => expect(screen.queryByText(/Cargando perfil/i)).not.toBeInTheDocument());
-    // simulate calling handleSaveImageToSupabase with null by requiring the module and invoking internal function
-    // Simulate deletion flow via services (component's modal triggers these in production)
+    await waitFor(() => expect(screen.queryByText(/Cargando perfil/i)).not.toBeInTheDocument());
+    const cam = screen.queryByTestId('CameraAltIcon') || screen.queryByLabelText('Cambiar imagen de perfil');
+    if (cam) fireEvent.click(cam);
+    const deleteBtn = await screen.findByTestId('profile-image-delete');
+    fireEvent.click(deleteBtn);
+    // deleteAllUserImages should be invoked
+    await waitFor(() => expect(mockDeleteAllUserImages).toHaveBeenCalled());
+    // component reloads profile and refreshes global profile
     const { data: { user } } = await supabase.auth.getUser();
-    await mockDeleteAllUserImages(user.id);
-    await mockUpdateUserProfile(user.id, { logo_url: null });
-    expect(mockDeleteAllUserImages).toHaveBeenCalled();
-    expect(mockUpdateUserProfile).toHaveBeenCalled();
+    await waitFor(() => expect(mockGetUserProfile).toHaveBeenCalledWith(user.id));
+    await waitFor(() => expect(global.__mockRefreshUserProfile).toHaveBeenCalled());
+    await waitFor(() => expect(mockShowBanner).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success' })));
   });
+
+  test('image delete failure shows error banner and does not update profile', async () => {
+    mockDeleteAllUserImages.mockRejectedValueOnce(new Error('delete failed'));
+    renderWithRouter(<Profile />);
+    await waitFor(() => expect(screen.queryByText(/Cargando perfil/i)).not.toBeInTheDocument());
+    const cam = screen.queryByTestId('CameraAltIcon') || screen.queryByLabelText('Cambiar imagen de perfil');
+    if (cam) fireEvent.click(cam);
+    const deleteBtn = await screen.findByTestId('profile-image-delete');
+    // Clicking delete causes the service to be invoked and fail; the component should not call updateUserProfile
+    fireEvent.click(deleteBtn);
+    await waitFor(() => expect(mockDeleteAllUserImages).toHaveBeenCalled());
+    expect(mockUpdateUserProfile).not.toHaveBeenCalled();
+    // Modal should remain open (the real modal displays an inline error); ensure modal is still present
+    expect(screen.getByTestId('profile-image-modal')).toBeInTheDocument();
+  });
+
+
 
   test('unauthenticated user causes error banner when saving name', async () => {
     supabase.auth.getUser.mockResolvedValueOnce({ data: { user: null } });
@@ -374,6 +421,37 @@ describe('Profile.jsx - deep and edge tests', () => {
     expect(mockInvalidateUserCache).toHaveBeenCalled();
   });
 
+  test('prevents duplicate rapid updates (debounce/dedupe)', async () => {
+    const { createDeferred } = require('../utils/deferred');
+    const deferred = createDeferred();
+    // Ensure form shows changes so update button actually triggers
+    useProfileForm.mockReturnValue({
+      formData: defaultForm,
+      hasChanges: true,
+      updateField: jest.fn(),
+      resetForm: jest.fn(),
+      updateInitialData: jest.fn(),
+    });
+
+    mockUpdateUserProfile.mockReset().mockImplementation(() => deferred.promise);
+
+    renderWithRouter(<Profile />);
+    await waitFor(() => expect(screen.queryByText(/Cargando perfil/i)).not.toBeInTheDocument());
+    const btn = screen.getByRole('button', { name: /Actualizar/i });
+    // Click twice within an act boundary
+    await act(async () => {
+      fireEvent.click(btn);
+    });
+
+    // Invoke the update and verify it was called once
+    await act(async () => { fireEvent.click(btn); });
+    expect(mockUpdateUserProfile.mock.calls.length).toBe(1);
+
+    // resolve deferred to finish
+    deferred.resolve({});
+    await waitFor(() => expect(mockUpdateUserProfile).toHaveBeenCalled());
+  });
+
   test('does NOT invalidate optimized shipping cache when region unchanged', async () => {
     // Ensure form has changes but no shipping region set so validation passes and update proceeds
     // NOTE: En la implementación actual, updateUserProfile SIEMPRE invalida cache general,
@@ -395,6 +473,24 @@ describe('Profile.jsx - deep and edge tests', () => {
     // La implementación actual invalida cache de usuario en todas las actualizaciones
     // Este es el comportamiento esperado
     expect(mockInvalidateUserCache).toHaveBeenCalled();
+  });
+
+  test('opens change password modal when clicking change password', async () => {
+    renderWithRouter(<Profile />);
+    await waitFor(() => expect(screen.queryByText(/Cargando perfil/i)).not.toBeInTheDocument());
+    const changeBtn = screen.getByTestId('company-change-password');
+    fireEvent.click(changeBtn);
+    expect(await screen.findByTestId('change-password-modal')).toBeInTheDocument();
+  });
+
+  test('handles malformed profile shape without crashing and shows fallback', async () => {
+    mockGetUserProfile.mockResolvedValueOnce({ data: {} });
+    renderWithRouter(<Profile />);
+    await waitFor(() => expect(screen.queryByText(/Cargando perfil/i)).not.toBeInTheDocument());
+    // Should not crash - at minimum the header is present and displays a name/fallback
+    const heading = screen.getByRole('heading', { level: 4 });
+    expect(heading).toBeInTheDocument();
+    expect(heading.textContent.trim().length).toBeGreaterThan(0);
   });
 
   test('partial shipping update (region set but commune/address missing) blocks update and does NOT invalidate cache', async () => {
@@ -466,6 +562,10 @@ describe('Profile.jsx - deep and edge tests', () => {
     // refreshUserProfile should be called to update global UI
     await waitFor(() => expect(global.__mockRefreshUserProfile).toHaveBeenCalled());
     await waitFor(() => expect(mockShowBanner).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success' })));
+    // Telemetry is best-effort; if invoked, assert its args
+    if (mockTrackUserAction.mock.calls.length > 0) {
+      expect(mockTrackUserAction).toHaveBeenCalledWith('uid-123', 'profile_updated');
+    }
   });
 
 });

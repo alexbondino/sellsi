@@ -158,77 +158,96 @@ export const useOrdersStore = create((set, get) => ({
     }
   },
 
-  // Actualizar estado de pedido con backend
+  // Actualizar estado de pedido con backend (con deduplicación de in-flight por orderId+status)
+  _inFlightUpdates: {},
   updateOrderStatus: async (orderId, newStatus, additionalData = {}) => {
-    try {
-      // Convertir el estado de backend a display antes del optimistic update
-      const getDisplayStatus = (backendStatus) => {
-        const displayMap = {
-          pending: 'Pendiente',
-          accepted: 'Aceptado',
-          rejected: 'Rechazado',
-          in_transit: 'En Transito',
-          delivered: 'Entregado',
-          cancelled: 'Cancelado',
-        }
-        return displayMap[backendStatus] || backendStatus
-      }
+    const key = `${orderId}:${newStatus}`
+    // Si ya hay una actualización en vuelo para esta combinación, devolver la misma promesa
+    if (get()._inFlightUpdates[key]) {
+      return get()._inFlightUpdates[key]
+    }
 
-      const displayStatus = getDisplayStatus(newStatus)
-
-      // Optimistic update - actualizar UI inmediatamente
-      set((state) => {
-        const updatedOrders = state.orders.map((order) => {
-          if (order.order_id === orderId) {
-            const updatedOrder = {
-              ...order,
-              status: displayStatus, // Usar el status de display
-              ...additionalData,
-            }
-
-            // Si el nuevo status es 'in_transit', actualizar estimated_delivery_date
-            if (
-              newStatus === 'in_transit' &&
-              additionalData.estimated_delivery_date
-            ) {
-              updatedOrder.estimated_delivery_date =
-                additionalData.estimated_delivery_date
-            }
-
-            // Recalcular isLate con el nuevo estado
-            updatedOrder.isLate = calculateIsLate(updatedOrder)
-
-            return updatedOrder
+    const promise = (async () => {
+      try {
+        // Convertir el estado de backend a display antes del optimistic update
+        const getDisplayStatus = (backendStatus) => {
+          const displayMap = {
+            pending: 'Pendiente',
+            accepted: 'Aceptado',
+            rejected: 'Rechazado',
+            in_transit: 'En Transito',
+            delivered: 'Entregado',
+            cancelled: 'Cancelado',
           }
-          return order
+          return displayMap[backendStatus] || backendStatus
+        }
+
+        const displayStatus = getDisplayStatus(newStatus)
+
+        // Optimistic update - actualizar UI inmediatamente
+        set((state) => {
+          const updatedOrders = state.orders.map((order) => {
+            if (order.order_id === orderId) {
+              const updatedOrder = {
+                ...order,
+                status: displayStatus, // Usar el status de display
+                ...additionalData,
+              }
+
+              // Si el nuevo status es 'in_transit', actualizar estimated_delivery_date
+              if (
+                newStatus === 'in_transit' &&
+                additionalData.estimated_delivery_date
+              ) {
+                updatedOrder.estimated_delivery_date =
+                  additionalData.estimated_delivery_date
+              }
+
+              // Recalcular isLate con el nuevo estado
+              updatedOrder.isLate = calculateIsLate(updatedOrder)
+
+              return updatedOrder
+            }
+            return order
+          })
+
+          return { orders: updatedOrders }
         })
 
-        return { orders: updatedOrders }
-      })
+        // Actualizar en el backend
+        const result = await orderService.updateOrderStatus(
+          orderId,
+          newStatus,
+          additionalData
+        )
 
-      // Actualizar en el backend
-      const result = await orderService.updateOrderStatus(
-        orderId,
-        newStatus,
-        additionalData
-      )
+        if (!result.success) {
+          throw new Error(result.message || 'Error actualizando pedido')
+        }
 
-      if (!result.success) {
-        throw new Error(result.message || 'Error actualizando pedido')
+        // Refrescar datos para asegurar sincronización
+        setTimeout(() => {
+          get().refreshOrders()
+        }, 1000)
+
+        return result
+      } catch (error) {
+        // Revertir cambio optimista en caso de error
+        await get().fetchOrders()
+
+        throw new Error(`Error actualizando pedido: ${error.message}`)
+      } finally {
+        // Limpiar in-flight
+        try {
+          delete get()._inFlightUpdates[key]
+        } catch (_) {}
       }
+    })()
 
-      // Refrescar datos para asegurar sincronización
-      setTimeout(() => {
-        get().refreshOrders()
-      }, 1000)
+    // Registrar promesa en vuelo
+    set((state) => ({ _inFlightUpdates: { ...state._inFlightUpdates, [key]: promise } }))
 
-      return result
-    } catch (error) {
-      // Revertir cambio optimista en caso de error
-      await get().fetchOrders()
-
-      throw new Error(`Error actualizando pedido: ${error.message}`)
-    }
+    return promise
   },
 
   // === FILTROS Y BÚSQUEDA ===

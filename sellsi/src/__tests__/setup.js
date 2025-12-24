@@ -87,6 +87,9 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
+// Mock window.scrollTo used by some components (jsdom does not implement it)
+window.scrollTo = jest.fn();
+
 // Mock de localStorage
 const localStorageMock = {
   getItem: jest.fn(() => null),

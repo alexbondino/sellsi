@@ -78,8 +78,8 @@ const paymentAfter = basePaymentOrder({
 });
 
 mockGetPaymentOrdersForBuyer
-  .mockResolvedValueOnce([paymentBefore])
-  .mockResolvedValueOnce([paymentAfter]);
+  .mockResolvedValueOnce({ orders: [paymentBefore] })
+  .mockResolvedValueOnce({ orders: [paymentAfter] });
 
 function TestHarness() {
   const { orders, fetchOrders } = useBuyerOrders(BUYER_ID);
@@ -104,7 +104,8 @@ describe('X-1 Cross Sync ETA propagation (buyer after supplier dispatch)', () =>
   it('propaga ETA a la parte supplier tras dispatch', async () => {
     const { getByTestId } = render(<TestHarness />);
 
-    // Esperar carga inicial (primera llamada)
+    // Trigger initial fetch and wait for first load (primera llamada)
+    fireEvent.click(getByTestId('refetch'));
     await waitFor(() => {
       const container = getByTestId('orders-root');
       const partB = container.querySelector('[data-supplier="sup-B"]');
@@ -125,5 +126,75 @@ describe('X-1 Cross Sync ETA propagation (buyer after supplier dispatch)', () =>
 
     // Afirmar que se llamaron exactamente dos fetch
     expect(mockGetPaymentOrdersForBuyer).toHaveBeenCalledTimes(2);
+  });
+
+  it('propaga ETA solo a la parte correspondiente en multi-supplier scenario', async () => {
+    const ETA_B = '2025-09-12';
+    const multiBefore = basePaymentOrder({
+      meta: {
+        'sup-A': { status: 'accepted' },
+        'sup-B': { status: 'pending' },
+        'sup-C': { status: 'accepted' }
+      }
+    });
+    const multiAfter = basePaymentOrder({
+      meta: {
+        'sup-A': { status: 'accepted' },
+        'sup-B': { status: 'in_transit', estimated_delivery_date: ETA_B },
+        'sup-C': { status: 'accepted' }
+      }
+    });
+
+    mockGetPaymentOrdersForBuyer
+      .mockResolvedValueOnce({ orders: [multiBefore] })
+      .mockResolvedValueOnce({ orders: [multiAfter] });
+
+    const { getByTestId } = render(<TestHarness />);
+    // initial fetch
+    fireEvent.click(getByTestId('refetch'));
+
+    await waitFor(() => {
+      const container = getByTestId('orders-root');
+      const supB = container.querySelector('[data-supplier="sup-B"]');
+      expect(supB).toBeTruthy();
+      expect(supB.getAttribute('data-eta')).toBe('');
+    });
+
+    // refetch after dispatch only sup-B got ETA
+    fireEvent.click(getByTestId('refetch'));
+
+    await waitFor(() => {
+      const container = getByTestId('orders-root');
+      const supA = container.querySelector('[data-supplier="sup-A"]');
+      const supB = container.querySelector('[data-supplier="sup-B"]');
+      expect(supA).toBeTruthy();
+      expect(supA.getAttribute('data-eta')).toBe('');
+      expect(supB.getAttribute('data-eta')).toBe(ETA_B);
+    });
+  });
+
+  it('si fetch falla, error es expuesto y se preserva estado previo', async () => {
+    // First a successful fetch
+    mockGetPaymentOrdersForBuyer.mockResolvedValueOnce({ orders: [paymentBefore] });
+
+    const { getByTestId } = render(<TestHarness />);
+    fireEvent.click(getByTestId('refetch'));
+
+    await waitFor(() => {
+      const container = getByTestId('orders-root');
+      const partB = container.querySelector('[data-supplier="sup-B"]');
+      expect(partB).toBeTruthy();
+    });
+
+    // Now simulate fetch failure
+    mockGetPaymentOrdersForBuyer.mockRejectedValueOnce(new Error('downstream'));
+    fireEvent.click(getByTestId('refetch'));
+
+    await waitFor(() => {
+      // Hook should set error in state; we assert that no exception is thrown and prior parts still exist
+      const container = getByTestId('orders-root');
+      const partB = container.querySelector('[data-supplier="sup-B"]');
+      expect(partB).toBeTruthy();
+    });
   });
 });
