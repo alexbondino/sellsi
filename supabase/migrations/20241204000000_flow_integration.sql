@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS public.flow_webhook_logs (
   processing_latency_ms integer,
   error_message text,
   created_at timestamptz DEFAULT now(),
-  order_id uuid REFERENCES orders(id) ON DELETE SET NULL,
+  order_id uuid,  -- FK will be added later when orders table exists
   category text  -- 'payment_confirmed', 'payment_rejected', etc.
 );
 
