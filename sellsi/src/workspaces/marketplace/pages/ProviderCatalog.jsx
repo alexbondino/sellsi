@@ -756,7 +756,7 @@ const ProviderCatalog = () => {
                   ),
                 }}
                 sx={{
-                  width: { xs: '100%', md: 200 },
+                  width: { xs: '100%', md: '15rem' },
                   flexShrink: 0,
                   '& .MuiInputBase-input': {
                     fontSize: { xs: '0.875rem', md: '1rem' },
@@ -781,8 +781,8 @@ const ProviderCatalog = () => {
                 <FormControl
                   size="small"
                   sx={{
-                    minWidth: { xs: 0, md: 193 },
-                    width: { xs: '100%', md: 193 },
+                    minWidth: { xs: 0, md: '15rem' },
+                    width: { xs: '100%', md: '15rem' },
                     flexShrink: 0,
                   }}
                 >
@@ -859,8 +859,8 @@ const ProviderCatalog = () => {
                 <FormControl
                   size="small"
                   sx={{
-                    minWidth: { xs: 0, md: 214 },
-                    width: { xs: '100%', md: 214 },
+                    minWidth: { xs: 0, md: '15rem' },
+                    width: { xs: '100%', md: '15rem' },
                     flexShrink: 0,
                   }}
                 >
