@@ -756,6 +756,7 @@ const ProviderCatalog = () => {
                   ),
                 }}
                 sx={{
+                  minWidth: { xs: '100%', md: '15rem' },
                   width: { xs: '100%', md: '15rem' },
                   flexShrink: 0,
                   '& .MuiInputBase-input': {
