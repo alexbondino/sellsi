@@ -106,7 +106,7 @@ jobs:
             --arg summary "$SUMMARY" \
             --arg desc "$DESCRIPTION" \
             --arg assignee "$JIRA_ASSIGNEE_ID" \
-            
+            '
               def to_adf($text):
                 ($text | split("\n")) as $lines |
                 [
