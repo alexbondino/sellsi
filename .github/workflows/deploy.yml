@@ -16,7 +16,7 @@ jobs:
       SUPABASE_DB_PASSWORD: ${{ secrets.DB_PASSWORD }} # <-- CLAVE 2: Usa el secreto del ENTORNO
       SUPABASE_PROJECT_ID: ${{ secrets.PROJECT_ID }} # <-- CLAVE 3: Usa el secreto del ENTORNO
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      SUPABASE_DISABLE_KEYRING: "1" # Evita error de keyring en runners Linux sin secrets service
+      SUPABASE_DISABLE_KEYRING: '1' # Evita error de keyring en runners Linux sin secrets service
     steps:
       - uses: actions/checkout@v3
       - uses: supabase/setup-cli@v1
@@ -28,6 +28,7 @@ jobs:
           supabase link --project-ref $SUPABASE_PROJECT_ID
           echo "Repairing migration history..."
           supabase migration repair --status reverted 20251222000001 || true
+          supabase migration repair --status applied 20250726181510 || true
           supabase db push --include-all --yes
 
   deploy-production:
@@ -39,7 +40,7 @@ jobs:
       SUPABASE_DB_PASSWORD: ${{ secrets.DB_PASSWORD }} # <-- CLAVE 2: Usa el secreto del ENTORNO
       SUPABASE_PROJECT_ID: ${{ secrets.PROJECT_ID }} # <-- CLAVE 3: Usa el secreto del ENTORNO
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      SUPABASE_DISABLE_KEYRING: "1" # Evita error de keyring en runners Linux sin secrets service
+      SUPABASE_DISABLE_KEYRING: '1' # Evita error de keyring en runners Linux sin secrets service
     steps:
       - uses: actions/checkout@v3
       - uses: supabase/setup-cli@v1
