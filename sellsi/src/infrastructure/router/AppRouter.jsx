@@ -157,6 +157,7 @@ export const AppRouter = ({ scrollTargets }) => {
           path="/ui-components/imports/category-dictionary"
           element={<CategoryDictionary />}
         />
+        <Route path="/catalog/:userNm/:userId" element={<ProviderCatalog />} />
         <Route
           path="/ui-components/imports/region-dictionary"
           element={<RegionDictionary />}
@@ -308,21 +309,6 @@ export const AppRouter = ({ scrollTargets }) => {
               redirectTo="/"
             >
               <CheckoutCancel />
-            </PrivateRoute>
-          }
-        />
-
-        {/* RUTA DEL CATÁLOGO DEL PROVEEDOR - Protegida por PrivateRoute */}
-        <Route
-          path="/catalog/:userNm/:userId"
-          element={
-            <PrivateRoute
-              isAuthenticated={!!session}
-              needsOnboarding={needsOnboarding}
-              loading={loadingUserStatus}
-              redirectTo="/"
-            >
-              <ProviderCatalog />
             </PrivateRoute>
           }
         />

@@ -278,7 +278,9 @@ export const UnifiedAuthProvider = ({ children }) => {
             main_supplier: true,
             country: 'No especificado',
           })
-          .select('user_nm, main_supplier, logo_url, email, verified, verified_at')
+          .select(
+            'user_nm, main_supplier, logo_url, email, verified, verified_at'
+          )
           .single();
 
         if (createError) {
@@ -576,7 +578,6 @@ export const UnifiedAuthProvider = ({ children }) => {
     const neutral = new Set([
       '/',
       '/marketplace',
-      '/catalog',
       '/terms-and-conditions',
       '/privacy-policy',
     ]);
@@ -624,7 +625,8 @@ export const UnifiedAuthProvider = ({ children }) => {
       const isAllowed = allowed.some(
         r =>
           location.pathname === r ||
-          location.pathname.startsWith('/marketplace/product')
+          location.pathname.startsWith('/marketplace/product') ||
+          location.pathname.startsWith('/catalog/')
       );
       if (!isAllowed) navigate('/', { replace: true });
     }
