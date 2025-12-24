@@ -60,10 +60,13 @@ const SearchBar = ({
   }, [setBusqueda]);
 
   // ✅ MEJORA DE RENDIMIENTO: Handler optimizado para cambio de búsqueda
-  const handleSearchChange = React.useCallback(e => {
-    const value = e.target.value;
-    setBusqueda(value);
-  }, [setBusqueda]);
+  const handleSearchChange = React.useCallback(
+    e => {
+      const value = e.target.value;
+      setBusqueda(value);
+    },
+    [setBusqueda]
+  );
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de cambio de ordenamiento
   const handleSortChange = React.useCallback(
@@ -92,11 +95,11 @@ const SearchBar = ({
   const textFieldStyles = React.useMemo(
     () => ({
       // ✅ NUEVO: Se agranda 50% cuando está en vista de proveedores
-      width: isProviderView 
+      width: isProviderView
         ? { xs: '100%', sm: '100%', md: '360px' } // 50% más ancho en vista proveedores
         : { xs: '30%', sm: '30%', md: '240px' }, // Tamaño normal en vista productos
       minWidth: isProviderView
-        ? { xs: 'auto', sm: 'auto', md: '750px' } // 50% más minWidth en vista proveedores  
+        ? { xs: 'auto', sm: 'auto', md: '750px' } // 50% más minWidth en vista proveedores
         : { xs: 'auto', sm: 'auto', md: '500px' }, // minWidth normal en vista productos
       '& .MuiOutlinedInput-root': {
         borderRadius: 1.5,
@@ -111,7 +114,7 @@ const SearchBar = ({
   const formControlStyles = React.useMemo(
     () => ({
       // ✅ AJUSTE: Se adapta al espacio restante cuando SearchBar se agranda en vista proveedores
-      width: isProviderView 
+      width: isProviderView
         ? { xs: '32%', sm: '35%', md: 195 } // Más estrecho cuando SearchBar es más ancho
         : { xs: '67%', sm: '61%', md: 245 }, // Tamaño normal cuando SearchBar es normal
       minWidth: 'auto', // ✅ Sin minWidth en móviles
@@ -199,20 +202,25 @@ const SearchBar = ({
       {/* Input de búsqueda (oculto en mobile si hideTextInputOnMobile y no provider view) */}
       <Box
         sx={{
-          display: hideTextInputOnMobile && !isProviderView ? { xs: 'none', sm: 'none', md: 'block' } : 'block'
+          display:
+            hideTextInputOnMobile && !isProviderView
+              ? { xs: 'none', sm: 'none', md: 'block' }
+              : 'block',
         }}
       >
         <TextField
           size="small"
-            value={busqueda}
-            onChange={handleSearchChange}
-            placeholder={isProviderView ? "Buscar proveedores..." : "Buscar productos..."}
-            variant="outlined"
-            InputProps={inputProps}
-            sx={textFieldStyles}
-            autoComplete="off"
-            autoCorrect="off"
-          />
+          value={busqueda}
+          onChange={handleSearchChange}
+          placeholder={
+            isProviderView ? 'Buscar proveedores...' : 'Buscar productos...'
+          }
+          variant="outlined"
+          InputProps={inputProps}
+          sx={textFieldStyles}
+          autoComplete="off"
+          autoCorrect="off"
+        />
       </Box>
       {/* Selector de ordenamiento - Más compacto - Oculto en vista de proveedores */}
       {!isProviderView && (
@@ -237,8 +245,8 @@ const SearchBar = ({
           </Select>
         </FormControl>
       )}
-      {/* Switch de vista Productos/Proveedores - Solo para marketplace con sidebar */}
-      {hasSideBar && (
+      {/* Switch de vista Productos/Proveedores - Visible cuando onToggleProviderView está disponible */}
+      {onToggleProviderView && (
         <Box
           sx={{
             display: 'flex',
@@ -250,7 +258,11 @@ const SearchBar = ({
         >
           <FormControlLabel
             control={
-              <Tooltip title="Alternar vista productos/proveedores" placement="right" arrow>
+              <Tooltip
+                title="Alternar vista productos/proveedores"
+                placement="right"
+                arrow
+              >
                 <span>
                   <Switch
                     checked={isProviderView}
@@ -289,37 +301,37 @@ const SearchBar = ({
       )}
       {/* Botón de filtros - Optimizado para móviles */}
       {showFiltersButton !== false && (
-      <Button
-        size="small"
-        variant={buttonVariantStyles.variant}
-        onClick={onToggleFilters}
-        sx={buttonBaseStyles}
-      >
-        {/* Solo icono en xs y sm, texto completo en md+ */}
-        <Box
-          sx={{
-            display: { xs: 'none', sm: 'none', md: 'flex' },
-            alignItems: 'center',
-            gap: 1,
-          }}
+        <Button
+          size="small"
+          variant={buttonVariantStyles.variant}
+          onClick={onToggleFilters}
+          sx={buttonBaseStyles}
         >
-          <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
-            <FilterAltIcon fontSize="small" />
-          </Badge>
-          Filtros
-        </Box>
-        {/* Solo icono en xs y sm */}
-        <Box
-          sx={{
-            display: { xs: 'flex', sm: 'flex', md: 'none' },
-            justifyContent: 'center',
-          }}
-        >
-          <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
-            <FilterAltIcon fontSize="small" />
-          </Badge>
-        </Box>
-      </Button>
+          {/* Solo icono en xs y sm, texto completo en md+ */}
+          <Box
+            sx={{
+              display: { xs: 'none', sm: 'none', md: 'flex' },
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
+              <FilterAltIcon fontSize="small" />
+            </Badge>
+            Filtros
+          </Box>
+          {/* Solo icono en xs y sm */}
+          <Box
+            sx={{
+              display: { xs: 'flex', sm: 'flex', md: 'none' },
+              justifyContent: 'center',
+            }}
+          >
+            <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
+              <FilterAltIcon fontSize="small" />
+            </Badge>
+          </Box>
+        </Button>
       )}
     </Box>
   );
