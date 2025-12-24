@@ -78,85 +78,22 @@ const ProviderCatalog = () => {
         setError(null);
 
         // 1. Obtener información del proveedor
-        // Intentar match exacto primero (id completo)
-        let providerData = null;
-        try {
-          const { data: providerExact, error: providerExactError } = await supabase
-            .from('users')
-            .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
-            .eq('user_id', userId)
-            .single();
+        const { data: providerData, error: providerError } = await supabase
+          .from('users')
+          .select(
+            'user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified'
+          )
+          .eq('user_id', userId)
+          .single();
 
-          if (!providerExactError && providerExact) {
-            providerData = providerExact;
-          }
-        } catch (e) {
-          console.debug('[ProviderCatalog] exact id lookup error', e);
+        if (providerError) {
+          throw new Error(
+            `Error al obtener proveedor: ${providerError.message}`
+          );
         }
 
-        // Si no encontramos por ID exacto intentar varias estrategias de fallback
         if (!providerData) {
-          // 1) Si userId es corto (p. ej. 4 chars), buscar prefix en user_id
-          if (userId && userId.length <= 4) {
-            try {
-              const { data: matches, error: matchError } = await supabase
-                .from('users')
-                .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
-                .like('user_id', `${userId}%`)
-                .limit(1);
-
-              if (!matchError && matches && matches.length > 0) {
-                providerData = matches[0];
-              }
-            } catch (e) {
-              console.debug('[ProviderCatalog] prefix lookup error', e);
-            }
-          }
-
-          // 2) Si aún no encontramos, intentar buscar por slug del userNm (reconstruir espacios)
-          if (!providerData && userNm) {
-            const normalizedName = userNm.replace(/-/g, ' ').trim();
-            try {
-              const { data: nameMatches, error: nameError } = await supabase
-                .from('users')
-                .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
-                .ilike('user_nm', `%${normalizedName}%`)
-                .limit(1);
-
-              if (!nameError && nameMatches && nameMatches.length > 0) {
-                providerData = nameMatches[0];
-              }
-            } catch (e) {
-              console.debug('[ProviderCatalog] name lookup error', e);
-            }
-          }
-
-          // 3) Como último recurso, intentar buscar en products por supplier_id prefix y deducir proveedor
-          if (!providerData && userId) {
-            try {
-              const { data: prodMatches, error: prodError } = await supabase
-                .from('products')
-                .select('supplier_id')
-                .like('supplier_id', `${userId}%`)
-                .limit(1);
-
-              if (!prodError && prodMatches && prodMatches.length > 0) {
-                const inferredSupplierId = prodMatches[0].supplier_id;
-                const { data: inferredUser, error: inferredError } = await supabase
-                  .from('users')
-                  .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
-                  .eq('user_id', inferredSupplierId)
-                  .single();
-                if (!inferredError && inferredUser) providerData = inferredUser;
-              }
-            } catch (e) {
-              console.debug('[ProviderCatalog] product-based lookup error', e);
-            }
-          }
-
-          if (!providerData) {
-            throw new Error('Proveedor no encontrado');
-          }
+          throw new Error('Proveedor no encontrado');
         }
 
         // Verificar si el proveedor está verificado
@@ -166,7 +103,7 @@ const ProviderCatalog = () => {
           );
         }
 
-        // 2. Obtener productos del proveedor usando el user_id real
+        // 2. Obtener productos del proveedor
         const { data: productsData, error: productsError } = await supabase
           .from('products')
           .select(
@@ -175,7 +112,7 @@ const ProviderCatalog = () => {
             product_images (image_url)
           `
           )
-          .eq('supplier_id', providerData.user_id)
+          .eq('supplier_id', userId)
           .eq('is_active', true)
           .order('createddt', { ascending: false });
 

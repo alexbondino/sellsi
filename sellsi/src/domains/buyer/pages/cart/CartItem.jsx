@@ -109,8 +109,7 @@ const CartItem = ({
     }
     
     const proveedorSlug = normalizeProviderSlug(providerName);
-    const shortSupplierId = supplierId.toString().slice(0, 4);
-    const catalogUrl = `/catalog/${proveedorSlug}/${shortSupplierId}`;
+    const catalogUrl = `/catalog/${proveedorSlug}/${supplierId}`;
     console.log('✅ Navegando a:', catalogUrl);
     navigate(catalogUrl);
   }, [navigate, item]);

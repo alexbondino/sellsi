@@ -1,12 +1,12 @@
 /**
  * 🛒 Tabla de Productos Marketplace
- * 
+ *
  * Componente que permite a los administradores gestionar productos del marketplace:
  * - Ver productos disponibles (Stock >= Compra Mínima)
  * - Eliminar productos del marketplace
  * - Filtrar y buscar productos
  * - Ver estadísticas de productos
- * 
+ *
  * @author Panel Administrativo Sellsi
  * @date 10 de Julio de 2025
  */
@@ -40,7 +40,7 @@ import {
   DialogActions,
   Button,
   Popover,
-  Fab
+  Fab,
 } from '@mui/material';
 import {
   Inventory as InventoryIcon,
@@ -50,7 +50,7 @@ import {
   Search as SearchIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 
 // Importar componentes UI existentes
@@ -58,7 +58,13 @@ import AdminStatCard from './AdminStatCard';
 import EditProductNameModal from '../../../shared/components/modals/EditProductNameModal';
 import DeleteMultipleProductsModal from '../../../shared/components/modals/DeleteMultipleProductsModal';
 // 🔍 Reemplazo de import desde barrel '../../../domains/admin' para reducir ciclos
-import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../services/adminProductService';
+import {
+  getMarketplaceProducts,
+  deleteProduct,
+  getProductStats,
+  deleteMultipleProducts,
+  updateProductName,
+} from '../services/adminProductService';
 import { useBanner } from '../../../shared/components/display/banners/BannerContext';
 import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail';
 import { AdminTableImage } from '../../../components/UniversalProductImage'; // Incluye gating viewport interno vía useInViewport
@@ -67,62 +73,62 @@ import { AdminTableImage } from '../../../components/UniversalProductImage'; // 
 const PRODUCT_STATUS = {
   available: { color: 'success', icon: '✅', label: 'Disponible' },
   lowStock: { color: 'warning', icon: '⚠️', label: 'Stock Bajo' },
-  outOfStock: { color: 'error', icon: '❌', label: 'Sin Stock' }
+  outOfStock: { color: 'error', icon: '❌', label: 'Sin Stock' },
 };
 
 const PRODUCT_FILTERS = [
   { value: 'all', label: 'Todos los productos' },
   { value: 'available', label: 'Productos' },
-  { value: 'lowStock', label: 'Stock bajo' }
+  { value: 'lowStock', label: 'Stock bajo' },
 ];
 
 // ✅ COMMON STYLES
 const commonStyles = {
   container: {
     p: 3,
-    overflowX: 'hidden' // Previene scroll horizontal
+    overflowX: 'hidden', // Previene scroll horizontal
   },
   headerSection: {
-    mb: 4
+    mb: 4,
   },
   filtersSection: {
     mb: 3,
     p: 2,
     borderRadius: 2,
     backgroundColor: '#f8f9fa',
-    overflowX: 'hidden' // Previene scroll horizontal en filtros
+    overflowX: 'hidden', // Previene scroll horizontal en filtros
   },
   tableContainer: {
-    mb: 3
+    mb: 3,
   },
   tableHeader: {
     backgroundColor: '#2E52B2',
     color: 'white',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   tableRow: {
     '&:hover': {
-      backgroundColor: '#f5f5f5'
-    }
+      backgroundColor: '#f5f5f5',
+    },
   },
   actionButton: {
     m: 0.5,
-    minWidth: 'auto'
+    minWidth: 'auto',
   },
   statusChip: {
     fontWeight: 'bold',
-    minWidth: 100
+    minWidth: 100,
   },
   refreshFab: {
     position: 'fixed',
     bottom: 16,
-    right: 16
+    right: 16,
   },
   productImage: {
     width: 40,
     height: 40,
-    borderRadius: 1
-  }
+    borderRadius: 1,
+  },
 };
 
 // ✅ PRODUCT MARKETPLACE TABLE COMPONENT
@@ -130,18 +136,18 @@ const ProductMarketplaceTable = memo(() => {
   // ========================================
   // 🔧 ESTADO
   // ========================================
-  
+
   const [products, setProducts] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-  
+
   // Filtros
   const [filters, setFilters] = useState({
     status: 'all',
     search: '',
-    supplier: 'all'
+    supplier: 'all',
   });
 
   // Estado para alternar entre productos activos e inactivos
@@ -164,7 +170,7 @@ const ProductMarketplaceTable = memo(() => {
   useEffect(() => {
     setFilters(prev => ({
       ...prev,
-      search: debouncedSearchTerm
+      search: debouncedSearchTerm,
     }));
   }, [debouncedSearchTerm]);
 
@@ -178,19 +184,19 @@ const ProductMarketplaceTable = memo(() => {
   // Modal de confirmación para eliminar
   const [deleteModal, setDeleteModal] = useState({
     open: false,
-    product: null
+    product: null,
   });
 
   // Modal para eliminar múltiples productos
   const [deleteMultipleModal, setDeleteMultipleModal] = useState({
     open: false,
-    products: []
+    products: [],
   });
 
   // Modal para editar nombre de producto
   const [editNameModal, setEditNameModal] = useState({
     open: false,
-    product: null
+    product: null,
   });
 
   // Estado de carga para operaciones
@@ -236,7 +242,7 @@ const ProductMarketplaceTable = memo(() => {
     setCopiedUser(false);
   };
 
-  const handleCopyId = async (text) => {
+  const handleCopyId = async text => {
     try {
       if (!text) return;
       await navigator.clipboard.writeText(text);
@@ -246,7 +252,7 @@ const ProductMarketplaceTable = memo(() => {
     } catch (_) {}
   };
 
-  const handleCopyUser = async (text) => {
+  const handleCopyUser = async text => {
     try {
       if (!text) return;
       await navigator.clipboard.writeText(text);
@@ -257,9 +263,9 @@ const ProductMarketplaceTable = memo(() => {
   };
 
   // Helper para mostrar precio en la tabla: soporta priceTiers y precio base (SIN negrita)
-  const formatCLP = (amount) => `$${Math.round(amount).toLocaleString('es-CL')}`;
+  const formatCLP = amount => `$${Math.round(amount).toLocaleString('es-CL')}`;
 
-  const renderProductPrice = (product) => {
+  const renderProductPrice = product => {
     const priceTiers = product.priceTiers || product.price_tiers || [];
 
     if (Array.isArray(priceTiers) && priceTiers.length > 0) {
@@ -272,13 +278,21 @@ const ProductMarketplaceTable = memo(() => {
         const maxPrice = Math.max(...normalized);
         if (minPrice !== maxPrice) {
           return (
-            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 400, fontSize: 12, lineHeight: 1.1 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontWeight: 400, fontSize: 12, lineHeight: 1.1 }}
+            >
               {formatCLP(minPrice)} - {formatCLP(maxPrice)}
             </Typography>
           );
         }
         return (
-          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 400, fontSize: 12, lineHeight: 1.1 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontWeight: 400, fontSize: 12, lineHeight: 1.1 }}
+          >
             {formatCLP(maxPrice)}
           </Typography>
         );
@@ -288,7 +302,12 @@ const ProductMarketplaceTable = memo(() => {
     // Fallback a precio base del producto
     const basePrice = product.price || product.precio || 0;
     return (
-      <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 400 }}>
+      <Typography
+        component="span"
+        variant="caption"
+        color="text.secondary"
+        sx={{ display: 'block', fontWeight: 400 }}
+      >
         {formatCLP(basePrice)}
       </Typography>
     );
@@ -307,11 +326,11 @@ const ProductMarketplaceTable = memo(() => {
   // 🔧 HELPER FUNCTIONS
   // ========================================
 
-  const getProductStatus = (product) => {
+  const getProductStatus = product => {
     // Determinar estado basado en stock vs compra mínima
     const stock = product.stock || 0;
     const minPurchase = product.min_purchase || 1;
-    
+
     if (stock >= minPurchase) {
       return stock <= minPurchase * 1.5 ? 'lowStock' : 'available';
     }
@@ -331,7 +350,7 @@ const ProductMarketplaceTable = memo(() => {
       const stock = product.stock || 0;
       const minPurchase = product.min_purchase || 1;
       const isActive = stock >= minPurchase;
-      
+
       if (showActiveProducts && !isActive) return false;
       if (!showActiveProducts && isActive) return false;
 
@@ -368,7 +387,7 @@ const ProductMarketplaceTable = memo(() => {
       // Cargar todos los productos sin filtros (filtrado local)
       const [productsResult, statsResult] = await Promise.all([
         getMarketplaceProducts({ includeInactive: true }), // Incluir productos inactivos para filtrado local
-        getProductStats()
+        getProductStats(),
       ]);
 
       if (productsResult.success) {
@@ -395,7 +414,7 @@ const ProductMarketplaceTable = memo(() => {
     } else {
       setFilters(prev => ({
         ...prev,
-        [field]: value
+        [field]: value,
       }));
     }
   }, []);
@@ -412,17 +431,29 @@ const ProductMarketplaceTable = memo(() => {
     });
   }, []);
 
-  const handleSelectAll = useCallback((isSelected) => {
-    if (isSelected) {
-      // Seleccionar solo los productos visibles de la página actual
-      setSelectedProducts(new Set(visibleProducts.map(product => product.product_id)));
-    } else {
-      setSelectedProducts(new Set());
-    }
-  }, [filteredProducts]);
+  const handleSelectAll = useCallback(
+    isSelected => {
+      if (isSelected) {
+        // Seleccionar solo los productos visibles de la página actual
+        setSelectedProducts(
+          new Set(visibleProducts.map(product => product.product_id))
+        );
+      } else {
+        setSelectedProducts(new Set());
+      }
+    },
+    [filteredProducts]
+  );
 
   // PAGINACIÓN: calcular páginas y productos visibles
-  const totalPages = useMemo(() => Math.max(1, Math.ceil((filteredProducts?.length || 0) / PRODUCTS_PER_PAGE)), [filteredProducts]);
+  const totalPages = useMemo(
+    () =>
+      Math.max(
+        1,
+        Math.ceil((filteredProducts?.length || 0) / PRODUCTS_PER_PAGE)
+      ),
+    [filteredProducts]
+  );
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -431,25 +462,31 @@ const ProductMarketplaceTable = memo(() => {
 
   const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
   const endIndex = startIndex + PRODUCTS_PER_PAGE;
-  const visibleProducts = useMemo(() => (filteredProducts || []).slice(startIndex, endIndex), [filteredProducts, startIndex, endIndex]);
+  const visibleProducts = useMemo(
+    () => (filteredProducts || []).slice(startIndex, endIndex),
+    [filteredProducts, startIndex, endIndex]
+  );
 
-  const handlePageChange = useCallback((page) => {
-    const safe = Math.min(Math.max(1, page), totalPages);
-    setCurrentPage(safe);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [totalPages]);
+  const handlePageChange = useCallback(
+    page => {
+      const safe = Math.min(Math.max(1, page), totalPages);
+      setCurrentPage(safe);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [totalPages]
+  );
 
-  const openDeleteModal = (product) => {
+  const openDeleteModal = product => {
     setDeleteModal({
       open: true,
-      product
+      product,
     });
   };
 
   const closeDeleteModal = () => {
     setDeleteModal({
       open: false,
-      product: null
+      product: null,
     });
   };
 
@@ -478,14 +515,16 @@ const ProductMarketplaceTable = memo(() => {
 
   // Handlers para eliminar múltiples productos
   const openDeleteMultipleModal = useCallback(() => {
-    const selectedProductsArray = filteredProducts.filter(product => selectedProducts.has(product.product_id));
+    const selectedProductsArray = filteredProducts.filter(product =>
+      selectedProducts.has(product.product_id)
+    );
     setDeleteMultipleModal({ open: true, products: selectedProductsArray });
   }, [filteredProducts, selectedProducts]);
 
   const closeDeleteMultipleModal = () => {
     setDeleteMultipleModal({
       open: false,
-      products: []
+      products: [],
     });
   };
 
@@ -498,7 +537,7 @@ const ProductMarketplaceTable = memo(() => {
         await loadData();
         setSelectedProducts(new Set()); // Limpiar selección
         closeDeleteMultipleModal();
-        
+
         if (result.errors.length > 0) {
           showBanner({
             message: `Se eliminaron ${result.deleted} de ${productIds.length} productos. Algunos productos tuvieron errores.`,
@@ -506,7 +545,9 @@ const ProductMarketplaceTable = memo(() => {
           });
         } else {
           showBanner({
-            message: `Se eliminaron ${result.deleted} producto${result.deleted !== 1 ? 's' : ''} correctamente`,
+            message: `Se eliminaron ${result.deleted} producto${
+              result.deleted !== 1 ? 's' : ''
+            } correctamente`,
             severity: 'success',
           });
         }
@@ -522,21 +563,21 @@ const ProductMarketplaceTable = memo(() => {
   };
 
   // Handlers para editar nombre de producto
-  const openEditNameModal = (product) => {
+  const openEditNameModal = product => {
     setEditNameModal({
       open: true,
-      product
+      product,
     });
   };
 
   const closeEditNameModal = () => {
     setEditNameModal({
       open: false,
-      product: null
+      product: null,
     });
   };
 
-  const handleEditNameConfirm = async (newName) => {
+  const handleEditNameConfirm = async newName => {
     const { product } = editNameModal;
     setOperationLoading(true);
     try {
@@ -564,196 +605,233 @@ const ProductMarketplaceTable = memo(() => {
   // ========================================
 
   const MemoAdminStatCard = memo(AdminStatCard);
-  const renderStatsCards = useCallback(() => (
-    <Grid container spacing={3} sx={commonStyles.headerSection}>
-      <Grid item xs={12} sm={6} md={3}>
-        <MemoAdminStatCard
-          title="Total Productos"
-          value={stats.totalProducts || 0}
-          icon={InventoryIcon}
-          color="primary"
-        />
+  const renderStatsCards = useCallback(
+    () => (
+      <Grid container spacing={3} sx={commonStyles.headerSection}>
+        <Grid item xs={12} sm={6} md={3}>
+          <MemoAdminStatCard
+            title="Total Productos"
+            value={stats.totalProducts || 0}
+            icon={InventoryIcon}
+            color="primary"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <MemoAdminStatCard
+            title="Productos Disponibles"
+            value={stats.availableProducts || 0}
+            icon={ShoppingCartIcon}
+            color="success"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <MemoAdminStatCard
+            title="Stock Bajo"
+            value={stats.lowStockProducts || 0}
+            icon={InventoryIcon}
+            color="warning"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <MemoAdminStatCard
+            title="Proveedores Activos"
+            value={stats.activeSuppliers || 0}
+            icon={StoreIcon}
+            color="info"
+          />
+        </Grid>
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <MemoAdminStatCard
-          title="Productos Disponibles"
-          value={stats.availableProducts || 0}
-          icon={ShoppingCartIcon}
-          color="success"
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <MemoAdminStatCard
-          title="Stock Bajo"
-          value={stats.lowStockProducts || 0}
-          icon={InventoryIcon}
-          color="warning"
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <MemoAdminStatCard
-          title="Proveedores Activos"
-          value={stats.activeSuppliers || 0}
-          icon={StoreIcon}
-          color="info"
-        />
-      </Grid>
-    </Grid>
-  ), [stats]);
+    ),
+    [stats]
+  );
 
-  const menuPropsEstado = useMemo(() => ({
-    disableScrollLock: true,
-    PaperProps: {
-      style: {
-        maxHeight: 300,
-        minWidth: 200
-      }
-    },
-    anchorOrigin: {
-      vertical: 'bottom',
-      horizontal: 'left'
-    },
-    transformOrigin: {
-      vertical: 'top',
-      horizontal: 'left'
-    }
-  }), []);
+  const menuPropsEstado = useMemo(
+    () => ({
+      disableScrollLock: true,
+      PaperProps: {
+        style: {
+          maxHeight: 300,
+          minWidth: 200,
+        },
+      },
+      anchorOrigin: {
+        vertical: 'bottom',
+        horizontal: 'left',
+      },
+      transformOrigin: {
+        vertical: 'top',
+        horizontal: 'left',
+      },
+    }),
+    []
+  );
   const menuPropsProveedor = menuPropsEstado;
-  const sxEstado = useMemo(() => ({ '& .MuiSelect-select': { minHeight: 'auto' }, maxWidth: '100%' }), []);
-  const sxProveedor = useMemo(() => ({ minWidth: 200, maxWidth: 260, width: '260px', '& .MuiSelect-select': { minHeight: 'auto' } }), []);
+  const sxEstado = useMemo(
+    () => ({ '& .MuiSelect-select': { minHeight: 'auto' }, maxWidth: '100%' }),
+    []
+  );
+  const sxProveedor = useMemo(
+    () => ({
+      minWidth: 200,
+      maxWidth: 260,
+      width: '260px',
+      '& .MuiSelect-select': { minHeight: 'auto' },
+    }),
+    []
+  );
 
-  const renderFilters = useCallback(() => (
-    <Paper sx={commonStyles.filtersSection}>
-      <Grid container spacing={3} alignItems="center">
-        {/* Título y botón de toggle mejorado */}
-        <Grid item xs={12}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Tooltip 
-              title={
-                <Box sx={{ p: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                    Explicación de estados:
-                  </Typography>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Productos Activos:</strong> Productos visibles en el marketplace donde el stock es mayor o igual a la compra mínima.
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Productos Inactivos:</strong> Productos no visibles en el marketplace, pero creados en la base de datos, donde el stock es menor que la compra mínima.
-                  </Typography>
-                </Box>
-              }
-              arrow
-              placement="left"
-            >
-              <IconButton size="small" sx={{ color: 'primary.main' }}>
-                <InfoIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              {showActiveProducts ? 'Productos Activos' : 'Productos Inactivos'}
-            </Typography>
-            <Button
-              variant={showActiveProducts ? 'contained' : 'outlined'}
-              color={showActiveProducts ? 'primary' : 'secondary'}
-              size="small"
-              endIcon={<span style={{fontSize:'1.2em'}}>&#8646;</span>}
-              onClick={() => setShowActiveProducts(!showActiveProducts)}
-              sx={{ 
-                minWidth: 180,
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 500,
-                boxShadow: showActiveProducts ? 2 : 0
-              }}
-            >
-              {showActiveProducts ? 'Ver productos inactivos' : 'Ver productos activos'}
-            </Button>
-          </Box>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <FormControl 
-            fullWidth 
-            size="medium" 
-            sx={sxEstado}
-          >
-            <InputLabel>Estado</InputLabel>
-            <Select
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              label="Estado"
-              MenuProps={menuPropsEstado}
-            >
-              {PRODUCT_FILTERS.map(filter => (
-                <MenuItem key={filter.value} value={filter.value}>
-                  {filter.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <FormControl 
-            fullWidth 
-            size="medium" 
-            sx={sxProveedor}
-          >
-            <InputLabel>Proveedor</InputLabel>
-            <Select
-              value={filters.supplier}
-              onChange={(e) => handleFilterChange('supplier', e.target.value)}
-              label="Proveedor"
-              MenuProps={menuPropsProveedor}
-            >
-              <MenuItem value="all">Todos los proveedores</MenuItem>
-              {/* TODO: Agregar lista de proveedores dinámicamente */}
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} sm={12} md={6}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <TextField
-              fullWidth
-              size="medium"
-              placeholder="Buscar por nombre, ID, proveedor..."
-              value={searchTerm}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              InputProps={{
-                startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
-              }}
-              sx={{ minWidth: 320, maxWidth: 600, width: '100%' }}
-            />
-            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap', minWidth: 120 }}>
-              {
-                !initialLoadComplete 
-                  ? "Cargando..." 
-                  : searchTerm && debouncedSearchTerm !== searchTerm 
-                    ? "Filtrando..." 
-                    : `Mostrando ${filteredProducts.length} de ${products.length}`
-              }
-            </Typography>
-          </Box>
-        </Grid>
-        
-        {/* Botón para eliminar productos seleccionados */}
-        {selectedProducts.size > 0 && (
+  const renderFilters = useCallback(
+    () => (
+      <Paper sx={commonStyles.filtersSection}>
+        <Grid container spacing={3} alignItems="center">
+          {/* Título y botón de toggle mejorado */}
           <Grid item xs={12}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-              <Button
-                variant="contained"
-                color="error"
-                startIcon={<DeleteIcon />}
-                onClick={openDeleteMultipleModal}
-                disabled={operationLoading}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Tooltip
+                title={
+                  <Box sx={{ p: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      Explicación de estados:
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>Productos Activos:</strong> Productos visibles en
+                      el marketplace donde el stock es mayor o igual a la compra
+                      mínima.
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong>Productos Inactivos:</strong> Productos no
+                      visibles en el marketplace, pero creados en la base de
+                      datos, donde el stock es menor que la compra mínima.
+                    </Typography>
+                  </Box>
+                }
+                arrow
+                placement="left"
               >
-                Eliminar {selectedProducts.size} producto{selectedProducts.size !== 1 ? 's' : ''} seleccionado{selectedProducts.size !== 1 ? 's' : ''}
+                <IconButton size="small" sx={{ color: 'primary.main' }}>
+                  <InfoIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                {showActiveProducts
+                  ? 'Productos Activos'
+                  : 'Productos Inactivos'}
+              </Typography>
+              <Button
+                variant={showActiveProducts ? 'contained' : 'outlined'}
+                color={showActiveProducts ? 'primary' : 'secondary'}
+                size="small"
+                endIcon={<span style={{ fontSize: '1.2em' }}>&#8646;</span>}
+                onClick={() => setShowActiveProducts(!showActiveProducts)}
+                sx={{
+                  minWidth: 180,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  boxShadow: showActiveProducts ? 2 : 0,
+                }}
+              >
+                {showActiveProducts
+                  ? 'Ver productos inactivos'
+                  : 'Ver productos activos'}
               </Button>
             </Box>
           </Grid>
-        )}
-      </Grid>
-    </Paper>
-  ), [filters, handleFilterChange, searchTerm, debouncedSearchTerm, initialLoadComplete, filteredProducts.length, products.length, selectedProducts.size, operationLoading, showActiveProducts]);
+
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth size="medium" sx={sxEstado}>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                value={filters.status}
+                onChange={e => handleFilterChange('status', e.target.value)}
+                label="Estado"
+                MenuProps={menuPropsEstado}
+              >
+                {PRODUCT_FILTERS.map(filter => (
+                  <MenuItem key={filter.value} value={filter.value}>
+                    {filter.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth size="medium" sx={sxProveedor}>
+              <InputLabel>Proveedor</InputLabel>
+              <Select
+                value={filters.supplier}
+                onChange={e => handleFilterChange('supplier', e.target.value)}
+                label="Proveedor"
+                MenuProps={menuPropsProveedor}
+              >
+                <MenuItem value="all">Todos los proveedores</MenuItem>
+                {/* TODO: Agregar lista de proveedores dinámicamente */}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={12} md={6}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <TextField
+                fullWidth
+                size="medium"
+                placeholder="Buscar por nombre, ID, proveedor..."
+                value={searchTerm}
+                onChange={e => handleFilterChange('search', e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                  ),
+                }}
+                sx={{ minWidth: 320, maxWidth: 600, width: '100%' }}
+              />
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ whiteSpace: 'nowrap', minWidth: 120 }}
+              >
+                {!initialLoadComplete
+                  ? 'Cargando...'
+                  : searchTerm && debouncedSearchTerm !== searchTerm
+                  ? 'Filtrando...'
+                  : `Mostrando ${filteredProducts.length} de ${products.length}`}
+              </Typography>
+            </Box>
+          </Grid>
+
+          {/* Botón para eliminar productos seleccionados */}
+          {selectedProducts.size > 0 && (
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={openDeleteMultipleModal}
+                  disabled={operationLoading}
+                >
+                  Eliminar {selectedProducts.size} producto
+                  {selectedProducts.size !== 1 ? 's' : ''} seleccionado
+                  {selectedProducts.size !== 1 ? 's' : ''}
+                </Button>
+              </Box>
+            </Grid>
+          )}
+        </Grid>
+      </Paper>
+    ),
+    [
+      filters,
+      handleFilterChange,
+      searchTerm,
+      debouncedSearchTerm,
+      initialLoadComplete,
+      filteredProducts.length,
+      products.length,
+      selectedProducts.size,
+      operationLoading,
+      showActiveProducts,
+    ]
+  );
 
   const renderProductsTable = () => (
     <TableContainer component={Paper} sx={commonStyles.tableContainer}>
@@ -762,9 +840,15 @@ const ProductMarketplaceTable = memo(() => {
           <TableRow sx={commonStyles.tableHeader}>
             <TableCell padding="checkbox">
               <Checkbox
-                indeterminate={selectedProducts.size > 0 && selectedProducts.size < filteredProducts.length}
-                checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
-                onChange={(e) => handleSelectAll(e.target.checked)}
+                indeterminate={
+                  selectedProducts.size > 0 &&
+                  selectedProducts.size < filteredProducts.length
+                }
+                checked={
+                  filteredProducts.length > 0 &&
+                  selectedProducts.size === filteredProducts.length
+                }
+                onChange={e => handleSelectAll(e.target.checked)}
                 sx={{ color: 'white' }}
               />
             </TableCell>
@@ -775,14 +859,26 @@ const ProductMarketplaceTable = memo(() => {
             <TableCell sx={{ color: 'white' }}>Stock</TableCell>
             <TableCell sx={{ color: 'white' }}>Estado</TableCell>
             <TableCell align="center" sx={{ color: 'white' }}>
-              <Tooltip 
-                title={<Box sx={{ p: 1, maxWidth: 260 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Acciones disponibles:</Typography>
-                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.95em' }}>
-                    <li><strong>Editar nombre:</strong> Permite modificar el nombre del producto en el marketplace.</li>
-                    <li><strong>Eliminar producto:</strong> Quita el producto del marketplace. Esta acción es irreversible.</li>
-                  </ul>
-                </Box>}
+              <Tooltip
+                title={
+                  <Box sx={{ p: 1, maxWidth: 260 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      Acciones disponibles:
+                    </Typography>
+                    <ul
+                      style={{ margin: 0, paddingLeft: 18, fontSize: '0.95em' }}
+                    >
+                      <li>
+                        <strong>Editar nombre:</strong> Permite modificar el
+                        nombre del producto en el marketplace.
+                      </li>
+                      <li>
+                        <strong>Eliminar producto:</strong> Quita el producto
+                        del marketplace. Esta acción es irreversible.
+                      </li>
+                    </ul>
+                  </Box>
+                }
                 arrow
                 placement="top"
               >
@@ -795,31 +891,41 @@ const ProductMarketplaceTable = memo(() => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {visibleProducts.map((product) => {
+          {visibleProducts.map(product => {
             const productStatus = getProductStatus(product);
             const isSelected = selectedProducts.has(product.product_id);
 
             return (
-              <TableRow 
-                key={product.product_id} 
+              <TableRow
+                key={product.product_id}
                 sx={commonStyles.tableRow}
                 selected={isSelected}
               >
                 <TableCell padding="checkbox">
                   <Checkbox
                     checked={isSelected}
-                    onChange={(e) => handleProductSelect(product.product_id, e.target.checked)}
+                    onChange={e =>
+                      handleProductSelect(product.product_id, e.target.checked)
+                    }
                   />
                 </TableCell>
 
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <AdminTableImage product={product} priority={true} fallbackIcon={() => (<ShoppingCartIcon />)} />
+                    <AdminTableImage
+                      product={product}
+                      priority={true}
+                      fallbackIcon={() => <ShoppingCartIcon />}
+                    />
                     <Box>
-                      <Typography component="span" variant="body2" fontWeight="medium">
+                      <Typography
+                        component="span"
+                        variant="body2"
+                        fontWeight="medium"
+                      >
                         {product.product_name || 'N/A'}
                       </Typography>
-                        {renderProductPrice(product)}
+                      {renderProductPrice(product)}
                     </Box>
                   </Box>
                 </TableCell>
@@ -829,13 +935,16 @@ const ProductMarketplaceTable = memo(() => {
                     variant="body2"
                     color="text.secondary"
                     sx={{ fontFamily: 'monospace', cursor: 'pointer' }}
-                    onClick={(e) => handleOpenId(e, product.product_id)}
+                    onClick={e => handleOpenId(e, product.product_id)}
                   >
                     {product.product_id?.slice(0, 8)}...
                   </Typography>
 
                   <Popover
-                    open={Boolean(idAnchor) && idOpenProductId === product.product_id}
+                    open={
+                      Boolean(idAnchor) &&
+                      idOpenProductId === product.product_id
+                    }
                     anchorEl={idAnchor}
                     onClose={handleCloseId}
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
@@ -846,10 +955,23 @@ const ProductMarketplaceTable = memo(() => {
                         fullWidth
                         size="small"
                         value={product.product_id || ''}
-                        InputProps={{ readOnly: true, sx: { fontFamily: 'monospace' } }}
+                        InputProps={{
+                          readOnly: true,
+                          sx: { fontFamily: 'monospace' },
+                        }}
                       />
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                        <Button size="small" variant="contained" onClick={() => handleCopyId(product.product_id)}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          mt: 1,
+                        }}
+                      >
+                        <Button
+                          size="small"
+                          variant="contained"
+                          onClick={() => handleCopyId(product.product_id)}
+                        >
                           {copiedId ? 'Copiado' : 'Copiar'}
                         </Button>
                       </Box>
@@ -868,13 +990,16 @@ const ProductMarketplaceTable = memo(() => {
                     variant="body2"
                     color="text.secondary"
                     sx={{ fontFamily: 'monospace', cursor: 'pointer' }}
-                    onClick={(e) => handleOpenUser(e, product.product_id)}
+                    onClick={e => handleOpenUser(e, product.product_id)}
                   >
                     {product.user_id?.slice(0, 8)}...
                   </Typography>
 
                   <Popover
-                    open={Boolean(userAnchor) && userOpenProductId === product.product_id}
+                    open={
+                      Boolean(userAnchor) &&
+                      userOpenProductId === product.product_id
+                    }
                     anchorEl={userAnchor}
                     onClose={handleCloseUser}
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
@@ -885,10 +1010,23 @@ const ProductMarketplaceTable = memo(() => {
                         fullWidth
                         size="small"
                         value={product.user_id || ''}
-                        InputProps={{ readOnly: true, sx: { fontFamily: 'monospace' } }}
+                        InputProps={{
+                          readOnly: true,
+                          sx: { fontFamily: 'monospace' },
+                        }}
                       />
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                        <Button size="small" variant="contained" onClick={() => handleCopyUser(product.user_id)}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          mt: 1,
+                        }}
+                      >
+                        <Button
+                          size="small"
+                          variant="contained"
+                          onClick={() => handleCopyUser(product.user_id)}
+                        >
                           {copiedUser ? 'Copiado' : 'Copiar'}
                         </Button>
                       </Box>
@@ -898,9 +1036,17 @@ const ProductMarketplaceTable = memo(() => {
 
                 <TableCell>
                   <Chip
-                    label={`${product.stock || 0} / ${product.min_purchase || 1}`}
+                    label={`${product.stock || 0} / ${
+                      product.min_purchase || 1
+                    }`}
                     size="small"
-                    color={productStatus === 'available' ? 'success' : productStatus === 'lowStock' ? 'warning' : 'error'}
+                    color={
+                      productStatus === 'available'
+                        ? 'success'
+                        : productStatus === 'lowStock'
+                        ? 'warning'
+                        : 'error'
+                    }
                     variant="outlined"
                   />
                 </TableCell>
@@ -915,10 +1061,12 @@ const ProductMarketplaceTable = memo(() => {
                 </TableCell>
 
                 <TableCell align="center">
-                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
+                  <Box
+                    sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}
+                  >
                     <Tooltip title="Editar nombre del producto">
-                      <IconButton 
-                        size="small" 
+                      <IconButton
+                        size="small"
                         sx={commonStyles.actionButton}
                         onClick={() => openEditNameModal(product)}
                         disabled={operationLoading}
@@ -928,8 +1076,8 @@ const ProductMarketplaceTable = memo(() => {
                     </Tooltip>
 
                     <Tooltip title="Eliminar producto">
-                      <IconButton 
-                        size="small" 
+                      <IconButton
+                        size="small"
                         sx={commonStyles.actionButton}
                         color="error"
                         onClick={() => openDeleteModal(product)}
@@ -956,19 +1104,51 @@ const ProductMarketplaceTable = memo(() => {
 
       {/* Pagination controls */}
       {filteredProducts && filteredProducts.length > PRODUCTS_PER_PAGE && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1, py: 2, flexWrap: 'wrap' }}>
-          <Button variant="outlined" disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}>‹ Anterior</Button>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 1,
+            py: 2,
+            flexWrap: 'wrap',
+          }}
+        >
+          <Button
+            variant="outlined"
+            disabled={currentPage === 1}
+            onClick={() => handlePageChange(currentPage - 1)}
+            sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}
+          >
+            ‹ Anterior
+          </Button>
 
           {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
             const page = Math.min(totalPages, Math.max(1, currentPage - 3 + i));
             return (
-              <Button key={page} variant={page === currentPage ? 'contained' : 'outlined'} onClick={() => handlePageChange(page)} sx={{ minWidth: 40, fontSize: '0.875rem' }}>{page}</Button>
+              <Button
+                key={page}
+                variant={page === currentPage ? 'contained' : 'outlined'}
+                onClick={() => handlePageChange(page)}
+                sx={{ minWidth: 40, fontSize: '0.875rem' }}
+              >
+                {page}
+              </Button>
             );
           })}
 
-          <Button variant="outlined" disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}>Siguiente ›</Button>
+          <Button
+            variant="outlined"
+            disabled={currentPage === totalPages}
+            onClick={() => handlePageChange(currentPage + 1)}
+            sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}
+          >
+            Siguiente ›
+          </Button>
 
-          <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>Página {currentPage} de {totalPages}</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+            Página {currentPage} de {totalPages}
+          </Typography>
         </Box>
       )}
     </TableContainer>
@@ -982,23 +1162,43 @@ const ProductMarketplaceTable = memo(() => {
       aria-describedby="delete-product-dialog-description"
       maxWidth="xs"
       PaperProps={{
-        sx: { minWidth: 400, maxWidth: 480 }
+        sx: { minWidth: 400, maxWidth: 480 },
       }}
     >
-      <DialogTitle id="delete-product-dialog-title" sx={{ textAlign: 'center' }}>
+      <DialogTitle
+        id="delete-product-dialog-title"
+        sx={{ textAlign: 'center' }}
+      >
         Eliminar producto del marketplace
       </DialogTitle>
       <DialogContent>
-        <DialogContentText id="delete-product-dialog-description" sx={{ textAlign: 'center' }}>
-          ¿Estás seguro de que deseas eliminar el producto <b style={{fontWeight:'bold'}}>{deleteModal.product?.product_name}</b> del marketplace?<br/>
+        <DialogContentText
+          id="delete-product-dialog-description"
+          sx={{ textAlign: 'center' }}
+        >
+          ¿Estás seguro de que deseas eliminar el producto{' '}
+          <b style={{ fontWeight: 'bold' }}>
+            {deleteModal.product?.product_name}
+          </b>{' '}
+          del marketplace?
+          <br />
           Esta acción no se puede deshacer.
         </DialogContentText>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'center', gap: 3 }}>
-        <Button onClick={closeDeleteModal} color="inherit" disabled={operationLoading}>
+        <Button
+          onClick={closeDeleteModal}
+          color="inherit"
+          disabled={operationLoading}
+        >
           Cancelar
         </Button>
-        <Button onClick={handleDeleteConfirm} color="error" variant="contained" disabled={operationLoading}>
+        <Button
+          onClick={handleDeleteConfirm}
+          color="error"
+          variant="contained"
+          disabled={operationLoading}
+        >
           {operationLoading ? 'Eliminando...' : 'Eliminar'}
         </Button>
       </DialogActions>

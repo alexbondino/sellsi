@@ -261,10 +261,9 @@ const MyProducts = () => {
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '');
 
-      // Construir URL completa del catálogo (usar id corto)
+      // Construir URL completa del catálogo
       const baseUrl = window.location.origin;
-      const shortSupplierId = (supplierId || '').toString().slice(0, 4);
-      const url = `${baseUrl}/catalog/${userNmSlug}/${shortSupplierId}`;
+      const url = `${baseUrl}/catalog/${userNmSlug}/${supplierId}`;
       setCatalogUrl(url);
       setShareModalOpen(true);
     }
