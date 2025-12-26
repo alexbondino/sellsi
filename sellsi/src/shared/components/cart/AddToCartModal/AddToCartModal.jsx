@@ -135,7 +135,11 @@ const ProductSummary = React.memo(function ProductSummary({
 }) {
   // Calcular tiempo de despacho para la región del usuario
   const deliveryInfo = React.useMemo(() => {
-    if (!shippingRegions || shippingRegions.length === 0 || !effectiveUserRegion) {
+    if (
+      !shippingRegions ||
+      shippingRegions.length === 0 ||
+      !effectiveUserRegion
+    ) {
       return null;
     }
 
@@ -149,8 +153,11 @@ const ProductSummary = React.memo(function ProductSummary({
     }
 
     // Obtener días de entrega
-    const days = userRegionConfig.delivery_days ?? userRegionConfig.maxDeliveryDays ?? userRegionConfig.days;
-    
+    const days =
+      userRegionConfig.delivery_days ??
+      userRegionConfig.maxDeliveryDays ??
+      userRegionConfig.days;
+
     if (!days || days <= 0) {
       return null;
     }
@@ -194,7 +201,12 @@ const ProductSummary = React.memo(function ProductSummary({
         </Typography>
       </Box>
 
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ p: { xs: 1.3, sm: 2 } }}>
+      <Stack
+        direction="row"
+        spacing={2}
+        alignItems="center"
+        sx={{ p: { xs: 1.3, sm: 2 } }}
+      >
         <Box
           sx={{
             width: 50,
@@ -209,7 +221,7 @@ const ProductSummary = React.memo(function ProductSummary({
             sx={checkoutSummaryImageSx}
           />
         </Box>
-        
+
         {/* Información de disponibilidad a la derecha de la imagen, centrada verticalmente */}
         {deliveryInfo && (
           <Box
@@ -221,7 +233,9 @@ const ProductSummary = React.memo(function ProductSummary({
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.3 }}>
-              <ShippingIcon sx={{ fontSize: 16, color: 'success.main', mr: 0.5 }} />
+              <ShippingIcon
+                sx={{ fontSize: 16, color: 'success.main', mr: 0.5 }}
+              />
               <Typography
                 variant="caption"
                 sx={{
@@ -242,7 +256,7 @@ const ProductSummary = React.memo(function ProductSummary({
             </Typography>
           </Box>
         )}
-        
+
         <Box sx={{ flex: 1 }}>
           <Stack
             direction="row"
@@ -251,7 +265,9 @@ const ProductSummary = React.memo(function ProductSummary({
           >
             {/* Mostrar selector de cantidad solo si NO es modo oferta */}
             {!isOfferMode && (
-              <Box sx={{ ml: 'auto', pointerEvents: 'auto', position: 'relative' }}>
+              <Box
+                sx={{ ml: 'auto', pointerEvents: 'auto', position: 'relative' }}
+              >
                 <QuantitySelector
                   value={quantity}
                   onChange={onQuantityChange}
@@ -360,7 +376,7 @@ const AddToCartModal = ({
 }) => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.only('xs'));
-  
+
   // Validación de Billing (solo interesa si usuario selecciona factura)
   const {
     isComplete: isBillingComplete,
@@ -509,18 +525,18 @@ const AddToCartModal = ({
   // ============================================================================
   // SCROLL LOCK SIMPLIFICADO - Evita desmontajes al minimizar navegador
   // ============================================================================
-  
+
   useEffect(() => {
     // Diagnostic: log open changes to trace unexpected unmounts
-    try {
-      if (
-        (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production') ||
-        (import.meta.env?.DEV)
-      ) {
-        // eslint-disable-next-line no-console
-        console.debug('[AddToCartModal] useEffect(open) - open=', open);
-      }
-    } catch (e) {}
+    // try {
+    //   if (
+    //     (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production') ||
+    //     (import.meta.env?.DEV)
+    //   ) {
+    //     // eslint-disable-next-line no-console
+    //     console.debug('[AddToCartModal] useEffect(open) - open=', open);
+    //   }
+    // } catch (e) {}
 
     if (open) {
       // Aplicar scroll lock mínimo: solo overflow
@@ -530,7 +546,9 @@ const AddToCartModal = ({
       // Restaurar overflow cuando se cierra
       const savedScrollY = parseInt(document.body.dataset.scrollY || '0', 10);
       document.body.style.overflow = '';
-      try { window.scrollTo(0, savedScrollY); } catch (e) {}
+      try {
+        window.scrollTo(0, savedScrollY);
+      } catch (e) {}
       delete document.body.dataset.scrollY;
     }
   }, [open]);
@@ -755,191 +773,205 @@ const AddToCartModal = ({
       PaperProps={drawerPaperProps}
       ModalProps={{
         keepMounted: true, // ✅ CRÍTICO: Evita desmontaje completo del componente
-            BackdropProps: {
-              sx: {
-                zIndex: 9998, // Backdrop justo debajo del modal
-                backgroundColor: 'rgba(0, 0, 0, 0.5)', // Asegurar que sea visible
-              },
-            },
-          }}
-          sx={{
-            zIndex: 9999, // También en el Drawer principal
-          }}
-        >
-          <Box sx={layoutRootSx}>
-            {/* Header */}
-            <Box sx={drawerHeaderSx}>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: 700, color: 'common.white' }}
-                >
-                  {isOfferMode
-                    ? 'Confirmar Oferta Aceptada'
-                    : 'Resumen del Pedido'}
-                </Typography>
-                <IconButton
-                  onClick={handleClose}
-                  size="small"
-                  sx={{ color: 'common.white' }}
-                >
-                  <CloseIcon />
-                </IconButton>
-              </Stack>
-            </Box>
+        BackdropProps: {
+          sx: {
+            zIndex: 9998, // Backdrop justo debajo del modal
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', // Asegurar que sea visible
+          },
+        },
+      }}
+      sx={{
+        zIndex: 9999, // También en el Drawer principal
+      }}
+    >
+      <Box sx={layoutRootSx}>
+        {/* Header */}
+        <Box sx={drawerHeaderSx}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, color: 'common.white' }}
+            >
+              {isOfferMode ? 'Confirmar Oferta Aceptada' : 'Resumen del Pedido'}
+            </Typography>
+            <IconButton
+              onClick={handleClose}
+              size="small"
+              sx={{ color: 'common.white' }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Stack>
+        </Box>
 
-            {/* Content */}
-            <Box sx={{ flex: 1, p: 2, overflow: 'auto' }}>
-              <Stack spacing={2}>
-                {/* 1. Precios (ofertas o regulares) */}
-                {isOfferMode ? (
-                  <OfferPriceDisplay
-                    offer={offer}
-                    productData={productData}
-                    isOfferMode={isOfferMode}
-                  />
-                ) : (
-                  <PriceTiersDisplay
-                    productData={productData}
-                    priceTiers={displayPriceTiers}
-                    quantity={quantity}
-                  />
-                )}
-
-                {/* 2. Resumen del producto con selector de cantidad (memoizado) */}
-                <ProductSummary
-                  productData={productData}
-                  quantity={quantity}
-                  onQuantityChange={handleQuantityChange}
-                  quantityError={quantityError}
-                  minQuantity={quantityBounds.minQ}
-                  maxQuantity={quantityBounds.maxQ}
-                  isOfferMode={isOfferMode}
-                  offer={offer}
-                  shippingRegions={enrichedProduct?.shippingRegions || enrichedProduct?.delivery_regions || enrichedProduct?.shipping_regions || enrichedProduct?.product_delivery_regions || []}
-                  effectiveUserRegion={effectiveUserRegion}
-                />
-
-                {/* Mensaje de compra mínima del proveedor */}
-                {(enrichedProduct?.minimum_purchase_amount || product?.minimum_purchase_amount || 0) > 0 && (
-                  <Alert
-                    severity="info"
-                    sx={{
-                      fontSize: '0.75rem',
-                      '& .MuiAlert-icon': {
-                        fontSize: '1.1rem',
-                      },
-                    }}
-                  >
-                    Proveedor exige una compra mínima de:{' '}
-                    <strong>${(enrichedProduct?.minimum_purchase_amount || product?.minimum_purchase_amount || 0).toLocaleString('es-CL')}</strong> en el total de sus productos
-                  </Alert>
-                )}
-
-                {/* 3. Tipo de documento (solo XS, antes del aviso) */}
-                {isXs && (!isOfferMode || availableOptions?.length > 0) && (
-                  <DocumentTypeSelector
-                    loadingDocumentTypes={loadingDocumentTypes}
-                    documentTypesError={documentTypesError}
-                    availableOptions={availableOptions}
-                    documentType={documentType}
-                    onChange={handleDocumentTypeChange}
-                  />
-                )}
-
-                {/* 4. Aviso de edad para categorías restringidas */}
-                {isAgeRestrictedCategory && (
-                  <Alert
-                    severity="warning"
-                    icon={<WarningIcon />}
-                    sx={{ fontSize: { xs: '0.8rem', md: '0.95rem' } }}
-                  >
-                    Venta de alcohol y tabaco solo para mayores de 18 años.
-                  </Alert>
-                )}
-
-                {/* 5. Tipo de documento (solo SM+, después del aviso) */}
-                {!isXs && (!isOfferMode || availableOptions?.length > 0) && (
-                  <DocumentTypeSelector
-                    loadingDocumentTypes={loadingDocumentTypes}
-                    documentTypesError={documentTypesError}
-                    availableOptions={availableOptions}
-                    documentType={documentType}
-                    onChange={handleDocumentTypeChange}
-                  />
-                )}
-              </Stack>
-            </Box>
-
-            {/* Subtotal siempre al final */}
-            <Box sx={{ p: 2, pt: 0 }}>
-              <SubtotalSection
-                currentPricing={currentPricing}
-                shippingValidation={shippingValidation}
-                product={enrichedProduct}
+        {/* Content */}
+        <Box sx={{ flex: 1, p: 2, overflow: 'auto' }}>
+          <Stack spacing={2}>
+            {/* 1. Precios (ofertas o regulares) */}
+            {isOfferMode ? (
+              <OfferPriceDisplay
+                offer={offer}
+                productData={productData}
+                isOfferMode={isOfferMode}
+              />
+            ) : (
+              <PriceTiersDisplay
+                productData={productData}
+                priceTiers={displayPriceTiers}
                 quantity={quantity}
               />
-            </Box>
+            )}
 
-            {/* Footer con botón */}
-            <Box
-              sx={{
-                p: 2,
-                pt: 1,
-                borderTop: 1,
-                borderColor: 'divider',
-                bgcolor: 'background.paper',
-              }}
-            >
-              {/**
-               * Reglas de deshabilitación del botón:
-               * - Producto propio
-               * - Procesando
-               * - Validación explícita indica que NO se puede despachar
-               * - Cantidad inválida (solo para productos normales)
-               * - Región de usuario NO configurada (nuevo requisito)
-               *   Nota: Cuando la región no está configurada, shippingValidation permanece null
-               *   porque la validación on-demand se salta (early return). Antes esto dejaba el botón habilitado.
-               */}
-              <Button
-                fullWidth
-                variant="contained"
-                size="large"
-                onClick={handleAddToCart}
-                disabled={
-                  shouldDisableButton({
-                    isOwnProduct,
-                    isProcessing,
-                    shippingValidation,
-                    isOfferMode,
-                    quantityError,
-                    effectiveUserRegion,
-                    isLoadingUserProfile,
-                    isLoadingUserRegion,
-                    justOpened,
-                  }) ||
-                  (isOfferMode && isOfferInCart)
-                }
-                sx={{ py: 1.5 }}
+            {/* 2. Resumen del producto con selector de cantidad (memoizado) */}
+            <ProductSummary
+              productData={productData}
+              quantity={quantity}
+              onQuantityChange={handleQuantityChange}
+              quantityError={quantityError}
+              minQuantity={quantityBounds.minQ}
+              maxQuantity={quantityBounds.maxQ}
+              isOfferMode={isOfferMode}
+              offer={offer}
+              shippingRegions={
+                enrichedProduct?.shippingRegions ||
+                enrichedProduct?.delivery_regions ||
+                enrichedProduct?.shipping_regions ||
+                enrichedProduct?.product_delivery_regions ||
+                []
+              }
+              effectiveUserRegion={effectiveUserRegion}
+            />
+
+            {/* Mensaje de compra mínima del proveedor */}
+            {(enrichedProduct?.minimum_purchase_amount ||
+              product?.minimum_purchase_amount ||
+              0) > 0 && (
+              <Alert
+                severity="info"
+                sx={{
+                  fontSize: '0.75rem',
+                  '& .MuiAlert-icon': {
+                    fontSize: '1.1rem',
+                  },
+                }}
               >
-                {isProcessing
-                  ? isOfferMode
-                    ? 'Procesando oferta...'
-                    : 'Agregando...'
-                  : isLoadingBilling
-                  ? 'Cargando...'
-                  : isOfferMode
-                  ? 'Confirmar Oferta'
-                  : documentType === 'factura' && !isBillingComplete
-                  ? 'Completar Facturación'
-                  : 'Agregar al Carrito'}
-              </Button>
-            </Box>
-          </Box>
+                Proveedor exige una compra mínima de:{' '}
+                <strong>
+                  $
+                  {(
+                    enrichedProduct?.minimum_purchase_amount ||
+                    product?.minimum_purchase_amount ||
+                    0
+                  ).toLocaleString('es-CL')}
+                </strong>{' '}
+                en el total de sus productos
+              </Alert>
+            )}
+
+            {/* 3. Tipo de documento (solo XS, antes del aviso) */}
+            {isXs && (!isOfferMode || availableOptions?.length > 0) && (
+              <DocumentTypeSelector
+                loadingDocumentTypes={loadingDocumentTypes}
+                documentTypesError={documentTypesError}
+                availableOptions={availableOptions}
+                documentType={documentType}
+                onChange={handleDocumentTypeChange}
+              />
+            )}
+
+            {/* 4. Aviso de edad para categorías restringidas */}
+            {isAgeRestrictedCategory && (
+              <Alert
+                severity="warning"
+                icon={<WarningIcon />}
+                sx={{ fontSize: { xs: '0.8rem', md: '0.95rem' } }}
+              >
+                Venta de alcohol y tabaco solo para mayores de 18 años.
+              </Alert>
+            )}
+
+            {/* 5. Tipo de documento (solo SM+, después del aviso) */}
+            {!isXs && (!isOfferMode || availableOptions?.length > 0) && (
+              <DocumentTypeSelector
+                loadingDocumentTypes={loadingDocumentTypes}
+                documentTypesError={documentTypesError}
+                availableOptions={availableOptions}
+                documentType={documentType}
+                onChange={handleDocumentTypeChange}
+              />
+            )}
+          </Stack>
+        </Box>
+
+        {/* Subtotal siempre al final */}
+        <Box sx={{ p: 2, pt: 0 }}>
+          <SubtotalSection
+            currentPricing={currentPricing}
+            shippingValidation={shippingValidation}
+            product={enrichedProduct}
+            quantity={quantity}
+          />
+        </Box>
+
+        {/* Footer con botón */}
+        <Box
+          sx={{
+            p: 2,
+            pt: 1,
+            borderTop: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+          }}
+        >
+          {/**
+           * Reglas de deshabilitación del botón:
+           * - Producto propio
+           * - Procesando
+           * - Validación explícita indica que NO se puede despachar
+           * - Cantidad inválida (solo para productos normales)
+           * - Región de usuario NO configurada (nuevo requisito)
+           *   Nota: Cuando la región no está configurada, shippingValidation permanece null
+           *   porque la validación on-demand se salta (early return). Antes esto dejaba el botón habilitado.
+           */}
+          <Button
+            fullWidth
+            variant="contained"
+            size="large"
+            onClick={handleAddToCart}
+            disabled={
+              shouldDisableButton({
+                isOwnProduct,
+                isProcessing,
+                shippingValidation,
+                isOfferMode,
+                quantityError,
+                effectiveUserRegion,
+                isLoadingUserProfile,
+                isLoadingUserRegion,
+                justOpened,
+              }) ||
+              (isOfferMode && isOfferInCart)
+            }
+            sx={{ py: 1.5 }}
+          >
+            {isProcessing
+              ? isOfferMode
+                ? 'Procesando oferta...'
+                : 'Agregando...'
+              : isLoadingBilling
+              ? 'Cargando...'
+              : isOfferMode
+              ? 'Confirmar Oferta'
+              : documentType === 'factura' && !isBillingComplete
+              ? 'Completar Facturación'
+              : 'Agregar al Carrito'}
+          </Button>
+        </Box>
+      </Box>
     </Drawer>
   );
 };
