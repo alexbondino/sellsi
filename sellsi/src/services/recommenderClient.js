@@ -30,6 +30,7 @@ export async function getRecommendations(limit = 10, category = null) {
     }
 
     const data = await response.json();
+    console.log('[DEBUG] Respuesta completa getRecommendations:', data);
 
     // Log solo de nombres de productos
     if (data.products && Array.isArray(data.products)) {
@@ -78,6 +79,7 @@ export async function getSimilarProducts(productId, limit = 5) {
     }
 
     const data = await response.json();
+    console.log('[DEBUG] Respuesta completa getSimilarProducts:', data);
 
     if (data.similar_products && Array.isArray(data.similar_products)) {
       console.log(
@@ -127,6 +129,7 @@ export async function getTrendingProducts(limit = 10) {
     }
 
     const data = await response.json();
+    console.log('[DEBUG] Respuesta completa getTrendingProducts:', data);
 
     if (data.trending_products && Array.isArray(data.trending_products)) {
       console.log(`🔥 Productos trending: ${data.trending_products.length}`);
@@ -173,6 +176,10 @@ export async function getPersonalizedRecommendations(userId, limit = 10) {
     }
 
     const data = await response.json();
+    console.log(
+      '[DEBUG] Respuesta completa getPersonalizedRecommendations:',
+      data
+    );
 
     if (data.recommendations && Array.isArray(data.recommendations)) {
       console.log(
