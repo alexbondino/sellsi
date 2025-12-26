@@ -14,7 +14,7 @@ const RECOMMENDER_URL =
  */
 export async function getRecommendations(limit = 10, category = null) {
   try {
-    const response = await fetch(`${RECOMMENDER_URL}/api/v1/recommendations`, {
+    const response = await fetch(`${RECOMMENDER_URL}/api/recommendations`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ export async function getRecommendations(limit = 10, category = null) {
 export async function getSimilarProducts(productId, limit = 5) {
   try {
     const response = await fetch(
-      `${RECOMMENDER_URL}/api/v1/similar/${productId}?limit=${limit}`
+      `${RECOMMENDER_URL}/api/similar/${productId}?limit=${limit}`
     );
 
     if (!response.ok) {
@@ -87,7 +87,7 @@ export async function getSimilarProducts(productId, limit = 5) {
 export async function getTrendingProducts(limit = 10) {
   try {
     const response = await fetch(
-      `${RECOMMENDER_URL}/api/v1/trending?limit=${limit}`
+      `${RECOMMENDER_URL}/api/trending?limit=${limit}`
     );
 
     if (!response.ok) {
@@ -122,7 +122,7 @@ export async function getTrendingProducts(limit = 10) {
 export async function getPersonalizedRecommendations(userId, limit = 10) {
   try {
     const response = await fetch(
-      `${RECOMMENDER_URL}/api/v1/personalized/${userId}?limit=${limit}`
+      `${RECOMMENDER_URL}/api/personalized/${userId}?limit=${limit}`
     );
 
     if (!response.ok) {
@@ -154,7 +154,7 @@ export async function getPersonalizedRecommendations(userId, limit = 10) {
  */
 export async function checkHealth() {
   try {
-    const response = await fetch(`${RECOMMENDER_URL}/api/v1/health`);
+    const response = await fetch(`${RECOMMENDER_URL}/api/health`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
