@@ -195,6 +195,9 @@ export function useProducts() {
         priceTiers: p.priceTiers || [],
         minPrice: p.minPrice ?? p.precio ?? p.price ?? 0,
         maxPrice: p.maxPrice ?? p.precio ?? p.price ?? 0,
+        imagen: undefined,
+        thumbnail_url: undefined,
+        thumbnails: undefined,
       }));
       setProducts(filterActiveProducts(base));
       setLoading(false);
@@ -426,18 +429,10 @@ export function useProducts() {
           const mapped = (data || [])
             .filter(p => p.supplier_id && usersMap[p.supplier_id]) // Solo productos de proveedores verificados
             .map(p => {
-              const firstImg =
-                p.product_images && p.product_images.length > 0
-                  ? p.product_images[0]
-                  : null;
-              const imagenPrincipal =
-                firstImg?.image_url || '/placeholder-product.jpg';
-              const thumbnailUrl = firstImg?.thumbnail_url || null;
-              const thumbnails = firstImg?.thumbnails
-                ? typeof firstImg.thumbnails === 'string'
-                  ? safeParseJSON(firstImg.thumbnails)
-                  : firstImg.thumbnails
-                : null;
+              // No asignar imágenes si el producto viene del recomendador
+              const imagenPrincipal = undefined;
+              const thumbnailUrl = undefined;
+              const thumbnails = undefined;
               const basePrice = p.price || 0;
               // Extraer regiones de despacho como slugs canónicos
               const shippingRegions = Array.isArray(p.product_delivery_regions)
