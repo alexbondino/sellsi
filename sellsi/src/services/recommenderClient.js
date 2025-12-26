@@ -32,10 +32,17 @@ export async function getRecommendations(limit = 10, category = null) {
     const data = await response.json();
 
     // Log solo de nombres de productos
-    console.log('🎯 Productos randomizados por el modelo:');
-    data.products.forEach(product => {
-      console.log(`   ${product.name}`);
-    });
+    if (data.products && Array.isArray(data.products)) {
+      console.log('🎯 Productos randomizados por el modelo:');
+      data.products.forEach(product => {
+        console.log(`   ${product.name}`);
+      });
+    } else if (data.recommendations && Array.isArray(data.recommendations)) {
+      console.log('🎯 Productos recomendados:');
+      data.recommendations.forEach(product => {
+        console.log(`   ${product.name}`);
+      });
+    }
 
     return data;
   } catch (error) {
@@ -62,14 +69,17 @@ export async function getSimilarProducts(productId, limit = 5) {
 
     const data = await response.json();
 
-    console.log(`🔗 Productos similares a ${productId}:`);
-    data.similar_products.forEach((product, index) => {
-      console.log(
-        `  ${index + 1}. ${
-          product.name
-        } (Score: ${product.recommendation_score.toFixed(2)})`
-      );
-    });
+    if (data.similar_products && Array.isArray(data.similar_products)) {
+      console.log(`🔗 Productos similares a ${productId}:`);
+      data.similar_products.forEach((product, index) => {
+        console.log(`  ${index + 1}. ${product.name}`);
+      });
+    } else if (data.recommendations && Array.isArray(data.recommendations)) {
+      console.log(`🔗 Productos similares a ${productId}:`);
+      data.recommendations.forEach((product, index) => {
+        console.log(`  ${index + 1}. ${product.name}`);
+      });
+    }
 
     return data;
   } catch (error) {
@@ -96,14 +106,17 @@ export async function getTrendingProducts(limit = 10) {
 
     const data = await response.json();
 
-    console.log('🔥 Productos trending:');
-    data.trending_products.forEach((product, index) => {
-      console.log(
-        `  ${index + 1}. ${
-          product.name
-        } (Score: ${product.recommendation_score.toFixed(2)})`
-      );
-    });
+    if (data.trending_products && Array.isArray(data.trending_products)) {
+      console.log('🔥 Productos trending:');
+      data.trending_products.forEach((product, index) => {
+        console.log(`  ${index + 1}. ${product.name}`);
+      });
+    } else if (data.recommendations && Array.isArray(data.recommendations)) {
+      console.log('🔥 Productos trending:');
+      data.recommendations.forEach((product, index) => {
+        console.log(`  ${index + 1}. ${product.name}`);
+      });
+    }
 
     return data;
   } catch (error) {
@@ -131,14 +144,12 @@ export async function getPersonalizedRecommendations(userId, limit = 10) {
 
     const data = await response.json();
 
-    console.log(`👤 Recomendaciones personalizadas para usuario ${userId}:`);
-    data.recommendations.forEach((product, index) => {
-      console.log(
-        `  ${index + 1}. ${
-          product.name
-        } (Score: ${product.recommendation_score.toFixed(2)})`
-      );
-    });
+    if (data.recommendations && Array.isArray(data.recommendations)) {
+      console.log(`👤 Recomendaciones personalizadas para usuario ${userId}:`);
+      data.recommendations.forEach((product, index) => {
+        console.log(`  ${index + 1}. ${product.name}`);
+      });
+    }
 
     return data;
   } catch (error) {
