@@ -104,8 +104,8 @@ export const useBillingInfoValidation = () => {
     const cached = globalBillingInfoCache.get();
     if (cached && cached.validation) {
       return {
-        state: cached.validation.isComplete 
-          ? BILLING_INFO_STATES.COMPLETE 
+        state: cached.validation.isComplete
+          ? BILLING_INFO_STATES.COMPLETE
           : BILLING_INFO_STATES.INCOMPLETE,
         billingInfo: cached.data,
         missingFields: cached.validation.missing || [],
@@ -123,7 +123,7 @@ export const useBillingInfoValidation = () => {
   const [billingInfo, setBillingInfo] = useState(initial.billingInfo);
   const [missingFields, setMissingFields] = useState(initial.missingFields);
   const [error, setError] = useState(null);
-  
+
   // ✅ Timestamp de cuando el hook cargó datos por última vez
   const [lastLoadedAt, setLastLoadedAt] = useState(0);
 
@@ -133,7 +133,10 @@ export const useBillingInfoValidation = () => {
     const currentInstance = hookInstanceCount;
     try {
       // Evitar ruido en CI/tests: no mostrar estos warnings en NODE_ENV === 'test'
-      if (process?.env?.NODE_ENV !== 'production' && process?.env?.NODE_ENV !== 'test') {
+      if (
+        process?.env?.NODE_ENV !== 'production' &&
+        process?.env?.NODE_ENV !== 'test'
+      ) {
         // debug tracking enabled but no noisy logging
         return () => {
           hookInstanceCount--;
@@ -204,17 +207,22 @@ export const useBillingInfoValidation = () => {
   // ✅ CRITICAL FIX: Usar useRef para estabilizar load y evitar loop infinito
   // Problema: load en deps de useEffect causaba re-ejecuciones infinitas
   const loadRef = React.useRef();
-  
+
   const load = useCallback(
     async (force = false) => {
       // Diagnostic log (dev only)
       const callStack = new Error().stack?.split('\n')[2]?.trim() || 'unknown';
-      try {
-        if (process && process.env && process.env.NODE_ENV !== 'production') {
-          // eslint-disable-next-line no-console
-          console.debug('[useBillingInfoValidation] 🔵 load() called. force=', !!force, 'from:', callStack);
-        }
-      } catch (e) {}
+      // Debug logs commented out to reduce console noise
+      // try {
+      //   if (process && process.env && process.env.NODE_ENV !== 'production') {
+      //     console.debug(
+      //       '[useBillingInfoValidation] 🔵 load() called. force=',
+      //       !!force,
+      //       'from:',
+      //       callStack
+      //     );
+      //   }
+      // } catch (e) {}
       if (!force) {
         const cached = globalBillingInfoCache.get();
         if (cached) {
@@ -304,7 +312,9 @@ export const useBillingInfoValidation = () => {
         globalBillingInfoCache.set(cachePayload);
         setLastLoadedAt(Date.now()); // ✅ Marcar cuándo cargamos
         // ✅ Notificar al AuthReadyCoordinator que billing cache está listo
-        try { onCacheReady('billing-info'); } catch(e) {}
+        try {
+          onCacheReady('billing-info');
+        } catch (e) {}
         return cachePayload;
       } catch (err) {
         console.error('[useBillingInfoValidation] Error:', err);
@@ -326,21 +336,19 @@ export const useBillingInfoValidation = () => {
   // ✅ CRITICAL FIX: Solo ejecutar load() una vez al montar el hook
   // El useEffect anterior con [load] causaba loop infinito porque load se recrea
   useEffect(() => {
-    try {
-      if (process?.env?.NODE_ENV !== 'production') {
-        console.debug('[useBillingInfoValidation] 🟢 useEffect mount - calling loadRef.current()');
-      }
-    } catch (e) {}
     loadRef.current();
 
     // Escuchar invalidaciones globales para recargar automáticamente las instancias montadas
     // Esto permite que Profile invalidando cache cause que componentes montados (p. ej. modal) se actualicen.
     const handler = () => {
-      try {
-        if (process?.env?.NODE_ENV !== 'production') {
-          console.debug('[useBillingInfoValidation] 🔔 received billing-info-invalidated event - forcing reload');
-        }
-      } catch (e) {}
+      // Debug logs commented out
+      // try {
+      //   if (process?.env?.NODE_ENV !== 'production') {
+      //     console.debug(
+      //       '[useBillingInfoValidation] 🔔 received billing-info-invalidated event - forcing reload'
+      //     );
+      //   }
+      // } catch (e) {}
       try {
         if (loadRef && loadRef.current) loadRef.current(true);
       } catch (err) {}
@@ -364,17 +372,25 @@ export const useBillingInfoValidation = () => {
             const newUserId = session?.user?.id || null;
             const cachedUserId = globalBillingInfoCache.cachedUserId || null;
             if (newUserId !== cachedUserId) {
-              try {
-                if (process?.env?.NODE_ENV !== 'production') {
-                  console.debug('[useBillingInfoValidation] 🔔 auth state changed - forcing reload');
-                }
-              } catch (e) {}
+              // Debug logs commented out
+              // try {
+              //   if (process?.env?.NODE_ENV !== 'production') {
+              //     console.debug(
+              //       '[useBillingInfoValidation] 🔔 auth state changed - forcing reload'
+              //     );
+              //   }
+              // } catch (e) {}
               if (loadRef && loadRef.current) loadRef.current(true);
             }
           } catch (e) {}
         });
         // Compatibilidad con la forma que devuelve supabase: { data: { subscription } }
-        if (res && res.data && res.data.subscription && typeof res.data.subscription.unsubscribe === 'function') {
+        if (
+          res &&
+          res.data &&
+          res.data.subscription &&
+          typeof res.data.subscription.unsubscribe === 'function'
+        ) {
           authSubUnsubscribe = () => res.data.subscription.unsubscribe();
         } else if (typeof res === 'function') {
           // Algunas implementaciones devuelven la función de unsubscribe directamente
@@ -400,7 +416,7 @@ export const useBillingInfoValidation = () => {
   // Ver AddToCartModal.jsx línea 378: useEffect(() => { if (open) refreshIfStale(); }, [open])
 
   const refresh = useCallback(() => loadRef.current(true), []);
-  
+
   // ✅ MEJORA: Solo recarga si hubo invalidación desde la última carga
   // Evita llamadas innecesarias a DB cuando el modal se abre múltiples veces
   const refreshIfStale = useCallback(() => {
@@ -410,14 +426,14 @@ export const useBillingInfoValidation = () => {
     if (!cached) {
       return loadRef.current(true);
     }
-    
+
     if (globalBillingInfoCache.wasInvalidatedSince(lastLoadedAt)) {
       return loadRef.current(true);
     }
     // Si no hubo invalidación, los datos actuales son válidos
     return Promise.resolve(null);
   }, [lastLoadedAt]); // Solo depende de lastLoadedAt (estable)
-  
+
   const invalidateCache = useCallback(
     () => globalBillingInfoCache.invalidate(),
     []
