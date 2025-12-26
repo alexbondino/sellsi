@@ -44,6 +44,7 @@ const TestConsumer = () => {
       <div data-testid="role">{String(currentAppRole)}</div>
       <div data-testid="loading">{String(loadingUserStatus)}</div>
       <div data-testid="profile">{userProfile ? userProfile.user_nm : 'null'}</div>
+      <div data-testid="phone">{userProfile ? (userProfile.phone_nbr || 'null') : 'null'}</div>
       <div data-testid="onboarding">{String(needsOnboarding)}</div>
     </div>
   );
@@ -76,7 +77,8 @@ describe('UnifiedAuthProvider basic flows', () => {
   test('derives role from profile and exposes initialization state', async () => {
     // Arrange: session present and profile available
     supabase.auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'user-1' } } } });
-    getUserProfile.mockResolvedValue({ data: { user_id: 'user-1', user_nm: 'ACME', main_supplier: true, logo_url: '' }, error: null });
+    // Include phone_nbr to verify provider exposes it
+    getUserProfile.mockResolvedValue({ data: { user_id: 'user-1', user_nm: 'ACME', main_supplier: true, logo_url: '', phone_nbr: '+56912345678' }, error: null });
 
     // Act
     render(
@@ -91,6 +93,8 @@ describe('UnifiedAuthProvider basic flows', () => {
     await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
     expect(screen.getByTestId('profile')).toHaveTextContent('ACME');
     expect(screen.getByTestId('role')).toHaveTextContent('supplier');
+    // Nuevo: verificar que phone_nbr se expone en el contexto
+    expect(screen.getByTestId('phone')).toHaveTextContent('+56912345678');
   });
 
   test('profile fetch error triggers onboarding flag (needsOnboarding)', async () => {
@@ -161,5 +165,58 @@ describe('UnifiedAuthProvider basic flows', () => {
     expect(screen.getByTestId('profile')).toHaveTextContent('AUTO');
     expect(screen.getByTestId('onboarding')).toHaveTextContent('true');
     expect(invalidateUserProfileCache).toHaveBeenCalledWith('user-2');
+  });
+
+  test('onboarding flow (invalidate + refresh) updates phone without F5', async () => {
+    // Arrange: session present and service returns a stale profile (no phone) unless forced
+    supabase.auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'user-3', email: 'u3@example.com' } } } });
+
+    getUserProfile.mockImplementation((userId, options = {}) => {
+      if (options && options.force) {
+        return Promise.resolve({ data: { user_id: 'user-3', user_nm: 'ACME', main_supplier: true, logo_url: '', phone_nbr: '+569999000' }, error: null });
+      }
+      // Stale response without phone
+      return Promise.resolve({ data: { user_id: 'user-3', user_nm: 'ACME', main_supplier: true, logo_url: '', phone_nbr: null }, error: null });
+    });
+
+    // Small consumer with an action to simulate onboarding completion
+    const OnboardTrigger = () => {
+      const { refreshUserProfile } = useAuth();
+      return (
+        <button
+          data-testid="onboard"
+          onClick={async () => {
+            // Simulate the onboarding's invalidate + refresh sequence
+            invalidateUserProfileCache('user-3');
+            await refreshUserProfile();
+          }}
+        >Trigger</button>
+      );
+    };
+
+    // Act: render provider with consumer and trigger
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <UnifiedAuthProvider>
+          <TestConsumer />
+          <OnboardTrigger />
+        </UnifiedAuthProvider>
+      </MemoryRouter>
+    );
+
+    // Initial state: phone is null (stale)
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
+    expect(screen.getByTestId('phone')).toHaveTextContent('null');
+
+    // Act: trigger onboarding completion
+    screen.getByTestId('onboard').click();
+
+    // Assert: invalidate was called, and phone gets updated to the new number
+    await waitFor(() => expect(invalidateUserProfileCache).toHaveBeenCalledWith('user-3'));
+    await waitFor(() => expect(screen.getByTestId('phone')).toHaveTextContent('+569999000'));
+
+    // Also assert getUserProfile was called with force to ensure freshness
+    const forcedCall = getUserProfile.mock.calls.find(c => c[0] === 'user-3' && c[1] && c[1].force === true);
+    expect(forcedCall).toBeDefined();
   });
 });

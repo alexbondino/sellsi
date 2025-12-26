@@ -38,7 +38,7 @@ async function hmacSha256(secret: string, data: string): Promise<Uint8Array> {
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-trust-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-trust-token, admin-email',
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 }
 

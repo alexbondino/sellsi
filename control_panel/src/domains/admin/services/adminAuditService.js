@@ -40,21 +40,15 @@ export const logAction = async (adminId, action, targetId = null, details = {}, 
       console.warn(`Acción no estándar registrada: ${action}`)
     }
 
-    // Preparar datos del log
-    const logData = {
-      admin_id: adminId,
-      action,
-      target_id: targetId,
-      details: details || {},
-      ip_address: ipAddress,
-      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-      timestamp: new Date().toISOString()
-    }
-
-    // Insertar en la tabla de auditoría
-    const { error } = await supabase
-      .from('admin_audit_log')
-      .insert([logData])
+    // Usar RPC con SECURITY DEFINER para bypasear RLS
+    const { error } = await supabase.rpc('log_admin_audit', {
+      p_admin_id: adminId,
+      p_action: action,
+      p_target_id: targetId,
+      p_details: details || {},
+      p_ip_address: ipAddress,
+      p_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+    })
 
     if (error) {
       console.error('Error registrando acción en auditoría:', error)
@@ -110,22 +104,22 @@ export const logMultipleActions = async (actions) => {
       const batch = actions.slice(i, i + batchSize)
       
       try {
-        const logData = batch.map(action => ({
-          admin_id: action.adminId,
-          action: action.action,
-          target_id: action.targetId || null,
-          details: action.details || {},
-          ip_address: action.ipAddress || null,
-          user_agent: action.userAgent || null,
-          timestamp: new Date().toISOString()
+        // Insertar usando RPC con SECURITY DEFINER
+        const rpcCalls = batch.map(action => supabase.rpc('log_admin_audit', {
+          p_admin_id: action.adminId,
+          p_action: action.action,
+          p_target_id: action.targetId || null,
+          p_details: action.details || {},
+          p_ip_address: action.ipAddress || null,
+          p_user_agent: action.userAgent || null
         }))
 
-        const { error } = await supabase
-          .from('admin_audit_log')
-          .insert(logData)
-
-        if (error) {
-          errors.push(`Error en lote ${Math.floor(i/batchSize) + 1}: ${error.message}`)
+        const results = await Promise.allSettled(rpcCalls)
+        const failed = results.filter(r => r.status === 'rejected')
+        
+        if (failed.length > 0) {
+          errors.push(`Error en lote ${Math.floor(i/batchSize) + 1}: ${failed.length} fallos`)
+          loggedCount += batch.length - failed.length
         } else {
           loggedCount += batch.length
         }

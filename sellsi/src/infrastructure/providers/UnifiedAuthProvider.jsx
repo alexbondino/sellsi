@@ -261,6 +261,8 @@ export const UnifiedAuthProvider = ({ children }) => {
             user_nm: fullProfile.user_nm,
             main_supplier: fullProfile.main_supplier,
             logo_url: fullProfile.logo_url,
+            phone_nbr: fullProfile.phone_nbr,
+            country: fullProfile.country,
             email: fullProfile.email,
             verified: fullProfile.verified || false,
             verified_at: fullProfile.verified_at || null,
@@ -481,12 +483,23 @@ export const UnifiedAuthProvider = ({ children }) => {
   const refreshUserProfile = async () => {
     if (!session?.user?.id) return;
     try {
-      const { data: userData, error } = await supabase
-        .from('users')
-        .select('user_id, user_nm, main_supplier, logo_url')
-        .eq('user_id', session.user.id)
-        .single();
-      if (!error && userData) {
+      // ✅ Usar getUserProfile() para obtener datos completos (incluye phone_nbr, country, email, etc.)
+      const { data: fullProfile, error } = await getUserProfile(session.user.id, { force: true });
+      
+      if (!error && fullProfile) {
+        // Mapear a la estructura esperada por el contexto
+        const userData = {
+          user_id: fullProfile.user_id,
+          user_nm: fullProfile.user_nm,
+          main_supplier: fullProfile.main_supplier,
+          logo_url: fullProfile.logo_url,
+          phone_nbr: fullProfile.phone_nbr,
+          country: fullProfile.country,
+          email: fullProfile.email,
+          verified: fullProfile.verified || false,
+          verified_at: fullProfile.verified_at || null,
+        };
+        
         setUserProfile(userData);
         setLastMainSupplier(userData.main_supplier);
         setNeedsOnboarding(
@@ -494,7 +507,9 @@ export const UnifiedAuthProvider = ({ children }) => {
             userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING
         );
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('❌ Error refreshing user profile:', e);
+    }
   };
 
   // Derived role (manualOverride > profile > null)
