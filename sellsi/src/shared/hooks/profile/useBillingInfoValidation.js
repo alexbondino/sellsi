@@ -134,10 +134,9 @@ export const useBillingInfoValidation = () => {
     try {
       // Evitar ruido en CI/tests: no mostrar estos warnings en NODE_ENV === 'test'
       if (process?.env?.NODE_ENV !== 'production' && process?.env?.NODE_ENV !== 'test') {
-        console.warn(`[useBillingInfoValidation] 🔴 HOOK MOUNTED #${currentInstance} | Total activos: ${hookInstanceCount}`);
+        // debug tracking enabled but no noisy logging
         return () => {
           hookInstanceCount--;
-          console.warn(`[useBillingInfoValidation] 🔴 HOOK UNMOUNTED #${currentInstance} | Total activos: ${hookInstanceCount}`);
         };
       }
     } catch (e) {}

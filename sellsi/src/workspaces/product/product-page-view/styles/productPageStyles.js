@@ -493,10 +493,10 @@ export const getResponsiveStyle = (mobile, tablet, desktop) => ({
 
 /**
  * Normaliza nombre de proveedor para slug de URL
+ * Simple normalization: lowercase + alphanumeric only (matches SQL)
  */
 export const normalizeProviderSlug = providerName => {
   return providerName
     ?.toLowerCase()
-    ?.replace(/\s+/g, '-')
-    ?.replace(/[^\w-]/g, '');
+    ?.replace(/[^a-z0-9]/g, '');
 };

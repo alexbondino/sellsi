@@ -85,11 +85,11 @@ const CartItem = ({
   const navigate = useNavigate();
 
   // Normaliza nombre de proveedor para slug de URL
+  // Simple normalization: lowercase + alphanumeric only (matches SQL)
   const normalizeProviderSlug = (providerName) => {
     return providerName
       ?.toLowerCase()
-      ?.replace(/\s+/g, '-')
-      ?.replace(/[^\w-]/g, '');
+      ?.replace(/[^a-z0-9]/g, '');
   };
 
   // Handler para click en nombre del proveedor

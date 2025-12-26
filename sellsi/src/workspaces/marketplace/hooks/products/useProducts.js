@@ -340,6 +340,7 @@ export function useProducts() {
                   supplierIds.map((id) => String(id))
                 )
                 .eq('verified', true) // ✅ SOLO PROVEEDORES VERIFICADOS
+                .eq('main_supplier', true) // ✅ SOLO USUARIOS CON ROL PROVEEDOR
               if (!usersError && usersData) {
                 usersMap = Object.fromEntries(
                   usersData.map((u) => [

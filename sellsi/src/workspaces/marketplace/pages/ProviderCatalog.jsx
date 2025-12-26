@@ -83,6 +83,12 @@ const ProviderCatalog = () => {
   const isFromBuyer = fromPath.includes('/buyer/');
   const isFromSupplier = fromPath.includes('/supplier/');
 
+  // Helper: Verificar si es un UUID válido
+  const isValidUUID = (str) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  };
+
   // Obtener información del proveedor y sus productos
   useEffect(() => {
     const fetchProviderAndProducts = async () => {
@@ -91,42 +97,53 @@ const ProviderCatalog = () => {
         setError(null);
 
         // 1. Obtener información del proveedor
-        // Intentar match exacto primero (id completo)
         let providerData = null;
-        try {
-          const { data: providerExact, error: providerExactError } = await supabase
-            .from('users')
-            .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
-            .eq('user_id', userId)
-            .single();
 
-          if (!providerExactError && providerExact) {
-            providerData = providerExact;
+        // Solo intentar exact match si userId es un UUID válido completo
+        if (isValidUUID(userId)) {
+          try {
+            const { data: providerExact, error: providerExactError } = await supabase
+              .from('users')
+              .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
+              .eq('user_id', userId)
+              .single();
+
+            if (!providerExactError && providerExact) {
+              providerData = providerExact;
+            }
+          } catch (e) {
+            console.debug('[ProviderCatalog] exact id lookup error', e);
           }
-        } catch (e) {
-          console.debug('[ProviderCatalog] exact id lookup error', e);
         }
 
-        // Si no encontramos por ID exacto intentar varias estrategias de fallback
+        // Si no encontramos por ID exacto, usar función RPC para búsqueda por prefijo
+        // IMPORTANTE: Pasar userNm para validar que coincida (evita colisiones)
         if (!providerData) {
-          // 1) Si userId es corto (p. ej. 4 chars), buscar prefix en user_id
-          if (userId && userId.length <= 4) {
-            try {
-              const { data: matches, error: matchError } = await supabase
-                .from('users')
-                .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
-                .like('user_id', `${userId}%`)
-                .limit(1);
+          try {
+            console.log('[DEBUG] Llamando RPC con:', { userId, userNm });
+            const { data: rpcResult, error: rpcError } = await supabase
+              .rpc('find_supplier_by_short_id', { 
+                short_id: userId,
+                expected_name_slug: userNm || null  // Validar nombre para evitar colisiones
+              });
 
-              if (!matchError && matches && matches.length > 0) {
-                providerData = matches[0];
-              }
-            } catch (e) {
-              console.debug('[ProviderCatalog] prefix lookup error', e);
+            console.log('[DEBUG] RPC response:', { rpcResult, rpcError });
+
+            if (rpcError) {
+              console.error('[ProviderCatalog] RPC error:', rpcError);
             }
+
+            if (!rpcError && rpcResult && rpcResult.length > 0) {
+              providerData = rpcResult[0];
+              console.log('[DEBUG] Provider encontrado via RPC:', providerData);
+            } else {
+              console.warn('[DEBUG] RPC no retornó resultados');
+            }
+          } catch (e) {
+            console.error('[ProviderCatalog] RPC lookup exception', e);
           }
 
-          // 2) Si aún no encontramos, intentar buscar por slug del userNm (reconstruir espacios)
+          // Fallback: Si aún no encontramos, intentar buscar por slug del userNm
           if (!providerData && userNm) {
             const normalizedName = userNm.replace(/-/g, ' ').trim();
             try {
@@ -141,29 +158,6 @@ const ProviderCatalog = () => {
               }
             } catch (e) {
               console.debug('[ProviderCatalog] name lookup error', e);
-            }
-          }
-
-          // 3) Como último recurso, intentar buscar en products por supplier_id prefix y deducir proveedor
-          if (!providerData && userId) {
-            try {
-              const { data: prodMatches, error: prodError } = await supabase
-                .from('products')
-                .select('supplier_id')
-                .like('supplier_id', `${userId}%`)
-                .limit(1);
-
-              if (!prodError && prodMatches && prodMatches.length > 0) {
-                const inferredSupplierId = prodMatches[0].supplier_id;
-                const { data: inferredUser, error: inferredError } = await supabase
-                  .from('users')
-                  .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
-                  .eq('user_id', inferredSupplierId)
-                  .single();
-                if (!inferredError && inferredUser) providerData = inferredUser;
-              }
-            } catch (e) {
-              console.debug('[ProviderCatalog] product-based lookup error', e);
             }
           }
 

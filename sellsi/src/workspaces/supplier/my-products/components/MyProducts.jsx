@@ -256,12 +256,10 @@ const MyProducts = () => {
   // Manejar apertura del modal de compartir catálogo
   const handleOpenShareModal = () => {
     if (userProfile && supplierId) {
-      // Crear slug del nombre del usuario
-      const userNmSlug = (userProfile.user_nm || `proveedor-${supplierId}`)
+      // Simple normalization: lowercase + alphanumeric only (matches SQL)
+      const userNmSlug = (userProfile.user_nm || `proveedor${supplierId}`)
         .toLowerCase()
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
+        .replace(/[^a-z0-9]/g, '');
 
       // Construir URL completa del catálogo (usar id corto)
       const baseUrl = window.location.origin;
