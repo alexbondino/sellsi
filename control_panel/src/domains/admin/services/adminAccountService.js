@@ -88,22 +88,20 @@ export const createAdminAccount = async (adminData, createdById = null) => {
       return { success: false, error: 'Error al crear la cuenta' };
     }
 
-    // Registrar la acción en el log de auditoría
+    // Registrar la acción en el log de auditoría usando RPC
     if (createdById) {
-      await supabase
-        .from('admin_audit_log')
-        .insert([
-          {
-            admin_id: createdById,
-            action: 'create_admin',
-            target_id: newAdmin.id,
-            details: {
-              email,
-              full_name: fullName,
-              role
-            }
-          }
-        ]);
+      await supabase.rpc('log_admin_audit', {
+        p_admin_id: createdById,
+        p_action: 'create_admin',
+        p_target_id: newAdmin.id,
+        p_details: {
+          email,
+          full_name: fullName,
+          role
+        },
+        p_ip_address: null,
+        p_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+      });
     }
 
     // Retornar el admin creado sin la contraseña
@@ -176,20 +174,18 @@ export const updateAdminStatus = async (adminId, isActive, updatedById) => {
       return { success: false, error: 'Error al actualizar el estado' };
     }
 
-    // Registrar la acción en el log de auditoría
-    await supabase
-      .from('admin_audit_log')
-      .insert([
-        {
-          admin_id: updatedById,
-          action: isActive ? 'activate_admin' : 'deactivate_admin',
-          target_id: adminId,
-          details: {
-            previous_status: !isActive,
-            new_status: isActive
-          }
-        }
-      ]);
+    // Registrar la acción en el log de auditoría usando RPC
+    await supabase.rpc('log_admin_audit', {
+      p_admin_id: updatedById,
+      p_action: isActive ? 'activate_admin' : 'deactivate_admin',
+      p_target_id: adminId,
+      p_details: {
+        previous_status: !isActive,
+        new_status: isActive
+      },
+      p_ip_address: null,
+      p_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+    });
 
     return { success: true };
   } catch (error) {
@@ -229,20 +225,18 @@ export const deleteAdminAccount = async (adminId, deletedById) => {
       return { success: false, error: 'Error al eliminar la cuenta' };
     }
 
-    // Registrar la acción en el log de auditoría
-    await supabase
-      .from('admin_audit_log')
-      .insert([
-        {
-          admin_id: deletedById,
-          action: 'delete_admin',
-          target_id: adminId,
-          details: {
-            deleted_email: adminToDelete?.email,
-            deleted_name: adminToDelete?.full_name
-          }
-        }
-      ]);
+    // Registrar la acción en el log de auditoría usando RPC
+    await supabase.rpc('log_admin_audit', {
+      p_admin_id: deletedById,
+      p_action: 'delete_admin',
+      p_target_id: adminId,
+      p_details: {
+        deleted_email: adminToDelete?.email,
+        deleted_name: adminToDelete?.full_name
+      },
+      p_ip_address: null,
+      p_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+    });
 
     return { success: true };
   } catch (error) {
