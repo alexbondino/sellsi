@@ -6,7 +6,11 @@ const __offerLimitsState = {
   // key: buyer|supplier|month -> count (aggregado proveedor)
   supplierCounts: new Map(),
   // registrar orden cronológico de inserts para testear race (debug)
-  log: []
+  log: [],
+  // pendingOffers: set of buyer|product|month que están en estado 'pending'
+  pendingOffers: new Set(),
+  // límites configurables (por defecto iguales a los usados originalmente)
+  limits: { product: 3, supplier: 5 }
 };
 
 export const mockSupabase = {
@@ -22,8 +26,8 @@ export const mockSupabase = {
         const suppKey = `${p_buyer_id}|${p_supplier_id}|${month}`;
         const product_count = __offerLimitsState.productCounts.get(prodKey) || 0;
         const supplier_count = __offerLimitsState.supplierCounts.get(suppKey) || 0;
-        const product_limit = 3;
-        const supplier_limit = 5;
+        const product_limit = __offerLimitsState.limits?.product || 3;
+        const supplier_limit = __offerLimitsState.limits?.supplier || 5;
         const allowed = product_count < product_limit && supplier_count < supplier_limit;
         return Promise.resolve({ data: {
           allowed,
@@ -35,16 +39,38 @@ export const mockSupabase = {
         }, error: null });
       }
       case 'create_offer': {
-        // Simular nueva lógica: incrementa conteos producto y proveedor (NULL) sin duplicar
+        // Simular nueva lógica: respeta la restricción pending por (buyer,product,month)
         const { p_buyer_id, p_supplier_id, p_product_id } = args || {};
         const month = new Date().toISOString().slice(0,7); // YYYY-MM
-        const prodKey = `${p_buyer_id}|${p_product_id}|${month}`;
+        const key = `${p_buyer_id}|${p_product_id}|${month}`;
+
+        // Si ya hay una oferta pending para buyer+product, devolver duplicate_pending (no incrementar contadores)
+        if (__offerLimitsState.pendingOffers.has(key)) {
+          return Promise.resolve({ data: { success: false, error_type: 'duplicate_pending', error: 'Ya existe una oferta pendiente para este producto' }, error: null });
+        }
+
+        const prodKey = key;
         const suppKey = `${p_buyer_id}|${p_supplier_id}|${month}`;
         const currentProd = __offerLimitsState.productCounts.get(prodKey) || 0;
         const currentSupp = __offerLimitsState.supplierCounts.get(suppKey) || 0;
+        // Read configured limits
+        const product_limit = __offerLimitsState.limits?.product || 3;
+        const supplier_limit = __offerLimitsState.limits?.supplier || 5;
+
+        // Si se alcanzó límite, devolver error sin incrementar
+        if (currentProd >= product_limit) {
+          return Promise.resolve({ data: { success: false, error_type: 'limit_exceeded', error: 'Se alcanzó el límite mensual para este producto' }, error: null });
+        }
+        if (currentSupp >= supplier_limit) {
+          return Promise.resolve({ data: { success: false, error_type: 'limit_exceeded', error: 'Se alcanzó el límite mensual con este proveedor' }, error: null });
+        }
+
+        // No excede: incrementar y marcar pending
         __offerLimitsState.productCounts.set(prodKey, currentProd + 1);
         __offerLimitsState.supplierCounts.set(suppKey, currentSupp + 1);
         __offerLimitsState.log.push({ t: Date.now(), prodKey, suppKey });
+        // Marcar pending para prevenir duplicados
+        __offerLimitsState.pendingOffers.add(key);
         return Promise.resolve({ data: { success: true, offer_id: `offer_${currentProd+1}`, expires_at: new Date(Date.now()+48*3600*1000).toISOString() }, error: null });
       }
       case 'get_buyer_offers':

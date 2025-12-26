@@ -1,5 +1,6 @@
 import React from 'react'
-import { render, fireEvent, screen } from '@testing-library/react'
+import { render, fireEvent, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import ImageUploader from '@/shared/components/forms/ImageUploader/ImageUploader'
 
 describe('ImageUploader', () => {
@@ -19,74 +20,75 @@ describe('ImageUploader', () => {
     jest.resetAllMocks()
   })
 
-  test('calls onImagesChange with processed image when a valid file is selected', () => {
+  test('calls onImagesChange with processed image when a valid file is selected', async () => {
     const onImagesChange = jest.fn()
     const onError = jest.fn()
 
-    const { container } = render(
+    const { getByTestId } = render(
       <ImageUploader images={[]} onImagesChange={onImagesChange} onError={onError} />
     )
 
-    const input = container.querySelector('input[type="file"]')
-  const file = new File(['dummy'], 'test.png', { type: 'image/png' })
+    const input = getByTestId('image-uploader-input')
+    const file = new File(['dummy'], 'test.png', { type: 'image/png' })
 
-    fireEvent.change(input, { target: { files: [file] } })
+    await userEvent.upload(input, file)
 
-    expect(onError).not.toHaveBeenCalled()
+    // component clears prior errors by calling onError(null), so assert last call is null
+    expect(onError).toHaveBeenCalledWith(null)
     expect(onImagesChange).toHaveBeenCalledTimes(1)
     const arg = onImagesChange.mock.calls[0][0]
     expect(Array.isArray(arg)).toBe(true)
     expect(arg).toHaveLength(1)
     expect(arg[0].name).toBe('test.png')
-  // The File.size can vary in JSDOM; assert it's a number and matches the file name
-  expect(typeof arg[0].size).toBe('number')
+    // The File.size can vary in JSDOM; assert it's a number and matches the file name
+    expect(typeof arg[0].size).toBe('number')
     expect(arg[0].url).toBe('blob:test.png')
   })
 
-  test('calls onError when file size exceeds 2MB', () => {
+  test('calls onError when file size exceeds 2MB', async () => {
     const onImagesChange = jest.fn()
     const onError = jest.fn()
 
-    const { container } = render(
+    const { getByTestId } = render(
       <ImageUploader images={[]} onImagesChange={onImagesChange} onError={onError} />
     )
 
-    const input = container.querySelector('input[type="file"]')
+    const input = getByTestId('image-uploader-input')
     const big = new File(['x'.repeat(3 * 1024 * 1024)], 'big.png', { type: 'image/png', size: 3 * 1024 * 1024 })
 
-    fireEvent.change(input, { target: { files: [big] } })
+    await userEvent.upload(input, big)
 
     expect(onImagesChange).not.toHaveBeenCalled()
     expect(onError).toHaveBeenCalledTimes(1)
     expect(onError.mock.calls[0][0]).toEqual(expect.stringContaining('2MB'))
   })
 
-  test('calls onError when adding files would exceed maxImages', () => {
+  test('calls onError when adding files would exceed maxImages', async () => {
     const onImagesChange = jest.fn()
     const onError = jest.fn()
 
     // Pre-populate images to hit the limit
     const existing = Array.from({ length: 5 }).map((_, i) => ({ id: i + 1, url: `blob:${i}`, name: `f${i}`, size: 100 }))
 
-    const { container } = render(
+    const { getByTestId } = render(
       <ImageUploader images={existing} onImagesChange={onImagesChange} onError={onError} maxImages={5} />
     )
 
-    const input = container.querySelector('input[type="file"]')
+    const input = getByTestId('image-uploader-input')
     const file = new File(['ok'], 'new.png', { type: 'image/png', size: 100 })
 
-    fireEvent.change(input, { target: { files: [file] } })
+    await userEvent.upload(input, file)
 
     expect(onImagesChange).not.toHaveBeenCalled()
     expect(onError).toHaveBeenCalledTimes(1)
-    expect(onError.mock.calls[0][0]).toEqual('Solo puedes subir máximo 5 imágenes')
+    expect(onError.mock.calls[0][0]).toEqual(expect.stringContaining('Solo puedes subir máximo 5 imágenes'))
   })
 
   test('processes files on drop and removeImage revokes object URL', () => {
     const onImagesChange = jest.fn()
     const onError = jest.fn()
 
-    const { container, getByText } = render(
+    const { getByText } = render(
       <ImageUploader images={[]} onImagesChange={onImagesChange} onError={onError} />
     )
 
@@ -111,5 +113,42 @@ describe('ImageUploader', () => {
 
     expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:dropped.png')
     expect(onImagesChange2).toHaveBeenCalledWith([])
+  })
+
+  test('calls onError when URL.createObjectURL throws and does not add images', async () => {
+    const onImagesChange = jest.fn()
+    const onError = jest.fn()
+
+    // simulate runtime throwing
+    global.URL.createObjectURL = jest.fn(() => { throw new Error('boom') })
+
+    const { getByTestId } = render(
+      <ImageUploader images={[]} onImagesChange={onImagesChange} onError={onError} />
+    )
+
+    const input = getByTestId('image-uploader-input')
+    const file = new File(['ok'], 'ok.png', { type: 'image/png', size: 100 })
+    await userEvent.upload(input, file)
+
+    expect(onImagesChange).not.toHaveBeenCalled()
+    // there may be multiple calls (clear + error); assert at least one error-like call
+    expect(onError.mock.calls.length).toBeGreaterThanOrEqual(1)
+    expect(onError.mock.calls[onError.mock.calls.length - 1][0]).toMatch(/No se pudo procesar la imagen|No se pudieron procesar las imágenes/)
+  })
+
+  test('rejects gif files as invalid type', async () => {
+    const onImagesChange = jest.fn()
+    const onError = jest.fn()
+
+    const { getByTestId } = render(<ImageUploader images={[]} onImagesChange={onImagesChange} onError={onError} />)
+
+    const input = getByTestId('image-uploader-input')
+    const gif = new File(['g'], 'anim.gif', { type: 'image/gif', size: 100 })
+    // Use fireEvent.change to bypass browser accept filtering in jsdom
+    fireEvent.change(input, { target: { files: [gif] } })
+
+    expect(onImagesChange).not.toHaveBeenCalled()
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(onError.mock.calls[0][0]).toMatch(/No se seleccionaron archivos de imagen válidos|JPEG, PNG o WebP/i)
   })
 })

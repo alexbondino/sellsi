@@ -105,9 +105,9 @@ serve((req) => withMetrics('update-lastip', req, async () => {
       .from('banned_ips')
       .select('ip, banned_reason')
       .eq('ip', clientIp)
-      .single();
+      .maybeSingle();
 
-    if (banError && banError.code !== 'PGRST116') {
+    if (banError) {
       logError('Error verificando IP baneada:', banError);
     }
 

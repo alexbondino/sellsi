@@ -32,4 +32,19 @@ describe('validateTaxPdf', () => {
     const res = validateTaxPdf(fakeFile({ size: MAX_PDF_BYTES }));
     expect(res).toEqual({ ok: true });
   });
+
+  it('acepta MIME con parámetros y case-insensitive', () => {
+    const res = validateTaxPdf(fakeFile({ type: 'Application/PDF;version=1.7', size: MAX_PDF_BYTES }));
+    expect(res.ok).toBe(true);
+  });
+
+  it('rechaza cuando size no es número (missing or NaN)', () => {
+    const r1 = validateTaxPdf(fakeFile({ size: undefined }));
+    expect(r1.ok).toBe(false);
+    expect(r1.error).toMatch(/Tamaño/);
+
+    const r2 = validateTaxPdf(fakeFile({ size: NaN }));
+    expect(r2.ok).toBe(false);
+    expect(r2.error).toMatch(/Tamaño/);
+  });
 });

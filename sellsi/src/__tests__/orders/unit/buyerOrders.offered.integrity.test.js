@@ -18,20 +18,30 @@ jest.mock('../../../services/user', () => ({
   }
 }));
 
-let mockInvoicesSelectCall = 0; // name prefixed with mock* so jest.mock factory can reference it
+let mockInvoicesResponses = [
+  [],
+  [{ order_id: 'po-int-1', supplier_id: 'sup-1', path: 'invoices/sup-1/inv.pdf', created_at: '2025-09-02T12:05:00Z' }]
+];
+let mockInvoicesSelectCall = 0;
+let mockInvoicesCallback = null; 
+
 jest.mock('../../../services/supabase', () => ({
   supabase: {
     from: () => ({
       select: () => ({
         in: () => {
           mockInvoicesSelectCall += 1;
-          // Primera carga: sin invoice. Segunda: invoice disponible.
-          if (mockInvoicesSelectCall === 1) return Promise.resolve({ data: [], error: null });
-          return Promise.resolve({ data: [{ order_id: 'po-int-1', supplier_id: 'sup-1', path: 'invoices/sup-1/inv.pdf', created_at: '2025-09-02T12:05:00Z' }], error: null });
+          const resp = mockInvoicesResponses[mockInvoicesSelectCall - 1] ?? [];
+          return Promise.resolve({ data: resp, error: null });
         }
       })
     }),
-    channel: () => ({ on: () => ({ subscribe: () => ({}) }) }),
+    channel: () => ({
+      on: (event, filter, cb) => {
+        mockInvoicesCallback = cb;
+        return { subscribe: () => ({}) };
+      }
+    }),
     removeChannel: jest.fn()
   }
 }));
@@ -73,17 +83,18 @@ function poAfter() {
 }
 
 mockGetPaymentOrdersForBuyer
-  .mockResolvedValueOnce(poBefore())
-  .mockResolvedValueOnce(poAfter());
+  .mockResolvedValueOnce({ orders: poBefore(), count: poBefore().length })
+  .mockResolvedValueOnce({ orders: poAfter(), count: poAfter().length });
 
 function Harness() {
-  const { orders, fetchOrders } = useBuyerOrders(BUYER_ID);
+  const { orders, fetchOrders, error } = useBuyerOrders(BUYER_ID);
   return (
     <div>
       <button data-testid="refetch" onClick={() => fetchOrders()}>refetch</button>
       <div data-testid="count" data-value={orders.length}></div>
+      {error && <div data-testid="error" data-value={error}></div>}
       {orders.map(p => (
-        <div key={p.order_id} data-part>
+        <div key={`${p.order_id}-${p.supplier_id || ''}`} data-part>
           <div data-items-length={p.items.length}></div>
           {p.items.map((it, idx) => (
             <div
@@ -106,6 +117,9 @@ function Harness() {
 describe('Ofertados integridad (O-2/O-3/O-5)', () => {
   it('mantiene líneas separadas, precios ofertados fijos y preserva tras invoice + refetch', async () => {
     const { getByTestId, container } = render(<Harness />);
+
+    // Trigger initial fetch (in production BuyerOrders triggers this; harness exposes a button)
+    fireEvent.click(getByTestId('refetch'));
 
     await waitFor(() => {
       const items = container.querySelectorAll('[data-item]');
@@ -137,5 +151,150 @@ describe('Ofertados integridad (O-2/O-3/O-5)', () => {
     expect(prices).toEqual([800, 900]);
     const offeredPrices = secondOffered.map(n => Number(n.getAttribute('data-offered-price'))).sort();
     expect(offeredPrices).toEqual([800, 900]);
+  });
+
+  it('applies invoices only to matching supplier (multi-supplier)', async () => {
+    const poMulti = [{
+      order_id: 'po-ms-1',
+      id: 'po-ms-1',
+      status: 'accepted',
+      payment_status: 'paid',
+      created_at: baseTime,
+      items: [
+        { product: { supplier_id: 'sup-1', name: 'P1' }, quantity: 1, price_at_addition: 1000, product_id: 'p1', isOffered: true, offer_id: 'off-1', offered_price: 900 },
+        { product: { supplier_id: 'sup-2', name: 'P2' }, quantity: 1, price_at_addition: 200, product_id: 'p2' }
+      ],
+      supplier_parts_meta: { 'sup-1': { status: 'accepted' }, 'sup-2': { status: 'accepted' } }
+    }];
+
+    mockGetPaymentOrdersForBuyer.mockResolvedValueOnce({ orders: poMulti, count: poMulti.length });
+mockInvoicesSelectCall = 0;
+mockInvoicesResponses = [[], [{ order_id: 'po-ms-1', supplier_id: 'sup-2', path: 'invoices/sup-2/inv.pdf', created_at: '2025-09-02T12:00:00Z' }]];
+
+    const { getByTestId, container } = render(<Harness />);
+    fireEvent.click(getByTestId('refetch'));
+
+    await waitFor(() => {
+      const items = container.querySelectorAll('[data-item]');
+      expect(items.length).toBe(2);
+    });
+
+    // Second fetch (invoice now available for sup-2)
+    mockGetPaymentOrdersForBuyer.mockResolvedValueOnce({ orders: poMulti, count: poMulti.length });
+    fireEvent.click(getByTestId('refetch'));
+
+    await waitFor(() => {
+      const items = Array.from(container.querySelectorAll('[data-item]'));
+      const sup2 = items.find(n => n.getAttribute('data-product') === 'p2');
+      expect(sup2.getAttribute('data-invoice')).toBe('invoices/sup-2/inv.pdf');
+      const sup1 = items.find(n => n.getAttribute('data-product') === 'p1');
+      expect(sup1.getAttribute('data-invoice')).toBe('');
+    });
+  });
+
+  it('applies the latest invoice when multiple rows exist (last-write-wins)', async () => {
+    const po = [{
+      order_id: 'po-lw-1',
+      id: 'po-lw-1',
+      status: 'accepted',
+      payment_status: 'paid',
+      created_at: baseTime,
+      items: [
+        { product: { supplier_id: 'sup-1', name: 'P1' }, quantity: 1, price_at_addition: 100, product_id: 'plw' }
+      ],
+      supplier_parts_meta: { 'sup-1': { status: 'accepted' } }
+    }];
+
+    mockGetPaymentOrdersForBuyer.mockResolvedValueOnce({ orders: po, count: po.length });
+mockInvoicesSelectCall = 0;
+    mockInvoicesResponses = [[
+      { order_id: 'po-lw-1', supplier_id: 'sup-1', path: 'inv-new.pdf', created_at: '2025-09-02T13:00:00Z' }
+    ]];
+
+    const { getByTestId, container } = render(<Harness />);
+    fireEvent.click(getByTestId('refetch'));
+
+    await waitFor(() => {
+      const items = Array.from(container.querySelectorAll('[data-item]'));
+      expect(items[0].getAttribute('data-invoice')).toBe('inv-new.pdf');
+    });
+  });
+
+  it('sets error when orderService fails', async () => {
+    mockGetPaymentOrdersForBuyer.mockRejectedValueOnce(new Error('service down'));
+
+    const { getByTestId } = render(<Harness />);
+    fireEvent.click(getByTestId('refetch'));
+
+    await waitFor(() => {
+      const err = getByTestId('error');
+      expect(err.getAttribute('data-value')).toBe('service down');
+    });
+  });
+
+  it('preserves offered flag when offered_price missing and falls back to price_at_addition', async () => {
+    const po = [{
+      order_id: 'po-no-offer-price',
+      id: 'po-no-offer-price',
+      status: 'accepted',
+      payment_status: 'paid',
+      created_at: baseTime,
+      items: [
+        { product: { supplier_id: 'sup-1', name: 'P' }, quantity: 1, price_at_addition: 500, product_id: 'p1', isOffered: true, offer_id: 'off-noprice' }
+      ],
+      supplier_parts_meta: { 'sup-1': { status: 'accepted' } }
+    }];
+
+    mockGetPaymentOrdersForBuyer.mockResolvedValueOnce({ orders: po, count: po.length });
+    mockInvoicesSelectCall = 0;
+    mockInvoicesResponses = [[]];
+
+    const { getByTestId, container } = render(<Harness />);
+    fireEvent.click(getByTestId('refetch'));
+
+    await waitFor(() => {
+      const items = Array.from(container.querySelectorAll('[data-item]'));
+      const offered = items.find(n => n.getAttribute('data-offered') === '1');
+      expect(offered).toBeDefined();
+      expect(Number(offered.getAttribute('data-price'))).toBe(500);
+      expect(offered.getAttribute('data-offered-price')).toBe('');
+    });
+  });
+
+  it('applies invoice when INSERT arrives via channel (realtime)', async () => {
+    const po = [{
+      order_id: 'po-rt-1',
+      id: 'po-rt-1',
+      status: 'accepted',
+      payment_status: 'paid',
+      created_at: baseTime,
+      items: [
+        { product: { supplier_id: 'sup-1', name: 'P' }, quantity: 1, price_at_addition: 100, product_id: 'prt' }
+      ],
+      supplier_parts_meta: { 'sup-1': { status: 'accepted' } }
+    }];
+
+    mockGetPaymentOrdersForBuyer.mockResolvedValueOnce({ orders: po, count: po.length });
+    mockInvoicesSelectCall = 0;
+    mockInvoicesResponses = [[]];
+
+    const { getByTestId, container } = render(<Harness />);
+    fireEvent.click(getByTestId('refetch'));
+
+    await waitFor(() => {
+      const items = Array.from(container.querySelectorAll('[data-item]'));
+      expect(items.length).toBe(1);
+      expect(items[0].getAttribute('data-invoice')).toBe('');
+    });
+
+    // Simulate channel INSERT callback
+    if (typeof mockInvoicesCallback === 'function') {
+      mockInvoicesCallback({ new: { order_id: 'po-rt-1', supplier_id: 'sup-1', path: 'invoices/sup-1/rt.pdf', created_at: '2025-09-02T14:00:00Z' } });
+    }
+
+    await waitFor(() => {
+      const items2 = Array.from(container.querySelectorAll('[data-item]'));
+      expect(items2[0].getAttribute('data-invoice')).toBe('invoices/sup-1/rt.pdf');
+    });
   });
 });

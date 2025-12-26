@@ -5,6 +5,7 @@
 
 import { supabase } from '../supabase';
 import { BANKS } from '../../shared/constants/profile';
+import { invalidateUserProfileCache } from './profileCache';
 
 // ============================================================================
 // PERF PROFILE CACHE (dedupe + TTL)
@@ -16,13 +17,7 @@ const PROFILE_CACHE_TTL = 1_800_000; // 30 minutos (balance entre performance y 
 const profileCache = new Map(); // userId -> { data, ts }
 const inFlight = new Map(); // userId -> Promise
 
-export const invalidateUserProfileCache = (userId) => {
-  if (userId) {
-    profileCache.delete(userId);
-    return;
-  }
-  profileCache.clear();
-};
+export { invalidateUserProfileCache } from './profileCache';
 
 /**
  * Limpia y valida el valor del banco
@@ -196,6 +191,7 @@ export const getUserProfileData = async (userId) => {
  */
 export const updateUserProfile = async (userId, profileData) => {
   try {
+    const partialErrors = {};
     // Server-side validation: Ensure required groups of fields are complete.
     // This mirrors the client-side rules implemented in the Profile component
     // - If shipping region is provided, require commune and address
@@ -259,6 +255,7 @@ export const updateUserProfile = async (userId, profileData) => {
 
         if (bankError) {
           console.error('❌ Error al actualizar datos bancarios:', bankError);
+          partialErrors.bank = bankError?.message || String(bankError);
         } else {
           console.log('✅ Datos bancarios actualizados correctamente');
         }
@@ -287,11 +284,10 @@ export const updateUserProfile = async (userId, profileData) => {
           .upsert(shippingData, { onConflict: ['user_id'] });
 
         if (shippingError) {
-          // ...removed log...
+          partialErrors.shipping = shippingError?.message || String(shippingError);
         }
       } catch (error) {
-        // ...removed log...
-      }
+              }
     }
 
     // 4. Actualizar/Insertar Facturación (con validación de existencia)
@@ -313,19 +309,17 @@ export const updateUserProfile = async (userId, profileData) => {
           .upsert(billingData, { onConflict: ['user_id'] });
 
         if (billingError) {
-          // ...removed log...
+          partialErrors.billing = billingError?.message || String(billingError);
         }
       } catch (error) {
-        // ...removed log...
-      }
+              }
     }
 
   // Invalidar cache tras actualización completa
-  invalidateUserProfileCache(userId);
-  return { success: true, error: null };
+  try { invalidateUserProfileCache(userId); } catch(e) {}
+  return { success: true, error: null, partialErrors: Object.keys(partialErrors).length ? partialErrors : undefined };
   } catch (error) {
-    // ...removed log...
-    return { success: false, error };
+        return { success: false, error };
   }
 };
 
@@ -340,8 +334,7 @@ export const uploadProfileImage = async (userId, imageFile) => {
     // 1. Eliminar TODAS las imágenes previas del usuario
     const deleteResult = await deleteAllUserImages(userId);
     if (!deleteResult.success) {
-      // ...removed log...
-    }
+          }
 
     // 2. Subir el nuevo archivo con timestamp para evitar cache
     const fileExt = imageFile.name.split('.').pop();
@@ -380,19 +373,16 @@ export const uploadProfileImage = async (userId, imageFile) => {
       .eq('user_id', userId)
       .single();
     if (userReadError) {
-      // ...removed log...
-    } else {
+          } else {
       // Si no coincide, intentar actualizar de nuevo
       if (userData?.logo_url !== publicUrl) {
-        // ...removed log...
-        const { error: retryError } = await supabase
+                const { error: retryError } = await supabase
           .from('users')
           .update({ logo_url: publicUrl })
           .eq('user_id', userId);
         
         if (retryError) {
-          // ...removed log...
-        }
+                  }
       }
     }
 
@@ -400,8 +390,7 @@ export const uploadProfileImage = async (userId, imageFile) => {
   invalidateUserProfileCache(userId);
   return { url: publicUrl, error: null };
   } catch (error) {
-    // ...removed log...
-    return { url: null, error };
+        return { url: null, error };
   }
 };
 
@@ -418,8 +407,7 @@ export const deleteAllUserImages = async (userId) => {
       .list(userId + '/', { limit: 100 });
     
     if (listError) {
-      // ...removed log...
-      return { success: false, error: listError };
+            return { success: false, error: listError };
     }
     
     if (!listData || listData.length === 0) {
@@ -433,15 +421,13 @@ export const deleteAllUserImages = async (userId) => {
       .remove(filesToRemove);
     
     if (removeError) {
-      // ...removed log...
-      return { success: false, error: removeError };
+            return { success: false, error: removeError };
     }
     
     return { success: true, deletedCount: filesToRemove.length };
     
   } catch (error) {
-    // ...removed log...
-    return { success: false, error };
+        return { success: false, error };
   }
 };
 export const diagnoseTables = async (userId) => {
@@ -525,8 +511,7 @@ export const repairUserImageUrl = async (userId) => {
       .list(userId + '/', { limit: 100 });
     
     if (listError) {
-      // ...removed log...
-      return { success: false, error: listError };
+            return { success: false, error: listError };
     }
 
     if (!listData || listData.length === 0) {
@@ -573,8 +558,7 @@ export const repairUserImageUrl = async (userId) => {
       .eq('user_id', userId);
     
     if (updateError) {
-      // ...removed log...
-      return { success: false, error: updateError };
+            return { success: false, error: updateError };
     }
     
     // 5. Eliminar archivos duplicados (mantener solo el que usamos)
@@ -714,12 +698,10 @@ export const forceFixImageUrl = async (userId) => {
       return { success: false, error: verifyError };
     }
     
-    // ...removed log...
-    
+        
     if (verifyData?.logo_url !== correctUrl) {
       const upsertResult = await forceUpsertImageUrl(userId, correctUrl);
-      // ...removed log...
-      
+            
       if (!upsertResult.success) {
         return { 
           success: false, 
@@ -747,8 +729,7 @@ export const forceFixImageUrl = async (userId) => {
         };
       }
       
-      // ...removed log...
-    }
+          }
     
     // 7. Limpiar archivos duplicados
     const filesToDelete = validImages
@@ -756,15 +737,13 @@ export const forceFixImageUrl = async (userId) => {
       .map(file => `${userId}/${file.name}`);
     
     if (filesToDelete.length > 0) {
-      // ...removed log...
-      const { error: deleteError } = await supabase.storage
+            const { error: deleteError } = await supabase.storage
         .from('user-logos')
         .remove(filesToDelete);
       
       if (deleteError) {
       } else {
-        // ...removed log...
-      }
+              }
     }
     
     return {
@@ -788,8 +767,7 @@ export const forceFixImageUrl = async (userId) => {
  */
 export const forceUpsertImageUrl = async (userId, correctUrl) => {
   try {
-    // ...removed log...
-    
+        
     const { data, error } = await supabase
       .from('users')
       .upsert({ 
@@ -802,8 +780,7 @@ export const forceUpsertImageUrl = async (userId, correctUrl) => {
       })
       .select();
     
-    // ...removed log...
-    
+        
     if (error) {
       return { success: false, error };
     }
@@ -883,22 +860,17 @@ if (typeof window !== 'undefined') {
         return;
       }
       
-      // ...removed log...
-      const result = await forceFixImageUrl(user.id);
-      // ...removed log...
-      
+            const result = await forceFixImageUrl(user.id);
+            
       if (result.success) {
-        // ...removed log...
-        // Intentar recargar automáticamente el perfil
+                // Intentar recargar automáticamente el perfil
         setTimeout(() => {
           window.location.reload();
         }, 2000);
       } else {
-        // ...removed log...
-        // Intentar corrección manual directa
+                // Intentar corrección manual directa
         const manualResult = await forceUpsertImageUrl(user.id, result.expected || 'URL_PLACEHOLDER');
-        // ...removed log...
-      }
+              }
       
       return result;
     } catch (error) {
@@ -913,8 +885,7 @@ if (typeof window !== 'undefined') {
         return;
       }
       
-      // ...removed log...
-      
+            
       // 1. Verificar usuario en tabla users
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -948,59 +919,47 @@ if (typeof window !== 'undefined') {
         return;
       }
       
-      // ...removed log...
-      
+            
       // Test 1: Update solo logo_url (sin updated_at que podría no existir)
-      // ...removed log...
-      const testUrl = 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/user-logos/' + user.id + '/logo.png';
+            const testUrl = 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/user-logos/' + user.id + '/logo.png';
       const { data: test1Data, error: test1Error } = await supabase
         .from('users')
         .update({ logo_url: testUrl })
         .eq('user_id', user.id)
         .select();
       
-      // ...removed log...
-      
+            
       // Test 2: Update solo updatedt (campo que sí existe)
-      // ...removed log...
-      const { data: test2Data, error: test2Error } = await supabase
+            const { data: test2Data, error: test2Error } = await supabase
         .from('users')
         .update({ updatedt: new Date().toISOString() })
         .eq('user_id', user.id)
         .select();
       
-      // ...removed log...
-      
+            
       // Test 3: Verificar si el campo updatedt existe
-      // ...removed log...
-      const { data: test3Data, error: test3Error } = await supabase
+            const { data: test3Data, error: test3Error } = await supabase
         .from('users')
         .update({ updatedt: new Date().toISOString() })
         .eq('user_id', user.id)
         .select();
       
-      // ...removed log...
-      
+            
       // Test 4: Verificar estructura de tabla
-      // ...removed log...
-      const { data: test4Data, error: test4Error } = await supabase
+            const { data: test4Data, error: test4Error } = await supabase
         .from('users')
         .select('*')
         .eq('user_id', user.id)
         .limit(1);
       
-      // ...removed log...
-      
+            
       // Test 5: Verificar RLS (Row Level Security)
-      // ...removed log...
-      const { data: test5Data, error: test5Error } = await supabase
+            const { data: test5Data, error: test5Error } = await supabase
         .from('users')
         .select('user_id, logo_url')
         .limit(5);
       
-      // ...removed log...
-      // ...removed log...
-      
+                  
       return { 
         test1: { data: test1Data, error: test1Error },
         test2: { data: test2Data, error: test2Error },
@@ -1012,7 +971,4 @@ if (typeof window !== 'undefined') {
     }
   };
   
-  // ...removed log...
-  // ...removed log...
-  // ...removed log...
-}
+      }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, FormControl, RadioGroup, FormControlLabel, Radio } from '@mui/material';
+import { Box, Typography, FormControl, RadioGroup, FormControlLabel, Radio, Select, MenuItem, useTheme, useMediaQuery } from '@mui/material';
 
 const DEFAULT_TITLE = 'Selecciona el documento tributario a solicitar';
 
@@ -11,6 +11,8 @@ export function DocumentTypeSelector({
   onChange,
   title = DEFAULT_TITLE,
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   if (loadingDocumentTypes) {
     return (
       <Box onClick={(e) => e.stopPropagation()}>
@@ -59,6 +61,55 @@ export function DocumentTypeSelector({
     );
   }
 
+  // Modo móvil: Dropdown compacto
+  if (isMobile) {
+    return (
+      <Box 
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
+      >
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, minWidth: 'fit-content' }}>
+          Documento Tributario
+        </Typography>
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <Select
+            value={documentType}
+            onChange={onChange}
+            sx={{ fontSize: '0.875rem' }}
+            MenuProps={{
+              disablePortal: false,
+              sx: {
+                zIndex: 10000, // Mayor que el Drawer (9999)
+              },
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'right',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'right',
+              },
+            }}
+          >
+            {availableOptions.map((option) => (
+              <MenuItem 
+                key={option.value} 
+                value={option.value}
+              >
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+    );
+  }
+
+  // Modo desktop: Radio buttons como antes
   return (
     <Box onClick={(e) => e.stopPropagation()}>
       <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>

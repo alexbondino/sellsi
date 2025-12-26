@@ -26,9 +26,10 @@ module.exports = {
   testTimeout: 10000,
   verbose: true,
   transform: {
-    '^.+\\.(js|jsx)$': 'babel-jest'
+    '^.+\\.[tj]sx?$': '<rootDir>/scripts/jest-transform-preprocess.cjs'
   },
-  moduleFileExtensions: ['js', 'jsx', 'json'],
+  extensionsToTreatAsEsm: ['.jsx'],
+  moduleFileExtensions: ['js', 'jsx', 'mjs', 'json'],
   transformIgnorePatterns: [
     'node_modules/(?!(.*\\.mjs$|@testing-library|@mui|uuid))'
   ],

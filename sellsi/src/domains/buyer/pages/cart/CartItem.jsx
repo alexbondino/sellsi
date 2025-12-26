@@ -85,11 +85,11 @@ const CartItem = ({
   const navigate = useNavigate();
 
   // Normaliza nombre de proveedor para slug de URL
+  // Simple normalization: lowercase + alphanumeric only (matches SQL)
   const normalizeProviderSlug = (providerName) => {
     return providerName
       ?.toLowerCase()
-      ?.replace(/\s+/g, '-')
-      ?.replace(/[^\w-]/g, '');
+      ?.replace(/[^a-z0-9]/g, '');
   };
 
   // Handler para click en nombre del proveedor
@@ -109,7 +109,8 @@ const CartItem = ({
     }
     
     const proveedorSlug = normalizeProviderSlug(providerName);
-    const catalogUrl = `/catalog/${proveedorSlug}/${supplierId}`;
+    const shortSupplierId = supplierId.toString().slice(0, 4);
+    const catalogUrl = `/catalog/${proveedorSlug}/${shortSupplierId}`;
     console.log('✅ Navegando a:', catalogUrl);
     navigate(catalogUrl);
   }, [navigate, item]);

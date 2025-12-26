@@ -167,11 +167,11 @@ export const AppRouter = ({ scrollTargets }) => {
         <Route path="/marketplace" element={<Marketplace />} />
         <Route
           path="/marketplace/product/:id"
-          element={<ProductPageWrapper isLoggedIn={!!session} />}
+          element={<ProductPageWrapper />}
         />
         <Route
           path="/marketplace/product/:id/:slug"
-          element={<ProductPageWrapper isLoggedIn={!!session} />}
+          element={<ProductPageWrapper />}
         />
 
         {/* Redirect legacy technicalspecs to unified marketplace product route */}
@@ -428,7 +428,7 @@ export const AppRouter = ({ scrollTargets }) => {
               loading={loadingUserStatus}
               redirectTo="/"
             >
-              <ProductPageWrapper isLoggedIn={!!session} />
+              <ProductPageWrapper />
             </PrivateRoute>
           }
         />

@@ -259,6 +259,7 @@ const OfferModal = ({
   };
 
   const handleSubmit = async () => {
+    if (process.env.NODE_ENV === 'test') console.log('[OfferModal] handleSubmit invoked');
     if (!validateForm()) return;
 
     if (!userId) {
@@ -448,6 +449,7 @@ const OfferModal = ({
         {/* Información de límites */}
         {limitsValidation && (
           <Alert
+            data-testid="limits-alert"
             severity={limitsValidation.allowed ? 'info' : 'warning'}
             sx={{ mb: { xs: 2, sm: 3 } }}
           >

@@ -12,10 +12,17 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 
 // Mock de supabase
 const mockGetUser = jest.fn();
+const mockOnAuthStateChange = jest.fn();
+
 jest.mock('../../services/supabase', () => ({
   supabase: {
     auth: {
-      getUser: () => mockGetUser()
+      getUser: () => mockGetUser(),
+      onAuthStateChange: (cb) => {
+        mockOnAuthStateChange(cb);
+        // Return a supabase-like subscription object
+        return { data: { subscription: { unsubscribe: () => {} } } };
+      }
     }
   }
 }));
@@ -110,7 +117,7 @@ describe('Billing Cache Bug - Flujo marketplace → profile → marketplace', ()
     });
     
     // Simular lo que hace Profile.jsx al guardar
-    invalidateBillingInfoCache();
+    act(() => invalidateBillingInfoCache());
     console.log('✅ PASO 3: Cache invalidado (simula guardado en Profile)');
 
     // ==========================================
@@ -250,13 +257,22 @@ describe('Billing Cache Bug - Flujo marketplace → profile → marketplace', ()
 
     // Primero: Simular que Profile guardó y emitió invalidación ANTES de montar el hook
     // Esto setea lastInvalidatedAt en el cache global
-    invalidateBillingInfoCache();
-    
-    // Pequeña pausa para asegurar timestamp diferente
-    await new Promise(r => setTimeout(r, 10));
 
+    // Usar fake timers para controlar timestamps de forma determinística
+    jest.useFakeTimers();
+    let now = Date.now();
+    const spyNow = jest.spyOn(Date, 'now').mockImplementation(() => now);
+
+    invalidateBillingInfoCache();
+    // Avanzar el reloj para simular tiempo después
+    now += 10;
+    jest.advanceTimersByTime(10);
     // Ahora: Montar el hook (simula abrir el modal DESPUÉS de la invalidación)
     const { result } = renderHook(() => useBillingInfoValidation());
+
+    // Restaurar temporizadores reales para el resto de la prueba
+    spyNow.mockRestore();
+    jest.useRealTimers();
 
     await waitFor(() => {
       expect(result.current.state).not.toBe(BILLING_INFO_STATES.LOADING);
@@ -274,15 +290,23 @@ describe('Billing Cache Bug - Flujo marketplace → profile → marketplace', ()
       error: null
     });
 
-    // Forzar otra invalidación para crear el escenario de "stale"
-    invalidateBillingInfoCache();
-    await new Promise(r => setTimeout(r, 10));
+    // Forzar otra invalidación para crear el escenario de "stale" (usar fake timers para determinismo)
+    jest.useFakeTimers();
+    let now2 = Date.now();
+    const spyNow2 = jest.spyOn(Date, 'now').mockImplementation(() => now2);
+
+    act(() => invalidateBillingInfoCache());
+    now2 += 10;
+    jest.advanceTimersByTime(10);
     mockGetUserProfile.mockClear();
 
     // Ahora refreshIfStale debería detectar que hubo invalidación
     await act(async () => {
       await result.current.refreshIfStale();
     });
+
+    spyNow2.mockRestore();
+    jest.useRealTimers();
 
     // La carga por event listener ya actualizó, así que refreshIfStale no necesita llamar
     // Este comportamiento es CORRECTO - los datos ya están frescos
@@ -312,5 +336,133 @@ describe('Billing Cache Bug - Flujo marketplace → profile → marketplace', ()
     // Verificar que se llamó con force: true
     expect(mockGetUserProfile).toHaveBeenCalledWith(mockUserId, { force: true });
     console.log('✅ refresh() pasa force:true a getUserProfile');
+  })
+
+  test('handles unauthenticated user (auth returns no user)', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+    mockGetUserProfile.mockResolvedValue({ data: completeBillingProfile, error: null });
+
+    const { result } = renderHook(() => useBillingInfoValidation());
+
+    await waitFor(() => {
+      expect(result.current.state).toBe(BILLING_INFO_STATES.ERROR);
+    });
+
+    expect(result.current.billingInfo).toBeNull();
+  })
+
+  test('concurrency: multiple mounts call getUserProfile only once', async () => {
+    // Simular una llamada en vuelo y resolverla manualmente sin fake timers
+    let resolveProfile;
+    mockGetUserProfile.mockImplementation(() => new Promise(res => { resolveProfile = res; }));
+
+    const r1 = renderHook(() => useBillingInfoValidation());
+    const r2 = renderHook(() => useBillingInfoValidation());
+
+    // Antes de resolver, la llamada debería haberse disparado EXACTAMENTE una vez
+    await waitFor(() => {
+      expect(mockGetUserProfile).toHaveBeenCalledTimes(1);
+    });
+
+    // Resolver la promesa (simular respuesta del servidor)
+    act(() => {
+      resolveProfile({ data: completeBillingProfile, error: null });
+    });
+
+    // Esperar que ambos hooks reciban la carga
+    await waitFor(() => {
+      expect(r1.result.current.isComplete).toBe(true);
+      expect(r2.result.current.isComplete).toBe(true);
+    });
+
+    // Asegurar que no se duplicaron llamadas
+    expect(mockGetUserProfile).toHaveBeenCalledTimes(1);
+  })
+
+  test('multi-user: cache invalidates when localStorage user_id changes', async () => {
+    // Simular user A
+    localStorage.setItem('user_id', 'userA');
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'userA' } }, error: null });
+    mockGetUserProfile.mockResolvedValueOnce({ data: completeBillingProfile, error: null });
+
+    const { result, unmount } = renderHook(() => useBillingInfoValidation());
+
+    // Forzar refresh() en la primera instancia para asegurar que se carguen los datos del usuario A
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    // Esperar que la llamada al perfil ocurra y que el resultado sea completo
+    await waitFor(() => {
+      expect(mockGetUserProfile).toHaveBeenCalled();
+    }, { timeout: 2000 });
+
+    await waitFor(() => {
+      expect(result.current.isComplete).toBe(true);
+    }, { timeout: 2000 });
+
+    // Cambiar a user B
+    localStorage.setItem('user_id', 'userB');
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'userB' } }, error: null });
+    mockGetUserProfile.mockResolvedValueOnce({ data: incompleteBillingProfile, error: null });
+
+    const { result: resultB } = renderHook(() => useBillingInfoValidation());
+
+    // Limpiar llamadas previas (ya configuramos userB antes de montar resultB)
+    mockGetUserProfile.mockClear();
+
+    // Usar la ruta real de la app: Profile guarda y llama invalidateBillingInfoCache()
+    act(() => {
+      invalidateBillingInfoCache();
+    });
+
+    // Esperar que la invalidación haya provocado la recarga en instancias montadas
+    await waitFor(() => {
+      expect(mockGetUserProfile).toHaveBeenCalled();
+      expect(resultB.current.state).toBe(BILLING_INFO_STATES.INCOMPLETE);
+    }, { timeout: 2000 });
+
+    // Restaurar localStorage
+    localStorage.removeItem('user_id');
+  });
+
+  test('AUTH EVENT: mounted hooks reload on supabase auth change', async () => {
+    // Usuario A inicial
+    localStorage.setItem('user_id', 'userA');
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'userA' } }, error: null });
+    mockGetUserProfile.mockResolvedValueOnce({ data: incompleteBillingProfile, error: null });
+
+    const { result } = renderHook(() => useBillingInfoValidation());
+
+    // Forzar y esperar carga inicial de datos para userA
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state).toBe(BILLING_INFO_STATES.INCOMPLETE);
+    });
+
+    // Preparar datos para userB
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'userB' } }, error: null });
+    mockGetUserProfile.mockResolvedValueOnce({ data: completeBillingProfile, error: null });
+
+    // Recuperar handler registrado por onAuthStateChange (usar la última llamada registrada)
+    const lastCallIndex = mockOnAuthStateChange.mock.calls.length - 1;
+    const authHandler = mockOnAuthStateChange.mock.calls[lastCallIndex][0];
+    expect(typeof authHandler).toBe('function');
+
+    // Simular evento de auth - userB firma sesión
+    act(() => {
+      authHandler('SIGNED_IN', { user: { id: 'userB' } });
+    });
+
+    // Esperar que el hook recargue y refleje datos de userB
+    await waitFor(() => {
+      expect(mockGetUserProfile).toHaveBeenCalled();
+      expect(result.current.state).toBe(BILLING_INFO_STATES.COMPLETE);
+    });
+
+    localStorage.removeItem('user_id');
   });
 });

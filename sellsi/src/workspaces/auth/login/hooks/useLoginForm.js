@@ -154,63 +154,26 @@ export const useLoginForm = () => {
         await supabase.auth.signOut();
         return;
       }
-      let { data: perfil, error: perfilError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single(); // ✅ NUEVO: Si el perfil no existe, crear automáticamente
-      if (perfilError || !perfil) {
-        const { data: newPerfil, error: createError } = await supabase
-          .from('users')
-          .insert({
-            user_id: user.id,
-            email: user.email,
-            user_nm:
-              user.user_metadata?.full_name ||
-              user.email.split('@')[0] ||
-              'Usuario',
-            main_supplier: true, // Por defecto proveedor
-            phone_nbr: user.user_metadata?.phone || '',
-            country: user.user_metadata?.pais || 'No especificado',
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('❌ Error creando perfil:', createError);
-          dispatch({
-            type: 'SET_ERROR_CORREO',
-            payload: 'Error al crear perfil de usuario',
-          });
-          return;
-        }
-
-        perfil = newPerfil;
-      }
+      
+      // ✅ OPTIMIZACIÓN: Guardar user_id y cerrar modal inmediatamente
       localStorage.setItem('user_id', user.id);
-
-      // ✅ NUEVO: Tracking de IP al hacer login
-      try {
-        const ipResult = await trackLoginIP(user.id, 'email_password');
-        if (ipResult.success) {
-          console.log('📡 IP actualizada en login:', ipResult.ip);
-        } else {
-          console.warn('⚠️ Error actualizando IP en login:', ipResult.error);
-        }
-      } catch (ipError) {
-        console.warn('⚠️ Error en tracking de IP:', ipError);
-        // No fallar el login por errores de IP tracking
-      }
-
-      // Guardar account_type basado en main_supplier
-      if (perfil.main_supplier) {
-        localStorage.setItem('account_type', 'proveedor');
-      } else {
-        localStorage.setItem('account_type', 'comprador');
-      }
-
       onClose();
-      // ✅ NUEVO: Usar función del RoleProvider para redirección inicial
+      
+      // ✅ OPTIMIZACIÓN: Tracking de IP en background (sin await)
+      trackLoginIP(user.id, 'email_password')
+        .then(ipResult => {
+          if (ipResult.success) {
+            console.log('📡 IP actualizada en login:', ipResult.ip);
+          } else {
+            console.warn('⚠️ Error actualizando IP en login:', ipResult.error);
+          }
+        })
+        .catch(ipError => {
+          console.warn('⚠️ Error en tracking de IP:', ipError);
+        });
+      
+      // ✅ OPTIMIZACIÓN: UnifiedAuthProvider ya maneja fetch/creación de perfil en evento SIGNED_IN
+      // ✅ OPTIMIZACIÓN: Usar función del RoleProvider para redirección inicial
       redirectToInitialHome();
     } catch (error) {
       console.error('Error en login:', error);

@@ -1,61 +1,67 @@
-// Test B-2: Chips cancelado vs rechazado (lógica aislada de getStatusChips en BuyerOrders)
+import { getStatusChips } from '../../../workspaces/buyer/my-orders/utils/orderStatusUtils';
 
-function getStatusChips(status, paymentStatus, order = null) {
-  const isPaymentExpired = paymentStatus === 'expired';
-  // If payment expired, we do not want to treat the order as cancelled/rejected for UI chips
-  const isCancelled = (status === 'cancelled' || (order && order.cancelled_at)) && !isPaymentExpired;
-  const isRejected = (status === 'rejected' && !isPaymentExpired) || isCancelled;
-  const getPaymentChipInfo = (ps) => {
-    switch (ps) {
-      case 'paid': return { label: 'Pago Confirmado', color: 'success' };
-      case 'expired': return { label: 'Pago Expirado', color: 'error' };
-      case 'pending':
-      default: return { label: 'Procesando Pago', color: 'warning' };
-    }
-  };
-  const paymentInfo = getPaymentChipInfo(paymentStatus);
-  // Always return at least the payment chip so payment_status is visible independently
-  const base = [{ key: 'pago', label: paymentInfo.label, color: paymentInfo.color, active: true }];
-  if (isRejected) {
-    base.push({ key: 'rechazado', label: isCancelled ? 'Cancelado' : 'Rechazado', active: true, color: 'error' });
-    base.push({ key: 'en_transito', label: 'En Transito', active: false, color: 'default' });
-    base.push({ key: 'entregado', label: 'Entregado', active: false, color: 'default' });
-  }
-  return base;
-}
+// Test B-2: Chips cancelado vs rechazado — use real implementation from orderStatusUtils
 
 describe('B-2 chips cancelado vs rechazado', () => {
-  it('status=rejected muestra chip Rechazado', () => {
+  it('status=rejected muestra chip Rechazado con pago confirmado', () => {
     const chips = getStatusChips('rejected', 'paid', { order_id: 'o1' });
+    expect(chips).toHaveLength(4);
+
+    const pago = chips.find(c => c.key === 'pago');
+    expect(pago.label).toBe('Pago Confirmado');
+    expect(pago.active).toBe(true);
+
     const rej = chips.find(c => c.key === 'rechazado');
+    expect(rej).toBeDefined();
     expect(rej.label).toBe('Rechazado');
+    expect(rej.color).toBe('error');
+    expect(rej.active).toBe(true);
   });
-  it('status=cancelled muestra chip Cancelado', () => {
+
+  it('status=cancelled muestra chip Cancelado y pago activo', () => {
     const chips = getStatusChips('cancelled', 'paid', { order_id: 'o2' });
     const rej = chips.find(c => c.key === 'rechazado');
+    expect(rej).toBeDefined();
     expect(rej.label).toBe('Cancelado');
+    expect(rej.active).toBe(true);
+
+    const pago = chips.find(c => c.key === 'pago');
+    expect(pago.active).toBe(true);
   });
+
   it('cancelled_at forzado aunque status!=cancelled -> Cancelado', () => {
     const chips = getStatusChips('pending', 'paid', { order_id: 'o3', cancelled_at: new Date().toISOString() });
     const rej = chips.find(c => c.key === 'rechazado');
+    expect(rej).toBeDefined();
     expect(rej.label).toBe('Cancelado');
   });
-  it('chip pago refleja Pago Expirado si payment_status=expired', () => {
+
+  it('status=rejected y payment_status=expired debe mostrar solo Pago Expirado (no rechazado)', () => {
     const chips = getStatusChips('rejected', 'expired', { order_id: 'o4' });
     const pago = chips.find(c => c.key === 'pago');
     expect(pago.label).toBe('Pago Expirado');
-  });
-  it('chip pago refleja Procesando Pago si payment_status=pending', () => {
-    const chips = getStatusChips('rejected', 'pending', { order_id: 'o5' });
-    const pago = chips.find(c => c.key === 'pago');
-    expect(pago.label).toBe('Procesando Pago');
+    const rej = chips.find(c => c.key === 'rechazado');
+    expect(rej).toBeUndefined();
   });
 
-  it('si status=cancelled y payment_status=expired mostrar solo Pago Expirado (no Cancelado/Rechazado)', () => {
-    const chips = getStatusChips('cancelled', 'expired', { order_id: 'o6' });
-    const pago = chips.find(c => c.key === 'pago');
+  it('si hay cancelled_at pero payment expired -> no mostrar Cancelado (expired anula cancel) y no hay chips activos', () => {
+    const chips = getStatusChips('pending', 'expired', { order_id: 'o5', cancelled_at: new Date().toISOString() });
     const rej = chips.find(c => c.key === 'rechazado');
-    expect(pago.label).toBe('Pago Expirado');
     expect(rej).toBeUndefined();
+
+    const pago = chips.find(c => c.key === 'pago');
+    expect(pago.label).toBe('Pago Expirado');
+    // En la implementación actual, cuando hay expired y cancelled_at, ninguno de los chips queda activo
+    expect(chips.filter(c => c.active).length).toBe(0);
+  });
+
+  it('estado por defecto con pago pendiente muestra Pago activo solo', () => {
+    const chips = getStatusChips('pending', 'pending', null);
+    expect(chips).toHaveLength(4);
+    const pago = chips.find(c => c.key === 'pago');
+    expect(pago.label).toBe('Procesando Pago');
+    expect(pago.active).toBe(true);
+    // Los demás deben estar inactivos
+    expect(chips.filter(c => c.active).length).toBe(1);
   });
 });

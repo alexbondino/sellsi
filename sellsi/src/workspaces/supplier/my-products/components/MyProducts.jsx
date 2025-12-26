@@ -24,6 +24,7 @@ import {
   Modal as MuiModal,
   Tooltip,
 } from '@mui/material';
+import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
 import {
   Add as AddIcon,
   Search as SearchIcon,
@@ -163,6 +164,7 @@ const MyProducts = () => {
 
   // 🆕 Estado para modal de compartir catálogo
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  useBodyScrollLock(shareModalOpen);
   const [catalogUrl, setCatalogUrl] = useState('');
 
   const {
@@ -254,16 +256,15 @@ const MyProducts = () => {
   // Manejar apertura del modal de compartir catálogo
   const handleOpenShareModal = () => {
     if (userProfile && supplierId) {
-      // Crear slug del nombre del usuario
-      const userNmSlug = (userProfile.user_nm || `proveedor-${supplierId}`)
+      // Simple normalization: lowercase + alphanumeric only (matches SQL)
+      const userNmSlug = (userProfile.user_nm || `proveedor${supplierId}`)
         .toLowerCase()
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
+        .replace(/[^a-z0-9]/g, '');
 
-      // Construir URL completa del catálogo
+      // Construir URL completa del catálogo (usar id corto)
       const baseUrl = window.location.origin;
-      const url = `${baseUrl}/catalog/${userNmSlug}/${supplierId}`;
+      const shortSupplierId = (supplierId || '').toString().slice(0, 4);
+      const url = `${baseUrl}/catalog/${userNmSlug}/${shortSupplierId}`;
       setCatalogUrl(url);
       setShareModalOpen(true);
     }

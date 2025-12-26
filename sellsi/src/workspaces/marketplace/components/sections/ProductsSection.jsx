@@ -630,11 +630,13 @@ const ProductsSection = React.memo(
     React.useEffect(() => {
       if (!FeatureFlags.FEATURE_PHASE1_THUMBS) return;
       if (!Array.isArray(renderItems) || !renderItems.length) return;
+      // ✅ FIX: No cargar thumbnails en vista de proveedores (usan logos, no product thumbnails)
+      if (isProviderView) return;
       // Tomar primeros 24 (o menos) IDs con product_id disponible
       const prefetchCount = 24;
       const ids = renderItems
         .slice(0, prefetchCount)
-        .map(p => p?.id || p?.product_id)
+        .map(p => p?.productid || p?.product_id)
         .filter(Boolean);
       if (!ids.length) return;
       let cancelled = false;

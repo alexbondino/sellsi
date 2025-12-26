@@ -191,6 +191,8 @@ const performNuclearCleanup = () => {
 };
 
 export const UnifiedAuthProvider = ({ children }) => {
+  // mount/unmount debug logging removed
+
   // Auth state
   const [session, setSession] = useState(null);
   const [userProfile, setUserProfile] = useState(null);

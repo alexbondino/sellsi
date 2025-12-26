@@ -10,6 +10,11 @@
 import { create } from 'zustand';
 import { updateProductSpecifications } from '../../../workspaces/marketplace';
 
+// Concurrency helpers: per-product tracking (module-level, shared across tests/runtime)
+const _inFlightSpecs = new Map()
+const _pendingSpecs = new Map()
+const _pendingResolvers = new Map()
+
 const useProductSpecifications = create((set, get) => ({
   // ============================================================================
   // ESTADO
@@ -25,41 +30,83 @@ const useProductSpecifications = create((set, get) => ({
   /**
    * Procesar especificaciones del producto
    */
-  processProductSpecifications: async (productId, specifications) => {
+  processProductSpecifications: (productId, specifications) => {
     if (!specifications?.length) {
-      return { success: true, data: [] };
+      return Promise.resolve({ success: true, data: [] })
     }
 
-    set(state => ({
-      processingSpecs: { ...state.processingSpecs, [productId]: true },
-      error: null,
-    }));
+    // Validate & sanitize input first
+    const validatedSpecs = get().validateSpecifications(specifications)
 
-    try {
-      // Validar especificaciones
-      const validatedSpecs = get().validateSpecifications(specifications);
+    if (!validatedSpecs.isValid) {
+      return Promise.resolve({ success: false, error: `Especificaciones inválidas: ${validatedSpecs.errors.join(', ')}` })
+    }
 
-      if (!validatedSpecs.isValid) {
-        throw new Error(
-          `Especificaciones inválidas: ${validatedSpecs.errors.join(', ')}`
-        );
+    // Map to service shape and sanitize fields
+    const payload = validatedSpecs.data.map(s => ({
+      key: s.nombre.trim(),
+      value: s.valor.trim(),
+      descripcion: s.descripcion ? s.descripcion.trim() : null,
+      categoria: s.categoria && s.categoria.trim() ? s.categoria.trim() : 'general',
+      unidad: s.unidad ? s.unidad.trim() : null,
+    }))
+
+    // Mark processing flag immediately
+    set(state => ({ processingSpecs: { ...state.processingSpecs, [productId]: true }, error: null }))
+
+    // Return a promise that resolves when processing (and any pending replacements) finish
+    return new Promise(async resolve => {
+      // helper to actually call service
+      const _callService = async (pl) => {
+        try {
+          const ok = await updateProductSpecifications(productId, pl)
+          return { success: !!ok, data: pl }
+        } catch (err) {
+          return { success: false, error: err?.message || String(err) }
+        }
       }
 
-      // Actualizar especificaciones usando el servicio seguro
-      await updateProductSpecifications(productId, validatedSpecs.data);
+      // If already processing, replace pending payload (last-write-wins) and register resolver
+      if (_inFlightSpecs.has(productId)) {
+        _pendingSpecs.set(productId, payload)
+        if (!_pendingResolvers.has(productId)) _pendingResolvers.set(productId, [])
+        _pendingResolvers.get(productId).push(resolve)
+        return
+      }
 
-      set(state => ({
-        processingSpecs: { ...state.processingSpecs, [productId]: false },
-      }));
+      // Not in flight: start processing loop
+      _inFlightSpecs.set(productId, true)
 
-      return { success: true, data: validatedSpecs.data };
-    } catch (error) {
-      set(state => ({
-        processingSpecs: { ...state.processingSpecs, [productId]: false },
-        error: `Error procesando especificaciones: ${error.message}`,
-      }));
-      return { success: false, error: error.message };
-    }
+      let currentPayload = payload
+      let result = null
+      try {
+        while (currentPayload) {
+          result = await _callService(currentPayload)
+          // after running, check if someone queued a replacement
+          currentPayload = _pendingSpecs.get(productId)
+          if (currentPayload) _pendingSpecs.delete(productId)
+        }
+      } finally {
+        // clear in-flight
+        _inFlightSpecs.delete(productId)
+        // unset processing flag
+        set(state => ({ processingSpecs: { ...state.processingSpecs, [productId]: false } }))
+
+        if (result && !result.success) {
+          set(state => ({ error: `Error procesando especificaciones: ${result.error}` }))
+        }
+
+        // resolve original caller
+        resolve(result)
+
+        // Resolve any resolvers that were waiting for pending replacements with the final result
+        if (_pendingResolvers.has(productId)) {
+          const resolvers = _pendingResolvers.get(productId)
+          _pendingResolvers.delete(productId)
+          for (const r of resolvers) r(result)
+        }
+      }
+    })
   },
 
   /**

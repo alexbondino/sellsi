@@ -4,6 +4,7 @@ import {
   sanitizeCartItems,
   isQuantityError,
 } from '../../utils/quantityValidation';
+import * as cartActions from './cartActions';
 
 // In-flight dedupe para getCartItems: evita múltiples GET idénticos concurrentes
 const __inFlightCartItems = new Map(); // cartId -> Promise
@@ -502,63 +503,12 @@ class CartService {
   }
 
   async updateItemQuantity(cartId, productOrLineId, newQuantity, options = {}) {
-    const { skipTimestamp = false } = options;
-    try {
-      const safeQuantity = this.validateQuantity(newQuantity);
-      if (safeQuantity <= 0) {
-        return await this.removeItemFromCart(cartId, productOrLineId);
-      }
-
-      // Heurística: la mayoría de llamadas pasan product_id (no cart_items_id). Intentar primero (cart_id + product_id)
-      let primary = await supabase
-        .from('cart_items')
-        .update({
-          quantity: safeQuantity,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('cart_id', cartId)
-        .eq('product_id', productOrLineId)
-        .select();
-
-      let data = primary.data;
-      let error = primary.error;
-      if (error && error.code !== 'PGRST116') throw error;
-
-      if (!data || (Array.isArray(data) && data.length === 0)) {
-        // Intentar por cart_items_id sólo si el primer camino no afectó filas
-        const secondary = await supabase
-          .from('cart_items')
-          .update({
-            quantity: safeQuantity,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('cart_items_id', productOrLineId)
-          .select();
-        if (secondary.error && secondary.error.code !== 'PGRST116')
-          throw secondary.error;
-        data = secondary.data;
-        if (!data || (Array.isArray(data) && data.length === 0)) {
-          // Crear fila si no existe (comportamiento legacy de establecer cantidad)
-          const insertRes = await supabase
-            .from('cart_items')
-            .insert({
-              cart_id: cartId,
-              product_id: productOrLineId,
-              quantity: safeQuantity,
-              updated_at: new Date().toISOString(),
-            })
-            .select();
-          if (insertRes.error) throw insertRes.error;
-          data = insertRes.data;
-        }
-      }
-
-      const row = Array.isArray(data) ? data[0] : data;
-      if (!skipTimestamp) await this.updateCartTimestamp(cartId);
-      return row;
-    } catch (error) {
-      throw new Error(`No se pudo actualizar la cantidad: ${error.message}`);
-    }
+    // Delegate to cartActions.updateItemQuantity and provide callbacks to preserve behavior
+    return await cartActions.updateItemQuantity(cartId, productOrLineId, newQuantity, {
+      ...options,
+      onUpdateTimestamp: id => this.updateCartTimestamp(id),
+      onRemoveItem: (idCart, prodId, opts) => this.removeItemFromCart(idCart, prodId, opts),
+    });
   }
 
   async removeItemFromCart(cartId, productOrLineId, options = {}) {

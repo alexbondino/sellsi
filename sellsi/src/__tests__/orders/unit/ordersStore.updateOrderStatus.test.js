@@ -107,4 +107,42 @@ describe('ordersStore.updateOrderStatus - optimistic flow', () => {
     expect(order.isLate).toBe(false);
   expect(orderService.__m.updateOrderStatus).toHaveBeenCalledWith('1','in_transit', { estimated_delivery_date: future });
   });
+
+  it('deduplica llamadas concurrentes a updateOrderStatus (misma orden+status)', async () => {
+    const { createDeferred } = require('../../utils/deferred');
+    const deferred = createDeferred();
+
+    // Replace backend mock to a deferred promise
+    orderService.__m.updateOrderStatus.mockReset().mockImplementation(() => deferred.promise);
+
+    setState({ orders: [seedOrderDisplay()] });
+
+    // Fire two concurrent calls
+    const p1 = useOrdersStore.getState().updateOrderStatus('1', 'accepted');
+    const p2 = useOrdersStore.getState().updateOrderStatus('1', 'accepted');
+
+    // Backend should have been called exactly once thanks to dedupe
+    expect(orderService.__m.updateOrderStatus.mock.calls.length).toBe(1);
+
+    // Resolve backend
+    deferred.resolve({ success: true });
+    await Promise.all([p1, p2]);
+
+    // Both promises resolved and order remains accepted
+    const order = useOrdersStore.getState().orders[0];
+    expect(order.status).toBe('Aceptado');
+  });
+
+  it('no falla ni altera estado al llamar updateOrderStatus para orden inexistente', async () => {
+    // No orders in state
+    setState({ orders: [] });
+
+    await act(async () => {
+      await useOrdersStore.getState().updateOrderStatus('missing', 'accepted');
+    });
+
+    // Backend still fue invocado
+    expect(orderService.__m.updateOrderStatus).toHaveBeenCalledWith('missing', 'accepted', {});
+    expect(useOrdersStore.getState().orders.length).toBe(0);
+  });
 });

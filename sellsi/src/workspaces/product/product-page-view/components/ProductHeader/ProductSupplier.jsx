@@ -31,8 +31,9 @@ const ProductSupplier = ({
     if (!isLoggedIn) return;
 
     const proveedorSlug = normalizeProviderSlug(proveedor);
-    navigate(`/catalog/${proveedorSlug}/${supplierId || 'userid'}`);
-  };
+    const shortId = (supplierId || 'userid').toString().slice(0, 4);
+    navigate(`/catalog/${proveedorSlug}/${shortId}`);
+  }; 
 
   return (
     <Box sx={SUPPLIER_STYLES.container}>

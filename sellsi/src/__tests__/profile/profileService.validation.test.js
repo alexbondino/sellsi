@@ -45,4 +45,23 @@ describe('validateProfileUpdate (server-side parity)', () => {
     const res = validateProfileUpdate({ shipping_region: 'metropolitana', shipping_commune: 'Santiago', shipping_address: 'Av 1', business_name: 'X', billing_rut: '1-9', business_line: 'Retail', billing_address: 'Calle 1', billing_region: 'metropolitana', billing_commune: 'Santiago' });
     expect(res.ok).toBe(true);
   });
+
+  test('businessName with only whitespace is treated as empty and does not require billing', () => {
+    const res = validateProfileUpdate({ businessName: '   ' });
+    expect(res.ok).toBe(true);
+    expect(res.errors).toEqual({});
+  });
+
+  test('partial shipping AND partial billing return both errors', () => {
+    const res = validateProfileUpdate({ shipping_region: 'metropolitana', shipping_commune: '', shipping_address: '', business_name: 'X' });
+    expect(res.ok).toBe(false);
+    expect(res.errors).toHaveProperty('shipping');
+    expect(res.errors).toHaveProperty('billing');
+  });
+
+  test('numeric and null values are handled gracefully (region as number, commune/address null)', () => {
+    const res = validateProfileUpdate({ shippingRegion: 1, shippingCommune: null, shippingAddress: null });
+    expect(res.ok).toBe(false);
+    expect(res.errors.shipping).toBeTruthy();
+  });
 });
