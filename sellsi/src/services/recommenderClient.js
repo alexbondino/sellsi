@@ -4,7 +4,7 @@
  */
 
 const RECOMMENDER_URL =
-  import.meta.env.VITE_RECOMMENDER_SERVICE_URL || 'http://localhost:8000';
+  import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
 /**
  * Obtiene recomendaciones generales de productos
