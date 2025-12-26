@@ -9,7 +9,7 @@ on:
 jobs:
   validate-pr-to-main:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 🔍 Validar origen del PR
         env:
@@ -20,25 +20,25 @@ jobs:
           echo "🎯 Target branch: $BASE_BRANCH"
           echo "📍 Source branch: $SOURCE_BRANCH"
           echo "📝 PR Title: $PR_TITLE"
-          
+
           # Verificar que el destino sea main
           if [ "$BASE_BRANCH" != "main" ]; then
             echo "✅ Este PR no va a main, permitido"
             exit 0
           fi
-          
+
           # Permitir merges desde staging
           if [ "$SOURCE_BRANCH" = "staging" ]; then
             echo "✅ Merge permitido: staging → main"
             exit 0
           fi
-          
+
           # Permitir PRs que empiecen con "hotfix" (case insensitive)
           if echo "$PR_TITLE" | grep -iq "^hotfix"; then
             echo "✅ Hotfix permitido: $PR_TITLE"
             exit 0
           fi
-          
+
           # Bloquear cualquier otro caso
           echo "❌ ERROR: Solo se permiten merges a main desde:"
           echo "   1. La rama 'staging'"
