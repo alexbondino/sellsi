@@ -163,6 +163,16 @@ async function fetchAllTiersDirect(productIds) {
  */
 export function useProducts() {
   const [products, setProducts] = useState([]);
+
+  // Log de productos cada vez que cambian
+  useEffect(() => {
+    if (products && Array.isArray(products)) {
+      console.log(`🛒 Productos en frontend: ${products.length}`);
+      products.forEach((p, i) => {
+        console.log(`  ${i + 1}. ${p.nombre || p.name || p.productnm || p.id}`);
+      });
+    }
+  }, [products]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // Refs locales solo para control de montaje y métricas
