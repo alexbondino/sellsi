@@ -4,7 +4,7 @@ Orquesta las diferentes estrategias de recomendación
 """
 from typing import List, Dict, Any, Optional
 from app.models.random_recommender import RandomRecommender
-from app.utils.mock_data import get_mock_products
+from app.utils.database import fetch_products, fetch_product_by_id
 
 
 class RecommenderService:
@@ -38,8 +38,12 @@ class RecommenderService:
         limit: int = 6,
         exclude_ids: List[str] = None
     ) -> List[Dict[str, Any]]:
-        """Obtiene recomendaciones generales"""
-        products = get_mock_products(category=category, exclude_ids=exclude_ids)
+        """Obtiene recomendaciones generales desde Supabase"""
+        products = await fetch_products(
+            category=category, 
+            min_stock=1,  # Solo productos con stock
+            exclude_ids=exclude_ids
+        )
         
         strategy = self.strategies[self.active_strategy]
         return strategy.recommend(products, limit=limit)
@@ -49,19 +53,19 @@ class RecommenderService:
         product_id: str,
         limit: int = 6
     ) -> List[Dict[str, Any]]:
-        """Obtiene productos similares"""
+        """Obtiene productos similares desde Supabase"""
         # Buscar el producto base
-        all_products = get_mock_products()
-        base_product = next((p for p in all_products if p["id"] == product_id), None)
+        base_product = await fetch_product_by_id(product_id)
         
         if not base_product:
             raise ValueError(f"Product {product_id} not found")
         
-        # Filtrar por misma categoría y excluir el producto base
-        similar_products = [
-            p for p in all_products
-            if p["category"] == base_product["category"] and p["id"] != product_id
-        ]
+        # Obtener productos de la misma categoría
+        similar_products = await fetch_products(
+            category=base_product["category"],
+            min_stock=1,
+            exclude_ids=[product_id]
+        )
         
         strategy = self.strategies[self.active_strategy]
         return strategy.recommend(similar_products, limit=limit)
@@ -72,9 +76,9 @@ class RecommenderService:
         limit: int = 10
     ) -> List[Dict[str, Any]]:
         """Obtiene recomendaciones personalizadas"""
-        # MVP: Por ahora retorna productos aleatorios
+        # MVP: Por ahora retorna productos aleatorios desde Supabase
         # TODO: Implementar basado en historial del usuario
-        products = get_mock_products()
+        products = await fetch_products(min_stock=1)
         
         strategy = self.strategies[self.active_strategy]
         return strategy.recommend(products, limit=limit)
@@ -84,9 +88,9 @@ class RecommenderService:
         limit: int = 10
     ) -> List[Dict[str, Any]]:
         """Obtiene productos en tendencia"""
-        # MVP: Por ahora retorna productos aleatorios
+        # MVP: Por ahora retorna productos aleatorios desde Supabase
         # TODO: Implementar basado en métricas reales
-        products = get_mock_products()
+        products = await fetch_products(min_stock=1)
         
         strategy = self.strategies[self.active_strategy]
         return strategy.recommend(products, limit=limit)
