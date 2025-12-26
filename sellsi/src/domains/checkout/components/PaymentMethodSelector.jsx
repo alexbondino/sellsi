@@ -16,9 +16,9 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { 
+import {
   ArrowBack as ArrowBackIcon,
-  CreditCard as CreditCardIcon 
+  CreditCard as CreditCardIcon,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -66,7 +66,7 @@ const PaymentMethodSelector = () => {
     completePayment,
     failPayment,
     currentStepId,
-    currentStepOrder
+    currentStepOrder,
   } = useCheckout();
 
   // Estados de métodos de pago
@@ -92,22 +92,32 @@ const PaymentMethodSelector = () => {
   // ===== CÁLCULO BASE TOTAL (igual que CheckoutSummary) =====
   const baseTotal = useMemo(() => {
     if (!orderData.items || orderData.items.length === 0) return 0;
-    
+
     const getItemPrice = item => {
       if (item.price_tiers && item.price_tiers.length > 0) {
         // ⚠️ CRÍTICO: Convertir a Number para evitar bypass con valores falsy
-        const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
-        return calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
+        const basePrice =
+          Number(
+            item.originalPrice ||
+              item.precioOriginal ||
+              item.price ||
+              item.precio
+          ) || 0;
+        return calculatePriceForQuantity(
+          item.quantity,
+          item.price_tiers,
+          basePrice
+        );
       }
       return item.price || 0;
     };
-    
+
     const totalBruto = orderData.items.reduce((total, item) => {
       const unitPrice = getItemPrice(item);
       const quantity = item.quantity || 0;
       return total + quantity * unitPrice;
     }, 0);
-    
+
     const shippingCost = orderData.shipping || 0;
     return Math.trunc(totalBruto) + shippingCost;
   }, [orderData.items, orderData.shipping]);
@@ -167,7 +177,9 @@ const PaymentMethodSelector = () => {
   const handleContinue = async () => {
     // Bloqueo inmediato con ref (no espera re-render de useState)
     if (isProcessingRef.current || paymentSuccessRef.current) {
-      console.log('[PaymentMethodSelector] Click ignorado - ya procesando o redirigiendo');
+      console.log(
+        '[PaymentMethodSelector] Click ignorado - ya procesando o redirigiendo'
+      );
       return;
     }
     isProcessingRef.current = true;
@@ -231,7 +243,10 @@ const PaymentMethodSelector = () => {
       // Normalizar a un único campo document_type (alias legacy documentType eliminado en nuevos flujos)
       const itemsWithDocType = (orderData.items || []).map(it => {
         const raw = it.document_type || it.documentType;
-        const norm = raw && ['boleta','factura'].includes(String(raw).toLowerCase()) ? String(raw).toLowerCase() : 'ninguno';
+        const norm =
+          raw && ['boleta', 'factura'].includes(String(raw).toLowerCase())
+            ? String(raw).toLowerCase()
+            : 'ninguno';
         return { ...it, document_type: norm };
       });
 
@@ -244,7 +259,7 @@ const PaymentMethodSelector = () => {
         subtotal: orderData.subtotal,
         tax: orderData.tax,
         shipping: orderData.shipping,
-  total: orderTotal, // Guardar el total base (server añadirá payment_fee y grand_total)
+        total: orderTotal, // Guardar el total base (server añadirá payment_fee y grand_total)
         currency: orderData.currency || 'CLP',
         paymentMethod: selectedMethod.id,
         shippingAddress: orderData.shippingAddress,
@@ -257,9 +272,15 @@ const PaymentMethodSelector = () => {
       if (selectedMethod.id === 'khipu') {
         console.log('[PaymentMethodSelector] Procesando pago con Khipu...');
         // Usar el total que quedó persistido en la fila (server authoritative) si existe
-  const authoritativeTotal = (order && typeof order.total === 'number') ? Math.round(order.total) : orderTotal; // sigue siendo base total
+        const authoritativeTotal =
+          order && typeof order.total === 'number'
+            ? Math.round(order.total)
+            : orderTotal; // sigue siendo base total
         if (authoritativeTotal !== orderTotal) {
-          console.log('[PaymentMethodSelector] Diferencia entre order.total y orderTotal calculado front:', { authoritativeTotal, frontComputed: orderTotal });
+          console.log(
+            '[PaymentMethodSelector] Diferencia entre order.total y orderTotal calculado front:',
+            { authoritativeTotal, frontComputed: orderTotal }
+          );
         }
         const paymentResult = await checkoutService.processKhipuPayment({
           orderId: order.id,
@@ -289,9 +310,10 @@ const PaymentMethodSelector = () => {
         }
       } else if (selectedMethod.id === 'flow') {
         console.log('[PaymentMethodSelector] Procesando pago con Flow...');
-        const authoritativeTotal = (order && typeof order.total === 'number')
-          ? Math.round(order.total)
-          : orderTotal;
+        const authoritativeTotal =
+          order && typeof order.total === 'number'
+            ? Math.round(order.total)
+            : orderTotal;
 
         const paymentResult = await checkoutService.processFlowPayment({
           orderId: order.id,
@@ -322,47 +344,55 @@ const PaymentMethodSelector = () => {
       }
     } catch (error) {
       console.error('Error processing payment:', error);
-      
+
       // ⭐ MANEJO COMPLETO DE ERRORES DE VALIDACIÓN SQL
       const errorMessages = {
-        'MINIMUM_PURCHASE_VIOLATION': 'No se cumple la compra mínima de uno o más proveedores.',
-        'MINIMUM_PURCHASE_NOT_MET': 'No se cumple la compra mínima requerida por el proveedor.',
-        'INSUFFICIENT_STOCK': 'Stock insuficiente para uno o más productos.',
-        'PRODUCT_NOT_FOUND': 'Uno o más productos ya no están disponibles.',
-        'INVALID_ITEM': 'Hay items inválidos en el carrito.',
-        'INVALID_QUANTITY': 'La cantidad de uno o más productos es inválida.',
-        'INVALID_PRODUCT': 'Uno o más productos no tienen proveedor asignado.',
-        'INVALID_SUPPLIER': 'El proveedor de uno o más productos no existe.',
-        'INVALID_ORDER': 'La orden está vacía o es inválida.',
+        MINIMUM_PURCHASE_VIOLATION:
+          'No se cumple la compra mínima de uno o más proveedores.',
+        MINIMUM_PURCHASE_NOT_MET:
+          'No se cumple la compra mínima requerida por el proveedor.',
+        INSUFFICIENT_STOCK: 'Stock insuficiente para uno o más productos.',
+        PRODUCT_NOT_FOUND: 'Uno o más productos ya no están disponibles.',
+        INVALID_ITEM: 'Hay items inválidos en el carrito.',
+        INVALID_QUANTITY: 'La cantidad de uno o más productos es inválida.',
+        INVALID_PRODUCT: 'Uno o más productos no tienen proveedor asignado.',
+        INVALID_SUPPLIER: 'El proveedor de uno o más productos no existe.',
+        INVALID_ORDER: 'La orden está vacía o es inválida.',
       };
-      
+
       // Buscar mensaje de error conocido
-      const knownError = Object.keys(errorMessages).find(key => 
+      const knownError = Object.keys(errorMessages).find(key =>
         error.message?.includes(key)
       );
-      
+
       if (knownError) {
         const userMessage = errorMessages[knownError];
-        console.log(`[PaymentMethodSelector] Error de validación: ${knownError}`);
-        
+        console.log(
+          `[PaymentMethodSelector] Error de validación: ${knownError}`
+        );
+
         // Todos los errores de validación redirigen al carrito para corrección
         toast.error(userMessage + ' Revisa tu carrito.');
         navigate('/buyer/cart');
         return;
       }
-      
+
       // Detectar error de constraint duplicada por mensaje
-      const isDuplicateOrder = 
+      const isDuplicateOrder =
         error.message?.includes('uniq_orders_cart_pending') ||
         error.message?.includes('duplicate key');
-        
+
       if (isDuplicateOrder) {
-        console.log('[PaymentMethodSelector] Orden duplicada detectada, redirigiendo a pedidos');
-        toast.info('Ya tienes un pago en proceso para este carrito. Revisa tus pedidos.');
+        console.log(
+          '[PaymentMethodSelector] Orden duplicada detectada, redirigiendo a pedidos'
+        );
+        toast.info(
+          'Ya tienes un pago en proceso para este carrito. Revisa tus pedidos.'
+        );
         navigate('/buyer/orders');
         return;
       }
-      
+
       // Error desconocido
       setError(error.message);
       toast.error(error.message);
@@ -402,13 +432,13 @@ const PaymentMethodSelector = () => {
   // ===== RENDERIZADO (COMPLETO) =====
 
   // Derivar total para barra inferior (replicado del summary calculado allí) - simple fallback
-  const totalForBar = orderData.total || 0
+  const totalForBar = orderData.total || 0;
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       {/* Layout condicional: móvil vs desktop */}
       {isMobile ? (
-  <Box sx={{ width: '100%', maxWidth: '100%', px: 0, mx: 'auto' }}>
+        <Box sx={{ width: '100%', maxWidth: '100%', px: 0, mx: 'auto' }}>
           <MobilePaymentLayout
             orderData={orderData}
             availableMethods={availableMethods}
@@ -419,7 +449,9 @@ const PaymentMethodSelector = () => {
             isProcessing={isProcessing}
             formatPrice={checkoutService.formatPrice}
             // Pasar número de orden seguro al layout móvil
-            currentStep={currentStepOrder ? currentStepOrder() : (currentStep?.order || 2)}
+            currentStep={
+              currentStepOrder ? currentStepOrder() : currentStep?.order || 2
+            }
             totalSteps={3}
           />
         </Box>
@@ -428,14 +460,31 @@ const PaymentMethodSelector = () => {
         <>
           {/* Header */}
           <Box sx={{ mb: { xs: 2.5, md: 4 }, px: { xs: 2, md: 3 } }}>
-            <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={2}
+              sx={{ mb: 3 }}
+            >
               <Tooltip title="Volver" arrow>
                 <IconButton onClick={handleBack} sx={{ p: 1 }}>
                   <ArrowBackIcon />
                 </IconButton>
               </Tooltip>
-              <CreditCardIcon sx={{ color: 'primary.main', fontSize: { xs: 26, md: 32 }, mr: 1 }} />
-              <Typography variant={"h4"} fontWeight="bold" sx={{ fontSize: { xs: '1.45rem', sm: '1.55rem', md: '2.125rem' } }}>
+              <CreditCardIcon
+                sx={{
+                  color: 'primary.main',
+                  fontSize: { xs: 26, md: 32 },
+                  mr: 1,
+                }}
+              />
+              <Typography
+                variant={'h4'}
+                fontWeight="bold"
+                sx={{
+                  fontSize: { xs: '1.45rem', sm: '1.55rem', md: '2.125rem' },
+                }}
+              >
                 <span style={{ color: '#2E52B2' }}>Método de Pago</span>
               </Typography>
             </Stack>
@@ -443,7 +492,13 @@ const PaymentMethodSelector = () => {
             {/* Stepper de progreso */}
             <Box
               sx={{
-                maxWidth: { xs: 340, sm: 480, md: '100%', lg: '100%', xl: '100%' },
+                maxWidth: {
+                  xs: 340,
+                  sm: 480,
+                  md: '100%',
+                  lg: '100%',
+                  xl: '100%',
+                },
                 width: '100%',
                 display: 'flex',
                 justifyContent: 'flex-start',
@@ -460,13 +515,18 @@ const PaymentMethodSelector = () => {
 
           {/* Contenido principal */}
           <Box sx={{ px: { xs: 2, md: 3 }, pb: { xs: 10, md: 0 } }}>
-            <Stack direction={{ xs: 'column', md: 'row', lg: 'row' }} spacing={{ xs: 3, md: 2, lg: 4 }}>
+            <Stack
+              direction={{ xs: 'column', md: 'row', lg: 'row' }}
+              spacing={{ xs: 3, md: 2, lg: 4 }}
+            >
               {/* Panel izquierdo - Métodos de pago */}
-              <Box sx={{ 
-                width: { xs: '100%' },
-                flexBasis: { xs: '100%', md: '65%', lg: '65%', xl: '65%' },
-                maxWidth: { xs: '100%', md: '65%', lg: '65%', xl: '65%' }
-              }}>
+              <Box
+                sx={{
+                  width: { xs: '100%' },
+                  flexBasis: { xs: '100%', md: '65%', lg: '65%', xl: '65%' },
+                  maxWidth: { xs: '100%', md: '65%', lg: '65%', xl: '65%' },
+                }}
+              >
                 <motion.div variants={itemVariants}>
                   <Paper
                     elevation={3}
@@ -478,7 +538,18 @@ const PaymentMethodSelector = () => {
                       border: '1px solid rgba(102, 126, 234, 0.1)',
                     }}
                   >
-                    <Typography variant="h5" fontWeight="bold" sx={{ mb: 3, fontSize: { xs: '1.15rem', sm: '1.25rem', md: '1.5rem' } }}>
+                    <Typography
+                      variant="h5"
+                      fontWeight="bold"
+                      sx={{
+                        mb: 3,
+                        fontSize: {
+                          xs: '1.15rem',
+                          sm: '1.25rem',
+                          md: '1.5rem',
+                        },
+                      }}
+                    >
                       {isCompleted
                         ? '¡Pago Completado!'
                         : 'Selecciona tu método de pago'}
@@ -510,6 +581,7 @@ const PaymentMethodSelector = () => {
                               onSelect={handleMethodSelect}
                               fees={fees}
                               formatPrice={checkoutService.formatPrice}
+                              baseTotal={baseTotal}
                             />
                           );
                         })}
@@ -534,11 +606,13 @@ const PaymentMethodSelector = () => {
               </Box>
 
               {/* Panel derecho - Resumen */}
-              <Box sx={{ 
-                width: { xs: '100%' },
-                flexBasis: { xs: '100%', md: '35%', lg: '35%', xl: '35%' },
-                maxWidth: { xs: '100%', md: '35%', lg: '35%', xl: '35%' }
-              }}>
+              <Box
+                sx={{
+                  width: { xs: '100%' },
+                  flexBasis: { xs: '100%', md: '35%', lg: '35%', xl: '35%' },
+                  maxWidth: { xs: '100%', md: '35%', lg: '35%', xl: '35%' },
+                }}
+              >
                 <motion.div variants={itemVariants}>
                   <CheckoutSummary
                     orderData={orderData}

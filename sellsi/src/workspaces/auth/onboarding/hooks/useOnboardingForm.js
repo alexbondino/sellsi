@@ -15,7 +15,7 @@ export const useOnboardingForm = onClose => {
     nombreEmpresa: '',
     nombrePersonal: '',
     telefonoContacto: '',
-    codigoPais: '+56',
+    codigoPais: 'CL', // Default to Chile
 
     // Campos de Documento Tributario
     documentTypes: [],

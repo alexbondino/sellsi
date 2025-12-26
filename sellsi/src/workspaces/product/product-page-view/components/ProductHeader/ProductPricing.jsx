@@ -28,6 +28,92 @@ import {
   ICON_BUTTON_CLEAN,
 } from '../../styles/productPageStyles';
 
+/**
+ * QuotationButtons - Botones de contacto y cotización
+ * Exportado para reutilizar en mobile y desktop
+ */
+export const QuotationButtons = ({
+  isLoggedIn,
+  isOwnProduct,
+  onOpenContactModal,
+  onOpenQuotationModal,
+  sx = {},
+}) => {
+  if (!isLoggedIn || isOwnProduct) return null;
+
+  return (
+    <Box
+      sx={{
+        mt: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5,
+        ...sx,
+      }}
+    >
+      {/* Fila 1 */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.75,
+          lineHeight: 1.2,
+        }}
+      >
+        <Typography
+          variant="body2"
+          sx={{ color: 'text.secondary', lineHeight: 1.2 }}
+        >
+          ¿Necesitas solicitar alguna condición especial?
+        </Typography>
+
+        <Button
+          variant="text"
+          size="small"
+          onClick={onOpenContactModal}
+          sx={{
+            fontWeight: 600,
+            minHeight: 'auto',
+            py: 0,
+          }}
+        >
+          Contáctanos
+        </Button>
+      </Box>
+
+      {/* Fila 2 */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.75,
+          lineHeight: 1.2,
+        }}
+      >
+        <Typography
+          variant="body2"
+          sx={{ color: 'text.secondary', lineHeight: 1.2 }}
+        >
+          ¿Quieres saber los detalles de todo?
+        </Typography>
+
+        <Button
+          variant="text"
+          size="small"
+          onClick={onOpenQuotationModal}
+          sx={{
+            fontWeight: 600,
+            minHeight: 'auto',
+            py: 0,
+          }}
+        >
+          Cotiza aquí
+        </Button>
+      </Box>
+    </Box>
+  );
+};
+
 const ProductPricing = ({
   product,
   tiers = [],
@@ -69,81 +155,6 @@ const ProductPricing = ({
         'es-CL'
       )}`,
     };
-  };
-
-  const renderQuotationButtonsDesktop = () => {
-    if (!isLoggedIn || isOwnProduct) return null;
-
-    return (
-      <Box
-        sx={{
-          mt: 2, // ✅ Espacio desde la tabla de precios
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 0.5, // 🔥 distancia entre filas
-        }}
-      >
-        {/* Fila 1 */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.75, // 🔥 texto ↔ botón
-            lineHeight: 1.2,
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ color: 'text.secondary', lineHeight: 1.2 }}
-          >
-            ¿Necesitas solicitar alguna condición especial?
-          </Typography>
-
-          <Button
-            variant="text"
-            size="small"
-            onClick={onOpenContactModal}
-            sx={{
-              fontWeight: 600,
-              minHeight: 'auto',
-              py: 0,
-            }}
-          >
-            Contáctanos
-          </Button>
-        </Box>
-
-        {/* Fila 2 */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.75,
-            lineHeight: 1.2,
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ color: 'text.secondary', lineHeight: 1.2 }}
-          >
-            ¿Quieres saber los detalles de todo?
-          </Typography>
-
-          <Button
-            variant="text"
-            size="small"
-            onClick={onOpenQuotationModal}
-            sx={{
-              fontWeight: 600,
-              minHeight: 'auto',
-              py: 0,
-            }}
-          >
-            Cotiza aquí
-          </Button>
-        </Box>
-      </Box>
-    );
   };
 
   if (showPriceSkeleton) return <PriceTiersSkeleton rows={4} />;
@@ -223,7 +234,14 @@ const ProductPricing = ({
           </Table>
         </TableContainer>
 
-        {!isMobile && renderQuotationButtonsDesktop()}
+        {!isMobile && (
+          <QuotationButtons
+            isLoggedIn={isLoggedIn}
+            isOwnProduct={isOwnProduct}
+            onOpenContactModal={onOpenContactModal}
+            onOpenQuotationModal={onOpenQuotationModal}
+          />
+        )}
       </Box>
     );
   }
@@ -250,7 +268,14 @@ const ProductPricing = ({
         </Table>
       </TableContainer>
 
-      {!isMobile && renderQuotationButtonsDesktop()}
+      {!isMobile && (
+        <QuotationButtons
+          isLoggedIn={isLoggedIn}
+          isOwnProduct={isOwnProduct}
+          onOpenContactModal={onOpenContactModal}
+          onOpenQuotationModal={onOpenQuotationModal}
+        />
+      )}
     </Box>
   );
 };
