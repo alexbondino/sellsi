@@ -93,6 +93,7 @@ jobs:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: DEP
+          JIRA_ASSIGNEE_ID: ${{ secrets.JIRA_ASSIGNEE_ID }}
           SUMMARY: ${{ steps.build_payload.outputs.summary }}
           DESCRIPTION: ${{ steps.build_payload.outputs.description }}
         shell: bash
@@ -104,6 +105,7 @@ jobs:
             --arg project "$JIRA_PROJECT_KEY" \
             --arg summary "$SUMMARY" \
             --arg desc "$DESCRIPTION" \
+            --arg assignee "$JIRA_ASSIGNEE_ID" \
             '
               def to_adf($text):
                 ($text | split("\n")) as $lines |
@@ -159,7 +161,14 @@ jobs:
                     type: "doc",
                     version: 1,
                     content: to_adf($desc)
-                  }
+                  },
+                  assignee: (
+                    if $assignee != "" then
+                      { id: $assignee }
+                    else
+                      null
+                    end
+                  )
                 }
               }
             ')

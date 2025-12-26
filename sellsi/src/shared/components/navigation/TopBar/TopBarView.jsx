@@ -1,9 +1,23 @@
 // Fase 3: Presentational View de la TopBar (sin lógica de negocio)
 import React from 'react';
-import { Box, Button, IconButton, Tooltip, Badge, Divider, TextField, InputAdornment, MenuItem, Menu } from '@mui/material';
+import {
+  Box,
+  Button,
+  IconButton,
+  Tooltip,
+  Badge,
+  Divider,
+  TextField,
+  InputAdornment,
+  MenuItem,
+  Menu,
+  ListItemIcon,
+} from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import PersonIcon from '@mui/icons-material/Person';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { NotificationBell } from '../../../../domains/notifications';
 import { MobileMenu } from './components/MobileMenu';
 import { AuthModals } from './components/AuthModals';
@@ -94,7 +108,12 @@ export function TopBarView({
               tabIndex={0}
               aria-label="Ir a inicio"
               onClick={onLogoClick}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onLogoClick(); } }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onLogoClick();
+                }
+              }}
             >
               <Box
                 component="img"
@@ -115,8 +134,15 @@ export function TopBarView({
               />
             </Box>
             {isLoggedIn && isBuyerRole && (
-              <Box data-component="TopBar.mobileSearch" sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', ml: { xs: 0.5, sm: 1 } }}>
-        <TextField
+              <Box
+                data-component="TopBar.mobileSearch"
+                sx={{
+                  display: { xs: 'flex', md: 'none' },
+                  alignItems: 'center',
+                  ml: { xs: 0.5, sm: 1 },
+                }}
+              >
+                <TextField
                   size="small"
                   placeholder="Buscar productos..."
                   inputRef={mobileSearchInputRef}
@@ -126,8 +152,8 @@ export function TopBarView({
                       backgroundColor: 'white',
                       height: 34,
                       borderRadius: 1.5,
-                      fontSize: '0.75rem'
-                    }
+                      fontSize: '0.75rem',
+                    },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -137,37 +163,69 @@ export function TopBarView({
                     ),
                     endAdornment: (
                       <InputAdornment position="end">
-        <IconButton size="small" onClick={onMobileSearchButton} aria-label="Ejecutar búsqueda">
+                        <IconButton
+                          size="small"
+                          onClick={onMobileSearchButton}
+                          aria-label="Ejecutar búsqueda"
+                        >
                           <ArrowForwardIcon fontSize="small" />
                         </IconButton>
                       </InputAdornment>
-                    )
+                    ),
                   }}
-      inputProps={{ 'aria-label': 'Buscar productos' }}
+                  inputProps={{ 'aria-label': 'Buscar productos' }}
                   {...mobileSearchInputProps}
                 />
               </Box>
             )}
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }} role="navigation" aria-label="Navegación principal">
+            <Box
+              sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}
+              role="navigation"
+              aria-label="Navegación principal"
+            >
               {desktopNavLinks}
             </Box>
           </Box>
 
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }} aria-label="Acciones de usuario" role="group">
+          <Box
+            sx={{
+              display: { xs: 'none', md: 'flex' },
+              alignItems: 'center',
+              gap: 0.5,
+            }}
+            aria-label="Acciones de usuario"
+            role="group"
+          >
             {desktopRightContent}
           </Box>
 
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 0, ml: { xs: 0.5, sm: 2 } }}>
+          <Box
+            sx={{
+              display: { xs: 'flex', md: 'none' },
+              alignItems: 'center',
+              gap: 0,
+              ml: { xs: 0.5, sm: 2 },
+            }}
+          >
             {isLoggedIn && (
               <Tooltip title="Notificaciones" arrow>
                 <span
                   role="button"
                   tabIndex={0}
-                  aria-label={`Abrir notificaciones, ${notifBellCount||0} sin leer`}
+                  aria-label={`Abrir notificaciones, ${
+                    notifBellCount || 0
+                  } sin leer`}
                   aria-haspopup="true"
                   aria-expanded={notifMenuOpen ? 'true' : 'false'}
-                  aria-controls={notifMenuOpen ? 'topbar-notifications-popover' : undefined}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenNotif?.(e); } }}
+                  aria-controls={
+                    notifMenuOpen ? 'topbar-notifications-popover' : undefined
+                  }
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onOpenNotif?.(e);
+                    }
+                  }}
                   onClick={onOpenNotif}
                 >
                   <NotificationBell count={notifBellCount} />
@@ -182,7 +240,9 @@ export function TopBarView({
               aria-label="Abrir menú móvil"
               aria-haspopup="true"
               aria-expanded={Boolean(mobileMenuAnchor) ? 'true' : 'false'}
-              aria-controls={Boolean(mobileMenuAnchor) ? 'topbar-mobile-menu' : undefined}
+              aria-controls={
+                Boolean(mobileMenuAnchor) ? 'topbar-mobile-menu' : undefined
+              }
             >
               <MenuIcon sx={{ color: 'white' }} />
             </IconButton>
@@ -206,7 +266,10 @@ export function TopBarView({
         onClose={onCloseProfileMenu}
         disableScrollLock
         aria-label="Menú de perfil"
-        MenuListProps={{ 'aria-label': 'Opciones de perfil', 'aria-labelledby': 'topbar-profile-button' }}
+        MenuListProps={{
+          'aria-label': 'Opciones de perfil',
+          'aria-labelledby': 'topbar-profile-button',
+        }}
         PaperProps={{
           sx: {
             backgroundColor: '#2C2C2C',
@@ -216,11 +279,29 @@ export function TopBarView({
               '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
             },
             '& .MuiSvgIcon-root': { color: '#FFFFFF' },
+            '& .MuiListItemIcon-root': {
+              minWidth: 36,
+            },
           },
         }}
       >
-        <MenuItem onClick={() => { onGoToProfile(); onCloseProfileMenu(); }}>Mi Perfil</MenuItem>
-        <MenuItem onClick={onLogout}>Cerrar sesión</MenuItem>
+        <MenuItem
+          onClick={() => {
+            onGoToProfile();
+            onCloseProfileMenu();
+          }}
+        >
+          <ListItemIcon>
+            <PersonIcon fontSize="small" />
+          </ListItemIcon>
+          Mi Perfil
+        </MenuItem>
+        <MenuItem onClick={onLogout}>
+          <ListItemIcon>
+            <LogoutIcon fontSize="small" />
+          </ListItemIcon>
+          Cerrar sesión
+        </MenuItem>
       </Menu>
 
       <AuthModals

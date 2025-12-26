@@ -128,7 +128,7 @@ const Onboarding = () => {
     accountType: '',
     nombreEmpresa: '',
     telefonoContacto: '',
-    codigoPais: '', // Default to Chile
+    codigoPais: 'CL', // Default to Chile
     descripcionProveedor: '',
 
     // Documento Tributario
@@ -326,7 +326,10 @@ const Onboarding = () => {
         }),
       };
 
-      console.log('🔍 [ONBOARDING] Payload users:', JSON.stringify(userUpdates, null, 2));
+      console.log(
+        '🔍 [ONBOARDING] Payload users:',
+        JSON.stringify(userUpdates, null, 2)
+      );
 
       // Upsert en tabla users
       const { error: upsertError } = await supabase
@@ -356,7 +359,10 @@ const Onboarding = () => {
           billing_commune: formData.billingCommune,
         };
 
-        console.log('🔍 [ONBOARDING] Payload billing_info:', JSON.stringify(billingUpdates, null, 2));
+        console.log(
+          '🔍 [ONBOARDING] Payload billing_info:',
+          JSON.stringify(billingUpdates, null, 2)
+        );
 
         const { error: billingError } = await supabase
           .from('billing_info')
@@ -365,7 +371,9 @@ const Onboarding = () => {
         if (billingError) {
           console.error('❌ [ONBOARDING] Billing Info Error:', billingError);
           console.error('📦 Payload que falló:', billingUpdates);
-          throw new Error(`Error al guardar información de facturación: ${billingError.message}`);
+          throw new Error(
+            `Error al guardar información de facturación: ${billingError.message}`
+          );
         }
 
         console.log('✅ [ONBOARDING] Billing info guardada exitosamente');
@@ -380,7 +388,8 @@ const Onboarding = () => {
       await refreshUserProfile();
 
       // Prime de región (si aplica) - ahora de formData ya que billing va a otra tabla
-      const regionCandidate = formData.billingRegion || formData.shippingRegion || null;
+      const regionCandidate =
+        formData.billingRegion || formData.shippingRegion || null;
       if (regionCandidate) {
         try {
           primeUserRegionCache(regionCandidate);
@@ -391,21 +400,24 @@ const Onboarding = () => {
 
       // ✅ Mostrar banner de éxito
       showBanner({
-        message: '¡Bienvenido a Sellsi! Tu perfil fue configurado correctamente 🎉',
+        message:
+          '¡Bienvenido a Sellsi! Tu perfil fue configurado correctamente 🎉',
         severity: 'success',
-        duration: 3000
+        duration: 3000,
       });
 
       // Navega a la home
       navigate('/', { replace: true });
     } catch (error) {
       console.error('❌ Error al actualizar el perfil:', error);
-      
+
       // ✅ Mostrar banner de error
       showBanner({
-        message: error.message || 'Hubo un error al guardar tu perfil. Intenta nuevamente.',
+        message:
+          error.message ||
+          'Hubo un error al guardar tu perfil. Intenta nuevamente.',
         severity: 'error',
-        duration: 6000
+        duration: 6000,
       });
     } finally {
       setIsLoading(false);

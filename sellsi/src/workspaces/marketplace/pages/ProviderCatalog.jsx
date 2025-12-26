@@ -21,6 +21,10 @@ import {
   Select,
   MenuItem,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -32,6 +36,8 @@ import {
   Clear as ClearIcon,
   Category as CategoryIcon,
   Sort as SortIcon,
+  Share as ShareIcon,
+  ContentCopy as ContentCopyIcon,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
@@ -62,6 +68,11 @@ const ProviderCatalog = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [priceOrder, setPriceOrder] = useState('none'); // none, asc, desc
   const [filteredProducts, setFilteredProducts] = useState([]);
+
+  // Estados para modal de compartir
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [catalogUrl, setCatalogUrl] = useState('');
+
   // Usar las categorías estandarizadas
   const availableCategories = CATEGORIAS;
 
@@ -352,6 +363,37 @@ const ProviderCatalog = () => {
     [addToCart, isFromBuyer, navigate]
   );
 
+  // Handlers para modal de compartir
+  const handleOpenShareModal = () => {
+    if (provider && userId) {
+      // Usar el mismo slug que está en la URL actual
+      const baseUrl = window.location.origin;
+      const url = `${baseUrl}/catalog/${userNm}/${userId}`;
+      setCatalogUrl(url);
+      setShareModalOpen(true);
+    }
+  };
+
+  const handleCloseShareModal = () => {
+    setShareModalOpen(false);
+  };
+
+  const handleCopyUrl = () => {
+    navigator.clipboard
+      .writeText(catalogUrl)
+      .then(() => {
+        toast.success('Enlace copiado al portapapeles', {
+          icon: '📋',
+          duration: 2000,
+        });
+      })
+      .catch(() => {
+        toast.error('Error al copiar el enlace', {
+          duration: 2000,
+        });
+      });
+  };
+
   // Manejar navegación hacia atrás
   const handleGoBack = () => {
     if (isFromBuyer) {
@@ -626,46 +668,78 @@ const ProviderCatalog = () => {
                     gap: { xs: 0.5, md: 1 },
                     mb: { xs: 0.5, md: 1 },
                     flexWrap: 'wrap',
-                    justifyContent: { xs: 'center', sm: 'flex-start' },
+                    justifyContent: { xs: 'center', sm: 'space-between' },
                   }}
                 >
-                  <Typography
-                    variant="h5"
+                  <Box
                     sx={{
-                      fontWeight: 600,
-                      color: 'primary.main',
-                      fontSize: { xs: '1.1rem', sm: '1.3rem', md: '2rem' },
-                      textAlign: { xs: 'center', sm: 'left' },
-                      lineHeight: 1.2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: { xs: 0.5, md: 1 },
+                      flexWrap: 'wrap',
                     }}
                   >
-                    {provider?.user_nm || 'Proveedor'}
-                  </Typography>
-                  {provider?.verified === true && (
-                    <Tooltip
-                      title="Este Proveedor ha sido verificado por Sellsi."
-                      placement="right"
-                      arrow
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontWeight: 600,
+                        color: 'primary.main',
+                        fontSize: { xs: '1.1rem', sm: '1.3rem', md: '2rem' },
+                        textAlign: { xs: 'center', sm: 'left' },
+                        lineHeight: 1.2,
+                      }}
                     >
-                      <Chip
-                        icon={
-                          <VerifiedUser
-                            sx={{ fontSize: { xs: '0.8rem', md: '1rem' } }}
-                          />
-                        }
-                        label="Verificado"
-                        color="primary"
+                      {provider?.user_nm || 'Proveedor'}
+                    </Typography>
+                    {provider?.verified === true && (
+                      <Tooltip
+                        title="Este Proveedor ha sido verificado por Sellsi."
+                        placement="right"
+                        arrow
+                      >
+                        <Chip
+                          icon={
+                            <VerifiedUser
+                              sx={{ fontSize: { xs: '0.8rem', md: '1rem' } }}
+                            />
+                          }
+                          label="Verificado"
+                          color="primary"
+                          size="small"
+                          variant="filled"
+                          clickable={false}
+                          onClick={() => {}}
+                          sx={{
+                            fontSize: { xs: '0.65rem', md: '0.75rem' },
+                            height: { xs: 20, md: 24 },
+                          }}
+                        />
+                      </Tooltip>
+                    )}
+                  </Box>
+
+                  {/* Botón de compartir catálogo */}
+                  <Tooltip title="Compartir catálogo" arrow>
+                    <span>
+                      <Button
+                        variant="outlined"
                         size="small"
-                        variant="filled"
-                        clickable={false}
-                        onClick={() => {}}
+                        onClick={handleOpenShareModal}
                         sx={{
-                          fontSize: { xs: '0.65rem', md: '0.75rem' },
-                          height: { xs: 20, md: 24 },
+                          borderRadius: 2,
+                          minWidth: 40,
+                          width: 40,
+                          height: 40,
+                          p: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                         }}
-                      />
-                    </Tooltip>
-                  )}
+                      >
+                        <ShareIcon fontSize="small" />
+                      </Button>
+                    </span>
+                  </Tooltip>
                 </Box>
 
                 <Typography
@@ -745,7 +819,8 @@ const ProviderCatalog = () => {
                   ),
                 }}
                 sx={{
-                  width: { xs: '100%', md: 200 },
+                  minWidth: { xs: '100%', md: '15rem' },
+                  width: { xs: '100%', md: '15rem' },
                   flexShrink: 0,
                   '& .MuiInputBase-input': {
                     fontSize: { xs: '0.875rem', md: '1rem' },
@@ -770,8 +845,8 @@ const ProviderCatalog = () => {
                 <FormControl
                   size="small"
                   sx={{
-                    minWidth: { xs: 0, md: 193 },
-                    width: { xs: '100%', md: 193 },
+                    minWidth: { xs: 0, md: '15rem' },
+                    width: { xs: '100%', md: '15rem' },
                     flexShrink: 0,
                   }}
                 >
@@ -848,8 +923,8 @@ const ProviderCatalog = () => {
                 <FormControl
                   size="small"
                   sx={{
-                    minWidth: { xs: 0, md: 214 },
-                    width: { xs: '100%', md: 214 },
+                    minWidth: { xs: 0, md: '15rem' },
+                    width: { xs: '100%', md: '15rem' },
                     flexShrink: 0,
                   }}
                 >
@@ -1059,6 +1134,66 @@ const ProviderCatalog = () => {
             )}
           </Box>
         </Box>
+
+        {/* Modal para compartir catálogo */}
+        <Dialog
+          open={shareModalOpen}
+          onClose={handleCloseShareModal}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle sx={{ fontWeight: 600 }}>Compartir Catálogo</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+              Comparte este enlace para que puedan ver el catálogo completo de{' '}
+              {provider?.user_nm}:
+            </Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 1,
+                alignItems: 'center',
+                bgcolor: 'grey.100',
+                p: 2,
+                borderRadius: 1,
+                flexDirection: { xs: 'column', sm: 'row' },
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  flex: 1,
+                  wordBreak: 'break-all',
+                  fontFamily: 'monospace',
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                }}
+              >
+                {catalogUrl}
+              </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<ContentCopyIcon />}
+                onClick={handleCopyUrl}
+                sx={{
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  width: { xs: '100%', sm: 'auto' },
+                }}
+              >
+                Copiar
+              </Button>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={handleCloseShareModal}
+              sx={{ textTransform: 'none' }}
+            >
+              Cerrar
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </ThemeProvider>
   );

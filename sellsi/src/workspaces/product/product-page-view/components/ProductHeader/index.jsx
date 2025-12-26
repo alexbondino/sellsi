@@ -19,7 +19,7 @@ import { Box } from '@mui/material';
 import ProductName from './ProductName';
 import ProductSupplier from './ProductSupplier';
 import ProductMetadata from './ProductMetadata';
-import ProductPricing from './ProductPricing';
+import ProductPricing, { QuotationButtons } from './ProductPricing';
 import QuotationSection from './QuotationSection';
 
 // Componentes existentes
@@ -318,6 +318,17 @@ const ProductHeader = React.memo(
 
               return null;
             })()}
+
+            {/* Botones de Cotización - Solo en mobile (después de botones de compra) */}
+            {isMobile && (
+              <QuotationButtons
+                isLoggedIn={isLoggedIn}
+                isOwnProduct={isOwnProduct}
+                onOpenContactModal={openContactModal}
+                onOpenQuotationModal={openQuotationModal}
+                sx={{ mt: 2, mb: 2 }}
+              />
+            )}
 
             {/* Metadata: Stock, Compra mínima, Chips - Solo en mobile (después de botones) */}
             {isMobile && (
