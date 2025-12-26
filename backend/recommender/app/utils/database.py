@@ -174,3 +174,78 @@ async def fetch_user_interactions(user_id: str) -> List[Dict[str, Any]]:
     """
     # Placeholder for future implementation
     return []
+
+
+def fetch_products_sync(
+    category: Optional[str] = None,
+    min_stock: int = 0,
+    exclude_ids: Optional[List[str]] = None,
+    limit: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """
+    Synchronous version of fetch_products for Vercel serverless functions
+    """
+    client = get_supabase_client()
+    
+    # Start query with JOIN to product_images
+    query = client.table("products").select("""
+        productid,
+        productnm,
+        category,
+        price,
+        productqty,
+        is_active,
+        supplier_id,
+        users!supplier_id(user_nm),
+        product_images!product_id(image_url)
+    """)
+    
+    # Filter by active products
+    query = query.eq("is_active", True)
+    
+    # Filter by minimum stock
+    if min_stock > 0:
+        query = query.gte("productqty", min_stock)
+    
+    # Filter by category
+    if category:
+        query = query.eq("category", category)
+    
+    # Execute query
+    response = query.execute()
+    
+    if not response.data:
+        return []
+    
+    # Transform data to match expected format
+    products = []
+    for item in response.data:
+        # Get first product image if available
+        product_images = item.get("product_images", [])
+        image_url = ""
+        if product_images and len(product_images) > 0:
+            image_url = product_images[0].get("image_url", "")
+        
+        product = {
+            "id": str(item["productid"]),
+            "name": item["productnm"],
+            "category": item.get("category", "Sin categoría"),
+            "price": float(item.get("price", 0)),
+            "stock": item.get("productqty", 0),
+            "image_url": image_url,
+            "active": item.get("is_active", True),
+            "provider_id": item.get("supplier_id", ""),
+            "provider_name": item.get("users", {}).get("user_nm", "Desconocido") if item.get("users") else "Desconocido"
+        }
+        
+        # Exclude specific IDs
+        if exclude_ids and product["id"] in exclude_ids:
+            continue
+            
+        products.append(product)
+    
+    # Limit results if specified
+    if limit and len(products) > limit:
+        products = products[:limit]
+    
+    return products
