@@ -94,7 +94,7 @@ export const QuotationButtons = ({
           variant="body2"
           sx={{ color: 'text.secondary', lineHeight: 1.2 }}
         >
-          ¿Quieres saber los detalles de todo?
+          Obtén el detalle de la operación
         </Typography>
 
         <Button
