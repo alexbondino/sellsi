@@ -1,39 +1,8 @@
-{{{{
-
+{
   "builds": [
-
-    {  "version": 2,
-
-      "src": "api/*.py",
-
-      "use": "@vercel/python"  "builds": [  "rewrites": [  "rewrites": [
-
-    }
-
-  ]    {
-
-}
-
-      "src": "api/**/*.py",    {    {
-
-      "use": "@vercel/python"
-
-    }      "source": "/api/recommender/:path*",      "source": "/api/recommender/:path*",
-
-  ],
-
-  "routes": [      "destination": "/api/recommender/:path*"      "destination": "/api/recommender/:path*"
-
     {
-
-      "src": "/api/(.*)",    }    }
-
-      "dest": "/api/$1"
-
-    }  ]  ]
-
+      "src": "api/*.py",
+      "use": "@vercel/python"
+    }
   ]
-
-}}}
-
-
+}
