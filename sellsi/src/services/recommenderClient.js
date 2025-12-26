@@ -33,15 +33,25 @@ export async function getRecommendations(limit = 10, category = null) {
 
     // Log solo de nombres de productos
     if (data.products && Array.isArray(data.products)) {
-      console.log('🎯 Productos randomizados por el modelo:');
-      data.products.forEach(product => {
-        console.log(`   ${product.name}`);
-      });
+      console.log(
+        `🎯 Productos randomizados por el modelo: ${data.products.length}`
+      );
+      if (data.products.length === 0) {
+        console.warn('⚠️ La lista de productos está vacía');
+      } else {
+        data.products.forEach(product => {
+          console.log(`   ${product.name}`);
+        });
+      }
     } else if (data.recommendations && Array.isArray(data.recommendations)) {
-      console.log('🎯 Productos recomendados:');
-      data.recommendations.forEach(product => {
-        console.log(`   ${product.name}`);
-      });
+      console.log(`🎯 Productos recomendados: ${data.recommendations.length}`);
+      if (data.recommendations.length === 0) {
+        console.warn('⚠️ La lista de productos recomendados está vacía');
+      } else {
+        data.recommendations.forEach(product => {
+          console.log(`   ${product.name}`);
+        });
+      }
     }
 
     return data;
@@ -70,15 +80,27 @@ export async function getSimilarProducts(productId, limit = 5) {
     const data = await response.json();
 
     if (data.similar_products && Array.isArray(data.similar_products)) {
-      console.log(`🔗 Productos similares a ${productId}:`);
-      data.similar_products.forEach((product, index) => {
-        console.log(`  ${index + 1}. ${product.name}`);
-      });
+      console.log(
+        `🔗 Productos similares a ${productId}: ${data.similar_products.length}`
+      );
+      if (data.similar_products.length === 0) {
+        console.warn('⚠️ La lista de productos similares está vacía');
+      } else {
+        data.similar_products.forEach((product, index) => {
+          console.log(`  ${index + 1}. ${product.name}`);
+        });
+      }
     } else if (data.recommendations && Array.isArray(data.recommendations)) {
-      console.log(`🔗 Productos similares a ${productId}:`);
-      data.recommendations.forEach((product, index) => {
-        console.log(`  ${index + 1}. ${product.name}`);
-      });
+      console.log(
+        `🔗 Productos similares a ${productId}: ${data.recommendations.length}`
+      );
+      if (data.recommendations.length === 0) {
+        console.warn('⚠️ La lista de productos similares está vacía');
+      } else {
+        data.recommendations.forEach((product, index) => {
+          console.log(`  ${index + 1}. ${product.name}`);
+        });
+      }
     }
 
     return data;
@@ -107,15 +129,23 @@ export async function getTrendingProducts(limit = 10) {
     const data = await response.json();
 
     if (data.trending_products && Array.isArray(data.trending_products)) {
-      console.log('🔥 Productos trending:');
-      data.trending_products.forEach((product, index) => {
-        console.log(`  ${index + 1}. ${product.name}`);
-      });
+      console.log(`🔥 Productos trending: ${data.trending_products.length}`);
+      if (data.trending_products.length === 0) {
+        console.warn('⚠️ La lista de productos trending está vacía');
+      } else {
+        data.trending_products.forEach((product, index) => {
+          console.log(`  ${index + 1}. ${product.name}`);
+        });
+      }
     } else if (data.recommendations && Array.isArray(data.recommendations)) {
-      console.log('🔥 Productos trending:');
-      data.recommendations.forEach((product, index) => {
-        console.log(`  ${index + 1}. ${product.name}`);
-      });
+      console.log(`🔥 Productos trending: ${data.recommendations.length}`);
+      if (data.recommendations.length === 0) {
+        console.warn('⚠️ La lista de productos trending está vacía');
+      } else {
+        data.recommendations.forEach((product, index) => {
+          console.log(`  ${index + 1}. ${product.name}`);
+        });
+      }
     }
 
     return data;
@@ -145,10 +175,18 @@ export async function getPersonalizedRecommendations(userId, limit = 10) {
     const data = await response.json();
 
     if (data.recommendations && Array.isArray(data.recommendations)) {
-      console.log(`👤 Recomendaciones personalizadas para usuario ${userId}:`);
-      data.recommendations.forEach((product, index) => {
-        console.log(`  ${index + 1}. ${product.name}`);
-      });
+      console.log(
+        `👤 Recomendaciones personalizadas para usuario ${userId}: ${data.recommendations.length}`
+      );
+      if (data.recommendations.length === 0) {
+        console.warn(
+          '⚠️ La lista de recomendaciones personalizadas está vacía'
+        );
+      } else {
+        data.recommendations.forEach((product, index) => {
+          console.log(`  ${index + 1}. ${product.name}`);
+        });
+      }
     }
 
     return data;
