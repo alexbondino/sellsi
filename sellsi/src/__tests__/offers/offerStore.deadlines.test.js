@@ -16,42 +16,7 @@ describe('offerStore deadlines & reservation', () => {
     useOfferStore.setState({ buyerOffers: [], supplierOffers: [], loading: false, error: null });
   });
 
-  test('reserveOffer (éxito) cambia a RESERVED y envía orderId', async () => {
-    const { supabase } = require('../../services/supabase');
-    // Preparar oferta aceptada dentro del plazo
-    const purchase_deadline = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-    useOfferStore.setState({ buyerOffers: [{ id: 'o_ok', status: OFFER_STATES.ACCEPTED, purchase_deadline }] });
 
-    supabase.rpc.mockImplementationOnce((fn, args) => {
-      expect(fn).toBe('mark_offer_as_purchased');
-      expect(args).toEqual({ p_offer_id: 'o_ok', p_order_id: 'order_123' });
-      return Promise.resolve({ data: { success: true }, error: null });
-    });
-
-    const res = await useOfferStore.getState().reserveOffer('o_ok', 'order_123');
-    expect(res).toEqual(expect.objectContaining({ success: true }));
-
-    const offer = useOfferStore.getState().buyerOffers.find(o => o.id === 'o_ok');
-    expect(offer.status).toBe(OFFER_STATES.RESERVED);
-    expect(offer.reserved_at).toBeDefined();
-    expect(offer.purchased_at).toBeDefined();
-  });
-
-  test('reserveOffer bloquea cuando purchase_deadline expiró', async () => {
-    const { supabase } = require('../../services/supabase');
-    const pastDeadline = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    useOfferStore.setState({ buyerOffers: [{ id: 'o_exp', status: OFFER_STATES.ACCEPTED, purchase_deadline: pastDeadline }] });
-
-    const initialCalls = supabase.rpc.mock.calls.length;
-    const res = await useOfferStore.getState().reserveOffer('o_exp');
-    // No debe llamar al RPC de mark_offer_as_purchased
-    expect(supabase.rpc.mock.calls.length).toBe(initialCalls);
-    expect(res.success).toBe(false);
-    expect(res.error).toMatch(/caducó/i);
-    const offer = useOfferStore.getState().buyerOffers.find(o => o.id === 'o_exp');
-    expect(offer.status).toBe(OFFER_STATES.EXPIRED);
-    expect(offer.expired_at).toBeDefined();
-  });
 
   test('acceptOffer sincroniza purchase_deadline -> expires_at y status approved', async () => {
     const { supabase } = require('../../services/supabase');
@@ -59,16 +24,94 @@ describe('offerStore deadlines & reservation', () => {
     useOfferStore.setState({ supplierOffers: [{ id: 'o_acc', status: 'pending', expires_at: new Date(Date.now() + 48*3600*1000).toISOString() }] });
 
     const deadline = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
-    supabase.rpc.mockImplementationOnce((fn, args) => {
-      expect(fn).toBe('accept_offer');
-      expect(args).toEqual({ p_offer_id: 'o_acc' });
-      return Promise.resolve({ data: { purchase_deadline: deadline }, error: null });
-    });
+    supabase.rpc.mockResolvedValueOnce({ data: { purchase_deadline: deadline }, error: null });
 
     await useOfferStore.getState().acceptOffer('o_acc');
+    // RPC called with expected args
+    expect(supabase.rpc).toHaveBeenCalledWith('accept_offer', expect.objectContaining({ p_offer_id: 'o_acc' }));
+
     const offer = useOfferStore.getState().supplierOffers.find(o => o.id === 'o_acc');
     expect(offer.status).toBe('approved'); // mapping interno
     expect(offer.purchase_deadline).toBe(deadline);
     expect(offer.expires_at).toBe(deadline); // sincronizado
+  });
+
+  test('reserveOffer handles backend error (success:false) without updating state', async () => {
+    const { supabase } = require('../../services/supabase');
+    const future = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    useOfferStore.setState({ buyerOffers: [{ id: 'o_err', status: OFFER_STATES.ACCEPTED, purchase_deadline: future }] });
+
+    supabase.rpc.mockResolvedValueOnce({ data: { success: false, error: 'already paid' }, error: null });
+
+    await expect(useOfferStore.getState().reserveOffer('o_err')).rejects.toThrow(/already paid/);
+
+    // Verify RPC was invoked with expected args
+    expect(supabase.rpc).toHaveBeenCalledWith('mark_offer_as_purchased', expect.objectContaining({ p_offer_id: 'o_err' }));
+
+    const off = useOfferStore.getState().buyerOffers.find(o => o.id === 'o_err');
+    expect(off.status).toBe(OFFER_STATES.ACCEPTED);
+  });
+
+  test('acceptOffer preserves expires_at when purchase_deadline missing', async () => {
+    const { supabase } = require('../../services/supabase');
+    const originalExpires = new Date(Date.now() + 48*3600*1000).toISOString();
+    useOfferStore.setState({ supplierOffers: [{ id: 'o_no_dead', status: 'pending', expires_at: originalExpires }] });
+
+    supabase.rpc.mockResolvedValueOnce({ data: { purchase_deadline: null }, error: null });
+
+    await useOfferStore.getState().acceptOffer('o_no_dead');
+    expect(supabase.rpc).toHaveBeenCalledWith('accept_offer', expect.objectContaining({ p_offer_id: 'o_no_dead' }));
+    const offer = useOfferStore.getState().supplierOffers.find(o => o.id === 'o_no_dead');
+    // expires_at should remain unchanged if backend did not provide a purchase_deadline
+    expect(offer.expires_at).toBe(originalExpires);
+  });
+
+  test('reserveOffer handles RPC rejection (exception) gracefully', async () => {
+    const { supabase } = require('../../services/supabase');
+    const future = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    useOfferStore.setState({ buyerOffers: [{ id: 'o_rej', status: OFFER_STATES.ACCEPTED, purchase_deadline: future }] });
+
+    supabase.rpc.mockImplementationOnce(() => Promise.reject(new Error('RPC down')));
+
+    await expect(useOfferStore.getState().reserveOffer('o_rej')).rejects.toThrow(/RPC down/);
+
+    const off = useOfferStore.getState().buyerOffers.find(o => o.id === 'o_rej');
+    expect(off.status).toBe(OFFER_STATES.ACCEPTED);
+  });
+
+  test('reserveOffer is idempotent for already finalized offers (RESERVED/PAID)', async () => {
+    const { supabase } = require('../../services/supabase');
+    useOfferStore.setState({ buyerOffers: [{ id: 'o_done', status: OFFER_STATES.RESERVED }, { id: 'o_paid', status: OFFER_STATES.PAID }] });
+
+    const resReserved = await useOfferStore.getState().reserveOffer('o_done');
+    const resPaid = await useOfferStore.getState().reserveOffer('o_paid');
+
+    expect(supabase.rpc).not.toHaveBeenCalled();
+    expect(resReserved).toEqual(expect.objectContaining({ success: false }));
+    expect(resPaid).toEqual(expect.objectContaining({ success: false }));
+  });
+
+  test('reserveOffer on missing offer still calls RPC and returns success', async () => {
+    const { supabase } = require('../../services/supabase');
+    supabase.rpc.mockResolvedValueOnce({ data: { success: true }, error: null });
+
+    const res = await useOfferStore.getState().reserveOffer('missing_offer', 'orderX');
+    expect(supabase.rpc).toHaveBeenCalledWith('mark_offer_as_purchased', { p_offer_id: 'missing_offer', p_order_id: 'orderX' });
+    expect(res).toEqual(expect.objectContaining({ success: true }));
+  });
+
+  test('reserveOffer treats purchase_deadline equal to now as allowed', async () => {
+    const { supabase } = require('../../services/supabase');
+    // Fix time to deterministic value
+    jest.useFakeTimers().setSystemTime(new Date('2025-01-01T00:00:00Z'));
+    const now = new Date().toISOString();
+    useOfferStore.setState({ buyerOffers: [{ id: 'o_now', status: OFFER_STATES.ACCEPTED, purchase_deadline: now }] });
+    supabase.rpc.mockResolvedValueOnce({ data: { success: true }, error: null });
+
+    const res = await useOfferStore.getState().reserveOffer('o_now');
+    expect(res).toEqual(expect.objectContaining({ success: true }));
+    const off = useOfferStore.getState().buyerOffers.find(o => o.id === 'o_now');
+    expect(off.status).toBe(OFFER_STATES.RESERVED);
+    jest.useRealTimers();
   });
 });

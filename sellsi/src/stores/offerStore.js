@@ -240,6 +240,10 @@ export const useOfferStore = create((set, get) => ({
       try {
         const state = get();
         const offer = state.buyerOffers.find(o => o.id === offerId);
+        // Short-circuit if already finalized (reserved/paid) to avoid duplicate RPCs
+        if (offer && (offer.status === OFFER_STATES.RESERVED || offer.status === OFFER_STATES.PAID)) {
+          return { success: false, error: 'La oferta ya fue finalizada' };
+        }
         if (offer && offer.purchase_deadline) {
           const dl = new Date(offer.purchase_deadline).getTime();
             if (!Number.isNaN(dl) && Date.now() > dl) {

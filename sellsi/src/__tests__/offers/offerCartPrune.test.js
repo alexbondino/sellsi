@@ -97,4 +97,47 @@ describe('Cart pruning for invalid offer statuses', () => {
     useOfferStore.getState()._pruneInvalidOfferCartItems();
     expect(useCartStore.getState().items.length).toBe(1);
   });
+
+  test('does NOT remove items without an offer_id', () => {
+    useOfferStore.setState({ buyerOffers: [{ id: 'off-exp', status: OFFER_STATES.EXPIRED }] });
+    // add an item without offer_id
+    useCartStore.setState(state => ({ items: state.items.concat([{ id: 'prod-no-offer', name: 'NoOffer', quantity: 1 }]) }));
+    addCartItemForOffer('off-exp');
+
+    expect(useCartStore.getState().items.length).toBe(2);
+
+    useOfferStore.getState()._pruneInvalidOfferCartItems();
+
+    // only the item with offer should be removed
+    expect(useCartStore.getState().items.length).toBe(1);
+    expect(useCartStore.getState().items[0].id).toBe('prod-no-offer');
+  });
+
+  test('prune returns correct removed count and uses setItems when available', () => {
+    // Prepare cart with two items linked to invalid offers
+    useCartStore.setState({ items: [
+      { id: 'prod-off1', offer_id: 'off-paid' },
+      { id: 'prod-off2', offer_id: 'off-exp' },
+      { id: 'prod-ok', offer_id: 'off-ok' }
+    ]});
+
+    useOfferStore.setState({ buyerOffers: [
+      { id: 'off-paid', status: OFFER_STATES.PAID },
+      { id: 'off-exp', status: OFFER_STATES.EXPIRED },
+      { id: 'off-ok', status: OFFER_STATES.RESERVED }
+    ]});
+
+    // Spy on setItems to ensure that path is used
+    const spy = jest.spyOn(useCartStore.getState(), 'setItems');
+
+    const result = useOfferStore.getState()._pruneInvalidOfferCartItems();
+
+    expect(result).toEqual(expect.objectContaining({ removed: 2 }));
+    expect(spy).toHaveBeenCalled();
+
+    // After pruning only prod-ok should remain
+    expect(useCartStore.getState().items.map(i => i.id)).toEqual(['prod-ok']);
+
+    spy.mockRestore();
+  });
 });

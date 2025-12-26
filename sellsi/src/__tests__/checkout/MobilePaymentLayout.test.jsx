@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, screen, within, fireEvent } from '@testing-library/react'
-import MobilePaymentLayout from '../../../domains/checkout/components/MobilePaymentLayout'
+import MobilePaymentLayout from '../../domains/checkout/components/MobilePaymentLayout'
 
 describe('MobilePaymentLayout', () => {
   test('bottom bar shows computed total for selected method and CTA enabled', () => {

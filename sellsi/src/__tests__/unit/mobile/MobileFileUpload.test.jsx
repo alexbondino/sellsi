@@ -600,8 +600,11 @@ describe('MobileFileUpload Component', () => {
         </TestWrapper>
       );
 
-      const errorText = screen.getByText('Error de validación');
-      expect(errorText.closest('p')).toHaveClass('MuiTypography-colorError');
+      const alert = screen.getByRole('alert');
+      expect(alert).toHaveTextContent('Error de validación');
+      expect(alert).toBeVisible();
+      // Also expose a test id for more direct selections
+      expect(screen.getByTestId('file-upload-error')).toBe(alert);
     });
   });
 

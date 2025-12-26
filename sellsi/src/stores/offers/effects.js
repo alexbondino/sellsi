@@ -30,7 +30,8 @@ export function pruneInvalidOfferCartItems({ cartStore, offers, log = () => {} }
     if (cartItems.length === 0) return { removed: 0 };
     const invalidOfferIds = new Set((offers||[]).filter(o => INVALID_FOR_CART.has(o.status)).map(o => o.id));
     if (invalidOfferIds.size === 0) return { removed: 0 };
-    const remaining = cartItems.filter(ci => !ci.offer_id || !invalidOfferIds.has(ci.offer_id));
+    // Tolerar items malformados (null/undefined) que podrían venir de bugs externos
+    const remaining = cartItems.filter(ci => ci && (!ci.offer_id || !invalidOfferIds.has(ci.offer_id)));
     if (remaining.length === cartItems.length) return { removed: 0 };
     if (typeof cartState.setItems === 'function') {
       cartState.setItems(remaining);

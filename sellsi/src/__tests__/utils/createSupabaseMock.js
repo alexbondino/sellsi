@@ -1,15 +1,17 @@
 function createSupabaseMock(overrides = {}) {
   // Allow passing partial overrides: { storage, rpc, from, supabaseUrl, supabaseKey }
-  const supabase = { ...overrides };
+  // If caller provides an existing supabase object (module), mutate it in-place so tests
+  // that imported the module will use our mocks. Otherwise, create a fresh object.
+  const supabaseRef = overrides && Object.keys(overrides).length ? overrides : {};
 
   const auth = {
     getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'user-1', email: 'test@example.com' } }, error: null }),
     refreshSession: jest.fn().mockResolvedValue(null),
   };
 
-  if (!supabase.auth) supabase.auth = {};
-  supabase.auth.getUser = auth.getUser;
-  supabase.auth.refreshSession = auth.refreshSession;
+  if (!supabaseRef.auth) supabaseRef.auth = {};
+  supabaseRef.auth.getUser = auth.getUser;
+  supabaseRef.auth.refreshSession = auth.refreshSession;
 
   // If caller provided a storage.from implementation, keep it; otherwise set a default
   const defaultStorageFrom = {
@@ -18,11 +20,11 @@ function createSupabaseMock(overrides = {}) {
     remove: jest.fn().mockResolvedValue({ error: null }),
   };
 
-  if (!supabase.storage) supabase.storage = {};
-  if (supabase.storage.from && typeof supabase.storage.from === 'function') {
+  if (!supabaseRef.storage) supabaseRef.storage = {};
+  if (supabaseRef.storage.from && typeof supabaseRef.storage.from === 'function') {
     // leave provided implementation
   } else {
-    supabase.storage.from = jest.fn().mockReturnValue(defaultStorageFrom);
+    supabaseRef.storage.from = jest.fn().mockReturnValue(defaultStorageFrom);
   }
 
   const usersTable = {
@@ -32,18 +34,18 @@ function createSupabaseMock(overrides = {}) {
     upsert: jest.fn().mockResolvedValue({ error: null }),
   };
 
-  if (!supabase.from) {
-    supabase.from = jest.fn().mockImplementation(table => {
+  if (!supabaseRef.from) {
+    supabaseRef.from = jest.fn().mockImplementation(table => {
       if (table === 'users') return usersTable;
       return { upsert: jest.fn().mockResolvedValue({ error: null }) };
     });
   }
 
   // Allow overriding rpc
-  if (!supabase.rpc) supabase.rpc = async () => ({ data: null, error: null });
+  if (!supabaseRef.rpc) supabaseRef.rpc = async () => ({ data: null, error: null });
 
   // Keep useful handles for assertions
-  return { usersTable, storageFrom: defaultStorageFrom, auth, supabase };
+  return { usersTable, storageFrom: defaultStorageFrom, auth, supabase: supabaseRef };
 }
 
 module.exports = { createSupabaseMock };

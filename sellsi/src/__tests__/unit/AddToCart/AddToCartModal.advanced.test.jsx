@@ -14,7 +14,7 @@ import {
   mockAuth,
   resetMocks,
   mockGetSession,
-} from '../../utils/mocks/addToCartMocks'
+} from '../../utils/addToCartMocks'
 
 // Shared setup mocks (apply BEFORE importing the module under test)
 import './setupMocks'

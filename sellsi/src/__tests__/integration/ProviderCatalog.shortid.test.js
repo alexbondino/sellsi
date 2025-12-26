@@ -1,9 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import ProviderCatalog from '../../../workspaces/marketplace/pages/ProviderCatalog';
+import ProviderCatalog from '../../workspaces/marketplace/pages/ProviderCatalog';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { supabase } from '../../../services/supabase';
 
-jest.mock('../../../services/supabase', () => ({
+jest.mock('../../services/supabase', () => ({
   supabase: {
     from: jest.fn(() => ({
       select: jest.fn().mockReturnThis(),

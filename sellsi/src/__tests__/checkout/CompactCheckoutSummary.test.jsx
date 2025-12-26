@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, screen, fireEvent, within } from '@testing-library/react'
-import CompactCheckoutSummary from '../../../domains/checkout/components/CompactCheckoutSummary'
+import CompactCheckoutSummary from '../../domains/checkout/components/CompactCheckoutSummary'
 
 describe('CompactCheckoutSummary (mobile)', () => {
   test('uses price_tiers and computes total including shipping and payment fee', () => {

@@ -45,6 +45,7 @@ import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { supabase } from '../../../services/supabase';
 
 import ProductCard from '../../../shared/components/display/product-card/ProductCard';
+import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock';
 import useCartStore from '../../../shared/stores/cart/cartStore';
 import { filterActiveProducts } from '../../../utils/productActiveStatus';
 import { CATEGORIAS } from '../components/CategoryNavigation/CategoryNavigation';
@@ -71,6 +72,7 @@ const ProviderCatalog = () => {
 
   // Estados para modal de compartir
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  useBodyScrollLock(shareModalOpen);
   const [catalogUrl, setCatalogUrl] = useState('');
 
   // Usar las categorías estandarizadas

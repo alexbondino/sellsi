@@ -449,6 +449,7 @@ const OfferModal = ({
         {/* Información de límites */}
         {limitsValidation && (
           <Alert
+            data-testid="limits-alert"
             severity={limitsValidation.allowed ? 'info' : 'warning'}
             sx={{ mb: { xs: 2, sm: 3 } }}
           >

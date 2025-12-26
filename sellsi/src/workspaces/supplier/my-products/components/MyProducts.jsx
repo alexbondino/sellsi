@@ -24,6 +24,7 @@ import {
   Modal as MuiModal,
   Tooltip,
 } from '@mui/material';
+import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
 import {
   Add as AddIcon,
   Search as SearchIcon,
@@ -163,6 +164,7 @@ const MyProducts = () => {
 
   // 🆕 Estado para modal de compartir catálogo
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  useBodyScrollLock(shareModalOpen);
   const [catalogUrl, setCatalogUrl] = useState('');
 
   const {

@@ -301,9 +301,13 @@ const Onboarding = () => {
         const oldLogoPathToDelete =
           existingProfile.logo_url.split('user-logos/')[1];
         if (oldLogoPathToDelete) {
-          await supabase.storage
+          const { error: removeError } = await supabase.storage
             .from('user-logos')
             .remove([oldLogoPathToDelete]);
+          if (removeError) {
+            console.error('❌ [ONBOARDING] Supabase Remove Error:', removeError);
+            throw new Error(`Error al eliminar el logo: ${removeError.message}`);
+          }
           logoPublicUrl = null;
         }
       }
@@ -442,6 +446,16 @@ const Onboarding = () => {
     }
     return hasBasicInfo;
   };
+
+  // Precompute helper text for phone field to avoid passing a function as helperText
+  const phoneHelperText = (() => {
+    if (!formData.telefonoContacto) return 'Opcional';
+    const res = validatePhone(
+      formData.codigoPais || 'CL',
+      formData.telefonoContacto || ''
+    );
+    return res.isValid ? `${formData.telefonoContacto.length}/15` : res.reason;
+  })();
 
   return (
     <>
@@ -708,16 +722,7 @@ const Onboarding = () => {
                           formData.telefonoContacto || ''
                         ).isValid
                       }
-                      helperText={() => {
-                        if (!formData.telefonoContacto) return 'Opcional';
-                        const res = validatePhone(
-                          formData.codigoPais || 'CL',
-                          formData.telefonoContacto || ''
-                        );
-                        return res.isValid
-                          ? `${formData.telefonoContacto.length}/15`
-                          : res.reason;
-                      }}
+                      helperText={phoneHelperText}
                       sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
                     />
                   </Box>

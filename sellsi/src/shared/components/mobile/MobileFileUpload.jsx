@@ -48,6 +48,8 @@ const MobileFileUpload = ({ file, error, onChange, label, accept = '*' }) => {
         <Typography
           variant="caption"
           color="error"
+          role="alert"
+          data-testid="file-upload-error"
           sx={{ display: 'block', mt: 0.5, ml: 1.5 }}
         >
           {error}

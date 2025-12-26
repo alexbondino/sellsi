@@ -14,10 +14,7 @@ import SupplierOffers from '../../workspaces/supplier/my-offers/components/Suppl
 import SupplierOffersList from '../../workspaces/supplier/my-offers/components/SupplierOffersList';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  mockOfferData,
-  mockLocalStorage,
-} from '../mocks/supabaseMock';
+import { mockOfferData } from '../mocks/supabaseMock';
 
 // Local deterministic RPC mock for supabase
 const mockRpc = jest.fn();
@@ -32,7 +29,13 @@ jest.mock('../../services/supabase', () => ({
 
 
 
+let localStorageGetSpy;
+let localStorageSetSpy;
+
 afterEach(() => {
+  // Restore spies and clear mocks
+  try { localStorageGetSpy?.mockRestore(); } catch(_) {}
+  try { localStorageSetSpy?.mockRestore(); } catch(_) {}
   jest.clearAllMocks();
 });
 
@@ -104,17 +107,17 @@ describe('Offer System Integration Tests', () => {
     mockSupabase.rpc = mockRpc;
 
     // Reset offer store to a clean state to avoid cross-test leakage
-    const { useOfferStore: runtimeOfferStore } = require('../../stores/offerStore');
-    runtimeOfferStore.setState({ buyerOffers: [], supplierOffers: [], loading: false, error: null });
+    try { const { resetOfferStore } = require('../utils/resetOfferStore'); resetOfferStore(); } catch(_) { const { useOfferStore: runtimeOfferStore } = require('../../stores/offerStore'); runtimeOfferStore.setState({ buyerOffers: [], supplierOffers: [], loading: false, error: null }); }
 
-    // Configurar respuestas específicas por clave
-    mockLocalStorage.getItem.mockImplementation(key => {
+    // Espiar localStorage nativo para respuestas deterministas
+    localStorageGetSpy = jest.spyOn(window.localStorage, 'getItem').mockImplementation(key => {
       if (key === 'user') return JSON.stringify(mockOfferData.validUser);
       if (key === 'user_id') return mockOfferData.validUser.id;
       if (key === 'user_nm') return mockOfferData.validUser.name;
       if (key === 'user_email') return mockOfferData.validUser.email;
       return null;
     });
+    localStorageSetSpy = jest.spyOn(window.localStorage, 'setItem').mockImplementation(() => {});
 
     // Ensure runtime supabase rpc points to local mockRpc so tests can control responses
     const svc = require('../../services/supabase');

@@ -71,5 +71,20 @@ module.exports = {
     };
 
     return { supabase, setTableResponse, triggerAuth, applyMock };
+  },
+
+  // Backwards-compatible helper used by older tests: createFromMock({ tableName: implementation })
+  // Returns { fromMock } and applies a jest.mock for '../../services/supabase' that uses the provided
+  // table implementations when `supabase.from(table)` is called.
+  createFromMock: (tableImpls = {}) => {
+    const fromMock = jest.fn((table) => {
+      if (Object.prototype.hasOwnProperty.call(tableImpls, table)) {
+        return tableImpls[table]
+      }
+      // default fallback: empty chain returning empty data
+      return createQuery({ data: [], error: null })
+    })
+    jest.doMock('../../services/supabase', () => ({ supabase: { from: fromMock } }))
+    return { fromMock }
   }
 };

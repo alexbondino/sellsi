@@ -98,7 +98,7 @@
     "autoprefixer": "^10.4.22",
     "babel-jest": "^30.1.2",
     "babel-plugin-transform-import-meta": "^2.3.3",
-    "@babel/plugin-syntax-import-meta": "^7.28.3",
+    "@babel/plugin-syntax-import-meta": "^7.10.4",
     "buffer": "^6.0.3",
     "critical": "^5.1.1",
     "cross-env": "^7.0.3",

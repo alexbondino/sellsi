@@ -1,4 +1,5 @@
-import { mockSupabase, mockOfferData, mockLocalStorage } from '../mocks/supabaseMock';
+import { mockSupabase, mockOfferData } from '../mocks/supabaseMock';
+import { resetOfferStore } from '../utils/resetOfferStore';
 
 // Mock de Supabase ANTES de importar
 jest.mock('../../services/supabase', () => ({
@@ -16,22 +17,23 @@ import { renderHook, act } from '@testing-library/react';
 import { useOfferStore } from '../../stores/offerStore';
 
 describe('offerStore', () => {
+  let localStorageGetSpy;
+  let localStorageSetSpy;
+
   beforeEach(() => {
     // Limpiar todos los mocks antes de cada test
     jest.clearAllMocks();
-    
-    // Reset store state manualmente
-    act(() => {
-      useOfferStore.setState({ 
-        buyerOffers: [], 
-        supplierOffers: [], 
-        loading: false, 
-        error: null 
-      });
-    });
-    
-    // Mock localStorage con datos de usuario válidos
-    mockLocalStorage.getItem.mockReturnValue(JSON.stringify(mockOfferData.validUser));
+    // Reset completo del store
+    resetOfferStore();
+
+    // Espiar localStorage nativo
+    localStorageGetSpy = jest.spyOn(window.localStorage, 'getItem').mockImplementation(() => JSON.stringify(mockOfferData.validUser));
+    localStorageSetSpy = jest.spyOn(window.localStorage, 'setItem').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    localStorageGetSpy.mockRestore();
+    localStorageSetSpy.mockRestore();
   });
 
   describe('validateOfferLimits', () => {
@@ -98,10 +100,24 @@ describe('offerStore', () => {
   expect(validation.isValid).toBe(true);
   expect(validation.error).toMatch(/Database error/);
     });
+
+    it('debería manejar reject de validate_offer_limits', async () => {
+      mockSupabase.rpc.mockImplementationOnce(() => Promise.reject(new Error('DB fail')));
+      const { result } = renderHook(() => useOfferStore());
+
+      let validation;
+      await act(async () => {
+        validation = await result.current.validateOfferLimits({ buyerId: 'b', productId: 'p', supplierId: 's' });
+      });
+
+      // Estrategia no bloqueante: continuar pero con aviso de error
+      expect(validation.isValid).toBe(true);
+      expect(validation.error).toMatch(/DB fail/i);
+    });
   });
 
   describe('createOffer', () => {
-    it('debería crear una oferta exitosamente', async () => {
+    it('debería crear una oferta exitosamente y agregar supplierOffers', async () => {
   // 1) validate_offer_limits
   mockSupabase.rpc.mockResolvedValueOnce({ data: { allowed: true, product_count: 0, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: null }, error: null });
   // 2) create_offer
@@ -128,6 +144,111 @@ describe('offerStore', () => {
         p_price: 1000,
         p_message: 'Test offer'
       }));
+      // Supplier offers should include the new offer id
+      expect(result.current.supplierOffers.some(s => s.id === 'new_offer_123')).toBe(true);
+    });
+
+    it('debería ejecutar validación ANTES de crear la oferta (Secuencia Crítica)', async () => {
+      // 1) validate_offer_limits
+      mockSupabase.rpc.mockResolvedValueOnce({ data: { allowed: true }, error: null });
+      // 2) create_offer
+      mockSupabase.rpc.mockResolvedValueOnce({ data: { success: true, offer_id: 'new_offer_123' }, error: null });
+      
+      const { result } = renderHook(() => useOfferStore());
+      
+      await act(async () => {
+        await result.current.createOffer({
+          productId: 'prod_456',
+          supplierId: 'supplier_789',
+          quantity: 5,
+          price: 1000
+        });
+      });
+      
+      // Verificación de orden estricto
+      expect(mockSupabase.rpc).toHaveBeenNthCalledWith(1, 'validate_offer_limits', expect.anything());
+      expect(mockSupabase.rpc).toHaveBeenNthCalledWith(2, 'create_offer', expect.anything());
+    });
+
+    it('debería bloquear llamadas concurrentes a createOffer (idempotencia en vuelo)', async () => {
+      // Implement deferred create_offer
+      let resolveCreate;
+      mockSupabase.rpc.mockImplementation((fnName) => {
+        if (fnName === 'validate_offer_limits') return Promise.resolve({ data: { allowed: true }, error: null });
+        if (fnName === 'create_offer') return new Promise(res => { resolveCreate = res; });
+        return Promise.resolve({ data: null, error: null });
+      });
+
+      const { result } = renderHook(() => useOfferStore());
+
+      // Start first and second calls inside a synchronous act to wrap state updates
+      let p1, p2;
+      act(() => {
+        p1 = result.current.createOffer({ productId: 'p1', supplierId: 's1', quantity: 1, price: 100 });
+        p2 = result.current.createOffer({ productId: 'p2', supplierId: 's2', quantity: 2, price: 200 });
+      });
+
+      // Allow event loop tick for RPC calls to be registered
+      await new Promise(r => process.nextTick(r));
+
+      // There should be only one create_offer invocation pending
+      const createCalls = mockSupabase.rpc.mock.calls.filter(c => c[0] === 'create_offer').length;
+      expect(createCalls).toBe(1);
+      expect(resolveCreate).toBeDefined();
+
+      // Resolve the pending create inside act so state updates are wrapped
+      act(() => { resolveCreate({ data: { success: true, offer_id: 'concurrent_offer' }, error: null }); });
+
+      // Wait both calls to finish inside act
+      await act(async () => { await Promise.all([p1, p2]); });
+
+      // After resolution, we should have the resulting offer in supplierOffers
+      expect(result.current.supplierOffers.some(s => s.id === 'concurrent_offer')).toBe(true);
+    });
+
+    it('debería manejar duplicate_pending desde backend y no agregar oferta', async () => {
+      // validate ok
+      mockSupabase.rpc.mockResolvedValueOnce({ data: { allowed: true, product_count: 0, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: null }, error: null });
+      // create_offer duplicate pending
+      mockSupabase.rpc.mockResolvedValueOnce({ data: { success: false, error_type: 'duplicate_pending', error: 'Ya existe una oferta pendiente para este producto' }, error: null });
+
+      const { result } = renderHook(() => useOfferStore());
+      const res = await act(async () => { return await result.current.createOffer({ productId: 'p', supplierId: 's', quantity: 1, price: 100 }); });
+
+      // Should return error and not add to supplierOffers
+      expect(res).toEqual(expect.objectContaining({ success: false, error: expect.stringMatching(/pendiente/i) }));
+      expect(result.current.supplierOffers).toHaveLength(0);
+    });
+
+    it('debería manejar rechazo de RPC en createOffer', async () => {
+      // validate ok
+      mockSupabase.rpc.mockResolvedValueOnce({ data: { allowed: true, product_count: 0, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: null }, error: null });
+      // create_offer rejects
+      mockSupabase.rpc.mockImplementationOnce(() => Promise.reject(new Error('create failed')));
+
+      const { result } = renderHook(() => useOfferStore());
+      const res = await act(async () => { return await result.current.createOffer({ productId: 'p', supplierId: 's', quantity: 1, price: 100 }); });
+
+      expect(res).toEqual(expect.objectContaining({ success: false, error: expect.stringMatching(/create failed/i) }));
+      expect(result.current.supplierOffers).toHaveLength(0);
+    });
+
+    it('debería rechazar cantidades extremadamente grandes', async () => {
+      const { result } = renderHook(() => useOfferStore());
+      await act(async () => {
+        await result.current.createOffer({ productId: 'p', supplierId: 's', quantity: 1000000000, price: 1000 });
+      });
+      expect(result.current.error).toMatch(/Datos de oferta inválidos/i);
+    });
+
+    it('debería bloquear segundo createOffer mientras loading=true (idempotencia)', async () => {
+      const { result } = renderHook(() => useOfferStore());
+      // Simulate the store is loading
+      act(() => { result.current.loading = true; });
+
+      const res = await act(async () => { return await result.current.createOffer({ productId: 'p', supplierId: 's', quantity: 1, price: 100 }); });
+      expect(mockSupabase.rpc).not.toHaveBeenCalled();
+      expect(res).toBeUndefined();
     });
 
     it('debería fallar cuando se excede el límite de ofertas', async () => {
@@ -161,6 +282,8 @@ describe('offerStore', () => {
       });
       
       expect(result.current.error).toContain('Datos de oferta inválidos');
+      // Robustez: no debe llamar al backend cuando los inputs son inválidos
+      expect(mockSupabase.rpc).not.toHaveBeenCalled();
     });
   });
 

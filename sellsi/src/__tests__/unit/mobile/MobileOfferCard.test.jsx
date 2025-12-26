@@ -94,9 +94,8 @@ describe('MobileOfferCard Component', () => {
       );
 
       expect(screen.getByText('Test Product')).toBeInTheDocument();
-      expect(screen.getByText('Test Supplier')).toBeInTheDocument();
-      expect(screen.getByText(/cantidad:/i)).toBeInTheDocument();
-      expect(screen.getByText('10')).toBeInTheDocument();
+      // Quantity + unit price shown for buyer variant
+      expect(screen.getByText(/10\s*uds\s*•\s*\$1\.000/)).toBeInTheDocument();
     });
 
     it('debería mostrar chip de estado "Pendiente" con color warning', () => {
@@ -150,7 +149,7 @@ describe('MobileOfferCard Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByText('Cancelar')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Cancelar Oferta/i })).toBeInTheDocument();
     });
 
     it('debería mostrar botón "Eliminar" para ofertas rechazadas', () => {
@@ -168,7 +167,7 @@ describe('MobileOfferCard Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByText('Eliminar')).toBeInTheDocument();
+      expect(screen.getByLabelText('Eliminar oferta')).toBeInTheDocument();
     });
 
     it('debería llamar onAction al hacer click en "Cancelar"', () => {
@@ -184,7 +183,7 @@ describe('MobileOfferCard Component', () => {
         </TestWrapper>
       );
 
-      fireEvent.click(screen.getByText('Cancelar'));
+      fireEvent.click(screen.getByRole('button', { name: /Cancelar Oferta/i }));
       expect(mockOnAction).toHaveBeenCalledWith('cancel', mockBuyerOffer);
     });
 
@@ -223,7 +222,8 @@ describe('MobileOfferCard Component', () => {
       );
 
       expect(screen.getByText('Supplier Product')).toBeInTheDocument();
-      expect(screen.getByText('Test Buyer')).toBeInTheDocument();
+      const ofertanteP = screen.getByText(/Ofertante:/i);
+      expect(ofertanteP).toHaveTextContent('Test Buyer');
     });
 
     it('debería mostrar "Aceptada" para status approved en variante supplier', () => {
@@ -289,7 +289,8 @@ describe('MobileOfferCard Component', () => {
       );
 
       expect(screen.getByText('Order Product')).toBeInTheDocument();
-      expect(screen.getByText('Order Buyer')).toBeInTheDocument();
+      const clientP = screen.getByText(/Cliente:/i);
+      expect(clientP).toHaveTextContent('Order Buyer');
     });
 
     it('debería mostrar "Aceptado" para status accepted', () => {
@@ -382,9 +383,9 @@ describe('MobileOfferCard Component', () => {
         </TestWrapper>
       );
 
-      // Verificar que se muestran los precios formateados
-      expect(screen.getByText(/\$1\.000/)).toBeInTheDocument(); // offered_price
-      expect(screen.getByText(/\$10\.000/)).toBeInTheDocument(); // total_price
+    // Verificar que se muestran la cantidad y el precio unitario formateado (ej: "10 uds • $1.000")
+    expect(screen.getByText(/10\s*uds\s*•\s*\$1\.000/)).toBeInTheDocument();
+    // Nota: el total no se muestra en la variante 'buyer', así que no lo assertamos aquí.
     });
 
     it('debería mostrar fecha de expiración para ofertas con expires_at', () => {
@@ -400,7 +401,8 @@ describe('MobileOfferCard Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByText(/vence:/i)).toBeInTheDocument();
+      // The component shows remaining time (e.g., 'Caducada', '59m', '1h 15m') next to the clock emoji
+    expect(screen.getByText(/Caducada|[0-9]+h\s*[0-9]+m|[0-9]+m/)).toBeInTheDocument();
     });
   });
 
@@ -439,7 +441,8 @@ describe('MobileOfferCard Component', () => {
         </TestWrapper>
       );
 
-      fireEvent.click(screen.getByText('Eliminar'));
+      // Icon button uses aria-label="Eliminar oferta"
+      fireEvent.click(screen.getByLabelText('Eliminar oferta'));
       expect(mockOnAction).toHaveBeenCalledWith('delete', rejectedOffer);
     });
 

@@ -5,10 +5,12 @@ import { BrowserRouter } from 'react-router-dom';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
 import { BannerProvider } from '../../shared/components/display/banners/BannerContext';
 
+import { render } from '@testing-library/react';
+
 export const renderWithProviders = (ui) => {
   const client = new QueryClient();
   return {
-    ...require('@testing-library/react').render(
+    ...render(
       <BrowserRouter>
         <QueryClientProvider client={client}>
           <ThemeProvider theme={dashboardThemeCore}>

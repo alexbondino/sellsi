@@ -1,5 +1,6 @@
 import React from 'react';
 import { mockSupabase, mockOfferData } from '../mocks/supabaseMock';
+import { resetOfferStore } from '../utils/resetOfferStore';
 
 // Mock de Supabase ANTES de importar
 jest.mock('../../services/supabase', () => ({
@@ -10,9 +11,22 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { useOfferStore } from '../../stores/offerStore';
 
 describe('Offer System Edge Cases', () => {
+  let localStorageGetSpy;
+  let localStorageSetSpy;
+
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useRealTimers();
+    // Reset store to known baseline
+    resetOfferStore();
+    // spy localStorage
+    localStorageGetSpy = jest.spyOn(window.localStorage, 'getItem').mockImplementation(() => null);
+    localStorageSetSpy = jest.spyOn(window.localStorage, 'setItem').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    localStorageGetSpy.mockRestore();
+    localStorageSetSpy.mockRestore();
   });
 
   describe('Casos límite de validación', () => {
@@ -68,6 +82,52 @@ describe('Offer System Edge Cases', () => {
       // debería devolver el error y setear estado error
       expect(res).toEqual({ success: false, error: 'Ya hay una oferta pendiente' });
       expect(result.current.error).toContain('Ya hay una oferta pendiente');
+    });
+
+    it('debería manejar secuencia success -> duplicate_pending en llamadas consecutivas', async () => {
+      // Preparación: buyer en localStorage y reset del store
+      localStorageGetSpy.mockReturnValue('buyer_dup_1');
+      act(() => { useOfferStore.setState({ buyerOffers: [], supplierOffers: [], loading: false, error: null }); });
+
+      // First call: validate ok + create success
+      mockSupabase.rpc
+        .mockResolvedValueOnce({ data: { allowed: true, product_count: 0, supplier_count: 0, product_limit: 3, supplier_limit: 5 }, error: null })
+        .mockResolvedValueOnce({ data: { success: true, offer_id: 'offer_ok' }, error: null })
+        // Second call: validate ok + create duplicate_pending
+        .mockResolvedValueOnce({ data: { allowed: true, product_count: 1, supplier_count: 0, product_limit: 3, supplier_limit: 5 }, error: null })
+        .mockResolvedValueOnce({ data: { success: false, error_type: 'duplicate_pending', error: 'Ya existe una oferta pendiente para este producto' }, error: null });
+
+      const { result } = renderHook(() => useOfferStore());
+
+      // Primera oferta (exitosa)
+      await act(async () => {
+        await result.current.createOffer({
+          productId: 'prod_dup',
+          supplierId: 'sup_dup',
+          quantity: 1,
+          price: 100,
+          message: 'first'
+        });
+      });
+
+      // Segunda oferta (duplicate)
+      let resp;
+      await act(async () => {
+        resp = await result.current.createOffer({
+          productId: 'prod_dup',
+          supplierId: 'sup_dup',
+          quantity: 1,
+          price: 110,
+          message: 'second'
+        });
+      });
+
+      expect(resp.success).toBe(false);
+      expect(result.current.error).toMatch(/ya existe una oferta pendiente/i);
+
+      // Calls: 2 create_offer invocados
+      const createCalls = mockSupabase.rpc.mock.calls.filter(c => c[0] === 'create_offer');
+      expect(createCalls.length).toBe(2);
     });
 
     it('debería rechazar precios negativos', async () => {
