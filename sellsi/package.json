@@ -36,7 +36,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:pipeline": "node scripts/test-pipeline.js",
-    "test:all": "npm run test:unit && npm run test:integration && npm run build && npm run test:e2e"
+    "test:all": "npm run test:unit && npm run test:integration && npm run build && npm run test:e2e",
+    "check:mojibake": "node scripts/check-mojibake.cjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

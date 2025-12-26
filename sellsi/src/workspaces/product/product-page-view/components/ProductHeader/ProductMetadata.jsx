@@ -145,12 +145,12 @@ const ProductMetadata = ({
                 gap: 0.5,
               }}
             >
-              <b>Monto mínimo de compra:</b> $
+              <b>Monto mínimo de compra al proveedor:</b> $
               {formatNumber(supplierMinimumAmount)}
               <Tooltip
                 title="El proveedor no despacha productos si el monto total entre todos los productos que compres es inferior al indicado"
                 arrow
-                placement="right"
+                placement="bottom"
               >
                 <InfoOutlined
                   sx={{ fontSize: 16, color: 'action.active', cursor: 'help' }}
@@ -194,7 +194,7 @@ const ProductMetadata = ({
               gap: 0.5,
             }}
           >
-            <b>Monto mínimo de compra:</b> $
+            <b>Monto mínimo de compra al proveedor:</b> $
             {formatNumber(supplierMinimumAmount)}
             <Tooltip
               title="El proveedor no despacha productos si el monto total entre todos los productos que compres es inferior al indicado"
