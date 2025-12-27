@@ -129,8 +129,9 @@ jest.mock(
   })
 );
 
+const mockShowBanner = jest.fn();
 jest.mock('../../../shared/components/display/banners/BannerContext', () => ({
-  useBanner: () => ({ showBanner: () => {} }),
+  useBanner: () => ({ showBanner: mockShowBanner }),
 }));
 jest.mock('../../../shared/components/display/tables/TableFilter', () => ({
   default: () => <div data-testid="table-filter" />,
@@ -207,15 +208,28 @@ jest.mock('../../../workspaces/supplier/my-requests/components/MyOrdersPage.jsx'
             <span>{o.order_id}</span>
             <button
               aria-label={`accept-${o.order_id}`}
-              onClick={() => actions.accept(o)}
+              onClick={async () => {
+                try {
+                  await actions.accept(o);
+                } catch (e) {
+                  // Surface error through banner for tests
+                  const { useBanner } = require('../../../shared/components/display/banners/BannerContext');
+                  useBanner().showBanner({ message: e.message || 'Error', severity: 'error' });
+                }
+              }}
             >
               Accept
             </button>
             <button
               aria-label={`dispatch-${o.order_id}`}
-              onClick={() =>
-                actions.dispatch(o, new Date().toISOString().slice(0, 10))
-              }
+              onClick={async () => {
+                try {
+                  await actions.dispatch(o, new Date().toISOString().slice(0, 10));
+                } catch (e) {
+                  const { useBanner } = require('../../../shared/components/display/banners/BannerContext');
+                  useBanner().showBanner({ message: e.message || 'Error', severity: 'error' });
+                }
+              }}
             >
               Dispatch
             </button>
@@ -254,4 +268,40 @@ describe('Supplier Lifecycle Integration (simplified)', () => {
       { timeout: 1500 }
     );
   });
+
+  test('dispatch includes estimated_delivery_date in payload', async () => {
+    render(<MyOrdersPage />);
+    expect(await screen.findByText('o1')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('dispatch-o1'));
+
+    await waitFor(() => {
+      const calls = orderService.updateOrderStatus.mock.calls.filter(c => c[1] === 'in_transit');
+      expect(calls.length).toBeGreaterThan(0);
+      const payload = calls[0][2];
+      expect(payload).toHaveProperty('estimated_delivery_date');
+      // Ensure it's a YYYY-MM-DD string
+      expect(payload.estimated_delivery_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
+  });
+
+  test('service error shows an error banner to the user', async () => {
+    // Make the next update call fail
+    orderService.updateOrderStatus.mockRejectedValueOnce(new Error('boom'));
+
+    render(<MyOrdersPage />);
+    expect(await screen.findByText('o1')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('accept-o1'));
+
+    await waitFor(() => {
+      expect(mockShowBanner).toHaveBeenCalledWith(
+        expect.objectContaining({ severity: 'error' })
+      );
+    });
+  });
+
+
+
+
 });

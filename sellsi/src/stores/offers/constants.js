@@ -35,7 +35,8 @@ export const BACKEND_TO_INTERNAL_STATUS = Object.freeze({
  * @returns {string} estado interno normalizado
  */
 export function normalizeStatus(status, expiresAt, purchaseDeadline = null) {
-  let finalStatus = status;
+  // Fallback: si el backend devuelve un status falsy, considerarlo 'pending' de forma segura
+  let finalStatus = status || OFFER_STATES.PENDING;
   const mapped = BACKEND_TO_INTERNAL_STATUS[status];
   if (mapped) finalStatus = mapped;
   

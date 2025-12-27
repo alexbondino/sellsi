@@ -18,26 +18,30 @@ const baseOrder = (overrides={}) => ({
   ...overrides
 });
 
-describe('Supplier Table offered chip', () => {
-  it('muestra chip ofertado si algún item es ofertado', () => {
-  render(<MemoryRouter><Table orders={[baseOrder({
-      items: [
-        { name: 'Prod A', quantity: 1, isOffered: true, offer_id: 'off-1', offered_price: 500 },
-        { name: 'Prod B', quantity: 2 }
-      ],
-      products: [
-        { name: 'Prod A', quantity: 1, isOffered: true, offer_id: 'off-1', offered_price: 500 },
-        { name: 'Prod B', quantity: 2 }
-      ]
-  })]} onActionClick={()=>{}} /></MemoryRouter>);
+describe('Supplier Table offered chip (robust)', () => {
+  const variants = [
+    ['isOffered flag in items', { items: [{ name: 'A', isOffered: true, quantity: 1 }], products: [] }],
+    ['metadata.isOffered in items', { items: [{ name: 'B', metadata: { isOffered: true }, quantity: 1 }], products: [] }],
+    ['offer_id only in items', { items: [{ name: 'C', offer_id: 'o1', quantity: 1 }], products: [] }],
+    ['offered_price only in items', { items: [{ name: 'D', offered_price: 100, quantity: 1 }], products: [] }],
+    ['present in products only', { items: [], products: [{ name: 'E', isOffered: true, quantity: 1 }] }],
+  ];
+
+  it.each(variants)('%s -> muestra chip', (label, data) => {
+    render(<MemoryRouter><Table orders={[baseOrder({ ...data })]} onActionClick={()=>{}} /></MemoryRouter>);
     expect(screen.getByTestId('supplier-chip-ofertado')).toBeTruthy();
   });
 
-  it('no muestra chip si ningún item es ofertado', () => {
-  render(<MemoryRouter><Table orders={[baseOrder({
-      items: [ { name: 'Prod C', quantity: 3 } ],
-      products: [ { name: 'Prod C', quantity: 3 } ]
-  })]} onActionClick={()=>{}} /></MemoryRouter>);
+  it('muestra solo un chip aun con multiples items ofertados', () => {
+    const data = { items: [ { name: 'X', isOffered: true }, { name: 'Y', isOffered: true } ], products: [] };
+    render(<MemoryRouter><Table orders={[baseOrder({ ...data })]} onActionClick={()=>{}} /></MemoryRouter>);
+    const chips = screen.getAllByTestId('supplier-chip-ofertado');
+    expect(chips.length).toBe(1);
+  });
+
+  it('no muestra chip si campos son falsy o null', () => {
+    const data = { items: [ { name: 'Z', isOffered: false, offered_price: null } ], products: [] };
+    render(<MemoryRouter><Table orders={[baseOrder({ ...data })]} onActionClick={()=>{}} /></MemoryRouter>);
     expect(screen.queryByTestId('supplier-chip-ofertado')).toBeNull();
   });
 });

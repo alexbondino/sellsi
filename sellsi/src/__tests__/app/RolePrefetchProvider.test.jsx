@@ -1,27 +1,54 @@
 import React from 'react';
 import { render, act } from '@testing-library/react';
 
-// Mock hooks
-jest.mock('../../hooks/usePrefetch', () => {
-  const mockPrefetchRoute = jest.fn();
-  return { usePrefetch: () => ({ prefetchRoute: mockPrefetchRoute }), __esModule: true };
-});
+// Clean mocks for hooks and providers
+const mockPrefetchRoute = jest.fn();
+jest.mock('../../hooks/usePrefetch', () => ({
+  usePrefetch: jest.fn(),
+}));
 
-// Provide a mutable mock role so tests can switch role without module reloads
-const mockRole = { current: 'buyer' };
 jest.mock('../../infrastructure/providers', () => ({
-  useAuth: () => ({ session: { user: { id: 'u' } }, loadingUserStatus: false }),
-  useRole: () => ({ currentAppRole: mockRole.current }),
-  __esModule: true,
+  useAuth: jest.fn(),
+  useRole: jest.fn(),
 }));
 
 import RolePrefetchProvider from '../../infrastructure/prefetch/RolePrefetchProvider';
+import { usePrefetch } from '../../hooks/usePrefetch';
+import { useRole, useAuth } from '../../infrastructure/providers';
 
 describe('RolePrefetchProvider', () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+    localStorage.clear();
 
-  test('schedules prefetch for buyer routes', () => {
+    // Default auth and role
+    useAuth.mockReturnValue({ session: { user: { id: 'u' } }, loadingUserStatus: false });
+    useRole.mockReturnValue({ currentAppRole: 'buyer' });
+
+    // Default prefetch hook implementation
+    usePrefetch.mockReturnValue({ prefetchRoute: mockPrefetchRoute });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test('does NOT schedule prefetch if user is loading', () => {
+    useAuth.mockReturnValue({ session: null, loadingUserStatus: true });
+
+    render(
+      <RolePrefetchProvider buyerDelay={10} supplierDelay={10}>
+        <div>OK</div>
+      </RolePrefetchProvider>
+    );
+
+    act(() => jest.advanceTimersByTime(100));
+
+    expect(mockPrefetchRoute).not.toHaveBeenCalled();
+  });
+
+  test('schedules prefetch for buyer routes (valid routes are prefetched)', () => {
     render(
       <RolePrefetchProvider buyerDelay={10} supplierDelay={10}>
         <div>OK</div>
@@ -29,33 +56,27 @@ describe('RolePrefetchProvider', () => {
     );
 
     // advance timers to trigger setTimeout
-  act(() => jest.advanceTimersByTime(20));
-  // require the module to access the mock created inside the factory
-  const { usePrefetch } = require('../../hooks/usePrefetch');
-  expect(usePrefetch().prefetchRoute).toHaveBeenCalled();
+    act(() => jest.advanceTimersByTime(20));
+
+    // Verify specific buyer routes were prefetched (behavior-focused, resistant to extra routes)
+    expect(mockPrefetchRoute).toHaveBeenCalledWith('/buyer/marketplace');
+    expect(mockPrefetchRoute).toHaveBeenCalledWith('/buyer/orders');
   });
 
-  test('schedules prefetch for supplier routes', () => {
-  // switch role to supplier for this test
-  const modProviders = require('../../infrastructure/providers');
-    mockRole.current = 'supplier';
-    jest.useFakeTimers();
-    const RolePrefetch = require('../../infrastructure/prefetch/RolePrefetchProvider').default;
-  const { usePrefetch } = require('../../hooks/usePrefetch');
-  // reset any previous calls to ensure deterministic counts
-  usePrefetch().prefetchRoute.mockClear();
+  test('schedules prefetch for supplier routes (critical supplier routes are prefetched)', () => {
+    // switch role to supplier for this test
+    useRole.mockReturnValue({ currentAppRole: 'supplier' });
 
     render(
-      <RolePrefetch buyerDelay={10} supplierDelay={10}>
+      <RolePrefetchProvider buyerDelay={10} supplierDelay={10}>
         <div>OK</div>
-      </RolePrefetch>
+      </RolePrefetchProvider>
     );
 
     act(() => jest.advanceTimersByTime(20));
-    // supplierRoutes length is 4
-    expect(usePrefetch().prefetchRoute).toHaveBeenCalledTimes(4);
-    jest.useRealTimers();
-    // restore role
-    mockRole.current = 'buyer';
+
+    // Verify critical supplier routes are prefetched (avoid brittle numeric counts)
+    expect(mockPrefetchRoute).toHaveBeenCalledWith('/supplier/home');
+    expect(mockPrefetchRoute).toHaveBeenCalledWith('/supplier/myproducts');
   });
 });

@@ -27,7 +27,7 @@ import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useAuth } from '../../../infrastructure/providers/UnifiedAuthProvider';
 import { buildEnrichedContactMessage } from './helpers/buildEnrichedContactMessage';
 
-// ✅ 1. Definimos la URL de tu función de Supabase desde variable de entorno
+// ✅ 1. Definimos la URL de tu función de Supabase desde variable de entorno (compatible con Jest)
 const supabaseFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/contact-form`;
 
 const ContactModal = ({ open, onClose, context = null }) => {

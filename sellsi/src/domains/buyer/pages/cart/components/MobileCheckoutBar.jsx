@@ -52,6 +52,7 @@ const MobileCheckoutBar = ({
 
   return (
     <Paper
+      data-testid="payment-bottom-bar"
       elevation={8}
       sx={{
         position: 'fixed',
@@ -95,6 +96,7 @@ const MobileCheckoutBar = ({
             )}
           </Stack>
           <Typography 
+            data-testid="payment-bottom-total"
             variant="h6" 
             fontWeight={700}
             sx={{ lineHeight: 1.2, fontSize: { xs: '1.05rem', sm: '1.15rem' } }}
@@ -105,6 +107,8 @@ const MobileCheckoutBar = ({
         
         {/* CTA Principal */}
         <Button
+          data-testid="payment-cta"
+          aria-label={isLoading ? loadingText : buttonText}
           variant="contained"
           size="large"
           onClick={handleClick}

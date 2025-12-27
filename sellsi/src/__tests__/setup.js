@@ -87,6 +87,9 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
+// Mock window.scrollTo used by some components (jsdom does not implement it)
+window.scrollTo = jest.fn();
+
 // Mock de localStorage
 const localStorageMock = {
   getItem: jest.fn(() => null),
@@ -157,6 +160,9 @@ jest.mock('../services/supabase', () => {
     const chain = {
       select: jest.fn(() => chain),
       eq: jest.fn(() => chain),
+      insert: jest.fn(() => chain),
+      upsert: jest.fn(() => chain),
+      maybeSingle: jest.fn(() => Promise.resolve(result)),
       single: jest.fn(() => Promise.resolve(result)),
     };
     return chain;
@@ -176,25 +182,67 @@ jest.mock('../services/supabase', () => {
   };
 
   // Expose a test helper to trigger auth events from tests via globalThis
+  // Wrap listener invocations inside act() to avoid React's "not wrapped in act(...)" warnings
   globalThis.__TEST_SUPABASE_TRIGGER_AUTH = (event, session) => {
     currentSession = session;
     // Call the internal listener if registered
     if (typeof authCallback === 'function') {
       try {
-        authCallback(event, session);
+        // use act to ensure state updates are flushed synchronously in tests
+        const { act } = require('@testing-library/react');
+        try {
+          act(() => authCallback(event, session));
+        } catch (e) {
+          // act may throw if already inside an act; fallback to direct call
+          try {
+            authCallback(event, session);
+          } catch (e2) {
+            /* ignore */
+          }
+        }
       } catch (e) {
-        /* ignore */
+        // If require fails for some reason, call directly
+        try {
+          authCallback(event, session);
+        } catch (e2) {
+          /* ignore */
+        }
       }
     }
     // Also call any globally registered test listeners (e.g., provider-level hooks)
     if (Array.isArray(globalThis.__TEST_AUTH_LISTENERS)) {
       globalThis.__TEST_AUTH_LISTENERS.forEach(l => {
         try {
-          l(event, session);
+          const { act } = require('@testing-library/react');
+          try {
+            act(() => l(event, session));
+          } catch (e) {
+            l(event, session);
+          }
         } catch (e) {
-          /* ignore */
+          try {
+            l(event, session);
+          } catch (e2) {
+            /* ignore */
+          }
         }
       });
+    }
+  };
+
+  // Helper: dispatch window events wrapped in act() to avoid "not wrapped in act(...)" warnings
+  globalThis.dispatchWindowEvent = (event) => {
+    try {
+      const { act } = require('@testing-library/react');
+      try {
+        act(() => globalThis.dispatchEvent(event));
+      } catch (e) {
+        // If already inside act or act fails, fallback to direct dispatch
+        globalThis.dispatchEvent(event);
+      }
+    } catch (e) {
+      // Fallback when require or act isn't available
+      globalThis.dispatchEvent(event);
     }
   };
 

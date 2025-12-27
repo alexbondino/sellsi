@@ -45,6 +45,7 @@ import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { supabase } from '../../../services/supabase';
 
 import ProductCard from '../../../shared/components/display/product-card/ProductCard';
+import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock';
 import useCartStore from '../../../shared/stores/cart/cartStore';
 import { filterActiveProducts } from '../../../utils/productActiveStatus';
 import { CATEGORIAS } from '../components/CategoryNavigation/CategoryNavigation';
@@ -71,6 +72,7 @@ const ProviderCatalog = () => {
 
   // Estados para modal de compartir
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  useBodyScrollLock(shareModalOpen);
   const [catalogUrl, setCatalogUrl] = useState('');
 
   // Usar las categorías estandarizadas
@@ -81,6 +83,12 @@ const ProviderCatalog = () => {
   const isFromBuyer = fromPath.includes('/buyer/');
   const isFromSupplier = fromPath.includes('/supplier/');
 
+  // Helper: Verificar si es un UUID válido
+  const isValidUUID = (str) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  };
+
   // Obtener información del proveedor y sus productos
   useEffect(() => {
     const fetchProviderAndProducts = async () => {
@@ -89,22 +97,73 @@ const ProviderCatalog = () => {
         setError(null);
 
         // 1. Obtener información del proveedor
-        const { data: providerData, error: providerError } = await supabase
-          .from('users')
-          .select(
-            'user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified'
-          )
-          .eq('user_id', userId)
-          .single();
+        let providerData = null;
 
-        if (providerError) {
-          throw new Error(
-            `Error al obtener proveedor: ${providerError.message}`
-          );
+        // Solo intentar exact match si userId es un UUID válido completo
+        if (isValidUUID(userId)) {
+          try {
+            const { data: providerExact, error: providerExactError } = await supabase
+              .from('users')
+              .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
+              .eq('user_id', userId)
+              .single();
+
+            if (!providerExactError && providerExact) {
+              providerData = providerExact;
+            }
+          } catch (e) {
+            console.debug('[ProviderCatalog] exact id lookup error', e);
+          }
         }
 
+        // Si no encontramos por ID exacto, usar función RPC para búsqueda por prefijo
+        // IMPORTANTE: Pasar userNm para validar que coincida (evita colisiones)
         if (!providerData) {
-          throw new Error('Proveedor no encontrado');
+          try {
+            console.log('[DEBUG] Llamando RPC con:', { userId, userNm });
+            const { data: rpcResult, error: rpcError } = await supabase
+              .rpc('find_supplier_by_short_id', { 
+                short_id: userId,
+                expected_name_slug: userNm || null  // Validar nombre para evitar colisiones
+              });
+
+            console.log('[DEBUG] RPC response:', { rpcResult, rpcError });
+
+            if (rpcError) {
+              console.error('[ProviderCatalog] RPC error:', rpcError);
+            }
+
+            if (!rpcError && rpcResult && rpcResult.length > 0) {
+              providerData = rpcResult[0];
+              console.log('[DEBUG] Provider encontrado via RPC:', providerData);
+            } else {
+              console.warn('[DEBUG] RPC no retornó resultados');
+            }
+          } catch (e) {
+            console.error('[ProviderCatalog] RPC lookup exception', e);
+          }
+
+          // Fallback: Si aún no encontramos, intentar buscar por slug del userNm
+          if (!providerData && userNm) {
+            const normalizedName = userNm.replace(/-/g, ' ').trim();
+            try {
+              const { data: nameMatches, error: nameError } = await supabase
+                .from('users')
+                .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
+                .ilike('user_nm', `%${normalizedName}%`)
+                .limit(1);
+
+              if (!nameError && nameMatches && nameMatches.length > 0) {
+                providerData = nameMatches[0];
+              }
+            } catch (e) {
+              console.debug('[ProviderCatalog] name lookup error', e);
+            }
+          }
+
+          if (!providerData) {
+            throw new Error('Proveedor no encontrado');
+          }
         }
 
         // Verificar si el proveedor está verificado
@@ -114,7 +173,7 @@ const ProviderCatalog = () => {
           );
         }
 
-        // 2. Obtener productos del proveedor
+        // 2. Obtener productos del proveedor usando el user_id real
         const { data: productsData, error: productsError } = await supabase
           .from('products')
           .select(
@@ -123,7 +182,7 @@ const ProviderCatalog = () => {
             product_images (image_url)
           `
           )
-          .eq('supplier_id', userId)
+          .eq('supplier_id', providerData.user_id)
           .eq('is_active', true)
           .order('createddt', { ascending: false });
 

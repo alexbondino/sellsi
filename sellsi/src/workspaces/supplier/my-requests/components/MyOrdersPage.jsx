@@ -829,7 +829,10 @@ const MyOrdersPage = () => {
     (modalState.type === 'dispatch' &&
       ((supplierDocTypes.length > 0 &&
         (!taxDocFileState.file || !!taxDocFileState.error)) ||
-        (isMobile && !deliveryDate))) // Mobile requiere fecha seleccionada
+        (isMobile && !deliveryDate))) ||
+    // Disable submit while the action is being processed
+    partActions.updating // prevent double submits / indicate processing to user
+
 
   // --- Renderizado Principal de la Página ---
   return (

@@ -141,15 +141,17 @@ export class AdminApiService {
    */
   static async logAuditAction(adminId, action, targetId = null, details = {}) {
     try {
-      const { error } = await supabase
-        .from('admin_audit_log')
-        .insert([{
-          admin_id: adminId,
-          action,
-          target_id: targetId,
-          details,
-          timestamp: new Date().toISOString()
-        }])
+      // IMPORTANTE: Usamos RPC con SECURITY DEFINER para bypasear RLS
+      // Esto permite que el frontend con token ANON registre auditoría durante el login
+      // cuando el admin aún no está autenticado en Supabase Auth
+      const { error } = await supabase.rpc('log_admin_audit', {
+        p_admin_id: adminId,
+        p_action: action,
+        p_target_id: targetId,
+        p_details: details || {},
+        p_ip_address: null,  // TODO: Capturar IP del cliente si es necesario
+        p_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+      })
 
       if (error) {
         console.warn('Error registrando auditoría:', error)

@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event'
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import MobileFilterAccordion from '../../../shared/components/mobile/MobileFilterAccordion';
@@ -37,8 +38,11 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByText('Estado')).toBeInTheDocument();
-      expect(screen.getByText('Todas')).toBeInTheDocument();
+      // Use accessible role for the accordion summary (button) and scope the summary text
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      expect(summaryBtn).toBeInTheDocument();
+      // The selected label (e.g., 'Todas') is rendered inside the summary — assert it exists there
+      expect(within(summaryBtn).getByText('Todas')).toBeInTheDocument();
     });
 
     it('debería mostrar el label personalizado', () => {
@@ -53,7 +57,7 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByText('Tipo de Oferta')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /tipo de oferta/i })).toBeInTheDocument();
     });
 
     it('debería usar "Filtro" como label por defecto', () => {
@@ -67,7 +71,7 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByText('Filtro')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /filtro/i })).toBeInTheDocument();
     });
 
     it('debería mostrar icono de filtro', () => {
@@ -82,8 +86,9 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      const filterIcon = container.querySelector('[data-testid="FilterListIcon"]');
-      expect(filterIcon || screen.getByText('Estado').previousSibling).toBeInTheDocument();
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      const filterIcon = within(summaryBtn).queryByTestId('FilterListIcon') || container.querySelector('[data-testid="FilterListIcon"]');
+      expect(filterIcon).toBeInTheDocument();
     });
   });
 
@@ -154,12 +159,11 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      // Las opciones no deberían estar visibles inicialmente
-      const pendingRadio = screen.queryByLabelText(/pendientes/i);
-      expect(pendingRadio).not.toBeVisible();
+      // Las opciones no deberían existir en el DOM antes de expandir
+      expect(screen.queryByRole('radio', { name: /pendientes/i })).not.toBeInTheDocument();
     });
 
-    it('debería expandir y mostrar opciones al hacer click', () => {
+    it('debería expandir y mostrar opciones al hacer click', async () => {
       render(
         <TestWrapper>
           <MobileFilterAccordion
@@ -171,14 +175,18 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      // Click en el accordion
-      const accordion = screen.getByText('Estado').closest('div[role="button"]');
-      fireEvent.click(accordion);
+      // Expand using accessible button and userEvent
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      await userEvent.click(summaryBtn);
 
-      // Ahora las opciones deberían estar visibles
-      expect(screen.getByText(/pendientes.*3/i)).toBeVisible();
-      expect(screen.getByText(/aprobadas.*5/i)).toBeVisible();
-      expect(screen.getByText(/rechazadas.*2/i)).toBeVisible();
+      // Check each option's radio exists and its visible label & count are present
+      for (const option of mockFilterOptions) {
+        const radio = await screen.findByRole('radio', { name: new RegExp(option.label, 'i') });
+        expect(radio).toBeInTheDocument();
+        const label = radio.closest('label');
+        expect(within(label).getByText(new RegExp(option.label, 'i'))).toBeVisible();
+        if (option.count != null) expect(within(label).getByText(String(option.count))).toBeVisible();
+      }
     });
 
     it('debería mostrar icono de expansión', () => {
@@ -193,13 +201,13 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      const expandIcon = container.querySelector('[data-testid="ExpandMoreIcon"]');
-      expect(expandIcon || container.querySelector('.MuiAccordionSummary-expandIconWrapper')).toBeInTheDocument();
+      const expandIcon = container.querySelector('[data-testid="ExpandMoreIcon"]') || container.querySelector('.MuiAccordionSummary-expandIconWrapper');
+      expect(expandIcon).toBeInTheDocument();
     });
   });
 
   describe('Selección de Filtros', () => {
-    it('debería mostrar todas las opciones de filtro', () => {
+    it('debería mostrar todas las opciones de filtro', async () => {
       render(
         <TestWrapper>
           <MobileFilterAccordion
@@ -211,16 +219,18 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      // Expandir
-      const accordion = screen.getByText('Estado').closest('div[role="button"]');
-      fireEvent.click(accordion);
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      await userEvent.click(summaryBtn);
 
-      mockFilterOptions.forEach(option => {
-        expect(screen.getByText(new RegExp(option.label, 'i'))).toBeVisible();
-      });
+      for (const option of mockFilterOptions) {
+        const radio = await screen.findByRole('radio', { name: new RegExp(option.label, 'i') });
+        expect(radio).toBeInTheDocument();
+        const label = radio.closest('label');
+        expect(within(label).getByText(new RegExp(option.label, 'i'))).toBeVisible();
+      }
     });
 
-    it('debería marcar el filtro actual como seleccionado', () => {
+    it('debería marcar el filtro actual como seleccionado', async () => {
       render(
         <TestWrapper>
           <MobileFilterAccordion
@@ -232,18 +242,17 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      // Expandir
-      const accordion = screen.getByText('Estado').closest('div[role="button"]');
-      fireEvent.click(accordion);
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      await userEvent.click(summaryBtn);
 
-      // Verificar que el radio correcto está seleccionado
-      const radioGroup = screen.getByRole('radiogroup');
-      const pendingRadio = within(radioGroup).getByRole('radio', { name: /pendientes/i });
-      
+      // Verificar que el radio input has the correct checked state
+      const pendingRadio = await screen.findByRole('radio', { name: /pendientes/i });
       expect(pendingRadio).toBeChecked();
+      const pendingLabel = pendingRadio.closest('label');
+      expect(within(pendingLabel).getByText(/pendientes/i)).toBeVisible();
     });
 
-    it('debería llamar onFilterChange al seleccionar una opción', () => {
+    it('debería llamar onFilterChange al seleccionar una opción', async () => {
       render(
         <TestWrapper>
           <MobileFilterAccordion
@@ -255,13 +264,12 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      // Expandir
-      const accordion = screen.getByText('Estado').closest('div[role="button"]');
-      fireEvent.click(accordion);
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      await userEvent.click(summaryBtn);
 
       // Seleccionar "Pendientes"
-      const pendingRadio = screen.getByRole('radio', { name: /pendientes/i });
-      fireEvent.click(pendingRadio);
+      const pendingRadio = await screen.findByRole('radio', { name: /pendientes/i });
+      await userEvent.click(pendingRadio);
 
       expect(mockOnFilterChange).toHaveBeenCalledWith('pending');
     });
@@ -278,7 +286,8 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByText('Todas')).toBeInTheDocument();
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      expect(within(summaryBtn).getByText('Todas')).toBeInTheDocument();
 
       // Rerender con nuevo filtro
       rerender(
@@ -292,12 +301,13 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByText('Pendientes')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /estado/i })).toBeInTheDocument();
+      expect(within(screen.getByRole('button', { name: /estado/i })).getByText('Pendientes')).toBeInTheDocument();
     });
   });
 
   describe('Contador de Items', () => {
-    it('debería mostrar contador de items para cada opción', () => {
+    it('debería mostrar contador de items para cada opción', async () => {
       render(
         <TestWrapper>
           <MobileFilterAccordion
@@ -309,17 +319,23 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      // Expandir
-      const accordion = screen.getByText('Estado').closest('div[role="button"]');
-      fireEvent.click(accordion);
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      await userEvent.click(summaryBtn);
 
-      expect(screen.getByText(/todas.*10/i)).toBeVisible();
-      expect(screen.getByText(/pendientes.*3/i)).toBeVisible();
-      expect(screen.getByText(/aprobadas.*5/i)).toBeVisible();
-      expect(screen.getByText(/rechazadas.*2/i)).toBeVisible();
+      const counts = [
+        { label: /todas/i, count: '10' },
+        { label: /pendientes/i, count: '3' },
+        { label: /aprobadas/i, count: '5' },
+        { label: /rechazadas/i, count: '2' },
+      ];
+      for (const item of counts) {
+        const radio = await screen.findByRole('radio', { name: item.label });
+        const label = radio.closest('label');
+        expect(within(label).getByText(item.count)).toBeVisible();
+      }
     });
 
-    it('debería funcionar sin contador (count opcional)', () => {
+    it('debería funcionar sin contador (count opcional)', async () => {
       const optionsWithoutCount = [
         { value: 'all', label: 'Todas' },
         { value: 'pending', label: 'Pendientes' }
@@ -336,17 +352,21 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      // Expandir
-      const accordion = screen.getByText('Estado').closest('div[role="button"]');
-      fireEvent.click(accordion);
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      await userEvent.click(summaryBtn);
 
-      expect(screen.getByText('Todas')).toBeVisible();
-      expect(screen.getByText('Pendientes')).toBeVisible();
+      // Use radio role existence and label visibility
+      const allRadio = await screen.findByRole('radio', { name: /todas/i });
+      const pendingRadio = await screen.findByRole('radio', { name: /pendientes/i });
+      expect(allRadio).toBeInTheDocument();
+      expect(within(allRadio.closest('label')).getByText(/todas/i)).toBeVisible();
+      expect(pendingRadio).toBeInTheDocument();
+      expect(within(pendingRadio.closest('label')).getByText(/pendientes/i)).toBeVisible();
     });
   });
 
   describe('Radio Buttons', () => {
-    it('debería tener tamaño de touch target adecuado (24px)', () => {
+    it('debería tener tamaño de touch target adecuado (24px)', async () => {
       const { container } = render(
         <TestWrapper>
           <MobileFilterAccordion
@@ -358,19 +378,15 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      // Expandir
-      const accordion = screen.getByText('Estado').closest('div[role="button"]');
-      fireEvent.click(accordion);
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      await userEvent.click(summaryBtn);
 
       const radios = container.querySelectorAll('.MuiRadio-root .MuiSvgIcon-root');
-      radios.forEach(radio => {
-        const styles = window.getComputedStyle(radio);
-        // fontSize: 24 en el sx del componente
-        expect(radio).toBeInTheDocument();
-      });
+      expect(radios.length).toBeGreaterThan(0);
+      radios.forEach(radio => expect(radio).toBeInTheDocument());
     });
 
-    it('debería permitir navegar con teclado entre opciones', () => {
+    it('debería permitir navegar con teclado entre opciones', async () => {
       render(
         <TestWrapper>
           <MobileFilterAccordion
@@ -382,11 +398,11 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      // Expandir
-      const accordion = screen.getByText('Estado').closest('div[role="button"]');
-      fireEvent.click(accordion);
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      await userEvent.keyboard('{Enter}');
+      await userEvent.click(summaryBtn);
 
-      const radioGroup = screen.getByRole('radiogroup');
+      const radioGroup = await screen.findByRole('radiogroup');
       const radios = within(radioGroup).getAllByRole('radio');
 
       expect(radios.length).toBe(mockFilterOptions.length);
@@ -443,8 +459,9 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByText('Filtros Avanzados')).toBeInTheDocument();
-      expect(screen.getByText('Todas las ofertas')).toBeInTheDocument();
+      const summaryBtn = screen.getByRole('button', { name: /filtros avanzados/i });
+      expect(summaryBtn).toBeInTheDocument();
+      expect(within(summaryBtn).getByText('Todas las ofertas')).toBeInTheDocument();
     });
   });
 
@@ -485,7 +502,7 @@ describe('MobileFilterAccordion Component', () => {
   });
 
   describe('Accesibilidad', () => {
-    it('debería tener roles ARIA correctos', () => {
+    it('debería tener roles ARIA correctos', async () => {
       render(
         <TestWrapper>
           <MobileFilterAccordion
@@ -497,14 +514,13 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      // Expandir
-      const accordion = screen.getByText('Estado').closest('div[role="button"]');
-      fireEvent.click(accordion);
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      await userEvent.click(summaryBtn);
 
-      expect(screen.getByRole('radiogroup')).toBeInTheDocument();
+      expect(await screen.findByRole('radiogroup')).toBeInTheDocument();
     });
 
-    it('debería permitir interacción por teclado', () => {
+    it('debería permitir interacción por teclado', async () => {
       render(
         <TestWrapper>
           <MobileFilterAccordion
@@ -516,17 +532,13 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      const accordion = screen.getByText('Estado').closest('div[role="button"]');
-      
-      // Simular Enter para expandir
-      fireEvent.keyDown(accordion, { key: 'Enter', code: 'Enter' });
-      
-      // Las opciones deberían ser accesibles
-      const radioGroup = screen.getByRole('radiogroup');
-      expect(radioGroup).toBeInTheDocument();
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      summaryBtn.focus();
+      await userEvent.keyboard('{Enter}');
+      expect(await screen.findByRole('radiogroup')).toBeInTheDocument();
     });
 
-    it('debería tener labels descriptivos para screen readers', () => {
+    it('debería tener labels descriptivos para screen readers', async () => {
       render(
         <TestWrapper>
           <MobileFilterAccordion
@@ -541,19 +553,18 @@ describe('MobileFilterAccordion Component', () => {
       expect(screen.getByText('Estado de Ofertas')).toBeInTheDocument();
       
       // Expandir
-      const accordion = screen.getByText('Estado de Ofertas').closest('div[role="button"]');
-      fireEvent.click(accordion);
+      const summaryBtn = screen.getByRole('button', { name: /estado de ofertas/i });
+      await userEvent.click(summaryBtn);
 
-      mockFilterOptions.forEach(option => {
-        const radioLabel = screen.getByRole('radio', { name: new RegExp(option.label, 'i') });
-        expect(radioLabel).toBeInTheDocument();
-      });
+      for (const option of mockFilterOptions) {
+        expect(await screen.findByRole('radio', { name: new RegExp(option.label, 'i') })).toBeInTheDocument();
+      }
     });
   });
 
   describe('Interacción Múltiple', () => {
-    it('debería permitir cambiar filtros múltiples veces', () => {
-      render(
+    it('debería permitir cambiar filtros múltiples veces', async () => {
+      const { rerender } = render(
         <TestWrapper>
           <MobileFilterAccordion
             currentFilter="all"
@@ -564,20 +575,41 @@ describe('MobileFilterAccordion Component', () => {
         </TestWrapper>
       );
 
-      // Expandir
-      const accordion = screen.getByText('Estado').closest('div[role="button"]');
-      fireEvent.click(accordion);
+      const summaryBtn = screen.getByRole('button', { name: /estado/i });
+      await userEvent.click(summaryBtn);
 
-      // Cambiar a "pending"
-      fireEvent.click(screen.getByRole('radio', { name: /pendientes/i }));
+      // Now we can simulate updates with rerender to reflect parent changes
+
+      await userEvent.click(await screen.findByRole('radio', { name: /pendientes/i }));
       expect(mockOnFilterChange).toHaveBeenCalledWith('pending');
+      // Simulate parent updating the controlled prop
+      rerender(
+        <TestWrapper>
+          <MobileFilterAccordion
+            currentFilter="pending"
+            onFilterChange={mockOnFilterChange}
+            filterOptions={mockFilterOptions}
+            label="Estado"
+          />
+        </TestWrapper>
+      );
 
       // Cambiar a "approved"
-      fireEvent.click(screen.getByRole('radio', { name: /aprobadas/i }));
+      await userEvent.click(await screen.findByRole('radio', { name: /aprobadas/i }));
       expect(mockOnFilterChange).toHaveBeenCalledWith('approved');
+      rerender(
+        <TestWrapper>
+          <MobileFilterAccordion
+            currentFilter="approved"
+            onFilterChange={mockOnFilterChange}
+            filterOptions={mockFilterOptions}
+            label="Estado"
+          />
+        </TestWrapper>
+      );
 
       // Cambiar a "all"
-      fireEvent.click(screen.getByRole('radio', { name: /todas/i }));
+      await userEvent.click(await screen.findByRole('radio', { name: /todas/i }));
       expect(mockOnFilterChange).toHaveBeenCalledWith('all');
 
       expect(mockOnFilterChange).toHaveBeenCalledTimes(3);

@@ -181,13 +181,13 @@ const ProductCardProviderContext = React.memo(({ product }) => {
               fromPath = '/supplier/marketplace';
             }
 
-            const userNmSlug = (user_nm || proveedor || `proveedor-${supplier_id}`)
+            // Simple normalization: lowercase + alphanumeric only (matches SQL)
+            const userNmSlug = (user_nm || proveedor || `proveedor${supplier_id}`)
               .toLowerCase()
-              .replace(/[^a-z0-9]/g, '-')
-              .replace(/-+/g, '-')
-              .replace(/^-|-$/g, '');
+              .replace(/[^a-z0-9]/g, '');
 
-            const catalogUrl = `/catalog/${userNmSlug}/${supplier_id}`;
+            const shortSupplierId = (supplier_id || '').toString().slice(0, 4);
+            const catalogUrl = `/catalog/${userNmSlug}/${shortSupplierId}`;
 
             navigate(catalogUrl, {
               state: { from: fromPath },

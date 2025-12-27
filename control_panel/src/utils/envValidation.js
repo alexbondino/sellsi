@@ -16,7 +16,7 @@ const REQUIRED_VARS = [
 // Variables específicas por entorno
 const ENV_SPECIFIC_VARS = {
   production: {
-    VITE_SUPABASE_URL: 'https://pvtmkfckdaeiqrfjskrq.supabase.co',
+    VITE_SUPABASE_URL: 'https://kaxjvxfddrfoixxmxgfc.supabase.co',
     VITE_APP_ENV: 'production',
     VITE_ALLOW_ADMIN_CREATION_WITHOUT_AUTH: 'false',
   },

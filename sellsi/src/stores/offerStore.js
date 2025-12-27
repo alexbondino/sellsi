@@ -55,6 +55,7 @@ if (typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env
   } catch (_) {}
 }
 import { notificationService } from '../domains/notifications/services/notificationService';
+import { toast } from 'react-hot-toast';
 // Carga perezosa de cart store para eliminar items asociados a ofertas inválidas
 let useCartStoreRef = null;
 try {
@@ -222,6 +223,7 @@ export const useOfferStore = create((set, get) => ({
     } catch (err) {
       if (typeof console !== 'undefined') console.log('[offerStore] createOffer error:', err?.message);
       set({ error: err.message, loading: false });
+      try { toast.error(err?.message || 'Error al enviar la oferta'); } catch(_) {}
       return { success: false, error: err.message };
     }
   },
@@ -238,6 +240,10 @@ export const useOfferStore = create((set, get) => ({
       try {
         const state = get();
         const offer = state.buyerOffers.find(o => o.id === offerId);
+        // Short-circuit if already finalized (reserved/paid) to avoid duplicate RPCs
+        if (offer && (offer.status === OFFER_STATES.RESERVED || offer.status === OFFER_STATES.PAID)) {
+          return { success: false, error: 'La oferta ya fue finalizada' };
+        }
         if (offer && offer.purchase_deadline) {
           const dl = new Date(offer.purchase_deadline).getTime();
             if (!Number.isNaN(dl) && Date.now() > dl) {

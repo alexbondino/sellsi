@@ -25,6 +25,8 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import BusinessIcon from '@mui/icons-material/Business';
 import InfoIcon from '@mui/icons-material/Info';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import {
   productGridColumns,
@@ -350,28 +352,28 @@ const ProductsSection = React.memo(
           role="navigation"
           aria-label="Paginaci├│n de productos"
         >
-          {/* Bot├│n Anterior */}
+          {/* Botón Anterior */}
           <Button
             variant="outlined"
             disabled={currentPage === 1}
             onClick={() => handlePageChange(currentPage - 1)}
             sx={{
               minWidth: 'auto',
-              px: { xs: 1, sm: 2 }, // Ô£à RESPONSIVO: Padding m├ís peque├▒o en m├│vil
-              fontSize: { xs: '0.75rem', sm: '0.875rem' }, // Ô£à RESPONSIVO: Texto m├ís peque├▒o en m├│vil
+              px: { xs: 1, sm: 2 }, // RESPONSIVO: Padding más pequeño en móvil
+              fontSize: { xs: '0.75rem', sm: '0.875rem' }, // RESPONSIVO: Texto más pequeño en móvil
             }}
-            aria-label="P├ígina anterior"
+            aria-label="Página anterior"
           >
-            {isXs ? 'ÔÇ╣' : 'ÔÇ╣ Anterior'}
+            {isXs ? <ChevronLeftIcon fontSize="small" /> : <><ChevronLeftIcon fontSize="small" sx={{ mr: 1 }} />Anterior</>}
           </Button>{' '}
-          {/* N├║meros de p├ígina */}
+          {/* Números de página */}
           {!isXs && startPage > 1 && (
             <>
               <Button
                 variant={1 === currentPage ? 'contained' : 'outlined'}
                 onClick={() => handlePageChange(1)}
                 sx={{ minWidth: { xs: 32, sm: 40 } }}
-                aria-label="Ir a p├ígina 1"
+                aria-label="Ir a página 1"
                 aria-current={currentPage === 1 ? 'page' : undefined}
               >
                 1
@@ -391,7 +393,7 @@ const ProductsSection = React.memo(
                 minWidth: { xs: 32, sm: 40 }, // Ô£à RESPONSIVO: Botones m├ís peque├▒os en m├│vil
                 fontSize: { xs: '0.75rem', sm: '0.875rem' },
               }}
-              aria-label={`Ir a p├ígina ${page}`}
+              aria-label={`Ir a página ${page}`}
               aria-current={page === currentPage ? 'page' : undefined}
             >
               {page}
@@ -406,14 +408,14 @@ const ProductsSection = React.memo(
                 variant={totalPages === currentPage ? 'contained' : 'outlined'}
                 onClick={() => handlePageChange(totalPages)}
                 sx={{ minWidth: { xs: 32, sm: 40 } }}
-                aria-label={`Ir a p├ígina ${totalPages}`}
+                aria-label={`Ir a página ${totalPages}`}
                 aria-current={currentPage === totalPages ? 'page' : undefined}
               >
                 {totalPages}
               </Button>
             </>
           )}
-          {/* Bot├│n Siguiente */}
+          {/* Botón Siguiente */}
           <Button
             variant="outlined"
             disabled={currentPage === totalPages}
@@ -423,14 +425,14 @@ const ProductsSection = React.memo(
               px: { xs: 1, sm: 2 },
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
             }}
-            aria-label="P├ígina siguiente"
+            aria-label="Página siguiente"
           >
-            {isXs ? 'ÔÇ║' : 'Siguiente ÔÇ║'}
+            {isXs ? <ChevronRightIcon fontSize="small" /> : <>Siguiente <ChevronRightIcon fontSize="small" sx={{ ml: 1 }} /></>}
           </Button>
-          {/* Info de p├ígina - Solo en pantallas medianas y grandes */}
+          {/* Info de página - Solo en pantallas medianas y grandes */}
           {!isXs && (
             <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-              P├ígina {currentPage} de {totalPages}
+              Página {currentPage} de {totalPages}
             </Typography>
           )}
         </Box>
@@ -630,11 +632,13 @@ const ProductsSection = React.memo(
     React.useEffect(() => {
       if (!FeatureFlags.FEATURE_PHASE1_THUMBS) return;
       if (!Array.isArray(renderItems) || !renderItems.length) return;
+      // ✅ FIX: No cargar thumbnails en vista de proveedores (usan logos, no product thumbnails)
+      if (isProviderView) return;
       // Tomar primeros 24 (o menos) IDs con product_id disponible
       const prefetchCount = 24;
       const ids = renderItems
         .slice(0, prefetchCount)
-        .map(p => p?.id || p?.product_id)
+        .map(p => p?.productid || p?.product_id)
         .filter(Boolean);
       if (!ids.length) return;
       let cancelled = false;
@@ -665,7 +669,7 @@ const ProductsSection = React.memo(
 // Ô£à MEJORA DE RENDIMIENTO: DisplayName para debugging
 ProductsSection.displayName = 'ProductsSection';
 
-// Prefetch inicial sencillo (warm thumbnails) ÔÇô se hace fuera de render para no afectar SSR hipot├®tico
+// Prefetch inicial sencillo (warm thumbnails) — se hace fuera de render para no afectar SSR hipotético
 // NOTA: Simple guard to ensure side effect only in browser
 if (typeof window !== 'undefined' && FeatureFlags.FEATURE_PHASE1_THUMBS) {
   // Micro cola para evitar saturar inmediatamente; se puede mejorar con observers

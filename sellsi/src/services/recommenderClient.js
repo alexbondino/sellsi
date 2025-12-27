@@ -1,0 +1,171 @@
+/**
+ * Recommender Service Client
+ * Cliente para interactuar con el servicio de recomendaciones ML
+ */
+
+const RECOMMENDER_URL =
+  import.meta.env.VITE_RECOMMENDER_SERVICE_URL || 'http://localhost:8000';
+
+/**
+ * Obtiene recomendaciones generales de productos
+ * @param {number} limit - Número máximo de productos a retornar
+ * @param {string} category - Categoría opcional para filtrar
+ * @returns {Promise<{products: Array, count: number, strategy: string}>}
+ */
+export async function getRecommendations(limit = 10, category = null) {
+  try {
+    const response = await fetch(`${RECOMMENDER_URL}/api/v1/recommendations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        limit,
+        ...(category && { category }),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Log solo de nombres de productos
+    console.log('🎯 Productos randomizados por el modelo:');
+    data.products.forEach(product => {
+      console.log(`   ${product.name}`);
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Backend Breaked');
+    return null;
+  }
+}
+
+/**
+ * Obtiene productos similares a uno dado
+ * @param {string} productId - ID del producto
+ * @param {number} limit - Número máximo de productos a retornar
+ * @returns {Promise<{similar_products: Array, count: number}>}
+ */
+export async function getSimilarProducts(productId, limit = 5) {
+  try {
+    const response = await fetch(
+      `${RECOMMENDER_URL}/api/v1/similar/${productId}?limit=${limit}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    console.log(`🔗 Productos similares a ${productId}:`);
+    data.similar_products.forEach((product, index) => {
+      console.log(
+        `  ${index + 1}. ${
+          product.name
+        } (Score: ${product.recommendation_score.toFixed(2)})`
+      );
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Backend Breaked');
+    console.error('Error details:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Obtiene productos trending
+ * @param {number} limit - Número máximo de productos a retornar
+ * @returns {Promise<{trending_products: Array, count: number}>}
+ */
+export async function getTrendingProducts(limit = 10) {
+  try {
+    const response = await fetch(
+      `${RECOMMENDER_URL}/api/v1/trending?limit=${limit}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    console.log('🔥 Productos trending:');
+    data.trending_products.forEach((product, index) => {
+      console.log(
+        `  ${index + 1}. ${
+          product.name
+        } (Score: ${product.recommendation_score.toFixed(2)})`
+      );
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Backend Breaked');
+    console.error('Error details:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Obtiene recomendaciones personalizadas para un usuario
+ * @param {string} userId - ID del usuario
+ * @param {number} limit - Número máximo de productos a retornar
+ * @returns {Promise<{recommendations: Array, count: number}>}
+ */
+export async function getPersonalizedRecommendations(userId, limit = 10) {
+  try {
+    const response = await fetch(
+      `${RECOMMENDER_URL}/api/v1/personalized/${userId}?limit=${limit}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    console.log(`👤 Recomendaciones personalizadas para usuario ${userId}:`);
+    data.recommendations.forEach((product, index) => {
+      console.log(
+        `  ${index + 1}. ${
+          product.name
+        } (Score: ${product.recommendation_score.toFixed(2)})`
+      );
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Backend Breaked');
+    console.error('Error details:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Verifica el estado del servicio
+ * @returns {Promise<{status: string, service: string, version: string}>}
+ */
+export async function checkHealth() {
+  try {
+    const response = await fetch(`${RECOMMENDER_URL}/api/v1/health`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log(`✅ Servicio de recomendaciones: ${data.status}`);
+    return data;
+  } catch (error) {
+    console.error('Backend Breaked');
+    console.error('Error details:', error.message);
+    return null;
+  }
+}

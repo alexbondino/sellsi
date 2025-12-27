@@ -542,7 +542,8 @@ const Rows = ({ order, onActionClick }) => {
   const statusChipProps = getStatusChipProps(order.status);
   // Detectar si hay al menos un item ofertado (para chip agregado en columna Producto)
   const hasOfferedItem = React.useMemo(() => {
-    const items = order?.items || order?.products || [];
+    // Preferir `items` si tiene elementos; si viene vacío, fallback a `products`.
+    const items = (Array.isArray(order?.items) && order.items.length > 0) ? order.items : (order?.products || []);
     return items.some(it => it.isOffered || it.metadata?.isOffered || !!it.offer_id || !!it.offered_price);
   }, [order]);
 

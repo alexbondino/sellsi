@@ -33,6 +33,9 @@ const validateDispatchDate = ({ userDate, orderLimitYMD, todayYMD }) => {
   }
 
   const chosenDate = parseYMD(chosen);
+  if (isNaN(chosenDate.getTime())) {
+    return { ok: false, error: 'Fecha inválida' };
+  }
   if (chosenDate < todayDate) {
     return { ok: false, error: 'La fecha estimada no puede ser anterior a hoy' };
   }
@@ -87,6 +90,25 @@ describe('Dispatch date validation (aislado)', () => {
     expect(res.ok).toBe(false);
     expect(mockDispatch).not.toHaveBeenCalled();
     expect(banners[banners.length - 1].message).toMatch(/Límite/);
+  });
+
+  it('permite fecha igual a hoy y a la fecha límite', () => {
+    // today
+    const today = toYMD(FIXED_NOW);
+    const resToday = performDispatchFlow({ userDate: today, orderLimitISO: null });
+    expect(resToday.ok).toBe(true);
+
+    // equal to limit
+    const limit = toYMD(addDays(FIXED_NOW, 3));
+    const resLimit = performDispatchFlow({ userDate: limit, orderLimitISO: limit + 'T00:00:00.000Z' });
+    expect(resLimit.ok).toBe(true);
+  });
+
+  it('rechaza fecha malformada', () => {
+    const res = performDispatchFlow({ userDate: 'invalid-date', orderLimitISO: null });
+    // invalid date should be treated as earlier than today by parse failure -> error
+    expect(res.ok).toBe(false);
+    expect(banners[banners.length - 1].message).toBeDefined();
   });
 });
 

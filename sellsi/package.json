@@ -36,7 +36,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:pipeline": "node scripts/test-pipeline.js",
-    "test:all": "npm run test:unit && npm run test:integration && npm run build && npm run test:e2e"
+    "test:all": "npm run test:unit && npm run test:integration && npm run build && npm run test:e2e",
+    "check:mojibake": "node scripts/check-mojibake.cjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -98,6 +99,7 @@
     "autoprefixer": "^10.4.22",
     "babel-jest": "^30.1.2",
     "babel-plugin-transform-import-meta": "^2.3.3",
+    "@babel/plugin-syntax-import-meta": "^7.10.4",
     "buffer": "^6.0.3",
     "critical": "^5.1.1",
     "cross-env": "^7.0.3",
@@ -108,7 +110,7 @@
     "globals": "^16.0.0",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.1.3",
-    "jest-environment-jsdom": "^30.1.2",
+    "jest-environment-jsdom": "^30.2.0",
     "jest-transform-stub": "^2.0.0",
     "jsdom": "^26.1.0",
     "postcss": "^8.5.6",

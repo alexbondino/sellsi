@@ -89,4 +89,66 @@ describe('PrivateRoute - routing rules and edge cases', () => {
     expect(screen.getByText('onboarding')).toBeInTheDocument();
     expect(screen.queryByText('buyercart')).not.toBeInTheDocument();
   });
+
+  test('authenticated user with onboarding complete can access protected content', () => {
+    render(
+      <MemoryRouter initialEntries={["/protected"]}>
+        <Routes>
+          <Route
+            path="/protected"
+            element={
+              <PrivateRoute isAuthenticated={true} needsOnboarding={false} loading={false}>
+                <div data-testid="protected">protected</div>
+              </PrivateRoute>
+            }
+          />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    // Should render the protected content
+    expect(screen.getByTestId('protected')).toBeInTheDocument();
+  });
+
+  test('visiting /onboarding when needsOnboarding=true renders onboarding page', () => {
+    render(
+      <MemoryRouter initialEntries={["/onboarding"]}>
+        <Routes>
+          <Route
+            path="/onboarding"
+            element={
+              <PrivateRoute isAuthenticated={true} needsOnboarding={true} loading={false}>
+                <div>onboarding</div>
+              </PrivateRoute>
+            }
+          />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('onboarding')).toBeInTheDocument();
+  });
+});
+
+describe('PrivateRoute - extra edge cases', () => {
+  test('respects custom redirectTo prop', () => {
+    render(
+      <MemoryRouter initialEntries={["/secret"]}>
+        <Routes>
+          <Route
+            path="/secret"
+            element={
+              <PrivateRoute isAuthenticated={false} needsOnboarding={false} loading={false} redirectTo="/custom-login">
+                <div>secret</div>
+              </PrivateRoute>
+            }
+          />
+          <Route path="/custom-login" element={<div>custom-login</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('custom-login')).toBeInTheDocument();
+    expect(screen.queryByText('secret')).not.toBeInTheDocument();
+  });
 });

@@ -24,7 +24,7 @@ import {
 
 const CompactCheckoutSummary = ({ 
   orderData,
-  formatPrice,
+  formatPrice = (n) => `CLP ${n}`,
   variant = 'minimal', // 'minimal' | 'detailed'
   selectedMethod = null
 }) => {
@@ -32,6 +32,7 @@ const CompactCheckoutSummary = ({
   
   const itemCount = orderData.items?.length || 0;
   const shipping = orderData.shipping || 0;
+  const subtotal = orderData.subtotal || 0;
 
   // Compute prices using tier-aware logic (same as desktop CheckoutSummary)
   const getItemPrice = item => {
@@ -40,7 +41,8 @@ const CompactCheckoutSummary = ({
       const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0;
       return calculatePriceForQuantity(item.quantity, item.price_tiers, basePrice);
     }
-    return item.price || 0;
+    // Coerce price to Number to avoid strings being displayed incorrectly
+    return Number(item.price || 0) || 0;
   };
 
   const { subtotalFromItems, baseTotal, paymentFee, total } = useMemo(() => {
@@ -121,8 +123,8 @@ const CompactCheckoutSummary = ({
                   }}>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
                     {(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) && (
-                      <Tooltip title="Este produco es ofertado" arrow>
-                        <Box component="span" sx={{ color: 'success.main', fontSize: 14, ml: 0.5 }}>●</Box>
+                      <Tooltip title="Este producto es ofertado" arrow>
+                        <Box component="span" sx={{ color: 'success.main', fontSize: 14, ml: 0.5 }} data-testid="offered-indicator">●</Box>
                       </Tooltip>
                     )}
                     <span style={{ marginLeft: 6 }}>x{item.quantity}</span>

@@ -393,9 +393,17 @@ serve(req => withMetrics('create-payment-flow', req, async () => {
 
       if (updateErr) {
         logErr('order_update_failed', { error: updateErr });
+        return respond(500, { 
+          error_code: 'ORDER_UPDATE_FAILED', 
+          error: 'No se pudo guardar los datos del pago en la orden' 
+        });
       }
     } catch (updateEx) {
       logErr('order_update_exception', { error: String(updateEx) });
+      return respond(500, { 
+        error_code: 'ORDER_UPDATE_EXCEPTION', 
+        error: 'Error al actualizar la orden con datos de Flow' 
+      });
     }
 
     log('success', { ms: Date.now() - startedAt, flowOrder: responseData.flowOrder });

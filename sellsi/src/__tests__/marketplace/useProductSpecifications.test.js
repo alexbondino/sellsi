@@ -1,14 +1,13 @@
-import useProductSpecifications from '../../workspaces/supplier/shared-hooks/useProductSpecifications'
+const { createDeferred } = require('../utils/deferred')
+const { loadIsolatedSpecStore } = require('../utils/loadIsolatedStore')
 
 describe('useProductSpecifications hook - robustness and race tests', () => {
   beforeEach(() => {
-    // reset the zustand store between tests to avoid state leakage
-    jest.resetModules();
-    jest.clearAllMocks();
-  });
+    jest.clearAllMocks()
+  })
 
   test('validateSpecifications removes invalid entries and reports errors', () => {
-    const hook = require('../../workspaces/supplier/shared-hooks/useProductSpecifications').default;
+    const store = loadIsolatedSpecStore()
     const input = [
       { nombre: '', valor: 'v' },
       { nombre: 'Good', valor: '' },
@@ -16,51 +15,94 @@ describe('useProductSpecifications hook - robustness and race tests', () => {
       { nombre: 'Ok', valor: 'Val' }
     ];
 
-    const res = hook.getState().validateSpecifications(input);
-    expect(res.isValid).toBe(false);
-    expect(Array.isArray(res.errors)).toBe(true);
-    // validated data only includes the last valid spec
-    expect(res.data.length).toBeGreaterThanOrEqual(1);
+    const res = store.validateSpecifications(input)
+    expect(res.isValid).toBe(false)
+    expect(Array.isArray(res.errors)).toBe(true)
+    expect(res.data.length).toBeGreaterThanOrEqual(1)
   });
 
   test('bulkValidateAndClean eliminates duplicates and reports duplicatesRemoved', () => {
-    const hook = require('../../workspaces/supplier/shared-hooks/useProductSpecifications').default;
+    const store = loadIsolatedSpecStore()
     const input = [
       { nombre: 'A', valor: '1' },
       { nombre: 'a', valor: '1' },
       { nombre: 'B', valor: '2' },
     ];
 
-    const res = hook.getState().bulkValidateAndClean(input);
-    expect(res.duplicatesRemoved).toBeGreaterThanOrEqual(1);
-    expect(res.data.length).toBe(2);
+    const res = store.bulkValidateAndClean(input)
+    expect(res.duplicatesRemoved).toBe(1)
+    expect(res.data.length).toBe(2)
   });
 
   test('processProductSpecifications sets processing flag and clears it after completion (race safety)', async () => {
-    // Mock updateProductSpecifications to delay
-    jest.doMock('../../workspaces/marketplace/services', () => ({ updateProductSpecifications: jest.fn(() => new Promise(res => setTimeout(() => res(true), 40))) }));
-    const hook = require('../../workspaces/supplier/shared-hooks/useProductSpecifications').default;
+    // Use deferred to make test deterministic
+    const deferred = createDeferred()
+    const updateMock = jest.fn(() => deferred.promise)
+    const store = loadIsolatedSpecStore({ updateProductSpecifications: updateMock })
 
-    const p1 = hook.getState().processProductSpecifications('p-1', [{ nombre: 'X', valor: '1' }]);
+    const promise = store.processProductSpecifications('p-1', [{ nombre: ' X ', valor: ' 1 ' }])
     // Immediately check processing flag
-    expect(hook.getState().isProcessingSpecs('p-1')).toBe(true);
+    expect(store.isProcessingSpecs('p-1')).toBe(true)
 
-    await p1;
+    // resolve the service
+    deferred.resolve(true)
+    await promise
+
     // After completion flag must be false
-    expect(hook.getState().isProcessingSpecs('p-1')).toBe(false);
-  }, 10000);
+    expect(store.isProcessingSpecs('p-1')).toBe(false)
+    expect(updateMock).toHaveBeenCalled()
+  })
 
   test('concurrent process calls for same product serialize processing flag correctly', async () => {
-    jest.doMock('../../workspaces/marketplace/services', () => ({ updateProductSpecifications: jest.fn(() => new Promise(res => setTimeout(() => res(true), 30))) }));
-    const hook = require('../../workspaces/supplier/shared-hooks/useProductSpecifications').default;
+    const deferred = createDeferred()
+    const updateMock = jest.fn(() => deferred.promise)
+    const store = loadIsolatedSpecStore({ updateProductSpecifications: updateMock })
 
-    const p1 = hook.getState().processProductSpecifications('p-2', [{ nombre: 'X', valor: '1' }]);
-    const p2 = hook.getState().processProductSpecifications('p-2', [{ nombre: 'Y', valor: '2' }]);
+    const p1 = store.processProductSpecifications('p-2', [{ nombre: 'X', valor: '1' }]);
+    const p2 = store.processProductSpecifications('p-2', [{ nombre: 'Y', valor: '2' }]);
 
     // While any is in flight, the flag should be true
-    expect(hook.getState().isProcessingSpecs('p-2')).toBe(true);
+    expect(store.isProcessingSpecs('p-2')).toBe(true);
 
-    await Promise.all([p1, p2]);
-    expect(hook.getState().isProcessingSpecs('p-2')).toBe(false);
-  }, 15000);
+    // resolve the single DB promise
+    deferred.resolve(true)
+    await Promise.all([p1, p2])
+    expect(store.isProcessingSpecs('p-2')).toBe(false)
+    expect(updateMock).toHaveBeenCalled()
+  })
+
+  test('processProductSpecifications handles service rejection and sets error', async () => {
+    const updateMock = jest.fn(() => Promise.reject(new Error('svc fail')))
+    const store = loadIsolatedSpecStore({ updateProductSpecifications: updateMock })
+
+    const res = await store.processProductSpecifications('p-fail', [{ nombre: 'A', valor: '1' }])
+    expect(res.success).toBe(false)
+    expect(store.isProcessingSpecs('p-fail')).toBe(false)
+    const fresh = require('../../workspaces/supplier/shared-hooks/useProductSpecifications').default.getState()
+    expect(typeof fresh.error).toBe('string')
+    expect(fresh.error).toMatch(/svc fail|Error procesando especificaciones/)
+  })
+
+  test('processProductSpecifications sends sanitized payload to service (trim + mapping + defaults)', async () => {
+    const updateMock = jest.fn(() => Promise.resolve(true))
+    const store = loadIsolatedSpecStore({ updateProductSpecifications: updateMock })
+
+    const input = [
+      { nombre: '  Name  ', valor: '  Val  ', descripcion: '  desc  ', categoria: '  ', unidad: '  ' }
+    ]
+
+    const res = await store.processProductSpecifications('p-payload', input)
+    expect(res.success).toBe(true)
+    expect(updateMock).toHaveBeenCalled()
+
+    const call = updateMock.mock.calls[0]
+    expect(call[0]).toBe('p-payload')
+    const sentSpecs = call[1]
+    expect(Array.isArray(sentSpecs)).toBe(true)
+    expect(sentSpecs[0].key).toBe('Name')
+    expect(sentSpecs[0].value).toBe('Val')
+    expect(sentSpecs[0].descripcion).toBe('desc')
+    // categoria should normalize blank -> 'general'
+    expect(sentSpecs[0].categoria).toBe('general')
+  })
 });

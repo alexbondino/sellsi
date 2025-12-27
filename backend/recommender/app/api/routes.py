@@ -1,23 +1,21 @@
 """
-API Routes for Recommendation Service
+API Routes
+Endpoints para recomendaciones de productos
 """
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, HTTPException
 from typing import Optional, List
+from pydantic import BaseModel
 from app.services.recommender_service import recommender_service
 
 router = APIRouter()
 
 
-# Pydantic Models
 class RecommendationRequest(BaseModel):
-    """Request model for recommendations"""
-    user_id: Optional[str] = Field(None, description="User ID for personalized recommendations")
-    product_id: Optional[str] = Field(None, description="Product ID for similar products")
-    category: Optional[str] = Field(None, description="Filter by category")
-    exclude_ids: List[str] = Field(default_factory=list, description="Product IDs to exclude")
-    limit: int = Field(6, ge=1, le=50, description="Number of recommendations")
-    strategy: Optional[str] = Field(None, description="Recommendation strategy")
+    """Request model para obtener recomendaciones"""
+    user_id: Optional[str] = None
+    category: Optional[str] = None
+    limit: int = 6
+    exclude_ids: Optional[List[str]] = None
 
 
 class HealthResponse(BaseModel):
@@ -27,110 +25,108 @@ class HealthResponse(BaseModel):
     version: str
 
 
-# Routes
 @router.get("/health", response_model=HealthResponse)
 async def health_check():
-    """Health check endpoint"""
+    """Endpoint de salud del servicio"""
     return {
         "status": "healthy",
-        "service": "sellsi-backend-recommender",
+        "service": "sellsi-recommender",
         "version": "1.0.0"
     }
 
 
 @router.get("/strategies")
-async def get_strategies():
-    """Get available recommendation strategies"""
+async def list_strategies():
+    """Lista las estrategias de recomendación disponibles"""
     return {
         "strategies": recommender_service.get_available_strategies(),
-        "default": recommender_service.default_strategy
+        "active": recommender_service.get_active_strategy()
     }
 
 
 @router.post("/recommendations")
 async def get_recommendations(request: RecommendationRequest):
     """
-    Get product recommendations
-    
-    - **user_id**: Optional user ID for personalized recommendations
-    - **product_id**: Optional product ID for similar products
-    - **category**: Optional category filter
-    - **exclude_ids**: List of product IDs to exclude
-    - **limit**: Number of recommendations (1-50)
-    - **strategy**: Recommendation strategy (random, collaborative, etc.)
+    Obtiene recomendaciones de productos
+    MVP: Retorna productos en orden aleatorio
     """
     try:
-        result = recommender_service.get_recommendations(
+        recommendations = await recommender_service.get_recommendations(
             user_id=request.user_id,
-            product_id=request.product_id,
             category=request.category,
-            exclude_ids=request.exclude_ids,
             limit=request.limit,
-            strategy=request.strategy
+            exclude_ids=request.exclude_ids or []
         )
-        return result
+        
+        return {
+            "products": recommendations,
+            "count": len(recommendations),
+            "strategy": recommender_service.get_active_strategy()
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/recommendations/similar/{product_id}")
+@router.get("/similar/{product_id}")
 async def get_similar_products(
     product_id: str,
-    limit: int = Query(4, ge=1, le=20, description="Number of similar products")
+    limit: int = 6
 ):
     """
-    Get products similar to a specific product
-    
-    - **product_id**: ID of the product
-    - **limit**: Number of similar products to return
+    Obtiene productos similares a uno dado
+    MVP: Retorna productos aleatorios de la misma categoría
     """
     try:
-        result = recommender_service.get_similar_products(
+        similar = await recommender_service.get_similar_products(
             product_id=product_id,
             limit=limit
         )
-        return result
+        
+        return {
+            "product_id": product_id,
+            "similar_products": similar,
+            "count": len(similar)
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=404, detail=f"Product not found: {str(e)}")
 
 
-@router.get("/recommendations/personalized/{user_id}")
+@router.get("/personalized/{user_id}")
 async def get_personalized_recommendations(
     user_id: str,
-    limit: int = Query(6, ge=1, le=50, description="Number of recommendations")
+    limit: int = 10
 ):
     """
-    Get personalized recommendations for a user
-    
-    - **user_id**: ID of the user
-    - **limit**: Number of recommendations to return
+    Obtiene recomendaciones personalizadas para un usuario
+    MVP: Retorna productos aleatorios
     """
     try:
-        result = recommender_service.get_personalized_recommendations(
+        personalized = await recommender_service.get_personalized_recommendations(
             user_id=user_id,
             limit=limit
         )
-        return result
+        
+        return {
+            "user_id": user_id,
+            "recommendations": personalized,
+            "count": len(personalized)
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/recommendations/trending")
-async def get_trending_products(
-    category: Optional[str] = Query(None, description="Filter by category"),
-    limit: int = Query(6, ge=1, le=50, description="Number of trending products")
-):
+@router.get("/trending")
+async def get_trending_products(limit: int = 10):
     """
-    Get trending/popular products
-    
-    - **category**: Optional category filter
-    - **limit**: Number of products to return
+    Obtiene productos en tendencia
+    MVP: Retorna productos aleatorios
     """
     try:
-        result = recommender_service.get_trending_products(
-            category=category,
-            limit=limit
-        )
-        return result
+        trending = await recommender_service.get_trending_products(limit=limit)
+        
+        return {
+            "trending_products": trending,
+            "count": len(trending)
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

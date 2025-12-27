@@ -1,60 +1,94 @@
 /**
- * Tests unitarios para eliminación batch y migración filtrada del carrito.
- * Nota: Se mockea supabase para aislar lógica.
+ * Robust unit tests for batch deletion and cart behavior.
+ * Uses a simple spy-builder mock for Supabase to avoid over-mocking logic.
  */
 import { cartService } from '../../services/user/cartService';
 
-// Mock básico de supabase
+// Spy-builder mock for Supabase (no Proxy, no internal logic)
 jest.mock('../../services/supabase', () => {
-  const deleted = []; // para ver qué se elimina
-  const inserted = [];
-  const cartItems = [];
+  const mockDeleteBuilder = {
+    delete: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+    then: jest.fn(),
+  };
+
   return {
     supabase: {
-      from: (table) => {
-        if (table === 'cart_items') {
-          return {
-            delete: () => {
-              const api = {
-                _filters: {},
-                eq(key, val) { this._filters[key] = val; return this; },
-                in(col, arr) { this._filters[col] = arr; return this; },
-                select() { return this; },
-                async execute() {
-                  const cart_id = this._filters.cart_id;
-                  const ids = Array.isArray(this._filters.cart_items_id) ? this._filters.cart_items_id : [];
-                  ids.forEach(id => deleted.push({ cart_id, id }));
-                  return { data: [], error: null };
-                }
-              };
-              // Proxy await to execute()
-              return new Proxy(api, {
-                get(target, prop) {
-                  if (prop === 'then') {
-                    return (resolve, reject) => target.execute().then(resolve, reject);
-                  }
-                  return target[prop];
-                }
-              });
-            }
-          };
-        }
-        if (table === 'carts') {
-          return {
-            select() { return this; },
-            eq() { return this; },
-            maybeSingle(){ return Promise.resolve({ data: { cart_id: 'c1', status: 'active', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), items: [] }, error: null }); }
-          };
-        }
-        return {};
-      }
-    }
+      from: jest.fn(() => mockDeleteBuilder),
+    },
+    _mockDeleteBuilder: mockDeleteBuilder,
   };
 });
 
+const { supabase, _mockDeleteBuilder } = require('../../services/supabase');
+
 describe('cartService batch delete', () => {
-  test('removeItemsFromCart elimina múltiples líneas sin error', async () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    // Default successful DB responses
+    _mockDeleteBuilder.then.mockImplementation((resolve) => resolve({ data: [], error: null }));
+    _mockDeleteBuilder.delete.mockReturnThis();
+    _mockDeleteBuilder.eq.mockReturnThis();
+    _mockDeleteBuilder.in.mockReturnThis();
+    _mockDeleteBuilder.update.mockReturnThis();
+  });
+
+  test('removeItemsFromCart dedupes ids and calls supabase with expected filters', async () => {
+    // Avoid waiting for timestamp debounce by stubbing updateCartTimestamp
+    const spyTimestamp = jest.spyOn(cartService, 'updateCartTimestamp').mockResolvedValue({});
+
     const res = await cartService.removeItemsFromCart('c1', ['l1','l2','l2']);
     expect(res).toBe(true);
+
+    // Verify table selection and filters
+    expect(supabase.from).toHaveBeenCalledWith('cart_items');
+    expect(_mockDeleteBuilder.eq).toHaveBeenCalledWith('cart_id', 'c1');
+    expect(_mockDeleteBuilder.in).toHaveBeenCalledWith('cart_items_id', expect.arrayContaining(['l1','l2']));
+
+    // Ensure deduplication happened (2 unique ids)
+    const calls = _mockDeleteBuilder.in.mock.calls[0];
+    const passedIds = calls[1];
+    expect(passedIds).toHaveLength(2);
+
+    spyTimestamp.mockRestore();
+  });
+
+  // NOTE: We assert the EFFECT (that timestamp refresh occurs) by spying on the
+  // internal updateCartTimestamp method. This spy works only if cartService
+  // invokes it as a method on the exported object (i.e., this.updateCartTimestamp).
+  // If the implementation changes to module-local function calls, this spy will
+  // silently not detect the call — in that case, prefer asserting on the DB update
+  // (supabase.from('carts').update(...)) instead.
+  test('triggers timestamp refresh (updateCartTimestamp) after deletion', async () => {
+    const spy = jest.spyOn(cartService, 'updateCartTimestamp').mockResolvedValue({});
+    await cartService.removeItemsFromCart('c1', ['a','b']);
+    expect(spy).toHaveBeenCalledWith('c1');
+    spy.mockRestore();
+  });
+
+  test('returns false for empty ids array', async () => {
+    const res = await cartService.removeItemsFromCart('c1', []);
+    expect(res).toBe(false);
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  test('returns false for missing cartId', async () => {
+    const res = await cartService.removeItemsFromCart(null, ['x']);
+    expect(res).toBe(false);
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  test('throws when supabase delete fails', async () => {
+    // Simulate DB error by making the then callback return an error
+    _mockDeleteBuilder.then.mockImplementation((resolve) => resolve({ data: null, error: { message: 'DB Error' } }));
+
+    await expect(cartService.removeItemsFromCart('c1', ['l1'])).rejects.toThrow(/DB Error/);
+
+    // Restore success behavior for subsequent tests
+    _mockDeleteBuilder.then.mockImplementation((resolve) => resolve({ data: [], error: null }));
   });
 });

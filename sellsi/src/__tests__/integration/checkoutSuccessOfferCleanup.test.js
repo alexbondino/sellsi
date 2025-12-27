@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -19,7 +19,8 @@ jest.mock('../../services/supabase', () => ({
 jest.mock('react-hot-toast', () => ({
   toast: {
     success: jest.fn(),
-    error: jest.fn()
+    error: jest.fn(),
+    info: jest.fn()
   }
 }));
 
@@ -70,14 +71,9 @@ describe('CheckoutSuccess - Offer Cleanup Integration', () => {
     
     // Get the mocked service
     mockCheckoutService = require('../../domains/checkout/services').checkoutService;
-    // Spy on useSearchParams so it reads window.location.search at runtime
+    // Mock useSearchParams to return deterministic query params for tests
     const rr = require('react-router-dom');
-    jest.spyOn(rr, 'useSearchParams').mockImplementation(() => {
-      const raw = typeof window !== 'undefined' ? window.location.search : '';
-      const fallback = 'payment_id=test123&transaction_id=txn456';
-      const query = raw && raw.length > 0 ? raw.replace(/^\?/, '') : fallback;
-      return [new URLSearchParams(query)];
-    });
+    jest.spyOn(rr, 'useSearchParams').mockReturnValue([new URLSearchParams('payment_id=test123&transaction_id=txn456')]);
     
     // Reset stores
     useOfferStore.setState({ 
@@ -116,8 +112,8 @@ describe('CheckoutSuccess - Offer Cleanup Integration', () => {
     useCartStore.setState({ items: cartItems });
     useOfferStore.setState({ buyerOffers: offers });
 
-    // Mock de las funciones de limpieza
-    const mockClearCart = jest.fn().mockResolvedValue();
+    // Mock de las funciones de limpieza (verificamos llamadas, no implementaciones)
+    const mockClearCart = jest.fn();
     const mockClearLocal = jest.fn();
     const mockForceCleanCartOffers = jest.fn();
 
@@ -153,6 +149,15 @@ describe('CheckoutSuccess - Offer Cleanup Integration', () => {
       expect(mockForceCleanCartOffers).toHaveBeenCalled();
     }, { timeout: 3000 });
 
+  // Verificar que el toast de éxito se disparó
+  const { toast } = require('react-hot-toast');
+  await waitFor(() => expect(toast.success).toHaveBeenCalledWith(expect.stringMatching(/pago/i)));
+
+  // Comprobamos que el método de limpieza de ofertas fue invocado (no su implementación interna)
+  await waitFor(() => {
+    expect(mockForceCleanCartOffers).toHaveBeenCalled();
+  });
+
   // Verificar que se muestre el mensaje de éxito (título o descripción)
   expect(screen.getByText(/pago completado/i)).toBeInTheDocument();
   });
@@ -187,19 +192,21 @@ describe('CheckoutSuccess - Offer Cleanup Integration', () => {
     }, { timeout: 5000 });
 
     // A pesar de los errores, debería seguir funcionando
-    await waitFor(() => {
-      expect(mockClearLocal).toHaveBeenCalled(); // Fallback ejecutado
-    }, { timeout: 3000 });
+    try {
+      await waitFor(() => {
+        expect(mockClearLocal).toHaveBeenCalled(); // Fallback ejecutado
+      }, { timeout: 3000 });
 
-    // Debería loggear el error pero continuar (no requerimos la forma exacta del Error)
-    await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalled();
-    }, { timeout: 3000 });
+      // Debería loggear el error pero continuar (no requerimos la forma exacta del Error)
+      await waitFor(() => {
+        expect(consoleSpy).toHaveBeenCalled();
+      }, { timeout: 3000 });
 
-    // Aún debería mostrar éxito al usuario (buscar título en lugar de frase exacta)
-    expect(screen.getByText(/pago completado/i)).toBeInTheDocument();
-
-    consoleSpy.mockRestore();
+      // Aún debería mostrar éxito al usuario (buscar título en lugar de frase exacta)
+      expect(screen.getByText(/pago completado/i)).toBeInTheDocument();
+    } finally {
+      consoleSpy.mockRestore();
+    }
   });
 
   it('debería redirigir automáticamente a pedidos después del tiempo establecido', async () => {
@@ -215,14 +222,93 @@ describe('CheckoutSuccess - Offer Cleanup Integration', () => {
       expect(mockCheckoutService.verifyKhipuPaymentStatus).toHaveBeenCalled();
     });
 
-    // Avanzar el tiempo 3 segundos (tiempo de redirección automática)
-    jest.advanceTimersByTime(3000);
+    // Avanzar el tiempo 3 segundos (tiempo de redirección automática) dentro de act
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/buyer/orders');
     });
 
     jest.useRealTimers();
+  });
+
+  it('debería manejar estado PENDING: limpiar carrito pero mostrar info', async () => {
+    // Preparar verificación pendiente
+    mockCheckoutService.verifyKhipuPaymentStatus.mockResolvedValueOnce({
+      success: true,
+      status: 'pending',
+      paymentId: 'test123',
+      transactionId: 'txn456'
+    });
+
+    // Preparar stores con mocks que solo verifican llamadas (no ejecutar lógica interna)
+    const mockClearCart = jest.fn();
+    const mockClearLocal = jest.fn();
+    const mockForceCleanCartOffers = jest.fn();
+
+    useCartStore.setState({ clearCart: mockClearCart, clearLocal: mockClearLocal });
+    useOfferStore.setState({ forceCleanCartOffers: mockForceCleanCartOffers });
+
+    // Inicializar con items y ofertas (estado inicial para la prueba)
+    useCartStore.setState({ items: [{ id: 'i1' }] });
+    useOfferStore.setState({ buyerOffers: [{ id: 'off-paid' }] });
+
+    render(
+      <TestWrapper>
+        <CheckoutSuccess />
+      </TestWrapper>
+    );
+
+    await waitFor(() => expect(mockCheckoutService.verifyKhipuPaymentStatus).toHaveBeenCalled());
+
+    // Para PENDING esperamos que muestre información y que se limpie el carrito
+    await waitFor(() => expect(mockClearCart).toHaveBeenCalled());
+    await waitFor(() => expect(mockForceCleanCartOffers).toHaveBeenCalled());
+
+    const { toast } = require('react-hot-toast');
+    await waitFor(() => expect(toast.info).toHaveBeenCalledWith(expect.stringMatching(/procesado|procesando/i)));
+
+    // No verificamos la implementación interna del store aquí; ya verificamos que la función de limpieza fue llamada
+    await waitFor(() => expect(mockForceCleanCartOffers).toHaveBeenCalled());
+  });
+
+  it('debería mostrar error si la verificación devuelve un estado inesperado', async () => {
+    mockCheckoutService.verifyKhipuPaymentStatus.mockResolvedValueOnce({
+      success: true,
+      status: 'failed',
+      paymentId: 'test123'
+    });
+
+    // Preparar spies
+    const mockClearCart = jest.fn();
+    const mockForceCleanCartOffers = jest.fn();
+    useCartStore.setState({ clearCart: mockClearCart });
+    useOfferStore.setState({ forceCleanCartOffers: mockForceCleanCartOffers });
+
+    render(
+      <TestWrapper>
+        <CheckoutSuccess />
+      </TestWrapper>
+    );
+
+    await waitFor(() => expect(mockCheckoutService.verifyKhipuPaymentStatus).toHaveBeenCalled());
+
+    // No debería limpiar cuando el estado no es handled
+    await waitFor(() => {
+      expect(mockClearCart).not.toHaveBeenCalled();
+      expect(mockForceCleanCartOffers).not.toHaveBeenCalled();
+    });
+
+    // Debería mostrarse el mensaje de error y disparar toast.error
+    const { toast } = require('react-hot-toast');
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+
+    // También debería renderizar el mensaje de error en pantalla
+    await waitFor(() => {
+      expect(screen.getByText(/error al verificar el pago/i)).toBeInTheDocument();
+    });
   });
 
   it('debería mostrar error cuando falla la verificación de pago', async () => {
@@ -246,8 +332,13 @@ describe('CheckoutSuccess - Offer Cleanup Integration', () => {
     // No debería intentar limpiar cuando falla la verificación
     const mockClearCart = jest.fn();
     useCartStore.setState({ clearCart: mockClearCart });
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Esperar a que el UI muestre el mensaje de error y luego afirmar que no se intentó limpiar
+    await waitFor(() => {
+      const msgs = screen.getAllByText(/error al verificar el pago/i);
+      expect(msgs.length).toBeGreaterThan(0);
+    }, { timeout: 5000 });
+
     expect(mockClearCart).not.toHaveBeenCalled();
   });
 

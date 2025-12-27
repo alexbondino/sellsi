@@ -20,12 +20,13 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_MSG: ${{ github.event.head_commit.message }}
         run: |
-          MERGE_MSG="${{ github.event.head_commit.message }}"
           echo "Merge message: $MERGE_MSG"
 
           # Extraer número de PR desde el mensaje "Merge pull request #123 ..."
-          PR_NUMBER=$(echo "$MERGE_MSG" | sed -n 's/.*pull request #\([0-9]\+\).*/\1/p')
+          # Usar solo la primera línea del mensaje para evitar problemas con saltos de línea
+          PR_NUMBER=$(echo "$MERGE_MSG" | head -n 1 | sed -n 's/.*pull request #\([0-9]\+\).*/\1/p')
           echo "PR_NUMBER extraído: $PR_NUMBER"
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
 

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { orderService } from '../../../../services/user';
 import { supabase } from '../../../../services/supabase';
 
@@ -11,61 +11,64 @@ import { supabase } from '../../../../services/supabase';
 export function useSupplierPartActions(supplierId) {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState(null);
+  // Track in-flight promises per order to dedupe concurrent transitions
+  const inFlightRef = useRef(new Map());
 
   const transition = useCallback(
-    async (part, newStatus, extra = {}) => {
+    (part, newStatus, extra = {}) => {
       if (!part) return;
-      setUpdating(true);
-      setError(null);
-      try {
-        const orderId = part.parent_order_id || part.order_id;
+      const orderId = part.parent_order_id || part.order_id;
 
-        // 🔥 NUEVA LÓGICA: Detectar mono vs multi-supplier
-        // Si no hay supplier_ids en el part, intentamos obtenerlos de la orden original
-        let supplierIds = part.supplier_ids;
-
-        if (!supplierIds) {
-          // Fallback: obtener supplier_ids desde la base de datos
-          const { data: orderData } = await supabase
-            .from('orders')
-            .select('supplier_ids')
-            .eq('id', orderId)
-            .single();
-          supplierIds = orderData?.supplier_ids || [];
-        }
-
-        // Detectar si es mono-supplier (1 proveedor) vs multi-supplier (2+ proveedores)
-        if (Array.isArray(supplierIds) && supplierIds.length === 1) {
-          // ✅ MONO SUPPLIER: Usar flujo global (UpdateOrderStatus)
-          console.log(
-            `🎯 Mono-supplier detected for order ${orderId}, using global status update`
-          );
-          const res = await orderService.updateOrderStatus(
-            orderId,
-            newStatus,
-            extra
-          );
-          setUpdating(false);
-          return res;
-        } else {
-          // ✅ MULTI SUPPLIER: Usar flujo parcial existente (updateSupplierPartStatus)
-          console.log(
-            `🎯 Multi-supplier detected for order ${orderId}, using partial status update`
-          );
-          const res = await orderService.updateSupplierPartStatus(
-            orderId,
-            part.supplier_id,
-            newStatus,
-            extra
-          );
-          setUpdating(false);
-          return res;
-        }
-      } catch (e) {
-        setError(e.message || 'Error');
-        setUpdating(false);
-        throw e;
+      // If there's already an in-flight operation for this order, return the same promise (dedupe)
+      if (inFlightRef.current.has(orderId)) {
+        return inFlightRef.current.get(orderId);
       }
+
+      const p = (async () => {
+        setUpdating(true);
+        setError(null);
+        try {
+          // If supplier_ids are missing, fetch them from DB
+          let supplierIds = part.supplier_ids;
+
+          if (!supplierIds) {
+            const { data: orderData } = await supabase
+              .from('orders')
+              .select('supplier_ids')
+              .eq('id', orderId)
+              .single();
+            supplierIds = orderData?.supplier_ids || [];
+          }
+
+          if (Array.isArray(supplierIds) && supplierIds.length === 1) {
+            console.log(
+              `🎯 Mono-supplier detected for order ${orderId}, using global status update`
+            );
+            const res = await orderService.updateOrderStatus(orderId, newStatus, extra);
+            return res;
+          } else {
+            console.log(
+              `🎯 Multi-supplier detected for order ${orderId}, using partial status update`
+            );
+            const res = await orderService.updateSupplierPartStatus(
+              orderId,
+              part.supplier_id,
+              newStatus,
+              extra
+            );
+            return res;
+          }
+        } catch (e) {
+          setError(e.message || 'Error');
+          throw e;
+        } finally {
+          setUpdating(false);
+          inFlightRef.current.delete(orderId);
+        }
+      })();
+
+      inFlightRef.current.set(orderId, p);
+      return p;
     },
     [supplierId]
   );

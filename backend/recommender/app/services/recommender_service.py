@@ -1,183 +1,100 @@
 """
 Recommender Service
-Orchestrates different recommendation strategies
+Orquesta las diferentes estrategias de recomendación
 """
 from typing import List, Dict, Any, Optional
 from app.models.random_recommender import RandomRecommender
-from app.utils.database import fetch_products
+from app.utils.database import fetch_products, fetch_product_by_id
 
 
 class RecommenderService:
-    """
-    Main recommender service that coordinates different strategies
-    """
+    """Servicio principal de recomendaciones"""
     
     def __init__(self):
-        # Initialize strategies
+        # MVP: Solo estrategia random
         self.strategies = {
-            'random': RandomRecommender(),
-            # Future strategies:
-            # 'collaborative': CollaborativeFilterRecommender(),
-            # 'content_based': ContentBasedRecommender(),
-            # 'hybrid': HybridRecommender(),
+            "random": RandomRecommender()
         }
-        self.default_strategy = 'random'
+        self.active_strategy = "random"
+        
+    def get_available_strategies(self) -> List[str]:
+        """Retorna las estrategias disponibles"""
+        return list(self.strategies.keys())
     
-    def get_recommendations(
-        self,
-        user_id: Optional[str] = None,
-        product_id: Optional[str] = None,
-        category: Optional[str] = None,
-        exclude_ids: Optional[List[str]] = None,
-        limit: int = 6,
-        strategy: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """
-        Get product recommendations
-        
-        Args:
-            user_id: User ID for personalized recommendations
-            product_id: Product ID for similar products
-            category: Filter by category
-            exclude_ids: Products to exclude
-            limit: Number of recommendations
-            strategy: Recommendation strategy to use
-        
-        Returns:
-            Dictionary with recommendations and metadata
-        """
-        # Select strategy
-        strategy_name = strategy or self.default_strategy
-        recommender = self.strategies.get(strategy_name)
-        
-        if not recommender:
-            raise ValueError(f"Unknown strategy: {strategy_name}")
-        
-        # Fetch products from database
-        products = fetch_products(
-            active_only=True,
-            min_stock=1,
-            category=category,
-            exclude_ids=exclude_ids or [],
-            limit=None  # Get all matching products, then sample
-        )
-        
-        # Generate recommendations
-        recommendations = recommender.recommend(
-            products=products,
-            user_id=user_id,
-            limit=limit
-        )
-        
-        return {
-            'recommendations': recommendations,
-            'total': len(recommendations),
-            'strategy': strategy_name,
-            'filters': {
-                'category': category,
-                'exclude_ids': exclude_ids or [],
-                'limit': limit
-            }
-        }
-    
-    def get_similar_products(
-        self,
-        product_id: str,
-        limit: int = 4
-    ) -> Dict[str, Any]:
-        """
-        Get products similar to a specific product
-        
-        Args:
-            product_id: Product ID
-            limit: Number of similar products
-        
-        Returns:
-            Dictionary with similar products
-        """
-        # TODO: Implement content-based similarity
-        # For now, use random from same category
-        
-        # Get the product to find its category
-        products = fetch_products(limit=1000)  # Get all products
-        target_product = next((p for p in products if p['id'] == product_id), None)
-        
-        if not target_product:
-            return {
-                'recommendations': [],
-                'total': 0,
-                'strategy': 'similar',
-                'product_id': product_id
-            }
-        
-        category = target_product.get('categoria')
-        
-        return self.get_recommendations(
-            category=category,
-            exclude_ids=[product_id],
-            limit=limit,
-            strategy='random'
-        )
-    
-    def get_personalized_recommendations(
-        self,
-        user_id: str,
-        limit: int = 6
-    ) -> Dict[str, Any]:
-        """
-        Get personalized recommendations for a user
-        
-        Args:
-            user_id: User ID
-            limit: Number of recommendations
-        
-        Returns:
-            Dictionary with personalized recommendations
-        """
-        # TODO: Implement collaborative filtering
-        # For now, use random strategy
-        
-        return self.get_recommendations(
-            user_id=user_id,
-            limit=limit,
-            strategy='random'
-        )
-    
-    def get_trending_products(
-        self,
-        category: Optional[str] = None,
-        limit: int = 6
-    ) -> Dict[str, Any]:
-        """
-        Get trending/popular products
-        
-        Args:
-            category: Filter by category
-            limit: Number of products
-        
-        Returns:
-            Dictionary with trending products
-        """
-        # TODO: Implement based on views/purchases
-        # For now, use random strategy
-        
-        return self.get_recommendations(
-            category=category,
-            limit=limit,
-            strategy='random'
-        )
+    def get_active_strategy(self) -> str:
+        """Retorna la estrategia activa"""
+        return self.active_strategy
     
     def set_strategy(self, strategy_name: str):
-        """Set the default strategy"""
-        if strategy_name in self.strategies:
-            self.default_strategy = strategy_name
-        else:
-            raise ValueError(f"Unknown strategy: {strategy_name}")
+        """Cambia la estrategia activa"""
+        if strategy_name not in self.strategies:
+            raise ValueError(f"Strategy '{strategy_name}' not found")
+        self.active_strategy = strategy_name
     
-    def get_available_strategies(self) -> List[str]:
-        """Get list of available strategies"""
-        return list(self.strategies.keys())
+    async def get_recommendations(
+        self,
+        user_id: Optional[str] = None,
+        category: Optional[str] = None,
+        limit: int = 6,
+        exclude_ids: List[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Obtiene recomendaciones generales desde Supabase"""
+        products = await fetch_products(
+            category=category, 
+            min_stock=1,  # Solo productos con stock
+            exclude_ids=exclude_ids
+        )
+        
+        strategy = self.strategies[self.active_strategy]
+        return strategy.recommend(products, limit=limit)
+    
+    async def get_similar_products(
+        self,
+        product_id: str,
+        limit: int = 6
+    ) -> List[Dict[str, Any]]:
+        """Obtiene productos similares desde Supabase"""
+        # Buscar el producto base
+        base_product = await fetch_product_by_id(product_id)
+        
+        if not base_product:
+            raise ValueError(f"Product {product_id} not found")
+        
+        # Obtener productos de la misma categoría
+        similar_products = await fetch_products(
+            category=base_product["category"],
+            min_stock=1,
+            exclude_ids=[product_id]
+        )
+        
+        strategy = self.strategies[self.active_strategy]
+        return strategy.recommend(similar_products, limit=limit)
+    
+    async def get_personalized_recommendations(
+        self,
+        user_id: str,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """Obtiene recomendaciones personalizadas"""
+        # MVP: Por ahora retorna productos aleatorios desde Supabase
+        # TODO: Implementar basado en historial del usuario
+        products = await fetch_products(min_stock=1)
+        
+        strategy = self.strategies[self.active_strategy]
+        return strategy.recommend(products, limit=limit)
+    
+    async def get_trending_products(
+        self,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """Obtiene productos en tendencia"""
+        # MVP: Por ahora retorna productos aleatorios desde Supabase
+        # TODO: Implementar basado en métricas reales
+        products = await fetch_products(min_stock=1)
+        
+        strategy = self.strategies[self.active_strategy]
+        return strategy.recommend(products, limit=limit)
 
 
-# Global service instance
+# Singleton instance
 recommender_service = RecommenderService()

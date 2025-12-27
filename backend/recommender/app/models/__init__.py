@@ -1,1 +1,1 @@
-# Models package
+"""Models Module - Recommendation Strategies"""

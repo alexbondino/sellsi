@@ -18,15 +18,19 @@ function createBuyerOrdersMini({ pollInterval = 15000 } = {}) {
   const startPolling = (fetchStatuses) => {
     if (pollFn) clearInterval(pollFn);
     pollFn = setInterval(async () => {
-      const hasPending = orders.some(o => o.is_payment_order && o.payment_status !== 'paid');
-      if (!hasPending) return;
-      if (Date.now() - lastRealtime < pollInterval * 2) return;
-      const statuses = await fetchStatuses();
-      if (Array.isArray(statuses)) {
-        setOrders(prev => prev.map(o => {
-          const st = statuses.find(s => s.id === o.order_id);
-          return st ? { ...o, payment_status: st.payment_status } : o;
-        }));
+      try {
+        const hasPending = orders.some(o => o.is_payment_order && o.payment_status !== 'paid');
+        if (!hasPending) return;
+        if (Date.now() - lastRealtime < pollInterval * 2) return;
+        const statuses = await fetchStatuses();
+        if (Array.isArray(statuses)) {
+          setOrders(prev => prev.map(o => {
+            const st = statuses.find(s => s.id === o.order_id);
+            return st ? { ...o, payment_status: st.payment_status } : o;
+          }));
+        }
+      } catch (err) {
+        // Swallow errors so polling can retry on next interval
       }
     }, pollInterval);
   };
@@ -101,6 +105,119 @@ describe('useBuyerOrders mini - B-3 invoices & B-4 polling', () => {
     mini.simulateTime(5000);
     await Promise.resolve();
     expect(fetchStatuses).not.toHaveBeenCalled();
+    mini.dispose();
+  });
+
+  it('B-4 boundary: no poll just below 2*interval, poll when equal', async () => {
+    const mini = createBuyerOrdersMini({ pollInterval: 5000 });
+    mini.init([{ order_id: 'oB', supplier_id: 's1', is_payment_order: true, payment_status: 'pending', items: [] }]);
+    const fetchStatuses = jest.fn().mockResolvedValue([{ id: 'oB', payment_status: 'paid' }]);
+    mini.startPolling(fetchStatuses);
+
+    // just below threshold -> should not call
+    mini.simulateTime(5000 * 2 - 1);
+    await Promise.resolve();
+    expect(fetchStatuses).not.toHaveBeenCalled();
+
+    // reach threshold exactly -> should call
+    mini.simulateTime(1);
+    await Promise.resolve();
+    expect(fetchStatuses).toHaveBeenCalled();
+    mini.dispose();
+  });
+
+  it('B-4 does not poll when no pending orders', async () => {
+    const mini = createBuyerOrdersMini({ pollInterval: 3000 });
+    mini.init([{ order_id: 'oN', supplier_id: 's1', is_payment_order: true, payment_status: 'paid', items: [] }]);
+    const fetchStatuses = jest.fn().mockResolvedValue([]);
+    mini.startPolling(fetchStatuses);
+
+    mini.simulateTime(3000 * 3);
+    await Promise.resolve();
+    expect(fetchStatuses).not.toHaveBeenCalled();
+    mini.dispose();
+  });
+
+  it('poll recovers after error and retries', async () => {
+    const mini = createBuyerOrdersMini({ pollInterval: 4000 });
+    mini.init([{ order_id: 'oE', supplier_id: 's1', is_payment_order: true, payment_status: 'pending', items: [] }]);
+    const fetchStatuses = jest.fn()
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce([{ id: 'oE', payment_status: 'paid' }]);
+
+    mini.startPolling(fetchStatuses);
+    // need to advance 2 * interval to allow polling (lastRealtime initial value)
+    mini.simulateTime(8000); // triggers first poll -> error
+    await Promise.resolve();
+    expect(fetchStatuses).toHaveBeenCalledTimes(1);
+
+    // next interval -> should call again and succeed
+    mini.simulateTime(4000);
+    await Promise.resolve();
+    expect(fetchStatuses).toHaveBeenCalledTimes(2);
+    const ords = mini.getOrders();
+    expect(ords[0].payment_status).toBe('paid');
+    mini.dispose();
+  });
+
+  it('invoice insert idempotent (same path twice)', () => {
+    const mini = createBuyerOrdersMini();
+    mini.init([{ order_id: 'oI', supplier_id: 's1', is_payment_order: true, payment_status: 'paid', items: [{ product_id: 'p1' }] }]);
+    mini.triggerInvoiceInsert({ order_id: 'oI', supplier_id: 's1', path: '/a.pdf' });
+    mini.triggerInvoiceInsert({ order_id: 'oI', supplier_id: 's1', path: '/a.pdf' });
+    const ords = mini.getOrders();
+    expect(ords[0].items[0].invoice_path).toBe('/a.pdf');
+    mini.dispose();
+  });
+
+  it('invoice insert safe when items missing/null', () => {
+    const mini = createBuyerOrdersMini();
+    mini.init([{ order_id: 'om', supplier_id: 's1', is_payment_order: true, payment_status: 'paid', items: null }]);
+    expect(() => mini.triggerInvoiceInsert({ order_id: 'om', supplier_id: 's1', path: '/safe.pdf' })).not.toThrow();
+    mini.dispose();
+  });
+
+  it('first-write-wins: later invoice does not overwrite existing invoice_path', () => {
+    const mini = createBuyerOrdersMini();
+    mini.init([{ order_id: 'ow', supplier_id: 's1', is_payment_order: true, payment_status: 'paid', items: [{ product_id: 'p1' }] }]);
+    mini.triggerInvoiceInsert({ order_id: 'ow', supplier_id: 's1', path: '/first.pdf' });
+    // later insert with different path
+    mini.triggerInvoiceInsert({ order_id: 'ow', supplier_id: 's1', path: '/second.pdf' });
+    const ords = mini.getOrders();
+    expect(ords[0].items[0].invoice_path).toBe('/first.pdf');
+    mini.dispose();
+  });
+
+  it('dispose stops polling and no further calls', async () => {
+    const mini = createBuyerOrdersMini({ pollInterval: 3000 });
+    mini.init([{ order_id: 'od', supplier_id: 's1', is_payment_order: true, payment_status: 'pending', items: [] }]);
+    const fetchStatuses = jest.fn().mockResolvedValue([{ id: 'od', payment_status: 'paid' }]);
+    mini.startPolling(fetchStatuses);
+    // dispose before any interval elapses
+    mini.dispose();
+    mini.simulateTime(3000 * 3);
+    await Promise.resolve();
+    expect(fetchStatuses).not.toHaveBeenCalled();
+  });
+
+  it('concurrency: invoice insert just before poll prevents the poll action', async () => {
+    const mini = createBuyerOrdersMini({ pollInterval: 4000 });
+    mini.init([{ order_id: 'oc', supplier_id: 's1', is_payment_order: true, payment_status: 'pending', items: [{ product_id: 'p1' }] }]);
+    const fetchStatuses = jest.fn().mockResolvedValue([{ id: 'oc', payment_status: 'paid' }]);
+    mini.startPolling(fetchStatuses);
+
+    // advance to just before poll
+    mini.simulateTime(4000 - 10);
+    // insert invoice, which updates lastRealtime
+    mini.triggerInvoiceInsert({ order_id: 'oc', supplier_id: 's1', path: '/concurrent.pdf' });
+    // advance remaining time to reach poll point
+    mini.simulateTime(10);
+    await Promise.resolve();
+
+    // fetch should not have been called because realtime recent
+    expect(fetchStatuses).not.toHaveBeenCalled();
+    const ords = mini.getOrders();
+    expect(ords[0].items[0].invoice_path).toBe('/concurrent.pdf');
     mini.dispose();
   });
 });

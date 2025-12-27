@@ -8,25 +8,19 @@ venv/
 env/
 ENV/
 
-# IDE
+# FastAPI
+.env
+.env.local
+
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-
-# Environment
-.env
-.env.local
-.env.*.local
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
 
 # Logs
 *.log
+server.log
 
 # OS
 .DS_Store

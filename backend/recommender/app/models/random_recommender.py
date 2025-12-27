@@ -1,51 +1,43 @@
 """
-Random Recommender Strategy (MVP)
-Simple random sampling with filters
+Random Recommender - MVP Strategy
+Randomiza el orden de los productos usando Fisher-Yates shuffle
 """
 import random
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 
 class RandomRecommender:
     """
-    Random recommendation strategy
-    Randomly samples products from the available pool
+    Estrategia de recomendación aleatoria
+    MVP: Mezcla productos de forma aleatoria
     """
-    
-    def __init__(self):
-        self.name = "random"
     
     def recommend(
         self,
         products: List[Dict[str, Any]],
-        user_id: Optional[str] = None,
-        limit: int = 6,
-        **kwargs
+        limit: int = 6
     ) -> List[Dict[str, Any]]:
         """
-        Generate random recommendations
+        Retorna productos en orden aleatorio
         
         Args:
-            products: List of available products
-            user_id: User ID (not used in random strategy)
-            limit: Number of recommendations to return
-            **kwargs: Additional parameters (not used)
-        
+            products: Lista de productos disponibles
+            limit: Número máximo de productos a retornar
+            
         Returns:
-            List of recommended products with scores
+            Lista de productos randomizados
         """
-        if not products or len(products) == 0:
+        if not products:
             return []
         
-        # Randomly sample products
-        sample_size = min(limit, len(products))
-        sampled = random.sample(products, sample_size)
+        # Fisher-Yates shuffle para aleatorización eficiente
+        shuffled = random.sample(products, min(len(products), limit))
         
-        # Add recommendation score (random for MVP)
-        for product in sampled:
-            product['recommendation_score'] = round(random.uniform(0.5, 1.0), 2)
+        # Agregar score aleatorio para simular "confianza" del modelo
+        for product in shuffled:
+            product["recommendation_score"] = round(random.uniform(0.5, 1.0), 2)
         
-        # Sort by score (highest first)
-        sampled.sort(key=lambda x: x['recommendation_score'], reverse=True)
+        # Ordenar por score (de mayor a menor)
+        shuffled.sort(key=lambda x: x.get("recommendation_score", 0), reverse=True)
         
-        return sampled
+        return shuffled

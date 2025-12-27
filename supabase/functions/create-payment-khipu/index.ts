@@ -463,7 +463,11 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     }
 
     if (!normalized.payment_url) {
-      log('warning_no_payment_url');
+      logErr('no_payment_url', { payment_id: normalized.payment_id });
+      return respond(500, { 
+        error_code: 'KHIPU_NO_PAYMENT_URL', 
+        error: 'Khipu no retornó URL de pago válida' 
+      });
     }
     (normalized as any).sealed_grand_total = sealedGrandTotal;
     (normalized as any).sealed_total_base = sealedTotalBase;
