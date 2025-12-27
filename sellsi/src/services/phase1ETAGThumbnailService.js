@@ -7,19 +7,19 @@ export class Phase1ETAGThumbnailService {
     // Cache Map con TTL
     this.cache = new Map();
     this.TTL = 30 * 60 * 1000; // 30 minutos
-    
+
     // Métricas internas (self-contained)
     this.metrics = {
       cacheHits: 0,
       cacheMisses: 0,
       totalRequests: 0,
       errors: 0,
-      startTime: Date.now()
+      startTime: Date.now(),
     };
-    
+
     // Cleanup automático cada 10 minutos
     setInterval(() => this.cleanup(), 10 * 60 * 1000);
-    
+
     console.log('[FASE1_ETAG] Service initialized with TTL:', this.TTL);
   }
 
@@ -32,7 +32,7 @@ export class Phase1ETAGThumbnailService {
     const cached = this.cache.get(productId);
     const now = Date.now();
     // SHORT-CIRCUIT: si hay entrada válida por TTL, no tocar DB
-    if (cached && (now - cached.timestamp) < this.TTL) {
+    if (cached && now - cached.timestamp < this.TTL) {
       if (!silent && process.env.NODE_ENV !== 'production') {
         console.log('[FASE1_ETAG] Cache HIT (short-circuit):', productId);
       }
@@ -41,6 +41,7 @@ export class Phase1ETAGThumbnailService {
     }
 
     try {
+      //
       // 🛡️ FIX PGRST116: Usar .maybeSingle() en lugar de .single() para evitar
       // error cuando no existe image_order=0 (producto eliminado o sin imágenes)
       const { data, error } = await supabase
@@ -61,7 +62,10 @@ export class Phase1ETAGThumbnailService {
         // Firma igual: solo refrescar timestamp (refresh) => HIT lógico
         cached.timestamp = Date.now();
         if (!silent && process.env.NODE_ENV !== 'production') {
-          console.log('[FASE1_ETAG] Cache HIT (refresh signature match):', productId);
+          console.log(
+            '[FASE1_ETAG] Cache HIT (refresh signature match):',
+            productId
+          );
         }
         this.recordMetric('cache_hit', Date.now() - startTime);
         return cached.data;
@@ -69,17 +73,25 @@ export class Phase1ETAGThumbnailService {
 
       // MISS real (no existía o firma cambió)
       if (!silent && process.env.NODE_ENV !== 'production') {
-        console.log('[FASE1_ETAG] Cache MISS DB fetch:', productId, 'signature:', currentSignature);
+        console.log(
+          '[FASE1_ETAG] Cache MISS DB fetch:',
+          productId,
+          'signature:',
+          currentSignature
+        );
       }
       this.cache.set(productId, {
         data,
         signature: currentSignature,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
       this.recordMetric('cache_miss', Date.now() - startTime);
       return data;
     } catch (err) {
-      console.error('[FASE1_ETAG] Error fetchThumbnailWithETag:', err?.message || err);
+      console.error(
+        '[FASE1_ETAG] Error fetchThumbnailWithETag:',
+        err?.message || err
+      );
       this.recordMetric('error', Date.now() - startTime);
       return cached?.data || null;
     }
@@ -101,7 +113,7 @@ export class Phase1ETAGThumbnailService {
     const now = Date.now();
     let deletedByTTL = 0;
     let deletedBySize = 0;
-    
+
     // Eliminar por TTL
     for (const [key, value] of this.cache.entries()) {
       if (now - value.timestamp > this.TTL) {
@@ -109,25 +121,26 @@ export class Phase1ETAGThumbnailService {
         deletedByTTL++;
       }
     }
-    
+
     // Limitar tamaño máximo (5000 entradas) - INCREASED for marketplace scale
     const maxSize = 5000;
     if (this.cache.size > maxSize) {
-      const entries = Array.from(this.cache.entries())
-        .sort((a, b) => a[1].timestamp - b[1].timestamp); // más antiguos primero
-      
+      const entries = Array.from(this.cache.entries()).sort(
+        (a, b) => a[1].timestamp - b[1].timestamp
+      ); // más antiguos primero
+
       const toDelete = this.cache.size - maxSize;
       for (let i = 0; i < toDelete; i++) {
         this.cache.delete(entries[i][0]);
         deletedBySize++;
       }
     }
-    
+
     if (deletedByTTL > 0 || deletedBySize > 0) {
       console.log('[FASE1_ETAG] Cleanup:', {
         deletedByTTL,
         deletedBySize,
-        remaining: this.cache.size
+        remaining: this.cache.size,
       });
     }
   }
@@ -137,7 +150,7 @@ export class Phase1ETAGThumbnailService {
    */
   recordMetric(type, duration) {
     this.metrics.totalRequests++;
-    
+
     if (type === 'cache_hit') {
       this.metrics.cacheHits++;
     } else if (type === 'cache_miss') {
@@ -147,19 +160,29 @@ export class Phase1ETAGThumbnailService {
     }
 
     // Self-contained performance logging
-    const hitRatio = this.metrics.totalRequests > 0 ? 
-      (this.metrics.cacheHits / this.metrics.totalRequests * 100).toFixed(1) : 0;
-    
-    console.log(`[FASE1_ETAG] ${type}: ${duration}ms | Hit Ratio: ${hitRatio}% | Cache Size: ${this.cache.size}`);
+    const hitRatio =
+      this.metrics.totalRequests > 0
+        ? ((this.metrics.cacheHits / this.metrics.totalRequests) * 100).toFixed(
+            1
+          )
+        : 0;
+
+    console.log(
+      `[FASE1_ETAG] ${type}: ${duration}ms | Hit Ratio: ${hitRatio}% | Cache Size: ${this.cache.size}`
+    );
   }
 
   /**
    * Obtener estadísticas del cache
    */
   getStats() {
-    const hitRatio = this.metrics.totalRequests > 0 ? 
-      (this.metrics.cacheHits / this.metrics.totalRequests * 100).toFixed(2) : 0;
-    
+    const hitRatio =
+      this.metrics.totalRequests > 0
+        ? ((this.metrics.cacheHits / this.metrics.totalRequests) * 100).toFixed(
+            2
+          )
+        : 0;
+
     return {
       cacheSize: this.cache.size,
       hitRatio: hitRatio + '%',
@@ -167,7 +190,7 @@ export class Phase1ETAGThumbnailService {
       cacheHits: this.metrics.cacheHits,
       cacheMisses: this.metrics.cacheMisses,
       errors: this.metrics.errors,
-      ttl: this.TTL
+      ttl: this.TTL,
     };
   }
 
@@ -194,7 +217,7 @@ export class Phase1ETAGThumbnailService {
     const need = [];
     for (const id of productIds) {
       const cached = this.cache.get(id);
-      if (cached && (now - cached.timestamp) < this.TTL) {
+      if (cached && now - cached.timestamp < this.TTL) {
         resultMap[id] = cached.data;
       } else {
         need.push(id);
@@ -222,14 +245,19 @@ export class Phase1ETAGThumbnailService {
         this.cache.set(row.product_id, {
           data: row,
           signature: row.thumbnail_signature,
-          timestamp: now2
+          timestamp: now2,
         });
         resultMap[row.product_id] = row;
       }
       // Para IDs sin fila (posible ausencia) dejar undefined explícito
       this.recordMetric('cache_miss', Date.now() - start);
       if (!silent && process.env.NODE_ENV !== 'production') {
-        console.log('[FASE1_ETAG] Batch fetch stored:', data.length, 'requested:', productIds.length);
+        console.log(
+          '[FASE1_ETAG] Batch fetch stored:',
+          data.length,
+          'requested:',
+          productIds.length
+        );
       }
       return resultMap;
     } catch (err) {
@@ -254,6 +282,9 @@ export async function getOrFetchMainThumbnail(productId, options = {}) {
   return phase1ETAGService.fetchThumbnailWithETag(productId, options);
 }
 
-export async function getOrFetchManyMainThumbnails(productIds = [], options = {}) {
+export async function getOrFetchManyMainThumbnails(
+  productIds = [],
+  options = {}
+) {
   return phase1ETAGService.fetchMany(productIds, options);
 }
