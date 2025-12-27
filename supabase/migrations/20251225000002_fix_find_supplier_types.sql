@@ -1,4 +1,4 @@
- a-- Fix function return types to match actual database column types
+-- Fix function return types to match actual database column types
 -- The issue was TEXT vs CHARACTER VARYING mismatch
 
 DROP FUNCTION IF EXISTS find_supplier_by_short_id(TEXT, TEXT);
