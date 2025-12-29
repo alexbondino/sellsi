@@ -708,7 +708,7 @@ const MobileOrderCard = ({ order, onAction }) => {
             {/* Documento Tributario */}
             <Box sx={{ mb: 2 }}>
               <Typography variant="subtitle2" gutterBottom>
-                Documento Tributario
+                Documento
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {documentType === 'boleta'

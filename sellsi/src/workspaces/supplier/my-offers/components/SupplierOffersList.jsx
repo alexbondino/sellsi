@@ -18,9 +18,11 @@ import {
   InputLabel,
   useMediaQuery,
   useTheme,
+  Button,
 } from '@mui/material'
 import { useBanner } from '../../../../shared/components/display/banners/BannerContext'
-import { Check as CheckIcon } from '@mui/icons-material'
+import { Check as CheckIcon, LocalOffer as LocalOfferIcon } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
 import SupplierOfferActionModals from './SupplierOfferActionModals'
 import { supabase } from '../../../../services/supabase'
 import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton'
@@ -67,6 +69,7 @@ const SupplierOffersList = ({
 }) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = React.useState('all')
   const [modalState, setModalState] = React.useState({
     open: false,
@@ -286,13 +289,33 @@ const SupplierOffersList = ({
     }
     return (
       <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <LocalOfferIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+        </Box>
         <Typography variant="h6" color="text.secondary">
-          Aún no tienes ofertas
+          Aún no has recibido ofertas
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Cuando compradores te envíen propuestas, las verás aquí. Podrás
-          aceptar o rechazar cada oferta.
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
+          Aquí verás las propuestas de tus compradores. Podrás revisarlas, aceptarlas o rechazarlas:
         </Typography>
+        <Box sx={{ textAlign: 'left', maxWidth: 600, mx: 'auto', mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 1 }}>
+            Consejos para recibir más ofertas:
+          </Typography>
+          <Typography variant="body2" color="text.secondary" component="ul" sx={{ pl: 4, listStyleType: 'disc', listStylePosition: 'outside' }}>
+            <li>Usa descripciones claras y completas.</li>
+            <li>Incluye fotos de buena calidad.</li>
+            <li>Responde con rapidez cuando recibas propuestas.</li>
+            <li>Define precios, cantidades mínimas y tramos de compra.</li>
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => navigate('/supplier/myproducts')}
+        >
+          Ver mis productos publicados
+        </Button>
       </Paper>
     )
   }
@@ -390,7 +413,7 @@ const SupplierOffersList = ({
 
   // Desktop View: Table
   return (
-    <TableContainer component={Paper} sx={{ p: 0 }}>
+    <>
       <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
         <Typography fontWeight={600}>Filtrar por estado:</Typography>
         <FormControl size="small" sx={{ minWidth: 180 }}>
@@ -410,7 +433,8 @@ const SupplierOffersList = ({
           </Select>
         </FormControl>
       </Box>
-      <Table>
+      <TableContainer component={Paper} sx={{ p: 0 }}>
+        <Table>
         <TableHead>
           <TableRow>
             <TableCell>
@@ -645,6 +669,7 @@ const SupplierOffersList = ({
         isMobile={isMobile}
       />
     </TableContainer>
+    </>
   )
 }
 

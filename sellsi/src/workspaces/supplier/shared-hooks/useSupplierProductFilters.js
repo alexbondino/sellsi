@@ -15,7 +15,7 @@ const useSupplierProductFilters = create((set, get) => ({
   // ============================================================================
   searchTerm: '',
   categoryFilter: 'all',
-  sortBy: 'updatedAt',
+  sortBy: 'updateddt',
   sortOrder: 'desc',
   statusFilter: 'all', // all, active, inactive
   stockFilter: 'all', // all, in-stock, low-stock, out-of-stock
@@ -182,17 +182,27 @@ const useSupplierProductFilters = create((set, get) => ({
       })
     }
 
+    // 🐛 DEBUG: Log antes de ordenar
+    if (filtered.length > 0) {
+      console.log('[DEBUG applyFilters] ==================== ANTES de ordenar ====================');
+      console.log('sortBy:', sortBy);
+      console.log('Total productos:', filtered.length);
+      filtered.slice(0, 5).forEach((p, i) => {
+        console.log(`  [${i}] ${p.productnm?.slice(0, 40) || 'sin nombre'}`);
+        console.log(`      updateddt: ${p.updateddt}`);
+        console.log(`      createddt: ${p.createddt}`);
+        console.log(`      price: ${p.price}`);
+      });
+    }
+
     // Aplicar ordenamiento
     filtered.sort((a, b) => {
-      // Ordenamiento especial para 'pausedStatus':
-      // 1) Productos inactivos (is_active=false) primero (alfabético por nombre)
-      // 2) Luego productos activos (alfabético por nombre)
+      // Ordenamiento especial para 'pausedStatus'
       if (sortBy === 'pausedStatus') {
         const aInactive = a.is_active === false
         const bInactive = b.is_active === false
         if (aInactive && !bInactive) return -1
         if (!aInactive && bInactive) return 1
-        // Ambos mismo grupo: comparar nombre (productnm) A-Z siempre
         const nameA = (a.productnm || '').toLowerCase()
         const nameB = (b.productnm || '').toLowerCase()
         if (nameA < nameB) return -1
@@ -200,39 +210,98 @@ const useSupplierProductFilters = create((set, get) => ({
         return 0
       }
 
-      let valueA = a[sortBy]
-      let valueB = b[sortBy]
-
-      // Manejo especial para fechas
-      if (sortBy === 'createddt' || sortBy === 'updateddt') {
-        valueA = new Date(valueA)
-        valueB = new Date(valueB)
+      // Ordenamiento por fechas - más recientes (productos creados recientemente)
+      if (sortBy === 'updateddt') {
+        const dateA = new Date(a.createddt || 0)
+        const dateB = new Date(b.createddt || 0)
+        return dateB - dateA // Descendente (más recientes primero)
       }
 
-      // Manejo especial para números
-      if (sortBy === 'price' || sortBy === 'productqty') {
-        valueA = Number(valueA) || 0
-        valueB = Number(valueB) || 0
+      // Ordenamiento por fechas - más antiguos (productos creados hace tiempo)
+      if (sortBy === 'createddt') {
+        const dateA = new Date(a.createddt || 0)
+        const dateB = new Date(b.createddt || 0)
+        return dateA - dateB // Ascendente (más antiguos primero)
       }
 
-      // ✅ FIX: Manejo especial para ordenamiento por precio considerando priceTiers
-      if (sortBy === 'precio') {
-        // Usar tramoPrecioMin (precio mínimo de priceTiers) o minPrice como fallback
-        // Paréntesis para evitar mezcla de '??' con '||' que rompe el parser
-        valueA = (a.tramoPrecioMin ?? a.minPrice ?? Number(a.price)) || 0
-        valueB = (b.tramoPrecioMin ?? b.minPrice ?? Number(b.price)) || 0
+      // Ordenamiento por precio menor a mayor (usar precio efectivo: tiers si existe, sino price base)
+      if (sortBy === 'precio_asc') {
+        // Calcular precio efectivo para A
+        let priceA = Number(a.price) || 0
+        if (a.priceTiers?.length > 0) {
+          const prices = a.priceTiers.map(t => Number(t.price)).filter(p => p > 0)
+          if (prices.length > 0) {
+            priceA = Math.min(...prices)
+          }
+        }
+        
+        // Calcular precio efectivo para B
+        let priceB = Number(b.price) || 0
+        if (b.priceTiers?.length > 0) {
+          const prices = b.priceTiers.map(t => Number(t.price)).filter(p => p > 0)
+          if (prices.length > 0) {
+            priceB = Math.min(...prices)
+          }
+        }
+        
+        return priceA - priceB // Ascendente
       }
 
-      // Manejo especial para strings
-      if (typeof valueA === 'string') {
-        valueA = valueA.toLowerCase()
-        valueB = valueB.toLowerCase()
+      // Ordenamiento por precio mayor a menor (usar precio efectivo: tiers si existe, sino price base)
+      if (sortBy === 'precio_desc') {
+        // Calcular precio efectivo para A
+        let priceA = Number(a.price) || 0
+        if (a.priceTiers?.length > 0) {
+          const prices = a.priceTiers.map(t => Number(t.price)).filter(p => p > 0)
+          if (prices.length > 0) {
+            priceA = Math.min(...prices)
+          }
+        }
+        
+        // Calcular precio efectivo para B
+        let priceB = Number(b.price) || 0
+        if (b.priceTiers?.length > 0) {
+          const prices = b.priceTiers.map(t => Number(t.price)).filter(p => p > 0)
+          if (prices.length > 0) {
+            priceB = Math.min(...prices)
+          }
+        }
+        
+        return priceB - priceA // Descendente
       }
 
-      if (valueA < valueB) return sortOrder === 'asc' ? -1 : 1
-      if (valueA > valueB) return sortOrder === 'asc' ? 1 : -1
+      // Ordenamiento por nombre (A-Z) - usar productnm de BD
+      if (sortBy === 'productnm') {
+        const nameA = (a.productnm || '').toLowerCase()
+        const nameB = (b.productnm || '').toLowerCase()
+        if (nameA < nameB) return -1
+        if (nameA > nameB) return 1
+        return 0
+      }
+
+      // Ordenamiento por stock (mayor stock primero) - usar productqty de BD
+      if (sortBy === 'productqty') {
+        const qtyA = Number(a.productqty) || 0
+        const qtyB = Number(b.productqty) || 0
+        return qtyB - qtyA // Descendente (mayor stock primero)
+      }
+
+      // Fallback genérico
       return 0
     })
+
+    // 🐛 DEBUG: Log DESPUÉS de ordenar
+    if (filtered.length > 0) {
+      console.log('[DEBUG applyFilters] ==================== DESPUES de ordenar ====================');
+      console.log('sortBy:', sortBy);
+      console.log('Total productos:', filtered.length);
+      filtered.slice(0, 5).forEach((p, i) => {
+        console.log(`  [${i}] ${p.productnm?.slice(0, 40) || 'sin nombre'}`);
+        console.log(`      updateddt: ${p.updateddt}`);
+        console.log(`      createddt: ${p.createddt}`);
+        console.log(`      price: ${p.price}`);
+      });
+    }
 
     return filtered
   },
@@ -360,7 +429,7 @@ const useSupplierProductFilters = create((set, get) => ({
     set({
       searchTerm: '',
       categoryFilter: 'all',
-      sortBy: 'updatedAt',
+      sortBy: 'updateddt',
       sortOrder: 'desc',
       statusFilter: 'all',
       stockFilter: 'all',

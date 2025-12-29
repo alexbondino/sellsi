@@ -65,7 +65,7 @@ const BottomBar = () => {
                 <Typography variant="h6" sx={{ ...sectionTitleStyle, textAlign: 'center', width: '100%' }}>Síguenos</Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
                   <SocialIcon href="https://www.linkedin.com/company/sellsi/" icon={<LinkedInIcon />} hoverColor="#0077b5" label="LinkedIn" />
-                  <SocialIcon href="#" icon={<InstagramIcon />} hoverColor="#e4405f" label="Instagram" />
+                  <SocialIcon href="https://www.instagram.com/sellsi.cl/" icon={<InstagramIcon />} hoverColor="#e4405f" label="Instagram" />
                   <SocialIcon href="#" icon={<WhatsAppIcon />} hoverColor="#25d366" label="WhatsApp" />
                 </Box>
 
@@ -101,7 +101,7 @@ const BottomBar = () => {
               <Typography variant="h6" sx={{ ...sectionTitleStyle, textAlign: 'center', width: '100%' }}>Síguenos</Typography>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', width: '100%' }}>
                 <SocialIcon href="https://www.linkedin.com/company/sellsi/" icon={<LinkedInIcon />} hoverColor="#0077b5" label="LinkedIn" />
-                <SocialIcon href="#" icon={<InstagramIcon />} hoverColor="#e4405f" label="Instagram" />
+                <SocialIcon href="https://www.instagram.com/sellsi.cl/" icon={<InstagramIcon />} hoverColor="#e4405f" label="Instagram" />
                 <SocialIcon href="#" icon={<WhatsAppIcon />} hoverColor="#25d366" label="WhatsApp" />
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 0, justifyContent: 'center', width: '100%' }}>
