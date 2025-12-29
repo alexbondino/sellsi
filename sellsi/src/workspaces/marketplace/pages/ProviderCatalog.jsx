@@ -17,6 +17,7 @@ import {
   TextField,
   InputAdornment,
   IconButton,
+  InputLabel,
   FormControl,
   Select,
   MenuItem,
@@ -25,6 +26,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -38,6 +41,7 @@ import {
   Sort as SortIcon,
   Share as ShareIcon,
   ContentCopy as ContentCopyIcon,
+  InfoOutlined,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
@@ -49,6 +53,7 @@ import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock';
 import useCartStore from '../../../shared/stores/cart/cartStore';
 import { filterActiveProducts } from '../../../utils/productActiveStatus';
 import { CATEGORIAS } from '../components/CategoryNavigation/CategoryNavigation';
+import { formatNumber } from '../utils/formatters';
 
 /**
  * ProviderCatalog - Catálogo de productos de un proveedor específico
@@ -64,10 +69,17 @@ const ProviderCatalog = () => {
   const [error, setError] = useState(null);
   const addToCart = useCartStore(state => state.addItem);
 
+  // Theme & media
+  const theme = useTheme();
+  // Consider xs and sm as mobile for UI adjustments
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  // Detectar únicamente XS para labels más cortos
+  const isXs = useMediaQuery(theme.breakpoints.only('xs'));
+
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [priceOrder, setPriceOrder] = useState('none'); // none, asc, desc
+  const [priceOrder, setPriceOrder] = useState('recent'); // recent, oldest, asc, desc
   const [filteredProducts, setFilteredProducts] = useState([]);
 
   // Estados para modal de compartir
@@ -104,7 +116,7 @@ const ProviderCatalog = () => {
           try {
             const { data: providerExact, error: providerExactError } = await supabase
               .from('users')
-              .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
+              .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified, minimum_purchase_amount')
               .eq('user_id', userId)
               .single();
 
@@ -149,7 +161,7 @@ const ProviderCatalog = () => {
             try {
               const { data: nameMatches, error: nameError } = await supabase
                 .from('users')
-                .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
+                .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified, minimum_purchase_amount')
                 .ilike('user_nm', `%${normalizedName}%`)
                 .limit(1);
 
@@ -315,16 +327,30 @@ const ProviderCatalog = () => {
       );
     }
 
-    // Ordenar por precio (considerando priceTiers)
-    if (priceOrder === 'asc') {
-      // ✅ FIX: Usar minPrice (precio mínimo de priceTiers) para ordenar de menor a mayor
+    // Ordenar productos
+    if (priceOrder === 'recent') {
+      // Más recientes primero (usando createddt de la BD)
+      filtered.sort((a, b) => {
+        const aDate = new Date(a.modifieddt || a.createddt || 0);
+        const bDate = new Date(b.modifieddt || b.createddt || 0);
+        return bDate - aDate; // Descendente (más recientes primero)
+      });
+    } else if (priceOrder === 'oldest') {
+      // Más antiguos primero (usando createddt de la BD)
+      filtered.sort((a, b) => {
+        const aDate = new Date(a.createddt || 0);
+        const bDate = new Date(b.createddt || 0);
+        return aDate - bDate; // Ascendente (más antiguos primero)
+      });
+    } else if (priceOrder === 'asc') {
+      // Precios de menor a mayor
       filtered.sort((a, b) => {
         const aPrice = a.minPrice ?? a.precio ?? 0;
         const bPrice = b.minPrice ?? b.precio ?? 0;
         return aPrice - bPrice;
       });
     } else if (priceOrder === 'desc') {
-      // ✅ FIX: Usar maxPrice (precio máximo de priceTiers) para ordenar de mayor a menor
+      // Precios de mayor a menor
       filtered.sort((a, b) => {
         const aPrice = a.maxPrice ?? a.precio ?? 0;
         const bPrice = b.maxPrice ?? b.precio ?? 0;
@@ -627,7 +653,7 @@ const ProviderCatalog = () => {
           <Paper
             elevation={2}
             sx={{
-              p: { xs: 1.5, sm: 2, md: 4 },
+              p: { xs: 1.5, sm: 1.5, md: 4 },
               mb: { xs: 2, md: 4 },
               borderRadius: 3,
               background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
@@ -636,8 +662,8 @@ const ProviderCatalog = () => {
             <Box
               sx={{
                 display: 'flex',
-                alignItems: { xs: 'flex-start', sm: 'center' },
-                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'flex-start', md: 'center' },
+                flexDirection: { xs: 'column', sm: 'column', md: 'row' },
                 gap: { xs: 2, sm: 2, md: 3 },
                 mb: { xs: 2, md: 3 },
               }}
@@ -646,11 +672,11 @@ const ProviderCatalog = () => {
                 src={provider?.logo_url || undefined}
                 alt={provider?.user_nm}
                 sx={{
-                  width: { xs: 60, sm: 80, md: 120 },
-                  height: { xs: 60, sm: 80, md: 120 },
+                  width: { xs: 60, sm: 60, md: 120 },
+                  height: { xs: 60, sm: 60, md: 120 },
                   border: '3px solid',
                   borderColor: 'primary.main',
-                  alignSelf: { xs: 'center', sm: 'flex-start' },
+                  alignSelf: { xs: 'center', sm: 'center', md: 'flex-start' },
                 }}
               >
                 {provider?.user_nm?.charAt(0)?.toUpperCase() || '🏢'}
@@ -664,7 +690,7 @@ const ProviderCatalog = () => {
                     gap: { xs: 0.5, md: 1 },
                     mb: { xs: 0.5, md: 1 },
                     flexWrap: 'wrap',
-                    justifyContent: { xs: 'center', sm: 'space-between' },
+                    justifyContent: { xs: 'center', sm: 'center', md: 'space-between' },
                   }}
                 >
                   <Box
@@ -680,8 +706,8 @@ const ProviderCatalog = () => {
                       sx={{
                         fontWeight: 600,
                         color: 'primary.main',
-                        fontSize: { xs: '1.1rem', sm: '1.3rem', md: '2rem' },
-                        textAlign: { xs: 'center', sm: 'left' },
+                        fontSize: { xs: '1.1rem', sm: '1.1rem', md: '2rem' },
+                        textAlign: { xs: 'center', sm: 'center', md: 'left' },
                         lineHeight: 1.2,
                       }}
                     >
@@ -693,23 +719,25 @@ const ProviderCatalog = () => {
                         placement="right"
                         arrow
                       >
-                        <Chip
-                          icon={
-                            <VerifiedUser
-                              sx={{ fontSize: { xs: '0.8rem', md: '1rem' } }}
-                            />
-                          }
-                          label="Verificado"
-                          color="primary"
-                          size="small"
-                          variant="filled"
-                          clickable={false}
-                          onClick={() => {}}
-                          sx={{
-                            fontSize: { xs: '0.65rem', md: '0.75rem' },
-                            height: { xs: 20, md: 24 },
-                          }}
-                        />
+                        {isMobile ? (
+                          <VerifiedUser sx={{ fontSize: '1rem', color: 'primary.main' }} />
+                        ) : (
+                          <Chip
+                            icon={
+                              <VerifiedUser sx={{ fontSize: { xs: '0.8rem', md: '1rem' } }} />
+                            }
+                            label="Verificado"
+                            color="primary"
+                            size="small"
+                            variant="filled"
+                            clickable={false}
+                            onClick={() => {}}
+                            sx={{
+                              fontSize: { xs: '0.65rem', md: '0.75rem' },
+                              height: { xs: 20, md: 24 },
+                            }}
+                          />
+                        )}
                       </Tooltip>
                     )}
                   </Box>
@@ -745,23 +773,55 @@ const ProviderCatalog = () => {
                     mb: { xs: 1, md: 2 },
                     lineHeight: 1.6,
                     fontSize: { xs: '0.8rem', md: '1rem' },
-                    textAlign: { xs: 'center', sm: 'left' },
+                    textAlign: { xs: 'center', sm: 'center', md: 'left' },
+                    display: 'block',
+                    width: '100%',
                   }}
                 >
                   {providerDescription}
                 </Typography>
 
                 <Typography
-                  variant="h6"
-                  color="primary.main"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: { xs: '0.9rem', sm: '1rem', md: '1.25rem' },
-                    textAlign: { xs: 'center', sm: 'left' },
-                  }}
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.8rem', md: '0.95rem' } }}
                 >
-                  Este proveedor actualmente tiene {provider?.productCount || 0}{' '}
-                  productos activos publicados
+                  {isMobile ? (
+                    <>
+                      <b>Productos publicados:</b>
+                      {' '}
+                      <Box component="span" sx={{ fontWeight: 700, mx: 0.5 }}>{formatNumber(provider?.productCount ?? 0)}</Box>
+                    </>
+                  ) : (
+                    <>
+                      <b>Este proveedor actualmente tiene:</b>
+                      {' '}
+                      <Box component="span" sx={{ fontWeight: 700, mx: 0.5 }}>{formatNumber(provider?.productCount ?? 0)}</Box>
+                      <b>productos publicados</b>
+                    </>
+                  )}
+                </Typography>
+
+                {/* Compra mínima exigida del proveedor */}
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.8rem', md: '0.95rem' } }}
+                >
+                  <b>Compra mínima exigida:</b>
+                  {' '}
+                  <Tooltip
+                    title="El proveedor no despacha productos si el monto total entre todos los productos que compres es inferior al indicado"
+                    arrow
+                    placement="bottom"
+                  >
+                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                      <Box component="span" sx={{ fontWeight: 700 }}>{'$' + formatNumber(
+                        provider?.minimum_purchase_amount ?? provider?.minimumPurchaseAmount ?? 0
+                      )}</Box>
+                      <InfoOutlined sx={{ fontSize: 16, color: 'action.active', cursor: 'help' }} />
+                    </Box>
+                  </Tooltip>
                 </Typography>
               </Box>
             </Box>
@@ -824,7 +884,7 @@ const ProviderCatalog = () => {
                 }}
               />
 
-              {/* Filtros en mobile: row layout para ahorrar espacio vertical */}
+              {/* Filtros en mobile: row layout para ahorrar espacio vertical (Categoría primero) */}
               <Box
                 sx={{
                   display: 'flex',
@@ -837,7 +897,7 @@ const ProviderCatalog = () => {
                   },
                 }}
               >
-                {/* Dropdown de ordenamiento por precio */}
+                {/* Dropdown de categorías (ahora primero) */}
                 <FormControl
                   size="small"
                   sx={{
@@ -846,85 +906,10 @@ const ProviderCatalog = () => {
                     flexShrink: 0,
                   }}
                 >
+                  <InputLabel id="provider-mobile-category-label">Categoría</InputLabel>
                   <Select
-                    value={priceOrder}
-                    onChange={e => {
-                      const v = e.target.value;
-                      // Cuando el usuario selecciona orden por precio, aplicar en todas las categorías
-                      if (v === 'asc' || v === 'desc') setCategoryFilter('all');
-                      setPriceOrder(v);
-                    }}
-                    displayEmpty
-                    startAdornment={
-                      <InputAdornment position="start">
-                        <SortIcon color="action" fontSize="small" />
-                      </InputAdornment>
-                    }
-                    sx={{
-                      '& .MuiSelect-select': {
-                        fontSize: { xs: '0.7rem', md: '0.875rem' },
-                        py: { xs: 0.5, md: 1 },
-                        px: { xs: 0, md: 1 },
-                      },
-                    }}
-                    MenuProps={{
-                      PaperProps: {
-                        sx: {
-                          maxHeight: 300,
-                          '& .MuiMenuItem-root': {
-                            fontSize: { xs: '0.7rem', md: '0.875rem' },
-                          },
-                        },
-                      },
-                      anchorOrigin: {
-                        vertical: 'bottom',
-                        horizontal: 'left',
-                      },
-                      transformOrigin: {
-                        vertical: 'top',
-                        horizontal: 'left',
-                      },
-                      // Prevenir scroll en body cuando se abre el dropdown
-                      disableScrollLock: true,
-                    }}
-                  >
-                    <MenuItem value="none">
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                        Ordenar por precio
-                      </Box>
-                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-                        Precio
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="asc">
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                        Menor a mayor precio
-                      </Box>
-                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-                        ↑ Precio
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="desc">
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                        Mayor a menor precio
-                      </Box>
-                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-                        ↓ Precio
-                      </Box>
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-
-                {/* Dropdown de categorías */}
-                <FormControl
-                  size="small"
-                  sx={{
-                    minWidth: { xs: 0, md: '15rem' },
-                    width: { xs: '100%', md: '15rem' },
-                    flexShrink: 0,
-                  }}
-                >
-                  <Select
+                    labelId="provider-mobile-category-label"
+                    label="Categoría"
                     value={categoryFilter}
                     onChange={e => setCategoryFilter(e.target.value)}
                     displayEmpty
@@ -961,14 +946,7 @@ const ProviderCatalog = () => {
                       disableScrollLock: true,
                     }}
                   >
-                    <MenuItem value="all">
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                        Todas las categorías
-                      </Box>
-                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-                        Categorías
-                      </Box>
-                    </MenuItem>
+                    <MenuItem value="all">{isXs ? 'Todas' : 'Todas las categorías'}</MenuItem>
                     {availableCategories.map(category => (
                       <MenuItem key={category} value={category}>
                         {category}
@@ -976,60 +954,65 @@ const ProviderCatalog = () => {
                     ))}
                   </Select>
                 </FormControl>
+
+                {/* Dropdown de ordenamiento por precio (ahora segundo) */}
+                <FormControl
+                  size="small"
+                  sx={{
+                    minWidth: { xs: 0, md: '15rem' },
+                    width: { xs: '100%', md: '15rem' },
+                    flexShrink: 0,
+                  }}
+                >
+                  <InputLabel id="provider-price-label">Ordenar por</InputLabel>
+                  <Select
+                    labelId="provider-price-label"
+                    label="Ordenar por"
+                    value={priceOrder}
+                    onChange={e => setPriceOrder(e.target.value)}
+                    displayEmpty
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <SortIcon color="action" fontSize="small" />
+                      </InputAdornment>
+                    }
+                    sx={{
+                      '& .MuiSelect-select': {
+                        fontSize: { xs: '0.7rem', md: '0.875rem' },
+                        py: { xs: 0.5, md: 1 },
+                        px: { xs: 0, md: 1 },
+                      },
+                    }}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          maxHeight: 300,
+                          '& .MuiMenuItem-root': {
+                            fontSize: { xs: '0.7rem', md: '0.875rem' },
+                          },
+                        },
+                      },
+                      anchorOrigin: {
+                        vertical: 'bottom',
+                        horizontal: 'left',
+                      },
+                      transformOrigin: {
+                        vertical: 'top',
+                        horizontal: 'left',
+                      },
+                      // Prevenir scroll en body cuando se abre el dropdown
+                      disableScrollLock: true,
+                    }}
+                  >
+                    <MenuItem value="recent">Mas Recientes</MenuItem>
+                    <MenuItem value="oldest">Mas Antiguos</MenuItem>
+                    <MenuItem value="asc">Precios menor a mayor</MenuItem>
+                    <MenuItem value="desc">Precios mayor a menor</MenuItem>
+                  </Select>
+                </FormControl>
               </Box>
 
-              {/* Indicadores de filtros activos */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                  flex: { xs: 'none', md: 1 },
-                  width: { xs: '100%', md: 'auto' },
-                }}
-              >
-                {searchTerm && (
-                  <Chip
-                    label={`Búsqueda: "${searchTerm}"`}
-                    onDelete={() => setSearchTerm('')}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    sx={{
-                      fontSize: { xs: '0.7rem', md: '0.75rem' },
-                      height: { xs: 24, md: 32 },
-                    }}
-                  />
-                )}
-                {priceOrder !== 'none' && (
-                  <Chip
-                    label={`Orden: ${
-                      priceOrder === 'asc' ? 'Menor a mayor' : 'Mayor a menor'
-                    }`}
-                    onDelete={() => setPriceOrder('none')}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    sx={{
-                      fontSize: { xs: '0.7rem', md: '0.75rem' },
-                      height: { xs: 24, md: 32 },
-                    }}
-                  />
-                )}
-                {categoryFilter !== 'all' && (
-                  <Chip
-                    label={`Categoría: ${categoryFilter}`}
-                    onDelete={() => setCategoryFilter('all')}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    sx={{
-                      fontSize: { xs: '0.7rem', md: '0.75rem' },
-                      height: { xs: 24, md: 32 },
-                    }}
-                  />
-                )}
-              </Box>
+
             </Box>
           </Paper>
 

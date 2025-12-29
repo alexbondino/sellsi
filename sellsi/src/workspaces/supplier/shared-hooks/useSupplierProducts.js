@@ -228,7 +228,7 @@ export const useSupplierProducts = (options = {}) => {
   // Productos para UI (con formato mejorado)
   const [ventasByProduct, setVentasByProduct] = useState({});
   const uiProducts = useMemo(() => {
-    return filteredProducts.map(product => {
+    const result = filteredProducts.map(product => {
       // Calcular datos de tramos de precio si existen
       let tramoMin = null,
         tramoMax = null,
@@ -315,6 +315,16 @@ export const useSupplierProducts = (options = {}) => {
         free_shipping_min_quantity: product.free_shipping_min_quantity || null,
       };
     });
+
+    // 🐛 DEBUG: Log uiProducts para verificar orden
+    if (result.length > 0) {
+      console.log('[DEBUG uiProducts] Total:', result.length);
+      result.slice(0, 3).forEach((p, i) => {
+        console.log(`  [${i}] ${p.nombre?.slice(0, 40)} - precio: ${p.precio}`);
+      });
+    }
+
+    return result;
   }, [filteredProducts, ventasByProduct]);
 
   // Enriquecer con ventas por producto usando product_sales

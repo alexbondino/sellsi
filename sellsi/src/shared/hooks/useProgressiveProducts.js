@@ -91,16 +91,20 @@ export function useProgressiveProducts(items, options) {
   const currentPageItems = items.slice(startIndex, endIndex);
 
   // 6. Infinite scroll slice (only when flag off)
+  // ✅ FIX: NO hacer slice reactivo - renderizar todos los currentPageItems
+  // El slice reactivo causa que React destruya y recree elementos -> scroll jump
   const infiniteVisibleItems = React.useMemo(() => {
-    if (featureFlags.enableViewportThumbs) return currentPageItems; // ignored later
+    if (featureFlags.enableViewportThumbs) return currentPageItems;
     if (strategy === 'paged') return currentPageItems;
-    return currentPageItems.slice(0, visibleProductsCount);
-  }, [currentPageItems, visibleProductsCount, featureFlags.enableViewportThumbs, strategy]);
+    // ANTES: return currentPageItems.slice(0, visibleProductsCount); // ❌ Causa scroll jump
+    // AHORA: Renderizar todos, el navegador puede manejar 60-80 cards
+    return currentPageItems;
+  }, [currentPageItems, featureFlags.enableViewportThumbs, strategy]);
 
   // 7. Infinite scroll activity condition
-  const isInfiniteScrollActive = !featureFlags.enableViewportThumbs && (strategy === 'hybrid' || strategy === 'infinite') &&
-    currentPageItems.length <= PRODUCTS_PER_PAGE &&
-    visibleProductsCount < currentPageItems.length;
+  // ✅ FIX: Como ahora renderizamos todos, infinite scroll está siempre inactivo
+  // La paginación maneja el cambio de página
+  const isInfiniteScrollActive = false;
 
   // 8. loadMore (infinite scroll) replicating original delay
   const loadMore = React.useCallback(() => {

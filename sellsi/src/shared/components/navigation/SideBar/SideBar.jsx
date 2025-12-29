@@ -247,15 +247,15 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
             transform: 'none',
           },
           '&.Mui-disabled': {
-            backgroundColor: theme.palette.primary.main,
+            background: `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
             color: theme.palette.primary.contrastText + ' !important',
             fontWeight: 'normal',
             opacity: 1,
             cursor: 'default',
-            transition: 'background-color 0.2s, color 0.2s',
+            transition: 'background 0.2s, color 0.2s',
           },
           '&.Mui-disabled:hover': {
-            backgroundColor: theme.palette.primary.main,
+            background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.light} 90%)`,
             color: theme.palette.primary.contrastText + ' !important',
           },
         },

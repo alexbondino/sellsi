@@ -6,7 +6,9 @@ import {
   Container,
   Paper,
   Alert,
+  Button,
 } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
 import './BuyerOrders.css'
 import AssignmentIcon from '@mui/icons-material/Assignment'
 import { ThemeProvider, useTheme } from '@mui/material/styles'
@@ -37,6 +39,7 @@ import OrderCard from './OrderCard'
 const BuyerOrders = memo(function BuyerOrders() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const navigate = useNavigate()
   
   // ============================================================================
   // AUTENTICACIÓN
@@ -332,12 +335,28 @@ const BuyerOrders = memo(function BuyerOrders() {
           ) : (
             // Estado vacío
             <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                <AssignmentIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+              </Box>
               <Typography variant="h6" color="text.secondary">
-                No tienes pedidos aún
+                Aun no haz realizado pedidos
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Los pedidos se crean cuando concretas compras a través del Marketplace.
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                En esta sección podrás hacer seguimiento a tus compras.
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3 }}>
                 ¡Explora nuestro marketplace y haz tu primer pedido!
               </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => navigate('/buyer/marketplace')}
+              >
+                Ir al Marketplace
+              </Button>
             </Paper>
           )}
 

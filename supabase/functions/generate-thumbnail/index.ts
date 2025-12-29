@@ -300,7 +300,7 @@ export async function processGenerateThumbnail(requestBody: any, deps: any = {})
     
     if (imageType === 'gif') {
       if (jobTrackingEnabled) {
-        try { await dbClient.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: 'unsupported_image_type_gif' }); } catch(_) {}
+        try { await dbClient.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: 'unsupported_image_type_gif' }); } catch(e) { logError('RPC mark_thumbnail_job_error failed:', e); }
       }
       return { status: 422, body: { success: false, error: 'unsupported_image_type', reason: 'gif_not_supported' } };
     }
@@ -443,7 +443,7 @@ export async function processGenerateThumbnail(requestBody: any, deps: any = {})
     if (hardErrors.length > 0) {
       logError('❌ Errores duros subiendo variantes:', hardErrors.map(e=>({variant:e.variant,msg:e.error})));
       if (jobTrackingEnabled) {
-        try { await dbClient.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: 'upload_partial_fail' }); } catch(_) {}
+        try { await dbClient.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: 'upload_partial_fail' }); } catch(e) { logError('RPC mark_thumbnail_job_error failed:', e); }
       }
     }
 
@@ -559,7 +559,7 @@ export async function processGenerateThumbnail(requestBody: any, deps: any = {})
     if (dbUpdateError) {
       logError("❌ Error updating thumbnails in DB:", dbUpdateError);
       if (jobTrackingEnabled) {
-        try { await dbClient.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: dbUpdateError.message }); } catch(_) {}
+        try { await dbClient.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: dbUpdateError.message }); } catch(e) { logError('RPC mark_thumbnail_job_error failed:', e); }
       }
     }
 
@@ -610,16 +610,37 @@ export async function processGenerateThumbnail(requestBody: any, deps: any = {})
       }
     }
 
+    // Evaluar estado final de variantes antes de marcar job
+    const hasSuccessfulVariants = successfulVariants.size > 0;
+    const hasThumbnailsInDB = storedThumbnails && Object.keys(storedThumbnails).length > 0;
+    const failed = successfulVariants.size === 0;
+    
     if (!dbUpdateError && jobTrackingEnabled) {
-      try { await dbClient.rpc('mark_thumbnail_job_success', { p_product_id: productId }); } catch(_) {}
+      if (hasSuccessfulVariants || hasThumbnailsInDB) {
+        try { 
+          await dbClient.rpc('mark_thumbnail_job_success', { p_product_id: productId }); 
+        } catch(e) { 
+          logError('RPC mark_thumbnail_job_success failed:', e); 
+        }
+      } else {
+        try { 
+          await dbClient.rpc('mark_thumbnail_job_error', { 
+            p_product_id: productId, 
+            p_error: 'all_variants_missing_after_verification' 
+          }); 
+        } catch(e) { 
+          logError('RPC mark_thumbnail_job_error failed:', e); 
+        }
+      }
     }
 
     // Construcción de la respuesta final con observabilidad completa
     return { 
-      status: 200, 
+      status: (hasSuccessfulVariants || hasThumbnailsInDB) ? 200 : 500, 
       body: { 
-        success: true, 
-        partial, 
+        success: hasSuccessfulVariants || hasThumbnailsInDB, 
+        partial,
+        failed, 
         status: dbUpdateError ? 'stored_without_db_update' : 'stored_and_updated',
         generatedVariants: Array.from(successfulVariants), 
         failedVariants: variantStatuses.filter(v => !v.ok).map(v => ({ variant: v.variant, error: v.error })), 

@@ -11,17 +11,34 @@ import {
   Box,
   Tooltip,
   IconButton,
+  Button,
 } from '@mui/material';
-import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
+import { InfoOutlined as InfoOutlinedIcon, Assignment as AssignmentIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import Rows from './TableRows';
 
 const Table = ({ orders, onActionClick }) => {
+  const navigate = useNavigate();
+  
   if (!orders || orders.length === 0) {
     return (
       <Paper sx={{ p: 4, textAlign: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <AssignmentIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+        </Box>
         <Typography variant="h6" color="text.secondary">
-          No se encontraron pedidos
+          Aún no tienes pedidos
         </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3 }}>
+          Tus pedidos se generan cuando concretas ventas ya sea del Marketplace o desde Ofertas Recibidas
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => navigate('/supplier/myproducts')}
+        >
+          Ver mis productos publicados
+        </Button>
       </Paper>
     );
   }
@@ -39,8 +56,8 @@ const Table = ({ orders, onActionClick }) => {
             <TableCell sx={{ fontWeight: 600 }}>ID Venta</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>Dirección Entrega</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>Fechas</TableCell>
-            <TableCell sx={{ fontWeight: 600 }}>Documento Tributario</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 600 }}>Venta y Envío (IVA inc.)</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Documento</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600 }}>Monto (IVA inc.)</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
