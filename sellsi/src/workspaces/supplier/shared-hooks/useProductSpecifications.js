@@ -8,7 +8,7 @@
  */
 
 import { create } from 'zustand';
-import { updateProductSpecifications } from '../../../workspaces/marketplace';
+import { updateProductSpecifications } from '../../../workspaces/marketplace/services/productSpecificationsService';
 
 // Concurrency helpers: per-product tracking (module-level, shared across tests/runtime)
 const _inFlightSpecs = new Map()

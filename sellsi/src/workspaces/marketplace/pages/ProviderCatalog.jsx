@@ -42,6 +42,8 @@ import {
   Share as ShareIcon,
   ContentCopy as ContentCopyIcon,
   InfoOutlined,
+  ShoppingCart as ShoppingCartIcon,
+  Inventory2 as Inventory2Icon,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
@@ -788,12 +790,14 @@ const ProviderCatalog = () => {
                 >
                   {isMobile ? (
                     <>
+                      <ShoppingCartIcon sx={{ fontSize: 18, color: 'action.active', mr: 0.5 }} />
                       <b>Productos publicados:</b>
                       {' '}
                       <Box component="span" sx={{ fontWeight: 700, mx: 0.5 }}>{formatNumber(provider?.productCount ?? 0)}</Box>
                     </>
                   ) : (
                     <>
+                      <Inventory2Icon sx={{ fontSize: 18, color: 'action.active', mr: 0.5 }} />
                       <b>Este proveedor actualmente tiene:</b>
                       {' '}
                       <Box component="span" sx={{ fontWeight: 700, mx: 0.5 }}>{formatNumber(provider?.productCount ?? 0)}</Box>
@@ -808,6 +812,7 @@ const ProviderCatalog = () => {
                   color="text.secondary"
                   sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.8rem', md: '0.95rem' } }}
                 >
+                  <ShoppingCartIcon sx={{ fontSize: 18, color: 'action.active', mr: 0.25 }} />
                   <b>Compra mínima exigida:</b>
                   {' '}
                   <Tooltip

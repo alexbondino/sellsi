@@ -883,11 +883,6 @@ const MyProducts = () => {
                           disableScrollLock: true,
                         }}
                       >
-                        <MenuItem value="all">
-                          <Box sx={{ display: 'block' }}>
-                            Todas las categorías
-                          </Box>
-                        </MenuItem>
                         {CATEGORIES.map(category => (
                           <MenuItem key={category.value} value={category.value}>
                             {category.label}

@@ -26,11 +26,11 @@ const Table = ({ orders, onActionClick }) => {
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
           <AssignmentIcon sx={{ fontSize: 48, color: 'primary.main' }} />
         </Box>
-        <Typography variant="h6" color="text.secondary">
+        <Typography variant="h6" color="text.secondary" sx={{ fontSize: { md: '1.5rem' } }}>
           Aún no tienes pedidos
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3 }}>
-          Tus pedidos se generan cuando concretas ventas ya sea del Marketplace o desde Ofertas Recibidas
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3, fontSize: { md: '1.05rem' } }}>
+          Tus pedidos se generan cuando concretas una venta, ya sea desde el marketplace o a partir de una oferta recibida.
         </Typography>
         <Button
           variant="contained"
