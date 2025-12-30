@@ -52,7 +52,6 @@ const USER_NAME_STATUS = { PENDING: 'pendiente' };
  * Resuelve Bugs: 6, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20
  */
 const performNuclearCleanup = () => {
-  console.warn('☢️ NUCLEAR CLEANUP - Limpiando sesión anterior ☢️');
 
   // 1. Auth Ready Coordinator
   try {
@@ -260,6 +259,7 @@ export const UnifiedAuthProvider = ({ children }) => {
       // Incluir user_id para que componentes como WhatsAppWidget puedan
       // mostrar un identificador corto sin caer en 'N/A'. Si fullProfile
       // no contiene user_id, usar el id de sesión (userId) como fallback.
+      // 🔧 FIX: Incluir información bancaria para evitar re-fetch en validaciones
       const userData = fullProfile
         ? {
             user_id: fullProfile.user_id || userId,
@@ -271,6 +271,12 @@ export const UnifiedAuthProvider = ({ children }) => {
             email: fullProfile.email,
             verified: fullProfile.verified || false,
             verified_at: fullProfile.verified_at || null,
+            // Información bancaria (para validaciones)
+            account_holder: fullProfile.account_holder || '',
+            bank: fullProfile.bank || '',
+            account_number: fullProfile.account_number || '',
+            transfer_rut: fullProfile.transfer_rut || '',
+            confirmation_email: fullProfile.confirmation_email || '',
           }
         : null;
 
@@ -493,6 +499,7 @@ export const UnifiedAuthProvider = ({ children }) => {
       
       if (!error && fullProfile) {
         // Mapear a la estructura esperada por el contexto
+        // 🔧 FIX: Incluir información bancaria para evitar re-fetch en validaciones
         const userData = {
           user_id: fullProfile.user_id,
           user_nm: fullProfile.user_nm,
@@ -503,6 +510,12 @@ export const UnifiedAuthProvider = ({ children }) => {
           email: fullProfile.email,
           verified: fullProfile.verified || false,
           verified_at: fullProfile.verified_at || null,
+          // Información bancaria (para validaciones)
+          account_holder: fullProfile.account_holder || '',
+          bank: fullProfile.bank || '',
+          account_number: fullProfile.account_number || '',
+          transfer_rut: fullProfile.transfer_rut || '',
+          confirmation_email: fullProfile.confirmation_email || '',
         };
         
         setUserProfile(userData);

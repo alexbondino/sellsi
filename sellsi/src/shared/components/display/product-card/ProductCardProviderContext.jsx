@@ -71,8 +71,9 @@ const ProductCardProviderContext = React.memo(({ product }) => {
           invoking UniversalProductImage and thumbnail hooks. */}
       <Box sx={{ 
         width: '100%', 
-        height: { xs: 160, sm: 170, md: 187.5, lg: 243.75, xl: 260 }, 
-        minHeight: { xs: 160 }, 
+        // ✅ UNIFICADO: Mismas dimensiones que ProductCardImage (buyer) para consistencia visual
+        height: { xs: 142, sm: 154, md: 187.5, lg: 243.75, xl: 260 }, 
+        minHeight: { xs: 142 }, 
         boxSizing: 'border-box' 
       }}>
         <Box

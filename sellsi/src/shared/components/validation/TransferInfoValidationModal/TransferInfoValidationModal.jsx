@@ -17,7 +17,6 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Modal, MODAL_TYPES } from '../../feedback';
-import { useTransferInfoValidation } from '../../../hooks/profile/useTransferInfoValidation';
 import { useAuth } from '../../../../infrastructure/providers';
 
 /**
@@ -27,9 +26,35 @@ export const useTransferInfoModal = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const navigate = useNavigate();
-  const { isBuyer } = useAuth();
+  const { isBuyer, userProfile, loadingUserStatus } = useAuth();
   
-  const { isComplete, isLoading, missingFieldLabels } = useTransferInfoValidation();
+  // 🔧 FIX: Usar userProfile del contexto (ya tiene la info bancaria cacheada)
+  // En lugar de hacer un fetch separado con useTransferInfoValidation
+  const isComplete = React.useMemo(() => {
+    if (!userProfile) return false;
+    
+    // Verificar campos requeridos
+    return !!(
+      userProfile.account_holder &&
+      userProfile.bank &&
+      userProfile.account_number &&
+      userProfile.transfer_rut &&
+      userProfile.confirmation_email
+    );
+  }, [userProfile]);
+  
+  const missingFieldLabels = React.useMemo(() => {
+    if (!userProfile) return [];
+    
+    const missing = [];
+    if (!userProfile.account_holder) missing.push('Nombre Titular');
+    if (!userProfile.bank) missing.push('Banco');
+    if (!userProfile.account_number) missing.push('Número de Cuenta');
+    if (!userProfile.transfer_rut) missing.push('RUT');
+    if (!userProfile.confirmation_email) missing.push('Correo de Confirmación');
+    
+    return missing;
+  }, [userProfile]);
 
   /**
    * Verifica si la información está completa y muestra modal si no
@@ -38,8 +63,8 @@ export const useTransferInfoModal = () => {
    * @returns {boolean} - true si está completa, false si se mostró el modal
    */
   const checkAndProceed = (redirectPath = null, callback = null) => {
-    if (isLoading) {
-      return false; // No hacer nada mientras se carga
+    if (loadingUserStatus) {
+      return false; // No hacer nada mientras se carga el perfil
     }
 
     if (!isComplete) {
@@ -77,7 +102,7 @@ export const useTransferInfoModal = () => {
     handleRegisterAccount,
     handleClose,
     isTransferInfoComplete: isComplete,
-    isLoadingTransferInfo: isLoading
+    isLoadingTransferInfo: loadingUserStatus
   };
 };
 

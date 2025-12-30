@@ -793,14 +793,14 @@ const ProviderCatalog = () => {
                       <ShoppingCartIcon sx={{ fontSize: 18, color: 'action.active', mr: 0.5 }} />
                       <b>Productos publicados:</b>
                       {' '}
-                      <Box component="span" sx={{ fontWeight: 700, mx: 0.5 }}>{formatNumber(provider?.productCount ?? 0)}</Box>
+                      <Box component="span" sx={{ fontWeight: 700, mx: 0 }}>{formatNumber(provider?.productCount ?? 0)}</Box>
                     </>
                   ) : (
                     <>
-                      <Inventory2Icon sx={{ fontSize: 18, color: 'action.active', mr: 0.5 }} />
-                      <b>Este proveedor actualmente tiene:</b>
+                      <Inventory2Icon sx={{ fontSize: 18, color: 'action.active', mr: 0.25 }} />
+                      <b>Este proveedor actualmente tiene</b>
                       {' '}
-                      <Box component="span" sx={{ fontWeight: 700, mx: 0.5 }}>{formatNumber(provider?.productCount ?? 0)}</Box>
+                      <Box component="span" sx={{ fontWeight: 700, mx: 0 }}>{formatNumber(provider?.productCount ?? 0)}</Box>
                       <b>productos publicados</b>
                     </>
                   )}
