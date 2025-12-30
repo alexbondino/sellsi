@@ -426,9 +426,9 @@ export const createCartStoreFacade = () => {
               console.debug('Error clearing cart history:', e)
             }
             
-            // Resetear shipping store
+            // Resetear shipping store (sin mostrar toaster)
             try {
-              shippingStore.setShippingOption('standard')
+              shippingStore.resetShipping()
             } catch (e) {
               console.debug('Error resetting shipping:', e)
             }

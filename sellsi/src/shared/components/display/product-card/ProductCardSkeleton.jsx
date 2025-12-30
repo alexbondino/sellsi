@@ -35,13 +35,14 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
     [type]
   );
 
-  // ✅ CORREGIDO: Altura del contenedor de imagen/avatar según tipo
+  // ✅ UNIFICADO: Altura del contenedor de imagen/avatar - MISMA para buyer y provider
   const headerHeight = React.useMemo(() => {
-    // Para provider: altura del avatar según ProductCardProviderContext línea 74
-    if (type === 'provider') {
-      return { xs: 160, sm: 170, md: 187.5, lg: 243.75, xl: 260 };
+    // Supplier no muestra imagen/avatar
+    if (type === 'supplier') {
+      return null;
     }
-    // Para buyer: altura de imagen de producto según ProductCardImage
+    // ✅ UNIFICADO: Buyer y Provider usan las MISMAS dimensiones para consistencia visual
+    // Según ProductCardImage y ProductCardProviderContext actualizados
     return { xs: 142, sm: 154, md: 187.5, lg: 243.75, xl: 260 };
   }, [type]);
 
@@ -80,7 +81,7 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
         <Box
           sx={{
             flexGrow: 1,
-            // ✅ Provider usa padding diferente (ProductCardProviderContext línea 96)
+            // ✅ Provider usa padding diferente (ProductCardProviderContext línea 95)
             px: type === 'provider' ? { xs: 1.5, sm: 2 } : { xs: 1, sm: 2 },
             py: type === 'provider' ? 2 : 2,
             pb: type === 'provider' ? '8px !important' : { xs: 6, md: 9 },
@@ -101,7 +102,7 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
         {(type === 'buyer' || type === 'provider') && (
           <Box
             sx={{
-              // ✅ Provider usa padding diferente (ProductCardProviderContext línea 164)
+              // ✅ Provider usa padding diferente (ProductCardProviderContext línea 163)
               p: type === 'provider' ? { xs: 1.5, sm: 2 } : 0,
               pt: type === 'provider' ? 0 : 0,
               ...(type === 'buyer' && {
@@ -240,7 +241,7 @@ const ProviderBodySkeleton = () => (
       width: '100%',
     }}
   >
-    {/* Nombre y verificación - ProductCardProviderContext línea 106 (mb: 1.5) */}
+    {/* Nombre y verificación - ProductCardProviderContext línea 105 (mb: 1.5) */}
     <Box
       sx={{
         display: 'flex',
@@ -260,7 +261,7 @@ const ProviderBodySkeleton = () => (
       />
       <Skeleton variant="circular" width={{ xs: 18, sm: 20, md: 20 }} height={{ xs: 18, sm: 20, md: 20 }} sx={{ flexShrink: 0 }} />
     </Box>
-    {/* Descripción - ProductCardProviderContext línea 131 (WebkitLineClamp: xs: 6, sm: 6, md: 6, lg: 8) */}
+    {/* Descripción - ProductCardProviderContext línea 130 (WebkitLineClamp: xs: 6, sm: 6, md: 6, lg: 8) */}
     <Box sx={{ width: '100%' }}>
       <Skeleton variant="text" width="95%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5 }} />
       <Skeleton variant="text" width="92%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5 }} />
