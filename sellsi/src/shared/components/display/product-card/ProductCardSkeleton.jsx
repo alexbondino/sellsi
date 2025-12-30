@@ -14,13 +14,14 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
       // ✅ CORREGIDO: Altura exacta de ProductCard
       height:
         type === 'supplier'
-          ? { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 }
-          : { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 },
-      // ✅ CORREGIDO: Ancho exacto de ProductCard
-      width:
+          ? { xs: 380, sm: 400, md: 435, lg: 487.5, xl: 520 }
+          : { xs: 380, sm: 400, md: 435, lg: 487.5, xl: 520 },
+      // ✅ CORREGIDO: width y maxWidth exactos de ProductCard
+      width: '100%',
+      maxWidth:
         type === 'supplier'
-          ? { xs: '100%', sm: '100%', md: 220, lg: 370, xl: 360 }
-          : { xs: '100%', sm: '100%', md: 220, lg: 300, xl: 320 },
+          ? { xs: '100%', sm: '100%', md: 240, lg: 380, xl: 370 }
+          : { xs: '100%', sm: '100%', md: 240, lg: 320, xl: 340 },
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
@@ -34,31 +35,36 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
     [type]
   );
 
-  // ✅ CORREGIDO: Altura del contenedor de imagen EXACTA según ProductCardImage
+  // ✅ CORREGIDO: Altura del contenedor de imagen/avatar según tipo
   const headerHeight = React.useMemo(() => {
-    // Alineado a ProductCardImage (UniversalProductImage.jsx línea 499-505)
+    // Para provider: altura del avatar según ProductCardProviderContext línea 74
+    if (type === 'provider') {
+      return { xs: 160, sm: 170, md: 187.5, lg: 243.75, xl: 260 };
+    }
+    // Para buyer: altura de imagen de producto según ProductCardImage
     return { xs: 142, sm: 154, md: 187.5, lg: 243.75, xl: 260 };
-  }, []);
+  }, [type]);
 
   return (
     <Card
       elevation={type === 'buyer' || type === 'provider' ? 2 : 0}
       sx={cardStyles}
     >
-      {/* Encabezado / Imagen - Solo para buyer y supplier, NO para provider */}
-      {type !== 'provider' && (
+      {/* Encabezado / Imagen - buyer muestra imagen de producto, provider muestra avatar/logo, supplier NO muestra imagen */}
+      {type !== 'supplier' && (
         <Box
           sx={{
             width: '100%',
             height: headerHeight,
-            bgcolor: 'grey.100',
+            bgcolor: type === 'provider' ? '#fff' : 'grey.100',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            p: type === 'provider' ? { xs: 1.5, sm: 1.8, md: 1.5 } : 0,
           }}
         >
           <Skeleton
-            variant="rectangular"
+            variant={type === 'provider' ? 'rectangular' : 'rectangular'}
             animation="wave"
             sx={{
               width: '100%',
@@ -74,10 +80,15 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
         <Box
           sx={{
             flexGrow: 1,
-            p: 2,
-            pb: { xs: 6, md: 9 },
+            // ✅ Provider usa padding diferente (ProductCardProviderContext línea 96)
+            px: type === 'provider' ? { xs: 1.5, sm: 2 } : { xs: 1, sm: 2 },
+            py: type === 'provider' ? 2 : 2,
+            pb: type === 'provider' ? '8px !important' : { xs: 6, md: 9 },
             display: 'flex',
             flexDirection: 'column',
+            // Provider usa alignItems center y textAlign center
+            alignItems: type === 'provider' ? 'center' : 'stretch',
+            textAlign: type === 'provider' ? 'center' : 'left',
           }}
         >
           {/* Cuerpo del card: variante específica */}
@@ -90,17 +101,25 @@ export const ProductCardSkeleton = React.memo(({ type = 'buyer' }) => {
         {(type === 'buyer' || type === 'provider') && (
           <Box
             sx={{
-              position: 'absolute',
-              left: '16px',
-              right: '16px',
-              bottom: '10px',
-              p: 0,
+              // ✅ Provider usa padding diferente (ProductCardProviderContext línea 164)
+              p: type === 'provider' ? { xs: 1.5, sm: 2 } : 0,
+              pt: type === 'provider' ? 0 : 0,
+              ...(type === 'buyer' && {
+                position: 'absolute',
+                left: '16px',
+                right: '16px',
+                bottom: '10px',
+              }),
+              ...(type === 'provider' && {
+                display: 'flex',
+                justifyContent: 'center',
+              }),
             }}
           >
             <Skeleton
               variant="rectangular"
               height={40}
-              sx={{ borderRadius: 2 }}
+              sx={{ borderRadius: 2, width: type === 'provider' ? '100%' : '100%' }}
             />
           </Box>
         )}
@@ -218,30 +237,45 @@ const ProviderBodySkeleton = () => (
     sx={{
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
-      textAlign: 'center',
-      gap: 1,
-      pb: '48px', // espacio para botón inferior
+      width: '100%',
     }}
   >
-    {/* Nombre y verificación */}
+    {/* Nombre y verificación - ProductCardProviderContext línea 106 (mb: 1.5) */}
     <Box
       sx={{
         display: 'flex',
         alignItems: 'center',
         gap: 0.5,
         justifyContent: 'center',
-        width: '100%',
+        mb: 1.5,
       }}
     >
-      <Skeleton variant="text" width="70%" height={24} />
-      <Skeleton variant="circular" width={18} height={18} />
+      <Skeleton 
+        variant="text" 
+        width="70%" 
+        sx={{ 
+          fontSize: { xs: '1rem', sm: '1.1rem', md: '1.4rem' },
+          height: { xs: 24, sm: 26, md: 34 }
+        }} 
+      />
+      <Skeleton variant="circular" width={{ xs: 18, sm: 20, md: 20 }} height={{ xs: 18, sm: 20, md: 20 }} sx={{ flexShrink: 0 }} />
     </Box>
-    {/* Descripción */}
+    {/* Descripción - ProductCardProviderContext línea 131 (WebkitLineClamp: xs: 6, sm: 6, md: 6, lg: 8) */}
     <Box sx={{ width: '100%' }}>
-      <Skeleton variant="text" width="92%" height={18} sx={{ mx: 'auto' }} />
-      <Skeleton variant="text" width="88%" height={18} sx={{ mx: 'auto' }} />
-      <Skeleton variant="text" width="75%" height={18} sx={{ mx: 'auto' }} />
+      <Skeleton variant="text" width="95%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5 }} />
+      <Skeleton variant="text" width="92%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5 }} />
+      <Skeleton variant="text" width="88%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5 }} />
+      <Skeleton variant="text" width="90%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5 }} />
+      <Skeleton variant="text" width="95%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5 }} />
+      <Skeleton variant="text" width="92%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5 }} />
+      <Skeleton variant="text" width="88%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5 }} />
+      <Skeleton variant="text" width="90%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5 }} />
+      <Skeleton variant="text" width="85%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5 }} />
+      {/* Sixth line hidden on xs/sm to match new WebkitLineClamp */}
+      <Skeleton variant="text" width="80%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5, display: { xs: 'none', sm: 'none', md: 'block' } }} />
+      {/* Líneas adicionales para lg/xl (display condicional via CSS si es necesario, o siempre visible) */}
+      <Skeleton variant="text" width="87%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', mb: 0.5, display: { xs: 'none', lg: 'block' } }} />
+      <Skeleton variant="text" width="75%" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.9rem' }, mx: 'auto', display: { xs: 'none', lg: 'block' } }} />
     </Box>
   </Box>
 );

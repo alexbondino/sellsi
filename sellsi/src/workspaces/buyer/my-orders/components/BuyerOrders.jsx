@@ -338,16 +338,16 @@ const BuyerOrders = memo(function BuyerOrders() {
               <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
                 <AssignmentIcon sx={{ fontSize: 48, color: 'primary.main' }} />
               </Box>
-              <Typography variant="h6" color="text.secondary">
-                Aun no haz realizado pedidos
+              <Typography variant="h6" color="text.secondary" sx={{ fontSize: { md: '1.5rem' } }}>
+                Aun no has realizado pedidos
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: { md: '1.05rem' } }}>
                 Los pedidos se crean cuando concretas compras a través del Marketplace.
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: { md: '1.05rem' } }}>
                 En esta sección podrás hacer seguimiento a tus compras.
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3, fontSize: { md: '1.05rem' } }}>
                 ¡Explora nuestro marketplace y haz tu primer pedido!
               </Typography>
               <Button

@@ -308,10 +308,10 @@ const OffersList = ({
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
             <LocalOfferIcon sx={{ fontSize: 48, color: 'primary.main' }} />
           </Box>
-          <Typography variant="h6" color="text.secondary">
+          <Typography variant="h6" color="text.secondary" sx={{ fontSize: { md: '1.5rem' } }}>
             Aun no has enviado ofertas
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3, fontSize: { md: '1.05rem' } }}>
             En Sellsi puedes negociar precios, volumenes y condiciones directamente con proveedores. Envía tu primera oferta y comienza a cerrar negocios.
           </Typography>
           <Button

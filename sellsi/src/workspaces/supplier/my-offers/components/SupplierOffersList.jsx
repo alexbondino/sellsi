@@ -292,21 +292,21 @@ const SupplierOffersList = ({
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
           <LocalOfferIcon sx={{ fontSize: 48, color: 'primary.main' }} />
         </Box>
-        <Typography variant="h6" color="text.secondary">
+        <Typography variant="h6" color="text.secondary" sx={{ fontSize: { md: '1.5rem' } }}>
           Aún no has recibido ofertas
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-          Aquí verás las propuestas de tus compradores. Podrás revisarlas, aceptarlas o rechazarlas:
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2, fontSize: { md: '1.05rem' } }}>
+          Aquí verás las propuestas de tus compradores. Podrás revisarlas, aceptarlas o rechazarlas
         </Typography>
         <Box sx={{ textAlign: 'left', maxWidth: 600, mx: 'auto', mb: 3 }}>
-          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 1 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 1, fontSize: { md: '1.05rem' }, lineHeight: { md: 1.35 } }}>
             Consejos para recibir más ofertas:
           </Typography>
-          <Typography variant="body2" color="text.secondary" component="ul" sx={{ pl: 4, listStyleType: 'disc', listStylePosition: 'outside' }}>
-            <li>Usa descripciones claras y completas.</li>
-            <li>Incluye fotos de buena calidad.</li>
-            <li>Responde con rapidez cuando recibas propuestas.</li>
-            <li>Define precios, cantidades mínimas y tramos de compra.</li>
+          <Typography variant="body2" color="text.secondary" component="ul" sx={{ pl: 4, listStyleType: 'disc', listStylePosition: 'outside', fontSize: { md: '1.05rem' }, lineHeight: { md: 1.35 } }}>
+            <li>Usa descripciones claras y completas</li>
+            <li>Incluye fotos de buena calidad</li>
+            <li>Responde con rapidez cuando recibas propuestas</li>
+            <li>Define precios, cantidades mínimas y tramos de compra</li>
           </Typography>
         </Box>
         <Button

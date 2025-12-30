@@ -867,33 +867,24 @@ const MyOrdersPage = () => {
           {/* Renderizado condicional mobile vs desktop */}
           {isMobile ? (
             <>
-              {orders.length === 0 ? (
-                <Table
-                  orders={[]}
-                  onActionClick={handleActionClick}
-                />
-              ) : (
-                <>
-                  {/* Mobile: FilterAccordion + MobileOfferCard */}
-                  <MobileFilterAccordion
-                    currentFilter={statusFilter}
-                    onFilterChange={setStatusFilter}
-                    filterOptions={filterOptions}
-                    label="Estado de pedidos"
+              {/* Mobile: FilterAccordion + MobileOfferCard */}
+              <MobileFilterAccordion
+                currentFilter={statusFilter}
+                onFilterChange={setStatusFilter}
+                filterOptions={filterOptions}
+                label="Estado de pedidos"
+              />
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {filteredOrders.map((order) => (
+                  <MobileOrderCard
+                    key={order.order_id}
+                    order={order}
+                    onAction={(actionType, orderData) =>
+                      handleActionClick(orderData, actionType)
+                    }
                   />
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {filteredOrders.map((order) => (
-                      <MobileOrderCard
-                        key={order.order_id}
-                        order={order}
-                        onAction={(actionType, orderData) =>
-                          handleActionClick(orderData, actionType)
-                        }
-                      />
-                    ))}
-                  </Box>
-                </>
-              )}
+                ))}
+              </Box>
             </>
           ) : (
             <>

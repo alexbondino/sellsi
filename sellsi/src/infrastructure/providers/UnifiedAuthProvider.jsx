@@ -16,6 +16,7 @@ import { onAuthStarted, onAuthCleared } from '../auth/AuthReadyCoordinator';
 // 🧹 Imports para Nuclear Cleanup (Kill Switch - Fase 1)
 import { useOrdersStore } from '../../shared/stores/orders/ordersStore';
 import { useOfferStore } from '../../stores/offerStore';
+import useCartStore from '../../shared/stores/cart/cartStore';
 import useCartHistory from '../../shared/stores/cart/useCartHistory';
 import { useNotificationsStore } from '../../domains/notifications/store/notificationsStore';
 import { queryClient } from '../../utils/queryClient';
@@ -27,7 +28,6 @@ import useProductSpecifications from '../../workspaces/supplier/shared-hooks/use
 import useProductPriceTiers from '../../workspaces/supplier/shared-hooks/useProductPriceTiers';
 import useProductBackground from '../../workspaces/supplier/shared-hooks/useProductBackground';
 import useProductCleanup from '../../workspaces/supplier/shared-hooks/useProductCleanup';
-import { STORAGE_KEY } from '../../shared/stores/cart/cartStore.constants';
 
 // Unified Auth + Role Context
 const UnifiedAuthContext = createContext();
@@ -64,6 +64,11 @@ const performNuclearCleanup = () => {
     useOrdersStore.getState().clearOrders();
   } catch (e) {
     console.debug('clearOrders:', e);
+  }
+  try {
+    useCartStore.getState().resetState();
+  } catch (e) {
+    console.debug('cartStore resetState:', e);
   }
   try {
     useCartHistory.getState().clearHistory();
@@ -148,6 +153,7 @@ const performNuclearCleanup = () => {
   } catch (e) {}
 
   // 6. localStorage (Bugs 14, 16)
+  // Nota: cartStore.resetState() ya limpia 'sellsi-cart-v3-refactored'
   [
     'user_id',
     'account_type',
@@ -156,7 +162,6 @@ const performNuclearCleanup = () => {
     'access_token',
     'auth_token',
     'currentAppRole',
-    STORAGE_KEY,
     'notifications_forced_read',
     'notifications_read_buffer',
   ].forEach(k => {
