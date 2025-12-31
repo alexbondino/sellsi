@@ -25,6 +25,9 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
+
+// Styles from Marketplace CategoryNavigation to keep category buttons consistent on desktop
+import { categoryNavigationStyles as catStyles } from '../../../marketplace/components/CategoryNavigation/CategoryNavigation.styles';
 import {
   Add as AddIcon,
   Search as SearchIcon,
@@ -35,6 +38,8 @@ import {
   Storefront as StorefrontIcon,
   CloudUpload as CloudUploadIcon,
   Share as ShareIcon,
+  Category as CategoryIcon,
+  Sort as SortIcon,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import {
@@ -95,18 +100,18 @@ const CATEGORIES = [
 ];
 
 const SORT_OPTIONS = [
-  { value: 'updatedAt', label: 'Más recientes' },
-  { value: 'createdAt', label: 'Más antiguos' },
-  { value: 'nombre', label: 'Nombre A-Z' },
-  { value: 'precio', label: 'Precio: menor a mayor' },
-  { value: 'stock', label: 'Stock disponible' },
-  { value: 'ventas', label: 'Más vendidos' },
+  { value: 'updateddt', label: 'Más recientes' },
+  { value: 'createddt', label: 'Más antiguos' },
+  { value: 'productnm', label: 'Nombre A-Z' },
+  { value: 'precio_asc', label: 'Precios menor a mayor' },
+  { value: 'precio_desc', label: 'Precios mayor a menor' },
+  { value: 'productqty', label: 'Stock disponible' },
   { value: 'pausedStatus', label: 'Pausados/Inactivos' },
 ];
 
 const MyProducts = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { userProfile } = useAuth();
 
@@ -398,7 +403,7 @@ const MyProducts = () => {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'flex-start',
-                  flexDirection: { xs: 'column', sm: 'row' },
+                  flexDirection: { xs: 'column', md: 'row' },
                   gap: 2,
                   mb: 3,
                 }}
@@ -428,42 +433,56 @@ const MyProducts = () => {
                     display: 'flex',
                     flexDirection: 'row',
                     gap: 1,
-                    width: { xs: '100%', sm: 'auto' },
+                    width: { xs: '100%', md: 'auto' },
                   }}
                 >
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={<AddIcon />}
-                    onClick={handleAddProduct}
-                    data-prefetch="add-product-btn"
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      px: { xs: 2, sm: 3 },
-                      flex: { xs: 1, sm: '0 1 auto' },
-                      minWidth: 0,
-                    }}
+                  <Tooltip
+                    title="Crea y publica un producto de manera individual con todos sus detalles"
+                    placement="bottom"
+                    arrow
+                    disableHoverListener={isMobile}
                   >
-                    {isMobile ? 'Agregar' : 'Agregar Producto'}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="large"
-                    startIcon={<CloudUploadIcon />}
-                    onClick={handleOpenMassiveImport}
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      fontWeight: 'bold',
-                      px: { xs: 2, sm: 3 },
-                      flex: { xs: 1, sm: '0 1 auto' },
-                      minWidth: 0,
-                    }}
+                    <Button
+                      variant="contained"
+                      size="large"
+                      startIcon={<AddIcon />}
+                      onClick={handleAddProduct}
+                      data-prefetch="add-product-btn"
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        px: { xs: 2, md: 3 },
+                        flex: { xs: 1, md: '0 1 auto' },
+                        minWidth: 0,
+                      }}
+                    >
+                      {isMobile ? 'Agregar' : 'Agregar Producto'}
+                    </Button>
+                  </Tooltip>
+                  <Tooltip
+                    title="Importa múltiples productos a la vez usando una plantilla de Excel"
+                    placement="bottom"
+                    arrow
+                    disableHoverListener={isMobile}
                   >
-                    Carga Masiva
-                  </Button>
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      startIcon={<CloudUploadIcon />}
+                      onClick={handleOpenMassiveImport}
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontWeight: 'bold',
+                        px: { xs: 2, md: 3 },
+                        flex: { xs: 1, md: '0 1 auto' },
+                        minWidth: 0,
+                      }}
+                    >
+                      Carga Masiva
+                    </Button>
+                  </Tooltip>
                   <Tooltip
                     title={
                       userProfile?.verified
@@ -523,35 +542,35 @@ const MyProducts = () => {
                   >
                     <Grid container columns={12} justifyContent="center">
                       {/* Primera fila mobile: Total productos (50%) + Productos activos (50%) */}
-                      <Grid item xs={6} sm={4} width={{ xs: '50%', sm: '31%' }}>
+                      <Grid item xs={6} md={4} width={{ xs: '50%', md: '31%' }}>
                         <Box
                           sx={{
                             p: 2,
                             borderRight: '1px solid',
                             borderColor: 'divider',
-                            borderBottom: { xs: '1px solid', sm: 'none' },
+                            borderBottom: { xs: '1px solid', md: 'none' },
                             borderBottomColor: { xs: 'divider' },
-                            minHeight: { xs: '110px', sm: 'auto' },
+                            minHeight: { xs: '110px', md: 'auto' },
                           }}
                         >
                           <Box
                             sx={{
                               display: 'flex',
-                              flexDirection: { xs: 'column', sm: 'row' },
-                              alignItems: { xs: 'flex-start', sm: 'center' },
-                              gap: { xs: 0.5, sm: 1.5 },
+                              flexDirection: { xs: 'column', md: 'row' },
+                              alignItems: { xs: 'flex-start', md: 'center' },
+                              gap: { xs: 0.5, md: 1.5 },
                             }}
                           >
                             <InventoryIcon
                               color="primary"
-                              sx={{ fontSize: { xs: 32, sm: 40 } }}
+                              sx={{ fontSize: { xs: 32, md: 40 } }}
                             />
                             <Box>
                               <Typography
                                 variant="h6"
                                 sx={{
                                   fontWeight: 600,
-                                  fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                                  fontSize: { xs: '1.1rem', md: '1.25rem' },
                                 }}
                               >
                                 {stats.total}
@@ -560,7 +579,7 @@ const MyProducts = () => {
                                 variant="body2"
                                 color="text.secondary"
                                 sx={{
-                                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                  fontSize: { xs: '0.75rem', md: '0.875rem' },
                                 }}
                               >
                                 Total de productos
@@ -570,35 +589,35 @@ const MyProducts = () => {
                         </Box>
                       </Grid>
 
-                      <Grid item xs={6} sm={4} width={{ xs: '50%', sm: '31%' }}>
+                      <Grid item xs={6} md={4} width={{ xs: '50%', md: '31%' }}>
                         <Box
                           sx={{
                             p: 2,
-                            borderRight: { sm: '1px solid' },
-                            borderColor: { sm: 'divider' },
-                            borderBottom: { xs: '1px solid', sm: 'none' },
+                            borderRight: { md: '1px solid' },
+                            borderColor: { md: 'divider' },
+                            borderBottom: { xs: '1px solid', md: 'none' },
                             borderBottomColor: { xs: 'divider' },
-                            minHeight: { xs: '110px', sm: 'auto' },
+                            minHeight: { xs: '110px', md: 'auto' },
                           }}
                         >
                           <Box
                             sx={{
                               display: 'flex',
-                              flexDirection: { xs: 'column', sm: 'row' },
-                              alignItems: { xs: 'flex-start', sm: 'center' },
-                              gap: { xs: 0.5, sm: 1.5 },
+                              flexDirection: { xs: 'column', md: 'row' },
+                              alignItems: { xs: 'flex-start', md: 'center' },
+                              gap: { xs: 0.5, md: 1.5 },
                             }}
                           >
                             <Box
                               sx={{
                                 color: 'success.main',
-                                fontSize: { xs: '32px', sm: '40px' },
+                                fontSize: { xs: '32px', md: '40px' },
                                 fontWeight: 'bold',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                width: { xs: '32px', sm: '40px' },
-                                height: { xs: '32px', sm: '40px' },
+                                width: { xs: '32px', md: '40px' },
+                                height: { xs: '32px', md: '40px' },
                                 lineHeight: 1,
                               }}
                             >
@@ -609,7 +628,7 @@ const MyProducts = () => {
                                 variant="h6"
                                 sx={{
                                   fontWeight: 600,
-                                  fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                                  fontSize: { xs: '1.1rem', md: '1.25rem' },
                                 }}
                               >
                                 {stats.active}
@@ -618,7 +637,7 @@ const MyProducts = () => {
                                 variant="body2"
                                 color="text.secondary"
                                 sx={{
-                                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                  fontSize: { xs: '0.75rem', md: '0.875rem' },
                                 }}
                               >
                                 Productos activos
@@ -632,14 +651,14 @@ const MyProducts = () => {
                       <Grid
                         item
                         xs={12}
-                        sm={4}
-                        width={{ xs: '100%', sm: '31%' }}
+                        md={4}
+                        width={{ xs: '100%', md: '31%' }}
                       >
                         <Box
                           sx={{
                             p: 2,
                             width: '100%',
-                            minHeight: { xs: '90px', sm: 'auto' },
+                            minHeight: { xs: '90px', md: 'auto' },
                           }}
                         >
                           <Box
@@ -651,14 +670,14 @@ const MyProducts = () => {
                           >
                             <AttachMoneyIcon
                               color="success"
-                              sx={{ fontSize: { xs: 32, sm: 40 } }}
+                              sx={{ fontSize: { xs: 32, md: 40 } }}
                             />
                             <Box>
                               <Typography
                                 variant="h6"
                                 sx={{
                                   fontWeight: 600,
-                                  fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                                  fontSize: { xs: '1.1rem', md: '1.25rem' },
                                 }}
                               >
                                 {stats.inventoryRange &&
@@ -680,7 +699,7 @@ const MyProducts = () => {
                                 variant="body2"
                                 color="text.secondary"
                                 sx={{
-                                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                  fontSize: { xs: '0.75rem', md: '0.875rem' },
                                 }}
                               >
                                 Valor del inventario
@@ -766,7 +785,7 @@ const MyProducts = () => {
                 {/* Botón limpiar filtros - solo si hay filtros activos */}
                 {(searchTerm ||
                   categoryFilter !== 'all' ||
-                  sortBy !== 'updatedAt') && (
+                  sortBy !== 'updateddt') && (
                   <Button
                     fullWidth
                     variant="outlined"
@@ -782,33 +801,6 @@ const MyProducts = () => {
                     Limpiar todos los filtros
                   </Button>
                 )}
-
-                {/* Chips de filtros activos */}
-                {(searchTerm || categoryFilter !== 'all') && (
-                  <Box
-                    sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}
-                  >
-                    {searchTerm && (
-                      <Chip
-                        label={`"${searchTerm}"`}
-                        onDelete={() => setSearchTerm('')}
-                        size="small"
-                        color="primary"
-                      />
-                    )}
-                    {categoryFilter !== 'all' && (
-                      <Chip
-                        label={
-                          CATEGORIES.find(c => c.value === categoryFilter)
-                            ?.label
-                        }
-                        onDelete={() => setCategoryFilter('all')}
-                        size="small"
-                        color="primary"
-                      />
-                    )}
-                  </Box>
-                )}
               </Box>
             ) : (
               /* 🖥️ DESKTOP: Diseño horizontal tradicional */
@@ -817,6 +809,7 @@ const MyProducts = () => {
                   {/* Búsqueda */}
                   <Grid item xs={12} sm={6} md={4}>
                     <TextField
+                      size="small"
                       fullWidth
                       placeholder="Buscar productos..."
                       value={searchTerm}
@@ -824,11 +817,27 @@ const MyProducts = () => {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <SearchIcon color="action" />
+                            <SearchIcon color="action" fontSize="small" />
+                          </InputAdornment>
+                        ),
+                        endAdornment: searchTerm && (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setSearchTerm('')}
+                              edge="end"
+                              size="small"
+                            >
+                              <ClearIcon fontSize="small" />
+                            </IconButton>
                           </InputAdornment>
                         ),
                       }}
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': { borderRadius: 2 },
+                        minWidth: { md: '15rem' },
+                        width: { xs: '100%', md: '15rem' },
+                        flexShrink: 0,
+                      }}
                       autoComplete="off"
                       autoCorrect="off"
                     />
@@ -836,17 +845,41 @@ const MyProducts = () => {
 
                   {/* Categoría */}
                   <Grid item xs={12} sm={6} md={3}>
-                    <FormControl fullWidth>
+                    <FormControl size="small" fullWidth>
                       <InputLabel>Categoría</InputLabel>
                       <Select
                         value={categoryFilter}
                         onChange={e => setCategoryFilter(e.target.value)}
                         label="Categoría"
+                        displayEmpty
+                        startAdornment={
+                          <InputAdornment position="start">
+                            <CategoryIcon color="action" fontSize="small" />
+                          </InputAdornment>
+                        }
                         sx={{
                           borderRadius: 2,
-                          '& .MuiSelect-select': {},
+                          minWidth: { md: '15rem' },
+                          width: { xs: '100%', md: '15rem' },
+                          flexShrink: 0,
                         }}
                         MenuProps={{
+                          PaperProps: {
+                            sx: {
+                              maxHeight: 300,
+                              '& .MuiMenuItem-root': {
+                                fontSize: { xs: '0.7rem', md: '0.875rem' },
+                              },
+                            },
+                          },
+                          anchorOrigin: {
+                            vertical: 'bottom',
+                            horizontal: 'left',
+                          },
+                          transformOrigin: {
+                            vertical: 'top',
+                            horizontal: 'left',
+                          },
                           disableScrollLock: true,
                         }}
                       >
@@ -861,16 +894,41 @@ const MyProducts = () => {
 
                   {/* Ordenar por */}
                   <Grid item xs={12} sm={6} md={3}>
-                    <FormControl fullWidth>
+                    <FormControl size="small" fullWidth>
                       <InputLabel>Ordenar por</InputLabel>
                       <Select
                         value={sortBy}
                         onChange={handleSortChange}
                         label="Ordenar por"
+                        displayEmpty
+                        startAdornment={
+                          <InputAdornment position="start">
+                            <SortIcon color="action" fontSize="small" />
+                          </InputAdornment>
+                        }
                         sx={{
                           borderRadius: 2,
+                          minWidth: { md: '15rem' },
+                          width: { xs: '100%', md: '15rem' },
+                          flexShrink: 0,
                         }}
                         MenuProps={{
+                          PaperProps: {
+                            sx: {
+                              maxHeight: 300,
+                              '& .MuiMenuItem-root': {
+                                fontSize: { xs: '0.7rem', md: '0.875rem' },
+                              },
+                            },
+                          },
+                          anchorOrigin: {
+                            vertical: 'bottom',
+                            horizontal: 'left',
+                          },
+                          transformOrigin: {
+                            vertical: 'top',
+                            horizontal: 'left',
+                          },
                           disableScrollLock: true,
                         }}
                       >
@@ -895,35 +953,6 @@ const MyProducts = () => {
                     </Button>
                   </Grid>
                 </Grid>
-
-                {/* Chips de filtros activos */}
-                {(searchTerm || categoryFilter !== 'all') && (
-                  <Box
-                    sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}
-                  >
-                    {searchTerm && (
-                      <Chip
-                        label={`Búsqueda: "${searchTerm}"`}
-                        onDelete={() => setSearchTerm('')}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                      />
-                    )}
-                    {categoryFilter !== 'all' && (
-                      <Chip
-                        label={`Categoría: ${
-                          CATEGORIES.find(c => c.value === categoryFilter)
-                            ?.label
-                        }`}
-                        onDelete={() => setCategoryFilter('all')}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                      />
-                    )}
-                  </Box>
-                )}
               </Paper>
             )}
 

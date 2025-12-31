@@ -390,6 +390,49 @@ export const createCartStoreFacade = () => {
               lastModified: state.lastModified,
             }
           },
+
+          // === RESET COMPLETO PARA KILLSWITCH ===
+
+          /**
+           * Resetea completamente el estado del carrito (para logout/cambio de sesión)
+           * ☢️ NUCLEAR CLEANUP - Limpia estado en memoria + localStorage
+           */
+          resetState: () => {
+            // Limpiar localStorage primero
+            try {
+              localStorage.removeItem('sellsi-cart-v3-refactored')
+            } catch (error) {
+              console.debug('Error clearing cart localStorage:', error)
+            }
+            
+            // Resetear estado en memoria
+            set({
+              items: [],
+              isLoading: false,
+              error: null,
+              notifications: [],
+              lastOrder: null,
+              cartId: null,
+              userId: null,
+              isBackendSynced: false,
+              isSyncing: false,
+              lastModified: null,
+            })
+            
+            // Limpiar history store
+            try {
+              historyStore.clearHistory()
+            } catch (e) {
+              console.debug('Error clearing cart history:', e)
+            }
+            
+            // Resetear shipping store (sin mostrar toaster)
+            try {
+              shippingStore.resetShipping()
+            } catch (e) {
+              console.debug('Error resetting shipping:', e)
+            }
+          },
         }
       },
       PERSIST_CONFIG

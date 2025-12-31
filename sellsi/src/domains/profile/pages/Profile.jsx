@@ -140,8 +140,8 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         throw new Error('Usuario no autenticado');
       }
 
-      // Usar el servicio para obtener el perfil completo
-      const { data, error } = await getUserProfile(user.id);
+      // ✅ Forzar bypass del cache para obtener datos frescos
+      const { data, error } = await getUserProfile(user.id, { force: true });
       
       console.log('📞 [PROFILE DEBUG] Datos crudos de getUserProfile:', {
         phone_nbr: data?.phone_nbr,
@@ -226,6 +226,9 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       
       // Recargar perfil después de actualizar
       await fetchUserProfile();
+      
+      // ✅ Refrescar perfil en UnifiedAuthProvider para actualizar main_supplier, verified, etc.
+      await refreshUserProfile();
       
       // Notificar al componente padre si existe
       if (externalUpdateHandler) {

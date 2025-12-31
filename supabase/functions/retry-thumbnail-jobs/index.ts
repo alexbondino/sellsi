@@ -83,9 +83,30 @@ serve((req) => withMetrics('retry-thumbnail-jobs', req, async () => {
         continue
       }
       if (mainImg.thumbnails && mainImg.thumbnails.desktop && mainImg.thumbnail_url) {
-        await supabase.rpc('mark_thumbnail_job_success', { p_product_id: productId })
-        successes.push(productId)
-        continue
+        // Verificar existencia física del archivo antes de marcar success
+        let headCheckOk = false
+        try {
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), 3000)
+          try {
+            const headResp = await fetch(mainImg.thumbnail_url, {
+              method: 'HEAD',
+              signal: controller.signal,
+            })
+            headCheckOk = headResp.ok
+          } finally {
+            clearTimeout(timeout)
+          }
+        } catch (_) {
+          // Si HEAD check falla, continuar a regeneración
+        }
+
+        if (headCheckOk) {
+          await supabase.rpc('mark_thumbnail_job_success', { p_product_id: productId })
+          successes.push(productId)
+          continue
+        }
+        // Si HEAD falla, continuar a regeneración
       }
 
       // Reiniciar job (incrementa attempts)

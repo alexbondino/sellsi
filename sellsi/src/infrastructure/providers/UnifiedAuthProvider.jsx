@@ -16,6 +16,7 @@ import { onAuthStarted, onAuthCleared } from '../auth/AuthReadyCoordinator';
 // 🧹 Imports para Nuclear Cleanup (Kill Switch - Fase 1)
 import { useOrdersStore } from '../../shared/stores/orders/ordersStore';
 import { useOfferStore } from '../../stores/offerStore';
+import useCartStore from '../../shared/stores/cart/cartStore';
 import useCartHistory from '../../shared/stores/cart/useCartHistory';
 import { useNotificationsStore } from '../../domains/notifications/store/notificationsStore';
 import { queryClient } from '../../utils/queryClient';
@@ -27,7 +28,6 @@ import useProductSpecifications from '../../workspaces/supplier/shared-hooks/use
 import useProductPriceTiers from '../../workspaces/supplier/shared-hooks/useProductPriceTiers';
 import useProductBackground from '../../workspaces/supplier/shared-hooks/useProductBackground';
 import useProductCleanup from '../../workspaces/supplier/shared-hooks/useProductCleanup';
-import { STORAGE_KEY } from '../../shared/stores/cart/cartStore.constants';
 
 // Unified Auth + Role Context
 const UnifiedAuthContext = createContext();
@@ -52,7 +52,6 @@ const USER_NAME_STATUS = { PENDING: 'pendiente' };
  * Resuelve Bugs: 6, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20
  */
 const performNuclearCleanup = () => {
-  console.warn('☢️ NUCLEAR CLEANUP - Limpiando sesión anterior ☢️');
 
   // 1. Auth Ready Coordinator
   try {
@@ -64,6 +63,11 @@ const performNuclearCleanup = () => {
     useOrdersStore.getState().clearOrders();
   } catch (e) {
     console.debug('clearOrders:', e);
+  }
+  try {
+    useCartStore.getState().resetState();
+  } catch (e) {
+    console.debug('cartStore resetState:', e);
   }
   try {
     useCartHistory.getState().clearHistory();
@@ -148,6 +152,7 @@ const performNuclearCleanup = () => {
   } catch (e) {}
 
   // 6. localStorage (Bugs 14, 16)
+  // Nota: cartStore.resetState() ya limpia 'sellsi-cart-v3-refactored'
   [
     'user_id',
     'account_type',
@@ -156,7 +161,6 @@ const performNuclearCleanup = () => {
     'access_token',
     'auth_token',
     'currentAppRole',
-    STORAGE_KEY,
     'notifications_forced_read',
     'notifications_read_buffer',
   ].forEach(k => {
@@ -255,6 +259,7 @@ export const UnifiedAuthProvider = ({ children }) => {
       // Incluir user_id para que componentes como WhatsAppWidget puedan
       // mostrar un identificador corto sin caer en 'N/A'. Si fullProfile
       // no contiene user_id, usar el id de sesión (userId) como fallback.
+      // 🔧 FIX: Incluir información bancaria para evitar re-fetch en validaciones
       const userData = fullProfile
         ? {
             user_id: fullProfile.user_id || userId,
@@ -266,6 +271,12 @@ export const UnifiedAuthProvider = ({ children }) => {
             email: fullProfile.email,
             verified: fullProfile.verified || false,
             verified_at: fullProfile.verified_at || null,
+            // Información bancaria (para validaciones)
+            account_holder: fullProfile.account_holder || '',
+            bank: fullProfile.bank || '',
+            account_number: fullProfile.account_number || '',
+            transfer_rut: fullProfile.transfer_rut || '',
+            confirmation_email: fullProfile.confirmation_email || '',
           }
         : null;
 
@@ -488,6 +499,7 @@ export const UnifiedAuthProvider = ({ children }) => {
       
       if (!error && fullProfile) {
         // Mapear a la estructura esperada por el contexto
+        // 🔧 FIX: Incluir información bancaria para evitar re-fetch en validaciones
         const userData = {
           user_id: fullProfile.user_id,
           user_nm: fullProfile.user_nm,
@@ -498,6 +510,12 @@ export const UnifiedAuthProvider = ({ children }) => {
           email: fullProfile.email,
           verified: fullProfile.verified || false,
           verified_at: fullProfile.verified_at || null,
+          // Información bancaria (para validaciones)
+          account_holder: fullProfile.account_holder || '',
+          bank: fullProfile.bank || '',
+          account_number: fullProfile.account_number || '',
+          transfer_rut: fullProfile.transfer_rut || '',
+          confirmation_email: fullProfile.confirmation_email || '',
         };
         
         setUserProfile(userData);

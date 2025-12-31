@@ -11,7 +11,7 @@ import { create } from 'zustand'
 import { supabase } from '../../../services/supabase'
 import { getOrFetchMainThumbnail } from '../../../services/phase1ETAGThumbnailService.js'
 import { FeatureFlags } from '../../../workspaces/supplier/shared-utils/featureFlags.js'
-import { updateProductSpecifications } from '../../../workspaces/marketplace'
+import { updateProductSpecifications } from '../../../workspaces/marketplace/services/productSpecificationsService'
 import { queryClient, QUERY_KEYS } from '../../../utils/queryClient.js'
 import { UploadService } from '../../../shared/services/upload'
 
@@ -423,21 +423,8 @@ const useSupplierProductsBase = create((set, get) => ({
       }))
 
       // 4. 🔧 FIX CRÍTICO: Procesar imágenes en background igual que en createProduct
-      console.log(
-        '🔄 [updateProduct] Procesando imágenes en background para producto:',
-        productId
-      )
-      console.log('🔍 [updateProduct] imagenes recibidas:', imagenes)
-      console.log('🔍 [updateProduct] tipo de imagenes:', typeof imagenes)
-      console.log('🔍 [updateProduct] es array:', Array.isArray(imagenes))
-
       // 🚨 SIEMPRE procesar imágenes (reemplazo atómico) si el caller envía el array (aunque vacío)
       if (imagenes !== undefined) {
-        console.log(
-          `📸 [updateProduct] Reemplazo atómico de imágenes, total=${
-            imagenes?.length || 0
-          }`
-        )
         const supplierId = localStorage.getItem('user_id')
         const replaceResult = await UploadService.replaceAllProductImages(
           imagenes || [],
@@ -492,17 +479,11 @@ const useSupplierProductsBase = create((set, get) => ({
 
       // Procesar especificaciones si existen
       if (specifications && specifications.length > 0) {
-        console.log(
-          `📋 [updateProduct] Procesando ${specifications.length} especificaciones`
-        )
         await get().processProductSpecifications(productId, specifications)
       }
 
       // Procesar tramos de precio si existen
       if (priceTiers && priceTiers.length > 0) {
-        console.log(
-          `💰 [updateProduct] Procesando ${priceTiers.length} tramos de precio`
-        )
         await get().processPriceTiers(productId, priceTiers)
       }
 
@@ -538,7 +519,6 @@ const useSupplierProductsBase = create((set, get) => ({
    * Eliminar producto
    */
   deleteProduct: async (productId) => {
-    console.log('[deleteProduct] INIT v2 path productId=', productId)
     set((state) => ({
       operationStates: {
         ...state.operationStates,

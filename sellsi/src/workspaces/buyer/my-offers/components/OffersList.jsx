@@ -19,12 +19,14 @@ import {
   InputLabel,
   useMediaQuery,
   useTheme,
+  Button,
 } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
 import { AddToCart } from '../../../../shared/components'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import DeleteIcon from '@mui/icons-material/Delete'
 import BlockIcon from '@mui/icons-material/Block'
-import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material'
+import { InfoOutlined as InfoOutlinedIcon, LocalOffer as LocalOfferIcon } from '@mui/icons-material'
 import MobileOfferCard from '../../../../shared/components/mobile/MobileOfferCard'
 import MobileOffersSkeleton from '../../../../shared/components/display/skeletons/MobileOffersSkeleton'
 import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion'
@@ -126,6 +128,7 @@ const OffersList = ({
 }) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = React.useState('all')
   const [statusOverrides, setStatusOverrides] = React.useState({}) // { offer_id: 'reserved' | 'paid' | ... }
   const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false)
@@ -302,13 +305,22 @@ const OffersList = ({
     if (!error) {
       return (
         <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
-          <Typography variant="h6" color="text.secondary">
-            No has enviado ofertas
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <LocalOfferIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+          </Box>
+          <Typography variant="h6" color="text.secondary" sx={{ fontSize: { md: '1.5rem' } }}>
+            Aun no has enviado ofertas
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Envía ofertas a proveedores desde la ficha de producto. Aquí verás
-            el estado de cada propuesta.
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3, fontSize: { md: '1.05rem' } }}>
+            En Sellsi puedes negociar precios, volumenes y condiciones directamente con proveedores. Envía tu primera oferta y comienza a cerrar negocios.
           </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => navigate('/buyer/marketplace')}
+          >
+            Ir al Marketplace
+          </Button>
         </Paper>
       )
     }
@@ -424,6 +436,28 @@ const OffersList = ({
   // Desktop View: Table (original)
   return (
     <>
+      <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
+        <Typography fontWeight={600}>Filtrar por estado:</Typography>
+        <FormControl size="small" sx={{ minWidth: 180 }}>
+          <InputLabel id="offers-filter-label">Estado</InputLabel>
+          <Select
+            labelId="offers-filter-label"
+            value={statusFilter}
+            label="Estado"
+            onChange={(e) => setStatusFilter(e.target.value)}
+            MenuProps={{ disableScrollLock: true }}
+          >
+            <MenuItem value="all">Todos</MenuItem>
+            <MenuItem value="pending">Pendiente</MenuItem>
+            <MenuItem value="approved">Aprobada</MenuItem>
+            <MenuItem value="cancelled">Cancelada</MenuItem>
+            <MenuItem value="rejected">Rechazada</MenuItem>
+            <MenuItem value="expired">Caducada</MenuItem>
+            <MenuItem value="reserved">En Carrito</MenuItem>
+            <MenuItem value="paid">Pagada</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
       <TableContainer
         component={Paper}
         sx={{ p: 0, position: 'relative', scrollbarGutter: 'stable' }}
@@ -444,28 +478,6 @@ const OffersList = ({
             </Box>
           </Box>
         )}
-        <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
-          <Typography fontWeight={600}>Filtrar por estado:</Typography>
-          <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel id="offers-filter-label">Estado</InputLabel>
-            <Select
-              labelId="offers-filter-label"
-              value={statusFilter}
-              label="Estado"
-              onChange={(e) => setStatusFilter(e.target.value)}
-              MenuProps={{ disableScrollLock: true }}
-            >
-              <MenuItem value="all">Todos</MenuItem>
-              <MenuItem value="pending">Pendiente</MenuItem>
-              <MenuItem value="approved">Aprobada</MenuItem>
-              <MenuItem value="cancelled">Cancelada</MenuItem>
-              <MenuItem value="rejected">Rechazada</MenuItem>
-              <MenuItem value="expired">Caducada</MenuItem>
-              <MenuItem value="reserved">En Carrito</MenuItem>
-              <MenuItem value="paid">Pagada</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
         <Table>
           <TableHead>
             <TableRow>

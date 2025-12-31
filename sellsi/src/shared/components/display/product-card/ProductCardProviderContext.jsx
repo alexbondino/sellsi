@@ -71,8 +71,9 @@ const ProductCardProviderContext = React.memo(({ product }) => {
           invoking UniversalProductImage and thumbnail hooks. */}
       <Box sx={{ 
         width: '100%', 
-        height: { xs: 160, sm: 170, md: 187.5, lg: 243.75, xl: 260 }, 
-        minHeight: { xs: 160 }, 
+        // ✅ UNIFICADO: Mismas dimensiones que ProductCardImage (buyer) para consistencia visual
+        height: { xs: 142, sm: 154, md: 187.5, lg: 243.75, xl: 260 }, 
+        minHeight: { xs: 142 }, 
         boxSizing: 'border-box' 
       }}>
         <Box
@@ -138,7 +139,7 @@ const ProductCardProviderContext = React.memo(({ product }) => {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             display: '-webkit-box',
-            WebkitLineClamp: { xs: 6, sm: 6, md: 6, lg: 8 }, // ✅ MOBILE FIX: Menos líneas en mobile
+            WebkitLineClamp: { xs: 5, sm: 5, md: 6, lg: 8 }, // Reduced mobile lines to avoid overly long descriptions
             WebkitBoxOrient: 'vertical',
             // Changed from 'justify' to 'left' to avoid uneven word spacing
             // when text is narrow; 'start' can be used for RTL-awareness.
@@ -151,7 +152,7 @@ const ProductCardProviderContext = React.memo(({ product }) => {
           {descripcion_proveedor && descripcion_proveedor.trim().length > 0
             ? descripcion_proveedor
             : PRODUCTS_TEXTS.providerNoDescription}
-        </Typography>
+        </Typography>  
       </CardContent>
 
       <CardActions

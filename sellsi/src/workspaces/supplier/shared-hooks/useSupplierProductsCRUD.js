@@ -376,7 +376,6 @@ const useSupplierProductsCRUD = create((set, get) => ({
    * Eliminar producto
    */
   deleteProduct: async productId => {
-    console.log('[CRUD deleteProduct] start', productId);
     set(state => ({
       operationStates: {
         ...state.operationStates,
