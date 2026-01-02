@@ -124,7 +124,7 @@ const PriceTiers = ({
           gutterBottom
           sx={{ fontWeight: 600, mb: 0 }}
         >
-          Define diferentes precios según la cantidad vendida{' '}
+          Define diferentes precios según la cantidad vendida (IVA incluido){' '}
         </Typography>
         {/* 📊 Contador de tramos para móvil */}
         {isMobile && (
