@@ -9,6 +9,7 @@ import {
   Badge,
   Divider,
   MenuItem,
+  Menu,
 } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { supabase } from '../../../services/supabase';
@@ -38,8 +39,65 @@ export default function TopBarContainer({
   const itemsInCart = useCartStore(state => state.items).length;
   const { isRoleLoading } = useRole();
 
+  // ====== TODOS LOS HOOKS DEBEN IR AQUÍ ARRIBA ======
+  const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
+  const [profileAnchor, setProfileAnchor] = useState(null);
+  const [notifAnchor, setNotifAnchor] = useState(null);
+  const [notifModalOpen, setNotifModalOpen] = useState(null);
+  const mobileSearchInputRef = useRef(null);
+
+  const {
+    loginOpen: openLoginModal,
+    registerOpen: openRegisterModal,
+    openLogin: openLoginModalOpen,
+    openRegister: openRegisterModalOpen,
+    closeLogin: closeLoginModal,
+    closeRegister: closeRegisterModal,
+    transitionLoginToRegister: handleLoginToRegisterTransition,
+  } = useAuthModalBus({ enableLegacyEventListeners: true });
+
+  const { currentRole } = useRoleFromRoute({
+    pathname: location.pathname,
+    isBuyerProp: isBuyer,
+    isRoleLoading,
+  });
+
+  const notifCtx = useNotificationsContext?.() || null;
+  const marketplaceSearchBus = useMarketplaceSearchBus();
+
+  const isBuyerRole = currentRole === 'buyer';
+  const {
+    term: mobileSearch,
+    inputProps: mobileSearchInputProps,
+    submit: submitMobileSearch,
+  } = useMarketplaceSearch({
+    enabled: !!session,
+    pathname: location.pathname,
+    isBuyerRole,
+    onReactive: t => {
+      marketplaceSearchBus?.updateExternalSearchTerm?.(t);
+    },
+    onNavigateOutside: t =>
+      navigate('/buyer/marketplace', {
+        state: { initialSearch: t, fromTopBar: true },
+      }),
+  });
+
+  // ====== FIN DE HOOKS ======
+
   // Detectar si estamos en onboarding para mostrar TopBar simplificado
   const isOnboarding = location.pathname.startsWith('/onboarding');
+  const isLoggedIn = !!session;
+
+  // Handler de logout (usado tanto en onboarding como en TopBar normal)
+  const handleLogout = async () => {
+    setProfileAnchor(null);
+    setMobileMenuAnchor(null);
+    try {
+      await supabase.auth.signOut();
+    } catch (_) {}
+    navigate('/');
+  };
 
   // ====== TopBar simplificado para Onboarding ======
   if (isOnboarding) {
@@ -95,66 +153,33 @@ export default function TopBarContainer({
               }}
             />
           </Box>
-          {/* Espacio vacío a la derecha - sin elementos */}
-          <Box />
+          {/* Perfil con opción de cerrar sesión */}
+          <Box>
+            <ProfileAvatarButton
+              logoUrl={logoUrl}
+              onClick={e => setProfileAnchor(e.currentTarget)}
+              expanded={Boolean(profileAnchor)}
+            />
+            <Menu
+              anchorEl={profileAnchor}
+              open={Boolean(profileAnchor)}
+              onClose={() => setProfileAnchor(null)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
+            </Menu>
+          </Box>
         </Box>
       </Box>
     );
   }
 
-  const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
-  const [profileAnchor, setProfileAnchor] = useState(null);
-
-  const {
-    loginOpen: openLoginModal,
-    registerOpen: openRegisterModal,
-    openLogin: openLoginModalOpen,
-    openRegister: openRegisterModalOpen,
-    closeLogin: closeLoginModal,
-    closeRegister: closeRegisterModal,
-    transitionLoginToRegister: handleLoginToRegisterTransition,
-  } = useAuthModalBus({ enableLegacyEventListeners: true }); // ✅ Habilitar eventos legacy
-
-  const { currentRole } = useRoleFromRoute({
-    pathname: location.pathname,
-    isBuyerProp: isBuyer,
-    isRoleLoading,
-  });
-  const isLoggedIn = !!session;
-
+  // ====== TopBar normal (no onboarding) ======
   const handleOpenMobileMenu = e => setMobileMenuAnchor(e.currentTarget);
   const handleCloseMobileMenu = () => setMobileMenuAnchor(null);
   const handleOpenProfileMenu = e => setProfileAnchor(e.currentTarget);
   const handleCloseProfileMenu = () => setProfileAnchor(null);
-
-  const handleLogout = async () => {
-    if (!session) {
-      handleCloseProfileMenu();
-      handleCloseMobileMenu();
-      navigate('/');
-      return;
-    }
-    try {
-      const { data } = await supabase.auth.getSession();
-      if (!data?.session) {
-        handleCloseProfileMenu();
-        handleCloseMobileMenu();
-        navigate('/');
-        return;
-      }
-    } catch (_) {
-      handleCloseProfileMenu();
-      handleCloseMobileMenu();
-      navigate('/');
-      return;
-    }
-    try {
-      await supabase.auth.signOut();
-    } catch (_) {}
-    handleCloseProfileMenu();
-    handleCloseMobileMenu();
-    navigate('/');
-  };
 
   const handleNavigate = ref => {
     handleCloseMobileMenu();
@@ -228,9 +253,6 @@ export default function TopBarContainer({
       expanded={Boolean(profileAnchor)}
     />
   );
-  const notifCtx = useNotificationsContext?.() || null;
-  const [notifAnchor, setNotifAnchor] = useState(null);
-  const [notifModalOpen, setNotifModalOpen] = useState(false);
   const handleOpenNotif = e => setNotifAnchor(e.currentTarget);
   const handleCloseNotif = () => setNotifAnchor(null);
   const handleViewAllNotif = () => {
@@ -390,26 +412,6 @@ export default function TopBarContainer({
     ];
   }
 
-  const isBuyerRole = currentRole === 'buyer';
-  const marketplaceSearchBus = useMarketplaceSearchBus();
-  const {
-    term: mobileSearch,
-    inputProps: mobileSearchInputProps,
-    submit: submitMobileSearch,
-  } = useMarketplaceSearch({
-    enabled: !!session,
-    pathname: location.pathname,
-    isBuyerRole,
-    onReactive: t => {
-      // Legacy fallback eliminado: se asume provider presente
-      marketplaceSearchBus?.updateExternalSearchTerm?.(t);
-    },
-    onNavigateOutside: t =>
-      navigate('/buyer/marketplace', {
-        state: { initialSearch: t, fromTopBar: true },
-      }),
-  });
-  const mobileSearchInputRef = useRef(null);
   const handleMobileSearchButton = () => submitMobileSearch();
 
   return (
