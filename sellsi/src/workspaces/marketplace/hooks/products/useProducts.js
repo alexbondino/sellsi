@@ -4,6 +4,39 @@ import { regiones as CHILE_REGIONES } from '../../../../utils/chileData';
 import { filterActiveProducts } from '../../../../utils/productActiveStatus';
 import { ENV } from '../../../../utils/env';
 
+// Helper para normalizar URLs de thumbnails
+// Si es path relativo, construye la URL completa de Supabase Storage
+function normalizeThumbnailUrl(url, supplierId, productId) {
+  if (!url) return null;
+  // Si ya es URL absoluta, retornar tal cual
+  if (/^https?:\/\//.test(url)) return url;
+  // Si es path relativo, construir URL de storage
+  if (supplierId && productId) {
+    const filename = url.split('/').pop();
+    const correctPath = `${supplierId}/${productId}/${filename}`;
+    const { data } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(correctPath);
+    return data?.publicUrl || null;
+  }
+  return null;
+}
+
+// Helper para normalizar objeto thumbnails completo
+function normalizeThumbnails(thumbnails, supplierId, productId) {
+  if (!thumbnails || typeof thumbnails !== 'object') return null;
+  return {
+    desktop: normalizeThumbnailUrl(thumbnails.desktop, supplierId, productId),
+    tablet: normalizeThumbnailUrl(thumbnails.tablet, supplierId, productId),
+    mobile: normalizeThumbnailUrl(thumbnails.mobile, supplierId, productId),
+    minithumb: normalizeThumbnailUrl(
+      thumbnails.minithumb,
+      supplierId,
+      productId
+    ),
+  };
+}
+
 // --- Parche mínimo anti redundancia (StrictMode + doble montaje) ---
 const PRODUCTS_CACHE_TTL = 60_000; // 60 segundos
 let productsCache = { data: null, fetchedAt: 0, inFlight: null };
@@ -209,7 +242,7 @@ export function useProducts() {
       const { data, error: pErr } = await supabase
         .from('products')
         .select(
-          'productid,supplier_id,productnm,price,category,product_type,productqty,minimum_purchase,negotiable,is_active,free_shipping_enabled,free_shipping_min_quantity,product_images(image_url,thumbnail_url,thumbnails),product_delivery_regions(region)'
+          'productid,supplier_id,productnm,price,category,product_type,productqty,minimum_purchase,negotiable,is_active,free_shipping_enabled,free_shipping_min_quantity,product_images(image_url,thumbnail_url,thumbnails,image_order),product_delivery_regions(region)'
         )
         .eq('is_active', true);
 
@@ -270,6 +303,35 @@ export function useProducts() {
                 .filter(Boolean)
             : [];
 
+          // Extraer imágenes del producto (ordenadas por image_order si existe)
+          const productImages = (p.product_images || []).sort(
+            (a, b) => (a.image_order ?? 999) - (b.image_order ?? 999)
+          );
+          const firstImage = productImages[0] || {};
+
+          // Normalizar URLs de imágenes (convertir paths relativos a URLs completas)
+          const imagen =
+            normalizeThumbnailUrl(
+              firstImage.image_url,
+              p.supplier_id,
+              p.productid
+            ) ||
+            firstImage.image_url ||
+            null;
+          const thumbnail_url =
+            normalizeThumbnailUrl(
+              firstImage.thumbnail_url,
+              p.supplier_id,
+              p.productid
+            ) ||
+            firstImage.thumbnail_url ||
+            null;
+          const thumbnails = normalizeThumbnails(
+            firstImage.thumbnails,
+            p.supplier_id,
+            p.productid
+          );
+
           return {
             id: p.productid,
             productid: p.productid,
@@ -284,9 +346,9 @@ export function useProducts() {
               usersMap[p.supplier_id]?.descripcion_proveedor,
             verified: usersMap[p.supplier_id]?.verified || false,
             proveedorVerificado: usersMap[p.supplier_id]?.verified || false,
-            imagen: undefined,
-            thumbnails: undefined,
-            thumbnail_url: undefined,
+            imagen,
+            thumbnails,
+            thumbnail_url,
             precio: basePrice,
             precioOriginal: p.price || null,
             descuento: 0,
