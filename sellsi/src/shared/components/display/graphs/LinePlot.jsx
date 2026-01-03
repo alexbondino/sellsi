@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -10,22 +10,9 @@ import {
 import { LineChart } from '@mui/x-charts/LineChart';
 import { formatCurrency } from '../../../utils/formatters';
 
-/**
- * Componente reutilizable de gráfico de líneas con puntos
- *
- * @param {Object} props
- * @param {string} props.title - Título del gráfico
- * @param {React.ReactNode} props.icon - Icono para el título
- * @param {Array} props.data - Array de objetos con { dateLabel, value }
- * @param {boolean} props.loading - Estado de carga
- * @param {number} props.period - Período seleccionado (7, 14, 30)
- * @param {function} props.onPeriodChange - Callback cuando cambia el período
- * @param {string} props.valueLabel - Etiqueta para los valores (ej: "Ventas", "Solicitudes")
- * @param {string} props.color - Color principal del gráfico
- * @param {boolean} props.isCurrency - Si los valores son moneda
- * @param {Array} props.summaryItems - Array de { label, value, color } para mostrar resumen
- * @param {string} props.emptyMessage - Mensaje cuando no hay datos
- */
+const MIN_Y_MAX_CURRENCY = 100000;
+const MIN_Y_MAX_NON_CURRENCY = 10;
+
 const LinePlot = ({
   title,
   icon,
@@ -39,18 +26,50 @@ const LinePlot = ({
   summaryItems = [],
   emptyMessage = 'No hay datos en este período',
 }) => {
-  const formatValue = value => {
-    if (isCurrency) {
-      return formatCurrency(value);
-    }
-    return value.toLocaleString('es-CL');
-  };
-
   const handlePeriodChange = (event, newPeriod) => {
     if (newPeriod !== null && onPeriodChange) {
       onPeriodChange(newPeriod);
     }
   };
+
+  // ✅ Normaliza valores a number
+  const safeData = useMemo(
+    () =>
+      (data || []).map(d => ({
+        ...d,
+        value: Number(d.value),
+      })),
+    [data]
+  );
+
+  // ✅ Dominio Y robusto (0 → max, con piso mínimo distinto según moneda / no-moneda)
+  const yMax = useMemo(() => {
+    const values = safeData.map(d => d.value).filter(v => Number.isFinite(v));
+
+    if (!values.length)
+      return isCurrency ? MIN_Y_MAX_CURRENCY : MIN_Y_MAX_NON_CURRENCY;
+
+    const maxValue = Math.max(...values);
+
+    if (isCurrency) {
+      return Math.max(maxValue, MIN_Y_MAX_CURRENCY);
+    }
+
+    // ✅ cuando NO es moneda: rango mínimo 0–10 (por ejemplo "solicitudes")
+    return Math.max(maxValue, MIN_Y_MAX_NON_CURRENCY);
+  }, [safeData, isCurrency]);
+
+  const formatValue = value => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return '-';
+
+    if (isCurrency) return formatCurrency(n);
+
+    return n.toLocaleString('es-CL');
+  };
+
+  // ✅ Centrado visual real
+  const sideMargin = isCurrency ? 55 : 40;
 
   if (loading) {
     return (
@@ -88,7 +107,7 @@ const LinePlot = ({
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {icon}
-          <Typography variant="h6" fontWeight={600} color="text.primary">
+          <Typography variant="h6" fontWeight={600}>
             {title}
           </Typography>
         </Box>
@@ -109,9 +128,6 @@ const LinePlot = ({
               '& .Mui-selected': {
                 bgcolor: 'primary.main',
                 color: 'white',
-                '&:hover': {
-                  bgcolor: 'primary.dark',
-                },
               },
             }}
           >
@@ -122,34 +138,39 @@ const LinePlot = ({
         )}
       </Box>
 
-      {/* Resumen de métricas */}
+      {/* Resumen */}
       {summaryItems.length > 0 && (
-        <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-          {summaryItems.map((item, index) => (
-            <Box key={index}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 3,
+            mb: 2,
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          {summaryItems.map((item, i) => (
+            <Box key={i} sx={{ textAlign: 'center' }}>
               <Typography variant="caption" color="text.secondary">
                 {item.label}
               </Typography>
               <Typography
-                variant="body1"
                 fontWeight={600}
-                color={item.color || 'text.primary'}
                 sx={{ fontSize: '0.95rem' }}
+                color={item.color || 'text.primary'}
               >
-                {isCurrency
-                  ? formatCurrency(item.value)
-                  : item.value.toLocaleString('es-CL')}
+                {formatValue(item.value)}
               </Typography>
             </Box>
           ))}
         </Box>
       )}
 
-      {/* Gráfico */}
+      {/* Chart */}
       <Box sx={{ flexGrow: 1, minHeight: 200 }}>
-        {data.length > 0 ? (
+        {safeData.length > 0 ? (
           <LineChart
-            dataset={data}
+            dataset={safeData}
             xAxis={[
               {
                 dataKey: 'dateLabel',
@@ -164,31 +185,31 @@ const LinePlot = ({
             ]}
             yAxis={[
               {
-                tickLabelStyle: { fontSize: 10 },
-                valueFormatter: value => formatValue(value),
                 min: 0,
+                max: yMax,
+                tickLabelStyle: { fontSize: 10 },
+                valueFormatter: v => formatValue(v),
               },
             ]}
             series={[
               {
                 dataKey: 'value',
-                color: color,
+                color,
                 showMark: true,
                 curve: 'linear',
-                valueFormatter: value => formatValue(value),
+                valueFormatter: v => formatValue(v),
               },
             ]}
             height={220}
             margin={{
-              left: isCurrency ? 65 : 45,
-              right: 15,
+              left: sideMargin,
+              right: sideMargin,
               top: 15,
               bottom: period > 14 || period === 'ytd' ? 50 : 35,
             }}
             sx={{
-              '& .MuiLineElement-root': {
-                strokeWidth: 2,
-              },
+              width: '100%',
+              '& .MuiLineElement-root': { strokeWidth: 2 },
               '& .MuiMarkElement-root': {
                 stroke: color,
                 strokeWidth: 2,
@@ -196,14 +217,11 @@ const LinePlot = ({
                 r: 3,
               },
             }}
-            slotProps={{
-              legend: { hidden: true },
-            }}
+            slotProps={{ legend: { hidden: true } }}
           />
         ) : (
           <Box
             sx={{
-              height: '100%',
               minHeight: 200,
               display: 'flex',
               alignItems: 'center',
@@ -212,7 +230,7 @@ const LinePlot = ({
               borderRadius: 2,
             }}
           >
-            <Typography color="text.secondary" variant="body2">
+            <Typography variant="body2" color="text.secondary">
               {emptyMessage}
             </Typography>
           </Box>
