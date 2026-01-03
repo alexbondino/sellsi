@@ -256,8 +256,7 @@ const TransferInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Debe coincidir exactamente con el nombre registrado en tu cuenta
-              bancaria.
+              Debe coincidir exactamente con el nombre registrado en tu banco
             </Typography>
           </Box>
 
@@ -269,8 +268,8 @@ const TransferInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              El RUT asociado a la cuenta bancaria. Puede ser diferente al RUT
-              de facturación si la cuenta es de otra persona o empresa.
+              Corresponde al RUT de la cuenta bancaria. Puede ser distinto al
+              RUT de facturación si la cuenta pertenece a otra persona o empresa
             </Typography>
           </Box>
 
@@ -283,7 +282,7 @@ const TransferInfoSection = ({
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
               Selecciona tu banco y tipo de cuenta (corriente, vista o ahorro).
-              Ingresa el número de cuenta completo sin guiones.
+              Ingresa el número de cuenta completo, sin puntos ni guiones.
             </Typography>
           </Box>
 
@@ -295,8 +294,16 @@ const TransferInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Recibirás notificaciones de transferencias realizadas a este
-              correo electrónico.
+              Aquí recibirás notificaciones cuando se realicen transferencias.
+            </Typography>
+          </Box>
+          <Box>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.primary', display: 'block', mt: 0.5 }}
+            >
+              🔒 Tus datos bancarios se usan únicamente para procesar pagos y no
+              se comparten con terceros.
             </Typography>
           </Box>
         </Box>

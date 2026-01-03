@@ -90,7 +90,7 @@ const BillingInfoSection = ({
 
           {/* RUT */}
           <TextField
-            label="RUT"
+            label="RUT de Facturación"
             value={formData.billingRut || ''}
             onChange={e => {
               const raw = e.target.value.replace(/[^0-9kK]/g, '');
@@ -128,7 +128,7 @@ const BillingInfoSection = ({
 
           {/* Giro */}
           <TextField
-            label="Giro"
+            label="Giro Comercial"
             value={formData.businessLine || ''}
             onChange={e => onFieldChange('businessLine', e.target.value)}
             fullWidth
@@ -150,7 +150,7 @@ const BillingInfoSection = ({
 
           {/* Dirección */}
           <TextField
-            label="Dirección"
+            label="Dirección Fiscal"
             value={formData.billingAddress || ''}
             onChange={e => onFieldChange('billingAddress', e.target.value)}
             fullWidth
@@ -297,8 +297,20 @@ const BillingInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Si compras, los proveedores usarán estos datos para emitir tus
-              facturas. Si vendes, Sellsi te facturará a estos datos.
+              Estos datos se usarán para la emisión de documentos tributarios.
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+            >
+              👉 Si compras, los proveedores utilizarán esta información para
+              emitir tus facturas.
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+            >
+              👉 Si vendes, Sellsi emitirá sus facturas a estos datos.
             </Typography>
           </Box>
 
@@ -310,7 +322,7 @@ const BillingInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Nombre legal de tu empresa o tu nombre si eres persona natural con
+              Nombre legal de la empresa o tu nombre si eres persona natural con
               giro.
             </Typography>
           </Box>
@@ -324,7 +336,7 @@ const BillingInfoSection = ({
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
               RUT de la empresa o persona a quien se emitirá la factura. Debe
-              estar registrado en el SII.
+              estar registrado y activo en el SII.
             </Typography>
           </Box>
 
@@ -348,8 +360,19 @@ const BillingInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Dirección registrada en el SII. Esta aparecerá en las facturas que
-              recibas.
+              Dirección registrada en el SII. Esta aparecerá en las facturas
+              emitidas.
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Región y Comuna
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+            >
+              Corresponden a la dirección fiscal registrada.
             </Typography>
           </Box>
         </Box>

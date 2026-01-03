@@ -225,8 +225,8 @@ const ShippingInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Selecciona primero la región para habilitar el selector de
-              comunas. Esto ayuda a calcular tiempos y costos de envío.
+              Selecciona primero la región para habilitar el listado de comunas.
+              Esta información se usa para calcular tiempos y costos de envío.
             </Typography>
           </Box>
 
@@ -238,8 +238,8 @@ const ShippingInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Incluye el nombre de la calle, número y cualquier referencia
-              adicional como departamento u oficina.
+              Ingresa la calle y número exactamente como figura en la entrega.
+              Puedes agregar referencias como departamento u oficina si aplica.
             </Typography>
           </Box>
 
@@ -251,8 +251,9 @@ const ShippingInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Asegúrate de que la dirección sea correcta y esté completa para
-              evitar problemas en la entrega de tus pedidos.
+              Asegúrate de que la dirección esté completa y correcta para evitar
+              retrasos en la entrega. Puedes actualizar esta información en
+              cualquier momento.
             </Typography>
           </Box>
         </Box>

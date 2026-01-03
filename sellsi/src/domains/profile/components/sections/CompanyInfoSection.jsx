@@ -253,8 +253,25 @@ const CompanyInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Esta será tu vista predeterminada al iniciar sesión. Puedes
-              cambiar entre roles desde el menú superior en cualquier momento.
+              Define qué verás al iniciar sesión.
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+            >
+              👉 Comprador: si buscas productos o proveedores.
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+            >
+              👉 Proveedor: si vendes o cotizas productos.
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+            >
+              (Puedes cambiarlo en cualquier momento)
             </Typography>
           </Box>
 
@@ -266,8 +283,8 @@ const CompanyInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Tu correo es tu identificador único en la plataforma. Mantén tu
-              contraseña segura y cámbiala periódicamente.
+              Tu correo es tu identificador único. Recomendamos usar uno
+              corporativo si representas a una empresa.
             </Typography>
           </Box>
 
@@ -279,8 +296,8 @@ const CompanyInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Se usará para notificaciones importantes y comunicación con
-              compradores/proveedores.
+              Usado solo para notificaciones importantes y contacto comercial.
+              No será público
             </Typography>
           </Box>
 
@@ -292,8 +309,9 @@ const CompanyInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Selecciona los tipos de documentos que ofrecerás al vender en el
-              Marketplace (boleta, factura, etc.).
+              Selecciona el tipo de documento que emitirás en tus ventas. Esta
+              configuración no limita tu operación y puede modificarse en
+              cualquier momento.
             </Typography>
           </Box>
 
