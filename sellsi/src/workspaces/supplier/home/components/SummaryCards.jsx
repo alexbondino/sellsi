@@ -17,24 +17,17 @@ const SummaryCards = ({
   products = [],
   totalSales = 0,
   outOfStock = 0,
-  weeklyRequestsCount = 0,
+  monthlyRequestsCount = 0,
   productsActive = 0,
 }) => {
   const chartData = {
     products: generateChartData(productsActive ?? products.length, 'up'),
     sales: generateChartData(totalSales / 1000, 'up'),
     outOfStock: generateChartData(outOfStock, 'down'),
-    requests: generateChartData(weeklyRequestsCount, 'neutral'),
+    requests: generateChartData(monthlyRequestsCount, 'neutral'),
   };
 
   const dashboardData = [
-    {
-      title: 'Productos Activos',
-      value: formatNumber(productsActive ?? products.length),
-      trend: 'up',
-      data: chartData.products,
-      icon: InventoryIcon,
-    },
     {
       title: 'Ventas Este Mes',
       value: formatCurrency(totalSales || 0),
@@ -43,18 +36,25 @@ const SummaryCards = ({
       icon: AttachMoneyIcon,
     },
     {
+      title: 'Solicitudes Este Mes',
+      value: Number(monthlyRequestsCount || 0).toString(),
+      trend: 'neutral',
+      data: chartData.requests,
+      icon: AssignmentIcon,
+    },
+    {
+      title: 'Productos Activos',
+      value: formatNumber(productsActive ?? products.length),
+      trend: 'up',
+      data: chartData.products,
+      icon: InventoryIcon,
+    },
+    {
       title: 'Productos Sin Stock',
       value: outOfStock.toString(),
       trend: outOfStock > 5 ? 'down' : 'neutral',
       data: chartData.outOfStock,
       icon: WarningIcon,
-    },
-    {
-      title: 'Solicitudes Semanales',
-      value: Number(weeklyRequestsCount || 0).toString(),
-      trend: 'neutral',
-      data: chartData.requests,
-      icon: AssignmentIcon,
     },
   ];
 

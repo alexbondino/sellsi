@@ -3,17 +3,13 @@ import React, { Suspense, useEffect } from 'react';
 import {
   Box,
   Grid,
-  Button,
   Container,
   ThemeProvider,
-  CircularProgress,
   Skeleton,
   useTheme,
   useMediaQuery,
-  Tooltip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import AddIcon from '@mui/icons-material/Add';
 import { useSupplierDashboard } from '../../shared-hooks/useSupplierDashboard';
 import { useSupplierProducts } from '../../shared-hooks/useSupplierProducts';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
@@ -85,8 +81,8 @@ const ProviderHome = () => {
     loadProducts,
   } = useSupplierProducts();
 
-  // Contador real de solicitudes semanales (órdenes pagadas últimos 7 días)
-  const weeklyRequestsCount = metrics?.weeklyRequestsCount ?? 0;
+  // Contador de solicitudes mensuales (órdenes del mes actual)
+  const monthlyRequestsCount = metrics?.monthlyRequestsCount ?? 0;
   const totalSales = metrics?.totalRevenue || 0;
 
   // Combine loading and error states
@@ -195,44 +191,12 @@ const ProviderHome = () => {
                       products={activeProducts}
                       totalSales={totalSales}
                       outOfStock={productsOutOfStock}
-                      weeklyRequestsCount={weeklyRequestsCount}
+                      monthlyRequestsCount={monthlyRequestsCount}
                       productsActive={productsActive}
+                      onNewProduct={handleNewProduct}
                     />
                   </Suspense>
                 </Box>
-
-                <Box sx={{ mb: 4 }}>
-                  <Tooltip
-                    title="Crea y publica un producto de manera individual con todos sus detalles"
-                    placement="bottom"
-                    arrow
-                  >
-                    <Button
-                      variant="contained"
-                      size="large"
-                      startIcon={<AddIcon />}
-                      fullWidth
-                      sx={{
-                        py: 2,
-                        borderRadius: 2,
-                        fontSize: '1.1rem',
-                        fontWeight: 600,
-                        textTransform: 'none',
-                        boxShadow: 'rgba(99, 102, 241, 0.16) 0px 4px 16px',
-                        '&:hover': {
-                          boxShadow: 'rgba(99, 102, 241, 0.24) 0px 6px 20px',
-                          transform: 'translateY(-1px)',
-                        },
-                        transition: 'all 0.2s ease-in-out',
-                      }}
-                      onClick={handleNewProduct}
-                    >
-                      Nuevo Producto
-                    </Button>
-                  </Tooltip>
-                </Box>
-
-                {/* Gráfico eliminado para reducir JS (recharts purgado) */}
               </Grid>
             </Grid>
           </Container>
