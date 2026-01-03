@@ -37,12 +37,12 @@ jobs:
               echo ""
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
-            # También dejamos título vacío por consistencia
             echo "pr_title=" >> "$GITHUB_OUTPUT"
+            echo "pr_author=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          # Llamar a la API de GitHub para obtener body y título del PR
+          # Llamar a la API de GitHub para obtener body, título y autor del PR
           PR_JSON=$(curl -sS \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
@@ -50,6 +50,7 @@ jobs:
 
           PR_BODY=$(echo "$PR_JSON" | jq -r '.body // ""')
           PR_TITLE=$(echo "$PR_JSON" | jq -r '.title // ""')
+          PR_AUTHOR=$(echo "$PR_JSON" | jq -r '.user.login // ""')
 
           {
             echo "pr_description<<EOF"
@@ -57,8 +58,40 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-          # ✅ Output con el título del PR
           echo "pr_title=$PR_TITLE" >> "$GITHUB_OUTPUT"
+          echo "pr_author=$PR_AUTHOR" >> "$GITHUB_OUTPUT"
+          echo "📝 PR Author: $PR_AUTHOR"
+
+      - name: 🗺️ Mapear GitHub user a Jira Account ID
+        id: map_user
+        shell: bash
+        env:
+          PR_AUTHOR: ${{ steps.pr_data.outputs.pr_author }}
+          # Mapeo de usuarios GitHub -> Jira Account IDs
+          # Agrega más usuarios según sea necesario
+          JIRA_USER_MAP: |
+            alexbondino:${{ secrets.JIRA_ACCOUNT_DANIEL }}
+            TheLichKing12:${{ secrets.JIRA_ACCOUNT_KLAUS }}
+        run: |
+          echo "Buscando Jira Account ID para: $PR_AUTHOR"
+
+          # Buscar el accountId en el mapeo
+          JIRA_REPORTER_ID=""
+          while IFS=: read -r github_user jira_id; do
+            if [ "$github_user" = "$PR_AUTHOR" ]; then
+              JIRA_REPORTER_ID="$jira_id"
+              break
+            fi
+          done <<< "$JIRA_USER_MAP"
+
+          if [ -n "$JIRA_REPORTER_ID" ]; then
+            echo "✅ Usuario mapeado: $PR_AUTHOR -> $JIRA_REPORTER_ID"
+          else
+            echo "⚠️ Usuario $PR_AUTHOR no tiene mapeo a Jira, se usará assignee como reporter"
+            JIRA_REPORTER_ID="${{ secrets.JIRA_ASSIGNEE_ID }}"
+          fi
+
+          echo "reporter_id=$JIRA_REPORTER_ID" >> "$GITHUB_OUTPUT"
 
       - name: 🏗️ Construir payload
         id: build_payload
@@ -95,6 +128,7 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: DEP
           JIRA_ASSIGNEE_ID: ${{ secrets.JIRA_ASSIGNEE_ID }}
+          JIRA_REPORTER_ID: ${{ steps.map_user.outputs.reporter_id }}
           SUMMARY: ${{ steps.build_payload.outputs.summary }}
           DESCRIPTION: ${{ steps.build_payload.outputs.description }}
         shell: bash
@@ -107,6 +141,7 @@ jobs:
             --arg summary "$SUMMARY" \
             --arg desc "$DESCRIPTION" \
             --arg assignee "$JIRA_ASSIGNEE_ID" \
+            --arg reporter "$JIRA_REPORTER_ID" \
             '
               def to_adf($text):
                 ($text | split("\n")) as $lines |
@@ -166,6 +201,13 @@ jobs:
                   assignee: (
                     if $assignee != "" then
                       { id: $assignee }
+                    else
+                      null
+                    end
+                  ),
+                  reporter: (
+                    if $reporter != "" then
+                      { id: $reporter }
                     else
                       null
                     end
