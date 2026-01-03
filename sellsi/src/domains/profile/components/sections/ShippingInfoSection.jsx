@@ -1,179 +1,261 @@
 import React from 'react';
-import { 
-  Box, 
-  Typography, 
-  TextField, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem 
+import {
+  Box,
+  Typography,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
-import { 
-  regiones, 
-  getComunasByRegion 
-} from '../../../../utils/chileData';
-import { 
-  getHighlightFieldStyle, 
-  getHighlightHelperText 
+import { regiones, getComunasByRegion } from '../../../../utils/chileData';
+import {
+  getHighlightFieldStyle,
+  getHighlightHelperText,
 } from '../../../../utils/fieldHighlightStyles';
 
 /**
  * Sección de Dirección de Despacho del perfil
- * Incluye: región, comuna, dirección, número, departamento
+ * Layout: 2 columnas - campos a la izquierda, descripciones a la derecha
  */
-const ShippingInfoSection = ({ 
-  formData, 
+const ShippingInfoSection = ({
+  formData,
   onFieldChange,
   onRegionChange,
   showErrors = false,
-  shouldHighlight = false // Nueva prop para highlight visual consistente
+  shouldHighlight = false,
 }) => {
-  
-  // Combinar showErrors (validación) con shouldHighlight (redirección desde modal)
   const isHighlighted = showErrors || shouldHighlight;
 
-  const handleRegionChange = (event) => {
+  const handleRegionChange = event => {
     const value = event.target.value;
     onRegionChange('shipping', 'shippingRegion', 'shippingCommune', value);
   };
 
   return (
     <Box id="shipping-info-section" sx={{ p: 3, height: 'fit-content' }}>
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h6">Dirección de Despacho</Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          Aquí enviaremos los productos que compres en el Marketplace
+      {/* Header de la sección */}
+      <Box sx={{ mb: 2.5 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          Dirección de Despacho
         </Typography>
-        <Box sx={{ mt: 1, borderBottom: 2, borderColor: 'primary.main' }} />
+        <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+          Dirección donde recibirás tus compras
+        </Typography>
+        <Box sx={{ mt: 1.5, borderBottom: 2, borderColor: 'primary.main' }} />
       </Box>
-      
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <FormControl 
-          fullWidth 
-          size="small" 
-          error={isHighlighted && !formData.shippingRegion}
-          sx={getHighlightFieldStyle(formData.shippingRegion, isHighlighted)}
-        >
-          <InputLabel sx={isHighlighted && !formData.shippingRegion ? { color: '#f44336', fontWeight: 'bold' } : {}}>
-            Región
-          </InputLabel>
-          <Select
-            value={formData.shippingRegion || ''}
-            onChange={handleRegionChange}
-            label="Región"
-            MenuProps={{ 
-              disableScrollLock: true,
-              disablePortal: false,
-              anchorOrigin: {
-                vertical: 'bottom',
-                horizontal: 'left',
-              },
-              transformOrigin: {
-                vertical: 'top',
-                horizontal: 'left',
-              },
-              PaperProps: {
-                style: {
-                  maxHeight: 48 * 5 + 8,
-                  overflowX: 'hidden',
-                  overflowY: 'auto',
-                },
-              },
-            }}
+
+      {/* Layout 2 columnas */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+          gap: 3,
+        }}
+      >
+        {/* Columna izquierda - Campos */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          {/* Región */}
+          <FormControl
+            fullWidth
+            size="small"
+            error={isHighlighted && !formData.shippingRegion}
+            sx={getHighlightFieldStyle(formData.shippingRegion, isHighlighted)}
           >
-            {regiones.map(region => (
-              <MenuItem key={region.value} value={region.value}>
-                {region.label}
-              </MenuItem>
-            ))}
-          </Select>
-          {isHighlighted && !formData.shippingRegion && (
-            <Typography variant="caption" color="error">Región es obligatoria</Typography>
-          )}
-        </FormControl>
-        
-        <FormControl 
-          fullWidth 
-          size="small" 
-          disabled={!formData.shippingRegion} 
-          error={isHighlighted && !formData.shippingCommune}
-          sx={getHighlightFieldStyle(formData.shippingCommune, isHighlighted)}
-        >
-          <InputLabel sx={isHighlighted && !formData.shippingCommune ? { color: '#f44336', fontWeight: 'bold' } : {}}>
-            Comuna
-          </InputLabel>
-          <Select
-            value={formData.shippingCommune || ''}
-            onChange={(e) => {
-              onFieldChange('shippingCommune', e.target.value);
-            }}
-            label="Comuna"
-            MenuProps={{ 
-              disableScrollLock: true,
-              disablePortal: false,
-              anchorOrigin: {
-                vertical: 'bottom',
-                horizontal: 'left',
-              },
-              transformOrigin: {
-                vertical: 'top',
-                horizontal: 'left',
-              },
-              PaperProps: {
-                style: {
-                  maxHeight: 48 * 5 + 8,
-                  overflowX: 'hidden',
-                  overflowY: 'auto',
-                },
-              },
-            }}
+            <InputLabel
+              sx={
+                isHighlighted && !formData.shippingRegion
+                  ? { color: '#f44336', fontWeight: 'bold' }
+                  : {}
+              }
+            >
+              Región
+            </InputLabel>
+            <Select
+              value={formData.shippingRegion || ''}
+              onChange={handleRegionChange}
+              label="Región"
+              MenuProps={{
+                disableScrollLock: true,
+                PaperProps: { style: { maxHeight: 48 * 5 + 8 } },
+              }}
+            >
+              {regiones.map(region => (
+                <MenuItem key={region.value} value={region.value}>
+                  {region.label}
+                </MenuItem>
+              ))}
+            </Select>
+            {isHighlighted && !formData.shippingRegion && (
+              <Typography variant="caption" color="error">
+                Región es obligatoria
+              </Typography>
+            )}
+          </FormControl>
+
+          {/* Comuna */}
+          <FormControl
+            fullWidth
+            size="small"
+            disabled={!formData.shippingRegion}
+            error={isHighlighted && !formData.shippingCommune}
+            sx={getHighlightFieldStyle(formData.shippingCommune, isHighlighted)}
           >
-            {(formData.shippingRegion ? getComunasByRegion(formData.shippingRegion) : []).map(comuna => (
-              <MenuItem key={comuna.value} value={comuna.value}>
-                {comuna.label}
-              </MenuItem>
-            ))}
-          </Select>
-          {isHighlighted && !formData.shippingCommune && (
-            <Typography variant="caption" color="error">Comuna es obligatoria</Typography>
-          )}
-        </FormControl>
-        
-        <TextField
-          label="Dirección de Envío"
-          value={formData.shippingAddress || ''}
-          onChange={(e) => onFieldChange('shippingAddress', e.target.value)}
-          fullWidth
-          variant="outlined"
-          size="small"
-          placeholder="Halimeda 433"
-          error={isHighlighted && !formData.shippingAddress}
-          helperText={getHighlightHelperText(formData.shippingAddress, isHighlighted, '', 'Dirección de envío es obligatoria')}
-          sx={getHighlightFieldStyle(formData.shippingAddress, isHighlighted)}
-        />
-        
-        <TextField
-          label="Dirección Número"
-          value={formData.shippingNumber || ''}
-          onChange={(e) => onFieldChange('shippingNumber', e.target.value)}
-          fullWidth
-          variant="outlined"
-          size="small"
-          type="number"
-          error={isHighlighted && !formData.shippingNumber}
-          helperText={getHighlightHelperText(formData.shippingNumber, isHighlighted, '', 'Número de dirección es obligatorio')}
-          sx={getHighlightFieldStyle(formData.shippingNumber, isHighlighted)}
-        />
-        
-        <TextField
-          label="Dirección Depto."
-          value={formData.shippingDept || ''}
-          onChange={(e) => onFieldChange('shippingDept', e.target.value)}
-          fullWidth
-          variant="outlined"
-          size="small"
-          placeholder="Depto. 101"
-        />
+            <InputLabel
+              sx={
+                isHighlighted && !formData.shippingCommune
+                  ? { color: '#f44336', fontWeight: 'bold' }
+                  : {}
+              }
+            >
+              Comuna
+            </InputLabel>
+            <Select
+              value={formData.shippingCommune || ''}
+              onChange={e => onFieldChange('shippingCommune', e.target.value)}
+              label="Comuna"
+              MenuProps={{
+                disableScrollLock: true,
+                PaperProps: { style: { maxHeight: 48 * 5 + 8 } },
+              }}
+            >
+              {(formData.shippingRegion
+                ? getComunasByRegion(formData.shippingRegion)
+                : []
+              ).map(comuna => (
+                <MenuItem key={comuna.value} value={comuna.value}>
+                  {comuna.label}
+                </MenuItem>
+              ))}
+            </Select>
+            {isHighlighted && !formData.shippingCommune && (
+              <Typography variant="caption" color="error">
+                Comuna es obligatoria
+              </Typography>
+            )}
+          </FormControl>
+
+          {/* Dirección */}
+          <TextField
+            label="Dirección"
+            value={formData.shippingAddress || ''}
+            onChange={e => onFieldChange('shippingAddress', e.target.value)}
+            fullWidth
+            variant="outlined"
+            size="small"
+            placeholder="Ej: Av. Providencia"
+            error={isHighlighted && !formData.shippingAddress}
+            helperText={getHighlightHelperText(
+              formData.shippingAddress,
+              isHighlighted,
+              '',
+              'Dirección es obligatoria'
+            )}
+            sx={getHighlightFieldStyle(formData.shippingAddress, isHighlighted)}
+          />
+
+          {/* Número */}
+          <TextField
+            label="Número"
+            value={formData.shippingNumber || ''}
+            onChange={e => onFieldChange('shippingNumber', e.target.value)}
+            fullWidth
+            variant="outlined"
+            size="small"
+            placeholder="Ej: 1234"
+            error={isHighlighted && !formData.shippingNumber}
+            helperText={getHighlightHelperText(
+              formData.shippingNumber,
+              isHighlighted,
+              '',
+              'Número es obligatorio'
+            )}
+            sx={getHighlightFieldStyle(formData.shippingNumber, isHighlighted)}
+          />
+
+          {/* Departamento (opcional) */}
+          <TextField
+            label="Depto. / Oficina (opcional)"
+            value={formData.shippingDept || ''}
+            onChange={e => onFieldChange('shippingDept', e.target.value)}
+            fullWidth
+            variant="outlined"
+            size="small"
+            placeholder="Ej: Depto 101, Oficina 5"
+          />
+        </Box>
+
+        {/* Columna derecha - Descripciones */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            p: 2,
+            backgroundColor: 'rgba(0,0,0,0.02)',
+            borderRadius: 2,
+            height: 'fit-content',
+          }}
+        >
+          <Typography
+            variant="subtitle2"
+            sx={{ fontWeight: 600, color: 'primary.main', mb: 1 }}
+          >
+            ℹ️ Información de ayuda
+          </Typography>
+
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              ¿Para qué es esta dirección?
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+            >
+              Esta será la dirección predeterminada donde enviaremos los
+              productos que compres en el Marketplace.
+            </Typography>
+          </Box>
+
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Región y Comuna
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+            >
+              Selecciona primero la región para habilitar el selector de
+              comunas. Esto ayuda a calcular tiempos y costos de envío.
+            </Typography>
+          </Box>
+
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Dirección Completa
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+            >
+              Incluye el nombre de la calle, número y cualquier referencia
+              adicional como departamento u oficina.
+            </Typography>
+          </Box>
+
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Importante
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+            >
+              Asegúrate de que la dirección sea correcta y esté completa para
+              evitar problemas en la entrega de tus pedidos.
+            </Typography>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
