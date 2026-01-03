@@ -70,8 +70,8 @@ jobs:
           # Mapeo de usuarios GitHub -> Jira Account IDs
           # Agrega más usuarios según sea necesario
           JIRA_USER_MAP: |
-            alexbondino:${{ secrets.JIRA_ACCOUNT_KLAUS }}
-            TheLichKing12:${{ secrets.JIRA_ACCOUNT_DANIEL }}
+            alexbondino:${{ secrets.JIRA_ACCOUNT_DANIEL }}
+            TheLichKing12:${{ secrets.JIRA_ACCOUNT_KLAUS }}
         run: |
           echo "Buscando Jira Account ID para: $PR_AUTHOR"
 
