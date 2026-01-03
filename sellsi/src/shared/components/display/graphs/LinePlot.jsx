@@ -156,8 +156,9 @@ const LinePlot = ({
                 scaleType: 'band',
                 tickLabelStyle: {
                   fontSize: 10,
-                  angle: period > 14 ? -45 : 0,
-                  textAnchor: period > 14 ? 'end' : 'middle',
+                  angle: period > 14 || period === 'ytd' ? -45 : 0,
+                  textAnchor:
+                    period > 14 || period === 'ytd' ? 'end' : 'middle',
                 },
               },
             ]}
@@ -165,12 +166,12 @@ const LinePlot = ({
               {
                 tickLabelStyle: { fontSize: 10 },
                 valueFormatter: value => formatValue(value),
+                min: 0,
               },
             ]}
             series={[
               {
                 dataKey: 'value',
-                label: valueLabel,
                 color: color,
                 showMark: true,
                 curve: 'linear',
@@ -182,7 +183,7 @@ const LinePlot = ({
               left: isCurrency ? 65 : 45,
               right: 15,
               top: 15,
-              bottom: period > 14 ? 50 : 35,
+              bottom: period > 14 || period === 'ytd' ? 50 : 35,
             }}
             sx={{
               '& .MuiLineElement-root': {

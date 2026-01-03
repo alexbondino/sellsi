@@ -148,7 +148,6 @@ const DailySalesChart = () => {
 
   const totalSales = salesData.reduce((sum, d) => sum + d.total, 0);
   const avgDaily = salesData.length > 0 ? totalSales / salesData.length : 0;
-  const maxSale = Math.max(...salesData.map(d => d.total), 0);
 
   // Transformar datos para LinePlot (espera 'value' en vez de 'total')
   const chartData = salesData.map(d => ({
@@ -167,11 +166,6 @@ const DailySalesChart = () => {
       value: Math.round(avgDaily),
       color: 'text.primary',
     },
-    {
-      label: 'Mejor día',
-      value: maxSale,
-      color: 'success.main',
-    },
   ];
 
   return (
@@ -182,7 +176,6 @@ const DailySalesChart = () => {
       icon={<TrendingUpIcon sx={{ color: 'primary.main', fontSize: 28 }} />}
       period={period}
       onPeriodChange={handlePeriodChange}
-      valueLabel="Ventas"
       color="#2E52B2"
       isCurrency={true}
       summaryItems={summaryItems}

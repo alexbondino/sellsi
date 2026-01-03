@@ -127,7 +127,6 @@ const DailyRequestsChart = () => {
   const totalRequests = requestsData.reduce((sum, d) => sum + d.total, 0);
   const avgDaily =
     requestsData.length > 0 ? totalRequests / requestsData.length : 0;
-  const maxRequests = Math.max(...requestsData.map(d => d.total), 0);
 
   // Transformar datos para LinePlot (espera 'value' en vez de 'total')
   const chartData = requestsData.map(d => ({
@@ -146,11 +145,6 @@ const DailyRequestsChart = () => {
       value: Math.round(avgDaily * 10) / 10,
       color: 'text.primary',
     },
-    {
-      label: 'Mejor día',
-      value: maxRequests,
-      color: 'success.main',
-    },
   ];
 
   return (
@@ -161,7 +155,6 @@ const DailyRequestsChart = () => {
       icon={<AssignmentIcon sx={{ color: '#9C27B0', fontSize: 28 }} />}
       period={period}
       onPeriodChange={handlePeriodChange}
-      valueLabel="Solicitudes"
       color="#9C27B0"
       isCurrency={false}
       summaryItems={summaryItems}
