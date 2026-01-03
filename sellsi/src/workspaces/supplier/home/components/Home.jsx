@@ -3,17 +3,13 @@ import React, { Suspense, useEffect } from 'react';
 import {
   Box,
   Grid,
-  Button,
   Container,
   ThemeProvider,
-  CircularProgress,
   Skeleton,
   useTheme,
   useMediaQuery,
-  Tooltip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import AddIcon from '@mui/icons-material/Add';
 import { useSupplierDashboard } from '../../shared-hooks/useSupplierDashboard';
 import { useSupplierProducts } from '../../shared-hooks/useSupplierProducts';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
@@ -189,38 +185,6 @@ const ProviderHome = () => {
           >
             <Grid container spacing={3}>
               <Grid size={12}>
-                {/* Botón de nuevo producto arriba */}
-                <Box sx={{ mb: 3 }}>
-                  <Tooltip
-                    title="Crea y publica un producto de manera individual con todos sus detalles"
-                    placement="bottom"
-                    arrow
-                  >
-                    <Button
-                      variant="contained"
-                      size="large"
-                      startIcon={<AddIcon />}
-                      fullWidth
-                      sx={{
-                        py: 2,
-                        borderRadius: 2,
-                        fontSize: '1.1rem',
-                        fontWeight: 600,
-                        textTransform: 'none',
-                        boxShadow: 'rgba(99, 102, 241, 0.16) 0px 4px 16px',
-                        '&:hover': {
-                          boxShadow: 'rgba(99, 102, 241, 0.24) 0px 6px 20px',
-                          transform: 'translateY(-1px)',
-                        },
-                        transition: 'all 0.2s ease-in-out',
-                      }}
-                      onClick={handleNewProduct}
-                    >
-                      Nuevo Producto
-                    </Button>
-                  </Tooltip>
-                </Box>
-
                 <Box sx={{ mb: 4 }}>
                   <Suspense fallback={<DashboardSummaryFallback />}>
                     <DashboardSummary
@@ -229,6 +193,7 @@ const ProviderHome = () => {
                       outOfStock={productsOutOfStock}
                       weeklyRequestsCount={weeklyRequestsCount}
                       productsActive={productsActive}
+                      onNewProduct={handleNewProduct}
                     />
                   </Suspense>
                 </Box>

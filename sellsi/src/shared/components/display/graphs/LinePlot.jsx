@@ -116,8 +116,8 @@ const LinePlot = ({
             }}
           >
             <ToggleButton value={7}>7d</ToggleButton>
-            <ToggleButton value={14}>14d</ToggleButton>
             <ToggleButton value={30}>30d</ToggleButton>
+            <ToggleButton value="ytd">YTD</ToggleButton>
           </ToggleButtonGroup>
         )}
       </Box>

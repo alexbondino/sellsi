@@ -5,6 +5,32 @@ import { formatCurrency } from '../../../../shared/utils/formatters';
 import { LinePlot } from '../../../../shared/components/display/graphs';
 
 /**
+ * Calcula las fechas de inicio y fin según el período seleccionado
+ */
+const getDateRange = period => {
+  const endDate = new Date();
+  let startDate;
+
+  if (period === 'ytd') {
+    // Year to date: desde el 1 de enero del año actual
+    startDate = new Date(endDate.getFullYear(), 0, 1);
+  } else {
+    startDate = new Date();
+    startDate.setDate(startDate.getDate() - period);
+  }
+
+  return { startDate, endDate };
+};
+
+/**
+ * Calcula el número de días en el rango
+ */
+const getDaysInRange = (startDate, endDate) => {
+  const diffTime = Math.abs(endDate - startDate);
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+};
+
+/**
  * Gráfico de ventas diarias para el dashboard del proveedor
  * Usa el componente LinePlot compartido
  */
@@ -34,9 +60,8 @@ const DailySalesChart = () => {
   const fetchDailySales = async () => {
     setLoading(true);
     try {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - period);
+      const { startDate, endDate } = getDateRange(period);
+      const daysCount = getDaysInRange(startDate, endDate);
 
       let { data, error } = await supabase
         .from('product_sales_confirmed')
@@ -70,9 +95,10 @@ const DailySalesChart = () => {
       }
 
       const dailyTotals = {};
-      for (let i = 0; i < period; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - (period - 1 - i));
+      // Inicializar todos los días del período con 0
+      for (let i = 0; i < daysCount; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
         const dateStr = date.toISOString().split('T')[0];
         dailyTotals[dateStr] = 0;
       }
@@ -92,7 +118,7 @@ const DailySalesChart = () => {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([date, total]) => ({
           date: new Date(date),
-          dateLabel: formatDateLabel(date),
+          dateLabel: formatDateLabel(date, period),
           total: Math.round(total),
         }));
 
@@ -105,10 +131,14 @@ const DailySalesChart = () => {
     }
   };
 
-  const formatDateLabel = dateStr => {
+  const formatDateLabel = (dateStr, currentPeriod) => {
     const date = new Date(dateStr + 'T12:00:00');
     const day = date.getDate();
     const month = date.toLocaleDateString('es-CL', { month: 'short' });
+    // Para YTD mostrar solo mes si hay muchos días
+    if (currentPeriod === 'ytd') {
+      return `${day} ${month}`;
+    }
     return `${day} ${month}`;
   };
 
