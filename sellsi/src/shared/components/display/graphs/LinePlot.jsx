@@ -59,6 +59,36 @@ const LinePlot = ({
     return Math.max(maxValue, MIN_Y_MAX_NON_CURRENCY);
   }, [safeData, isCurrency]);
 
+  /**
+   * Formatea valores grandes para el eje Y usando K (miles) y MM (millones)
+   */
+  const formatAxisValue = value => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return '-';
+
+    if (isCurrency) {
+      if (n >= 1000000) {
+        return `$${(n / 1000000).toFixed(1)}MM`;
+      }
+      if (n >= 1000) {
+        return `$${(n / 1000).toFixed(0)}K`;
+      }
+      return `$${n}`;
+    }
+
+    // No currency
+    if (n >= 1000000) {
+      return `${(n / 1000000).toFixed(1)}MM`;
+    }
+    if (n >= 1000) {
+      return `${(n / 1000).toFixed(0)}K`;
+    }
+    return n.toLocaleString('es-CL');
+  };
+
+  /**
+   * Formatea valores completos para tooltips y métricas
+   */
   const formatValue = value => {
     const n = Number(value);
     if (!Number.isFinite(n)) return '-';
@@ -188,7 +218,7 @@ const LinePlot = ({
                 min: 0,
                 max: yMax,
                 tickLabelStyle: { fontSize: 10 },
-                valueFormatter: v => formatValue(v),
+                valueFormatter: v => formatAxisValue(v),
               },
             ]}
             series={[
