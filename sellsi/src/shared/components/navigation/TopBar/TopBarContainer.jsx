@@ -12,6 +12,7 @@ import {
   Menu,
 } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 import { supabase } from '../../../services/supabase';
 import useCartStore from '../../../stores/cart/cartStore';
 import { useRole } from '../../../../infrastructure/providers';
@@ -20,6 +21,7 @@ import { useNotificationsContext } from '../../../../domains/notifications/compo
 import { ProfileAvatarButton } from './components/ProfileAvatarButton';
 import { NotificationsMenu } from './components/NotificationsMenu';
 import { RoleSwitchControl } from './components/RoleSwitchControl';
+import FeedbackModal from './components/FeedbackModal';
 import { navButtonBase, iconButtonBase } from './topBar.styles';
 import { useRoleFromRoute } from './hooks/useRoleFromRoute';
 import { useAuthModalBus } from './hooks/useAuthModalBus';
@@ -44,6 +46,7 @@ export default function TopBarContainer({
   const [profileAnchor, setProfileAnchor] = useState(null);
   const [notifAnchor, setNotifAnchor] = useState(null);
   const [notifModalOpen, setNotifModalOpen] = useState(null);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const mobileSearchInputRef = useRef(null);
 
   const {
@@ -355,6 +358,16 @@ export default function TopBarContainer({
           onChange={handleRoleToggleChange}
           sx={{ mr: 2, opacity: isRoleLoading ? 0.6 : 1 }}
         />
+        <Tooltip title="Ayúdanos a mejorar" arrow>
+          <IconButton
+            onClick={() => setFeedbackModalOpen(true)}
+            sx={{ ...iconButtonBase, color: 'white', mr: 1 }}
+            disableRipple
+            disableFocusRipple
+          >
+            <FeedbackIcon sx={{ fontSize: '1.3rem' }} />
+          </IconButton>
+        </Tooltip>
         <NotificationsMenu
           showBell
           unreadCount={notifCtx?.unreadCount || 0}
@@ -382,6 +395,13 @@ export default function TopBarContainer({
           </IconButton>
         </Tooltip>
         {profileMenuButton}
+        <FeedbackModal
+          open={feedbackModalOpen}
+          onClose={() => setFeedbackModalOpen(false)}
+          userEmail={session?.user?.email}
+          companyName={session?.user?.user_metadata?.company_name}
+          userName={session?.user?.user_metadata?.full_name}
+        />
       </>
     );
     mobileMenuItems = [
@@ -397,6 +417,16 @@ export default function TopBarContainer({
         />
       </MenuItem>,
       <Divider key="dividerMobileRole" />,
+      <MenuItem
+        key="feedback"
+        onClick={() => {
+          setFeedbackModalOpen(true);
+          handleCloseMobileMenu();
+        }}
+      >
+        <FeedbackIcon sx={{ mr: 1, fontSize: '1.2rem' }} />
+        Ayúdanos a mejorar
+      </MenuItem>,
       <MenuItem
         key="profile"
         onClick={() => {
