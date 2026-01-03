@@ -192,24 +192,29 @@ export const useSupplierDashboard = () => {
           { supplierId, month: monthStart.substring(0, 7) },
           async () => {
             const { data: psRows, error: psErr } = await supabase
-              .from('product_sales_confirmed')  // 👈 Vista materializada (solo ventas aceptadas+)
+              .from('product_sales_confirmed') // 👈 Vista materializada (solo ventas aceptadas+)
               .select('amount, trx_date')
               .eq('supplier_id', supplierId)
               .gte('trx_date', monthStart)
               .lt('trx_date', nextMonth);
             if (psErr) {
-              console.warn('⚠️ Error consultando product_sales_confirmed, intentando fallback:', psErr);
+              console.warn(
+                '⚠️ Error consultando product_sales_confirmed, intentando fallback:',
+                psErr
+              );
               // Fallback: consultar tabla original con JOIN para filtrar en una sola query
               const { data: fallbackRows, error: fallbackErr } = await supabase
                 .from('product_sales')
-                .select('amount, trx_date, orders!inner(status, payment_status, cancelled_at)')
+                .select(
+                  'amount, trx_date, orders!inner(status, payment_status, cancelled_at)'
+                )
                 .eq('supplier_id', supplierId)
                 .eq('orders.payment_status', 'paid')
                 .in('orders.status', ['accepted', 'in_transit', 'delivered'])
                 .is('orders.cancelled_at', null)
                 .gte('trx_date', monthStart)
                 .lt('trx_date', nextMonth);
-              
+
               if (fallbackErr) {
                 const prev = smartMetricCache.get('monthlyRevenue', {
                   supplierId,
@@ -217,11 +222,15 @@ export const useSupplierDashboard = () => {
                 });
                 return prev?.data ?? 0;
               }
-              
-              const grossRevenue = (fallbackRows || []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+
+              const grossRevenue = (fallbackRows || []).reduce(
+                (sum, r) => sum + (Number(r.amount) || 0),
+                0
+              );
               const SERVICE_RATE = 0.03;
               const IVA_RATE = 0.19;
-              const netMultiplier = (1 - SERVICE_RATE) * (1 - IVA_RATE * SERVICE_RATE);
+              const netMultiplier =
+                (1 - SERVICE_RATE) * (1 - IVA_RATE * SERVICE_RATE);
               return grossRevenue * netMultiplier;
             }
             const grossRevenue = (psRows || []).reduce(
@@ -232,7 +241,8 @@ export const useSupplierDashboard = () => {
             // Total descuento: 3.57% → Multiplicador: 0.9643
             const SERVICE_RATE = 0.03; // 3% comisión Sellsi
             const IVA_RATE = 0.19; // 19% IVA sobre la comisión
-            const netMultiplier = (1 - SERVICE_RATE) * (1 - IVA_RATE * SERVICE_RATE);
+            const netMultiplier =
+              (1 - SERVICE_RATE) * (1 - IVA_RATE * SERVICE_RATE);
             const netRevenue = grossRevenue * netMultiplier;
             return netRevenue;
           },
@@ -241,26 +251,21 @@ export const useSupplierDashboard = () => {
 
         const orderMetrics = [];
 
-        // Contar solicitudes semanales (últimos 7 días) basado en órdenes confirmadas
-        let weeklyRequestsCount = 0;
+        // Contar solicitudes mensuales (órdenes del mes donde el proveedor está incluido)
+        let monthlyRequestsCount = 0;
         try {
-          const last7 = new Date(
-            Date.now() - 7 * 24 * 60 * 60 * 1000
-          ).toISOString();
-          const { data: psWindow, error: psWinErr } = await supabase
-            .from('product_sales_confirmed')
-            .select('order_id, trx_date')
-            .eq('supplier_id', supplierId)
-            .gte('trx_date', last7)
-            .not('order_id', 'is', null);
+          // Usar el mismo rango del mes que para revenue
+          const { data: ordersData, error: ordersErr } = await supabase
+            .from('orders')
+            .select('id, created_at')
+            .contains('supplier_ids', [supplierId])
+            .gte('created_at', monthStart)
+            .lt('created_at', nextMonth);
 
-          if (!psWinErr && Array.isArray(psWindow)) {
-            const distinct = new Set(
-              psWindow.map(r => r.order_id).filter(Boolean)
-            );
-            weeklyRequestsCount = distinct.size;
+          if (!ordersErr && Array.isArray(ordersData)) {
+            monthlyRequestsCount = ordersData.length;
             // Seed recent orders set for realtime dedupe
-            recentOrderIdsRef.current = new Set(distinct);
+            recentOrderIdsRef.current = new Set(ordersData.map(o => o.id));
           }
         } catch (_) {
           /* noop */
@@ -298,7 +303,7 @@ export const useSupplierDashboard = () => {
           totalRevenue: monthlyRevenue,
           averageRating: 0, // Se puede agregar después
           totalOrders: orderMetrics.length,
-          weeklyRequestsCount,
+          monthlyRequestsCount,
         };
 
         // Datos para gráficos

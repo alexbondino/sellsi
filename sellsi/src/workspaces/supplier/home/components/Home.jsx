@@ -81,8 +81,8 @@ const ProviderHome = () => {
     loadProducts,
   } = useSupplierProducts();
 
-  // Contador real de solicitudes semanales (órdenes pagadas últimos 7 días)
-  const weeklyRequestsCount = metrics?.weeklyRequestsCount ?? 0;
+  // Contador de solicitudes mensuales (órdenes del mes actual)
+  const monthlyRequestsCount = metrics?.monthlyRequestsCount ?? 0;
   const totalSales = metrics?.totalRevenue || 0;
 
   // Combine loading and error states
@@ -191,7 +191,7 @@ const ProviderHome = () => {
                       products={activeProducts}
                       totalSales={totalSales}
                       outOfStock={productsOutOfStock}
-                      weeklyRequestsCount={weeklyRequestsCount}
+                      monthlyRequestsCount={monthlyRequestsCount}
                       productsActive={productsActive}
                       onNewProduct={handleNewProduct}
                     />

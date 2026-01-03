@@ -11,7 +11,7 @@ const DashboardSummary = ({
   products,
   totalSales,
   outOfStock,
-  weeklyRequestsCount,
+  monthlyRequestsCount,
   productsActive,
   onNewProduct,
 }) => (
@@ -34,7 +34,7 @@ const DashboardSummary = ({
         products={products}
         totalSales={totalSales}
         outOfStock={outOfStock}
-        weeklyRequestsCount={weeklyRequestsCount}
+        monthlyRequestsCount={monthlyRequestsCount}
         productsActive={productsActive}
       />
 

@@ -17,14 +17,14 @@ const SummaryCards = ({
   products = [],
   totalSales = 0,
   outOfStock = 0,
-  weeklyRequestsCount = 0,
+  monthlyRequestsCount = 0,
   productsActive = 0,
 }) => {
   const chartData = {
     products: generateChartData(productsActive ?? products.length, 'up'),
     sales: generateChartData(totalSales / 1000, 'up'),
     outOfStock: generateChartData(outOfStock, 'down'),
-    requests: generateChartData(weeklyRequestsCount, 'neutral'),
+    requests: generateChartData(monthlyRequestsCount, 'neutral'),
   };
 
   const dashboardData = [
@@ -50,8 +50,8 @@ const SummaryCards = ({
       icon: WarningIcon,
     },
     {
-      title: 'Solicitudes Semanales',
-      value: Number(weeklyRequestsCount || 0).toString(),
+      title: 'Solicitudes Este Mes',
+      value: Number(monthlyRequestsCount || 0).toString(),
       trend: 'neutral',
       data: chartData.requests,
       icon: AssignmentIcon,
