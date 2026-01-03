@@ -358,16 +358,27 @@ export default function TopBarContainer({
           onChange={handleRoleToggleChange}
           sx={{ mr: 2, opacity: isRoleLoading ? 0.6 : 1 }}
         />
-        <Tooltip title="Ayúdanos a mejorar" arrow>
-          <IconButton
-            onClick={() => setFeedbackModalOpen(true)}
-            sx={{ ...iconButtonBase, color: 'white', mr: 1 }}
-            disableRipple
-            disableFocusRipple
-          >
-            <FeedbackIcon sx={{ fontSize: '1.3rem' }} />
-          </IconButton>
-        </Tooltip>
+        <Button
+          onClick={() => setFeedbackModalOpen(true)}
+          startIcon={<FeedbackIcon />}
+          sx={{
+            ...navButtonBase,
+            mr: 2,
+            color: 'white',
+            textTransform: 'none',
+            fontSize: '0.85rem',
+            border: '1px solid white',
+            borderRadius: '20px',
+            px: 2,
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid white',
+            },
+          }}
+          disableRipple
+        >
+          Ayúdanos a mejorar
+        </Button>
         <NotificationsMenu
           showBell
           unreadCount={notifCtx?.unreadCount || 0}
