@@ -10,8 +10,14 @@ import {
 import { LineChart } from '@mui/x-charts/LineChart';
 import { formatCurrency } from '../../../utils/formatters';
 
-const MIN_Y_MAX_CURRENCY = 100000;
-const MIN_Y_MAX_NON_CURRENCY = 10;
+// Valores mínimos para el eje Y
+const MIN_Y_MAX_CURRENCY = 10000; // $10K mínimo
+const MIN_Y_MAX_NON_CURRENCY = 5;
+
+// ✅ Este valor controla cuán a la izquierda queda el eje Y.
+// Menor = más a la izquierda (pero si es muy bajo, puede cortar labels).
+const Y_MARGIN_LEFT_CURRENCY = 0;
+const Y_MARGIN_LEFT_NON_CURRENCY = 0;
 
 const LinePlot = ({
   title,
@@ -42,73 +48,60 @@ const LinePlot = ({
     [data]
   );
 
-  // ✅ Dominio Y robusto (0 → max, con piso mínimo distinto según moneda / no-moneda)
+  // ✅ Dominio Y robusto con +20% de margen
   const yMax = useMemo(() => {
     const values = safeData.map(d => d.value).filter(v => Number.isFinite(v));
 
-    if (!values.length)
+    if (!values.length) {
       return isCurrency ? MIN_Y_MAX_CURRENCY : MIN_Y_MAX_NON_CURRENCY;
-
-    const maxValue = Math.max(...values);
-
-    if (isCurrency) {
-      return Math.max(maxValue, MIN_Y_MAX_CURRENCY);
     }
 
-    // ✅ cuando NO es moneda: rango mínimo 0–10 (por ejemplo "solicitudes")
-    return Math.max(maxValue, MIN_Y_MAX_NON_CURRENCY);
+    const maxValue = Math.max(...values);
+    const minFloor = isCurrency ? MIN_Y_MAX_CURRENCY : MIN_Y_MAX_NON_CURRENCY;
+
+    if (maxValue > 0) {
+      return Math.max(maxValue * 1.2, minFloor);
+    }
+
+    return minFloor;
   }, [safeData, isCurrency]);
 
-  /**
-   * Formatea valores grandes para el eje Y usando K (miles) y MM (millones)
-   */
+  // ✅ Formato corto para eje Y (reduce ancho de labels => evita que el eje se corra)
   const formatAxisValue = value => {
     const n = Number(value);
     if (!Number.isFinite(n)) return '-';
 
     if (isCurrency) {
-      if (n >= 1000000) {
-        return `$${(n / 1000000).toFixed(1)}MM`;
-      }
-      if (n >= 1000) {
-        return `$${(n / 1000).toFixed(0)}K`;
-      }
+      if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}MM`;
+      if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
       return `$${n}`;
     }
 
-    // No currency
-    if (n >= 1000000) {
-      return `${(n / 1000000).toFixed(1)}MM`;
-    }
-    if (n >= 1000) {
-      return `${(n / 1000).toFixed(0)}K`;
-    }
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}MM`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
     return n.toLocaleString('es-CL');
   };
 
-  /**
-   * Formatea valores completos para tooltips y métricas
-   */
+  // ✅ Formato completo para métricas / tooltip
   const formatValue = value => {
     const n = Number(value);
     if (!Number.isFinite(n)) return '-';
-
-    if (isCurrency) return formatCurrency(n);
-
-    return n.toLocaleString('es-CL');
+    return isCurrency ? formatCurrency(n) : n.toLocaleString('es-CL');
   };
 
-  // ✅ Centrado visual real
-  const sideMargin = isCurrency ? 55 : 40;
+  // ✅ Margen izquierdo final del chart (mueve el eje Y)
+  const chartLeft = isCurrency
+    ? Y_MARGIN_LEFT_CURRENCY
+    : Y_MARGIN_LEFT_NON_CURRENCY;
 
   if (loading) {
     return (
-      <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
-        <Skeleton variant="text" width={200} height={32} />
+      <Paper sx={{ p: 2, borderRadius: 3, height: '100%' }}>
+        <Skeleton variant="text" width={200} height={28} />
         <Skeleton
           variant="rectangular"
-          height={250}
-          sx={{ mt: 2, borderRadius: 2 }}
+          height={200}
+          sx={{ mt: 1.5, borderRadius: 2 }}
         />
       </Paper>
     );
@@ -117,22 +110,22 @@ const LinePlot = ({
   return (
     <Paper
       sx={{
-        p: 3,
+        p: 2,
         borderRadius: 3,
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      {/* Header */}
+      {/* Header (SIN padding extra a la izquierda) */}
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          mb: 2,
+          mb: 1.5,
           flexWrap: 'wrap',
-          gap: 2,
+          gap: 1.5,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -174,7 +167,7 @@ const LinePlot = ({
           sx={{
             display: 'flex',
             gap: 3,
-            mb: 2,
+            mb: 1.5,
             justifyContent: 'center',
             flexWrap: 'wrap',
           }}
@@ -197,7 +190,7 @@ const LinePlot = ({
       )}
 
       {/* Chart */}
-      <Box sx={{ flexGrow: 1, minHeight: 200 }}>
+      <Box sx={{ flexGrow: 1, minHeight: 180 }}>
         {safeData.length > 0 ? (
           <LineChart
             dataset={safeData}
@@ -230,12 +223,12 @@ const LinePlot = ({
                 valueFormatter: v => formatValue(v),
               },
             ]}
-            height={220}
+            height={200}
             margin={{
-              left: sideMargin,
-              right: sideMargin,
-              top: 15,
-              bottom: period > 14 || period === 'ytd' ? 50 : 35,
+              left: chartLeft, // ✅ aquí se corrige “muy a la derecha”
+              right: 16,
+              top: 10,
+              bottom: period > 14 || period === 'ytd' ? 45 : 30,
             }}
             sx={{
               width: '100%',
@@ -252,7 +245,7 @@ const LinePlot = ({
         ) : (
           <Box
             sx={{
-              minHeight: 200,
+              minHeight: 180,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
