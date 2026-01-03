@@ -1,7 +1,19 @@
 // 📁 shared/components/navigation/TopBar/TopBar.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Box, Button, IconButton, MenuItem, useTheme, Tooltip, Badge, Divider, TextField, InputAdornment, Menu } from '@mui/material';
+import {
+  Box,
+  Button,
+  IconButton,
+  MenuItem,
+  useTheme,
+  Tooltip,
+  Badge,
+  Divider,
+  TextField,
+  InputAdornment,
+  Menu,
+} from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 // import PersonIcon from '@mui/icons-material/Person'; // Ya no se usa directamente en TopBar
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -59,9 +71,84 @@ export default function TopBar({
   } = useAuthModalBus({ enableLegacyEventListeners: true });
 
   // Rol derivado vía hook
-  const { currentRole } = useRoleFromRoute({ pathname: location.pathname, isBuyerProp: isBuyer, isRoleLoading });
+  const { currentRole } = useRoleFromRoute({
+    pathname: location.pathname,
+    isBuyerProp: isBuyer,
+    isRoleLoading,
+  });
 
   const isLoggedIn = !!session;
+
+  // Detectar si estamos en onboarding para ocultar elementos
+  const isOnboarding = location.pathname.startsWith('/onboarding');
+  console.log(
+    '[TopBar] isOnboarding:',
+    isOnboarding,
+    'pathname:',
+    location.pathname
+  );
+
+  // ====== TopBar simplificado para Onboarding ======
+  if (isOnboarding) {
+    console.log('[TopBar] Rendering simplified onboarding TopBar');
+    return (
+      <Box
+        sx={{
+          backgroundColor: '#000000',
+          width: '100%',
+          left: 0,
+          right: 0,
+          px: 0,
+          py: { xs: 0, sm: 0, md: 1 },
+          display: 'flex',
+          justifyContent: 'center',
+          position: 'fixed',
+          top: 0,
+          zIndex: 1100,
+          height: { xs: 45, md: '64px' },
+          borderBottom: '1px solid white',
+        }}
+      >
+        <Box
+          sx={{
+            width: '100%',
+            maxWidth: '100%',
+            px: { xs: 2, md: 4 },
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          {/* Logo */}
+          <Box
+            sx={{
+              height: { xs: 38, sm: 38, md: 50 },
+              width: { xs: 90, sm: 90, md: 140 },
+              display: 'flex',
+              alignItems: 'center',
+              p: 0,
+              m: 0,
+              lineHeight: 0,
+              overflow: 'hidden',
+            }}
+          >
+            <Box
+              component="img"
+              src="/Logos/sellsiwhite_logo_transparent.webp"
+              alt="Sellsi Logo"
+              sx={{
+                height: { xs: 25, sm: 25, md: 38 },
+                width: 'auto',
+                objectFit: 'contain',
+              }}
+            />
+          </Box>
+          {/* Espacio vacío a la derecha - sin elementos */}
+          <Box />
+        </Box>
+      </Box>
+    );
+  }
 
   const handleOpenMobileMenu = e => setMobileMenuAnchor(e.currentTarget);
   const handleCloseMobileMenu = () => setMobileMenuAnchor(null);
@@ -110,7 +197,9 @@ export default function TopBar({
       if (ref === 'contactModal') {
         // Navigate to landing and trigger scroll to contact section
         setSkipScrollToTopOnce();
-        const search = `?scrollTo=${encodeURIComponent('contactModal')}&t=${Date.now()}`;
+        const search = `?scrollTo=${encodeURIComponent(
+          'contactModal'
+        )}&t=${Date.now()}`;
         navigate(`/${search}`);
         return;
       }
@@ -161,11 +250,14 @@ export default function TopBar({
     lg: '250px',
   }; // Default padding for logged out
   // Helpers centralizados
-  const getProfileRoute = (flag) => (flag ? '/buyer/profile' : '/supplier/profile');
+  const getProfileRoute = flag =>
+    flag ? '/buyer/profile' : '/supplier/profile';
   const goToProfile = () => navigate(getProfileRoute(isBuyer));
 
   // Avatar state handled inside ProfileAvatarButton now; removed local avatarLoaded.
-  const profileMenuButton = <ProfileAvatarButton logoUrl={logoUrl} onClick={handleOpenProfileMenu} />;
+  const profileMenuButton = (
+    <ProfileAvatarButton logoUrl={logoUrl} onClick={handleOpenProfileMenu} />
+  );
   // Notifications
   const notifCtx = useNotificationsContext?.() || null;
   const [notifAnchor, setNotifAnchor] = useState(null);
@@ -181,12 +273,10 @@ export default function TopBar({
     // Navigate based on context_section
     if (n.context_section === 'supplier_orders')
       navigate('/supplier/my-orders');
-    else if (n.context_section === 'buyer_orders') 
-      navigate('/buyer/orders');
+    else if (n.context_section === 'buyer_orders') navigate('/buyer/orders');
     else if (n.context_section === 'supplier_offers')
       navigate('/supplier/offers');
-    else if (n.context_section === 'buyer_offers')
-      navigate('/buyer/offers');
+    else if (n.context_section === 'buyer_offers') navigate('/buyer/offers');
     else if (n.order_status && currentRole === 'buyer')
       navigate('/buyer/orders');
     else if (n.order_status && currentRole === 'supplier')
@@ -264,7 +354,14 @@ export default function TopBar({
 
     mobileMenuItems = [
       ...publicNavButtons.map(({ label, ref }) => (
-        <MenuItem key={label} onClick={() => { handleNavigate(ref); handleCloseMobileMenu(); }} sx={{ fontSize: 16 }}>
+        <MenuItem
+          key={label}
+          onClick={() => {
+            handleNavigate(ref);
+            handleCloseMobileMenu();
+          }}
+          sx={{ fontSize: 16 }}
+        >
           {label}
         </MenuItem>
       )),
@@ -293,58 +390,78 @@ export default function TopBar({
     paddingX = { xs: 2, md: 4, mac: 4, lg: 4 }; // Updated padding for logged in
     desktopRightContent = (
       <>
-        {/* Usamos el componente Switch - Solo mostrar cuando el rol esté determinado */}
-        <RoleSwitchControl
-          role={currentRole}
-          disabled={isRoleLoading}
-          onChange={handleRoleToggleChange}
-          sx={{ mr: 2, opacity: isRoleLoading ? 0.6 : 1 }}
-        />
+        {/* Usamos el componente Switch - Solo mostrar cuando el rol esté determinado y NO estamos en onboarding */}
+        {!isOnboarding && (
+          <RoleSwitchControl
+            role={currentRole}
+            disabled={isRoleLoading}
+            onChange={handleRoleToggleChange}
+            sx={{ mr: 2, opacity: isRoleLoading ? 0.6 : 1 }}
+          />
+        )}
 
-        <NotificationsMenu
-          showBell
-          unreadCount={notifCtx?.unreadCount || 0}
-          notifications={notifCtx?.notifications || []}
-          activeTab={notifCtx?.activeTab || 'all'}
-          onTabChange={t => notifCtx?.setActiveTab?.(t)}
-          onItemClick={handleNotifItemClick}
-          onViewAll={handleViewAllNotif}
-          onCloseDialog={handleCloseNotifModal}
-          anchorEl={notifAnchor}
-          onOpen={handleOpenNotif}
-          onClose={handleCloseNotif}
-          dialogOpen={notifModalOpen}
-        />
+        {/* Notificaciones - ocultar en onboarding */}
+        {!isOnboarding && (
+          <NotificationsMenu
+            showBell
+            unreadCount={notifCtx?.unreadCount || 0}
+            notifications={notifCtx?.notifications || []}
+            activeTab={notifCtx?.activeTab || 'all'}
+            onTabChange={t => notifCtx?.setActiveTab?.(t)}
+            onItemClick={handleNotifItemClick}
+            onViewAll={handleViewAllNotif}
+            onCloseDialog={handleCloseNotifModal}
+            anchorEl={notifAnchor}
+            onOpen={handleOpenNotif}
+            onClose={handleCloseNotif}
+            dialogOpen={notifModalOpen}
+          />
+        )}
 
-        <Tooltip title="Carrito" arrow>
-          <IconButton onClick={() => navigate('/buyer/cart')} sx={{ ...iconButtonBase, color: 'white', mr: 3 }} disableFocusRipple disableRipple>
-            <Badge badgeContent={itemsInCart} color="error">
-              <CustomShoppingCartIcon sx={{ lineHeight: 1 }} />
-            </Badge>
-          </IconButton>
-        </Tooltip>
+        {/* Carrito - ocultar en onboarding */}
+        {!isOnboarding && (
+          <Tooltip title="Carrito" arrow>
+            <IconButton
+              onClick={() => navigate('/buyer/cart')}
+              sx={{ ...iconButtonBase, color: 'white', mr: 3 }}
+              disableFocusRipple
+              disableRipple
+            >
+              <Badge badgeContent={itemsInCart} color="error">
+                <CustomShoppingCartIcon sx={{ lineHeight: 1 }} />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+        )}
         {profileMenuButton}
       </>
     );
 
     mobileMenuItems = [
-      <MenuItem
-        key="roleToggleMobile"
-        sx={{ display: 'flex', justifyContent: 'center', py: 1 }}
-      >
-        {/* Usamos el componente Switch en el menú móvil - Solo mostrar cuando el rol esté determinado */}
-        <RoleSwitchControl
-          role={currentRole}
-          disabled={isRoleLoading}
-          onChange={handleRoleToggleChange}
-          sx={{ width: '100%', mr: 0, opacity: isRoleLoading ? 0.6 : 1 }}
-        />
-      </MenuItem>,
-      <Divider key="dividerMobileRole" />,
-      // Eliminado el botón de carrito en mobileMenuItems
+      // Solo mostrar switch de rol si NO estamos en onboarding
+      ...(!isOnboarding
+        ? [
+            <MenuItem
+              key="roleToggleMobile"
+              sx={{ display: 'flex', justifyContent: 'center', py: 1 }}
+            >
+              {/* Usamos el componente Switch en el menú móvil - Solo mostrar cuando el rol esté determinado */}
+              <RoleSwitchControl
+                role={currentRole}
+                disabled={isRoleLoading}
+                onChange={handleRoleToggleChange}
+                sx={{ width: '100%', mr: 0, opacity: isRoleLoading ? 0.6 : 1 }}
+              />
+            </MenuItem>,
+            <Divider key="dividerMobileRole" />,
+          ]
+        : []),
       <MenuItem
         key="profile"
-        onClick={() => { goToProfile(); handleCloseMobileMenu(); }}
+        onClick={() => {
+          goToProfile();
+          handleCloseMobileMenu();
+        }}
       >
         Mi Perfil
       </MenuItem>,
@@ -356,17 +473,25 @@ export default function TopBar({
 
   // ================== 🔍 MOBILE MARKETPLACE SEARCH (Buyer only) ==================
   const isBuyerRole = currentRole === 'buyer';
-  const { term: mobileSearch, setTerm: setMobileSearch, isOnBuyerMarketplace, inputProps: mobileSearchInputProps, submit: submitMobileSearch } = useMarketplaceSearch({
+  const {
+    term: mobileSearch,
+    setTerm: setMobileSearch,
+    isOnBuyerMarketplace,
+    inputProps: mobileSearchInputProps,
+    submit: submitMobileSearch,
+  } = useMarketplaceSearch({
     enabled: !!session,
     pathname: location.pathname,
     isBuyerRole,
-    onReactive: (t) => {
+    onReactive: t => {
       // Reemplaza evento global: en lugar de dispatch se podría usar contexto; mantenemos evento por compat temporal
       const evt = new CustomEvent('marketplaceSearch', { detail: { term: t } });
       window.dispatchEvent(evt);
     },
-    onNavigateOutside: (t) => {
-      navigate('/buyer/marketplace', { state: { initialSearch: t, fromTopBar: true } });
+    onNavigateOutside: t => {
+      navigate('/buyer/marketplace', {
+        state: { initialSearch: t, fromTopBar: true },
+      });
     },
   });
   const mobileSearchInputRef = useRef(null);
@@ -455,7 +580,14 @@ export default function TopBar({
             </Box>
             {/* Mobile search: placed right of logo for buyer role */}
             {isLoggedIn && isBuyerRole && (
-              <Box data-component="TopBar.mobileSearch" sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', ml: { xs: 0.5, sm: 1 } }}>
+              <Box
+                data-component="TopBar.mobileSearch"
+                sx={{
+                  display: { xs: 'flex', md: 'none' },
+                  alignItems: 'center',
+                  ml: { xs: 0.5, sm: 1 },
+                }}
+              >
                 <TextField
                   size="small"
                   value={mobileSearchInputProps.value}
@@ -469,8 +601,8 @@ export default function TopBar({
                       backgroundColor: 'white',
                       height: 34,
                       borderRadius: 1.5,
-                      fontSize: '0.75rem'
-                    }
+                      fontSize: '0.75rem',
+                    },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -480,11 +612,14 @@ export default function TopBar({
                     ),
                     endAdornment: (
                       <InputAdornment position="end">
-                        <IconButton size="small" onClick={handleMobileSearchButton}>
+                        <IconButton
+                          size="small"
+                          onClick={handleMobileSearchButton}
+                        >
                           <ArrowForwardIcon fontSize="small" />
                         </IconButton>
                       </InputAdornment>
-                    )
+                    ),
                   }}
                 />
               </Box>
@@ -504,7 +639,14 @@ export default function TopBar({
             {desktopRightContent}
           </Box>
 
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 0, ml: { xs: 0.5, sm: 2 } }}>
+          <Box
+            sx={{
+              display: { xs: 'flex', md: 'none' },
+              alignItems: 'center',
+              gap: 0,
+              ml: { xs: 0.5, sm: 2 },
+            }}
+          >
             {/* Campana de notificaciones - móvil */}
             {isLoggedIn && (
               <Tooltip title="Notificaciones" arrow>
@@ -552,14 +694,17 @@ export default function TopBar({
         }}
       >
         <MenuItem
-          onClick={() => { goToProfile(); handleCloseProfileMenu(); }}
+          onClick={() => {
+            goToProfile();
+            handleCloseProfileMenu();
+          }}
         >
           Mi Perfil
         </MenuItem>
         <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
       </Menu>
 
-  {/* Legacy inline auth modals removed; using AuthModals wrapper */}
+      {/* Legacy inline auth modals removed; using AuthModals wrapper */}
       <AuthModals
         openLogin={openLoginModal}
         openRegister={openRegisterModal}

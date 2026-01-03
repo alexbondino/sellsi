@@ -38,7 +38,7 @@ const ProductPricing = ({
         gutterBottom
         sx={{ fontWeight: 600, color: 'black', mb: 2 }}
       >
-        Define el valor unitario y la compra mínima
+        Define el valor unitario (IVA incluido) y la compra mínima
       </Typography>
 
       {isMobile ? (
