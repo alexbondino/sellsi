@@ -189,19 +189,8 @@ const ProviderHome = () => {
           >
             <Grid container spacing={3}>
               <Grid size={12}>
-                <Box sx={{ mb: 4 }}>
-                  <Suspense fallback={<DashboardSummaryFallback />}>
-                    <DashboardSummary
-                      products={activeProducts}
-                      totalSales={totalSales}
-                      outOfStock={productsOutOfStock}
-                      weeklyRequestsCount={weeklyRequestsCount}
-                      productsActive={productsActive}
-                    />
-                  </Suspense>
-                </Box>
-
-                <Box sx={{ mb: 4 }}>
+                {/* Botón de nuevo producto arriba */}
+                <Box sx={{ mb: 3 }}>
                   <Tooltip
                     title="Crea y publica un producto de manera individual con todos sus detalles"
                     placement="bottom"
@@ -232,7 +221,17 @@ const ProviderHome = () => {
                   </Tooltip>
                 </Box>
 
-                {/* Gráfico eliminado para reducir JS (recharts purgado) */}
+                <Box sx={{ mb: 4 }}>
+                  <Suspense fallback={<DashboardSummaryFallback />}>
+                    <DashboardSummary
+                      products={activeProducts}
+                      totalSales={totalSales}
+                      outOfStock={productsOutOfStock}
+                      weeklyRequestsCount={weeklyRequestsCount}
+                      productsActive={productsActive}
+                    />
+                  </Suspense>
+                </Box>
               </Grid>
             </Grid>
           </Container>
