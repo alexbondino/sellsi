@@ -73,6 +73,8 @@ const SummaryCards = ({
       trend: outOfStock > 5 ? 'down' : 'neutral',
       data: chartData.outOfStock,
       icon: WarningIcon,
+      linkTo: '/proveedor/productos',
+      linkLabel: 'Ir a Mis Productos',
     },
     {
       title: 'Solicitudes Pendientes',
@@ -80,6 +82,8 @@ const SummaryCards = ({
       trend: pendingRequestsCount > 0 ? 'up' : 'neutral',
       data: chartData.pendingRequests,
       icon: PendingActionsIcon,
+      linkTo: '/proveedor/pedidos',
+      linkLabel: 'Ir a Mis Pedidos',
     },
     {
       title: 'Ofertas Pendientes',
@@ -87,6 +91,8 @@ const SummaryCards = ({
       trend: pendingOffersCount > 0 ? 'up' : 'neutral',
       data: chartData.pendingOffers,
       icon: LocalOfferIcon,
+      linkTo: '/proveedor/ofertas',
+      linkLabel: 'Ir a Mis Ofertas',
     },
   ];
 
