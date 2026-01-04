@@ -40,8 +40,14 @@ export default function StatCard({
   let displayIcon = icon;
   let displayColor = trendColors[trend];
 
-  if (title?.toLowerCase().includes('sin stock')) displayColor = '#f44336';
-  if (title?.toLowerCase().includes('solicitud')) displayColor = '#2E52B2';
+  // Colores específicos por tipo de card
+  if (title?.toLowerCase().includes('ventas este mes'))
+    displayColor = '#2E7D32'; // Verde
+  if (title?.toLowerCase().includes('monto por liberar'))
+    displayColor = '#2E7D32'; // Verde
+  if (title?.toLowerCase().includes('sin stock')) displayColor = '#f44336'; // Rojo
+  if (title?.toLowerCase().includes('solicitud')) displayColor = '#2E52B2'; // Azul
+  if (title?.toLowerCase().includes('oferta')) displayColor = '#7B1FA2'; // Púrpura
 
   return (
     <Card
