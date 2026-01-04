@@ -256,7 +256,7 @@ const TransferInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              Debe coincidir exactamente con el nombre registrado en tu banco
+              Debe coincidir exactamente con el nombre registrado en tu banco.
             </Typography>
           </Box>
 
@@ -269,7 +269,8 @@ const TransferInfoSection = ({
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
               Corresponde al RUT de la cuenta bancaria. Puede ser distinto al
-              RUT de facturación si la cuenta pertenece a otra persona o empresa
+              RUT de facturación si la cuenta pertenece a otra persona o
+              empresa.
             </Typography>
           </Box>
 
