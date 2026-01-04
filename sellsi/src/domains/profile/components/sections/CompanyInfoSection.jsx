@@ -163,9 +163,6 @@ const CompanyInfoSection = ({
           {/* Compra Mínima - Solo suppliers */}
           {formData.role === 'supplier' && (
             <Box>
-              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                Compra Mínima
-              </Typography>
               {(() => {
                 const raw = formData.minimumPurchaseAmount ?? '';
                 const digits = String(raw).replace(/\D+/g, '');
@@ -173,7 +170,7 @@ const CompanyInfoSection = ({
                   digits === '' ? '' : Number(digits).toLocaleString('es-CL');
                 return (
                   <TextField
-                    label="Monto mínimo (CLP)"
+                    label="Compra Mínima (CLP)"
                     value={display}
                     onChange={e => {
                       const onlyDigits = (e.target.value || '').replace(
@@ -265,7 +262,7 @@ const CompanyInfoSection = ({
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
-              👉 Proveedor: si vendes o cotizas productos.
+              👉 Proveedor: si vendes productos.
             </Typography>
             <Typography
               variant="caption"
@@ -297,7 +294,7 @@ const CompanyInfoSection = ({
               sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
             >
               Usado solo para notificaciones importantes y contacto comercial.
-              No será público
+              No será público.
             </Typography>
           </Box>
 

@@ -86,6 +86,7 @@ const BillingInfoSection = ({
             variant="outlined"
             size="small"
             placeholder="Nombre de empresa o persona"
+            InputLabelProps={{ shrink: true }}
           />
 
           {/* RUT */}
@@ -108,6 +109,7 @@ const BillingInfoSection = ({
             variant="outlined"
             size="small"
             placeholder="12.345.678-9"
+            InputLabelProps={{ shrink: true }}
             error={
               !validateRut(formData.billingRut) ||
               shouldShowError(formData.billingRut)
@@ -135,6 +137,7 @@ const BillingInfoSection = ({
             variant="outlined"
             size="small"
             placeholder="Ej: Comercio al por menor"
+            InputLabelProps={{ shrink: true }}
             error={shouldShowError(formData.businessLine)}
             helperText={getHighlightHelperText(
               formData.businessLine,
@@ -157,6 +160,7 @@ const BillingInfoSection = ({
             variant="outlined"
             size="small"
             placeholder="Dirección fiscal"
+            InputLabelProps={{ shrink: true }}
             error={shouldShowError(formData.billingAddress)}
             helperText={getHighlightHelperText(
               formData.billingAddress,
