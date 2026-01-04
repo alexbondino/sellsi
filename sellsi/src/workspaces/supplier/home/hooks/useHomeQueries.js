@@ -19,11 +19,10 @@ import { supabase } from '../../../../services/supabase';
 // CONSTANTES
 // ============================================================================
 const SERVICE_RATE = 0.03;
-const IVA_RATE = 0.19;
-const NET_MULTIPLIER = (1 - SERVICE_RATE) * (1 - IVA_RATE * SERVICE_RATE);
+const NET_MULTIPLIER = 1 - SERVICE_RATE; // Solo descontar 3% de comisión
 
-// Cache TTL en ms (5 minutos)
-const CACHE_TTL = 5 * 60 * 1000;
+// Cache deshabilitado para datos en tiempo real
+const CACHE_ENABLED = false;
 
 // ============================================================================
 // UTILIDADES DE FECHAS
@@ -109,14 +108,18 @@ export const useHomeQueries = () => {
     `${queryName}:${JSON.stringify(params)}`;
 
   const getFromCache = key => {
+    // Cache deshabilitado
+    if (!CACHE_ENABLED) return null;
     const cached = cacheRef.current.get(key);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    if (cached) {
       return cached.data;
     }
     return null;
   };
 
   const setToCache = (key, data) => {
+    // Cache deshabilitado
+    if (!CACHE_ENABLED) return;
     cacheRef.current.set(key, { data, timestamp: Date.now() });
   };
 
@@ -160,39 +163,25 @@ export const useHomeQueries = () => {
         const { startDate, endDate } = getDateRange(period);
         const daysCount = getDaysInRange(startDate, endDate);
 
-        // Intentar primero con la vista materializada
-        let { data, error } = await supabase
-          .from('product_sales_confirmed')
-          .select('amount, trx_date')
+        // Consulta directa a product_sales para obtener solo pedidos entregados (delivered)
+        // No usar vista materializada para tener datos en tiempo real
+        const { data, error } = await supabase
+          .from('product_sales')
+          .select('amount, trx_date, orders!inner(status, cancelled_at)')
           .eq('supplier_id', supplierId)
+          .eq('orders.status', 'delivered')
+          .is('orders.cancelled_at', null)
           .gte('trx_date', startDate.toISOString())
           .lte('trx_date', endDate.toISOString())
           .order('trx_date', { ascending: true });
 
-        // Fallback a product_sales si la vista falla
         if (error) {
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('product_sales')
-            .select(
-              'amount, trx_date, orders!inner(status, payment_status, cancelled_at)'
-            )
-            .eq('supplier_id', supplierId)
-            .eq('orders.payment_status', 'paid')
-            .in('orders.status', ['accepted', 'in_transit', 'delivered'])
-            .is('orders.cancelled_at', null)
-            .gte('trx_date', startDate.toISOString())
-            .lte('trx_date', endDate.toISOString())
-            .order('trx_date', { ascending: true });
-
-          if (fallbackError) {
-            return {
-              data: [],
-              total: 0,
-              average: 0,
-              error: fallbackError.message,
-            };
-          }
-          data = fallbackData;
+          return {
+            data: [],
+            total: 0,
+            average: 0,
+            error: error.message,
+          };
         }
 
         // Inicializar todos los días del período con 0
@@ -359,11 +348,16 @@ export const useHomeQueries = () => {
         // Ejecutar todas las queries en paralelo
         const [salesResult, requestsResult, productsResult] = await Promise.all(
           [
-            // 1. Ventas del mes (desde product_sales_confirmed)
+            // 1. Ventas del mes (solo pedidos entregados - delivered)
+            // Consulta directa a product_sales con join a orders para datos en tiempo real
             supabase
-              .from('product_sales_confirmed')
-              .select('amount')
+              .from('product_sales')
+              .select(
+                'amount, orders!inner(status, payment_status, cancelled_at)'
+              )
               .eq('supplier_id', supplierId)
+              .eq('orders.status', 'delivered')
+              .is('orders.cancelled_at', null)
               .gte('trx_date', monthStart)
               .lt('trx_date', nextMonth),
 
