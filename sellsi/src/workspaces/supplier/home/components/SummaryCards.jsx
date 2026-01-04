@@ -8,6 +8,7 @@ import {
   Assignment as AssignmentIcon,
   LocalOffer as LocalOfferIcon,
   AccountBalanceWallet as WalletIcon,
+  PendingActions as PendingActionsIcon,
 } from '@mui/icons-material';
 import { generateChartData } from '../utils/utils';
 import {
@@ -23,6 +24,7 @@ const SummaryCards = ({
   productsActive = 0,
   monthlyOffersCount = 0,
   pendingReleaseAmount = 0,
+  pendingRequestsCount = 0,
 }) => {
   const chartData = {
     products: generateChartData(productsActive ?? products.length, 'up'),
@@ -31,6 +33,7 @@ const SummaryCards = ({
     requests: generateChartData(monthlyRequestsCount, 'neutral'),
     offers: generateChartData(monthlyOffersCount, 'neutral'),
     pendingRelease: generateChartData(pendingReleaseAmount / 1000, 'neutral'),
+    pendingRequests: generateChartData(pendingRequestsCount, 'neutral'),
   };
 
   const dashboardData = [
@@ -54,6 +57,13 @@ const SummaryCards = ({
       trend: 'neutral',
       data: chartData.requests,
       icon: AssignmentIcon,
+    },
+    {
+      title: 'Solicitudes Pendientes',
+      value: Number(pendingRequestsCount || 0).toString(),
+      trend: pendingRequestsCount > 0 ? 'up' : 'neutral',
+      data: chartData.pendingRequests,
+      icon: PendingActionsIcon,
     },
     {
       title: 'Ofertas Este Mes',

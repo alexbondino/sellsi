@@ -86,23 +86,11 @@ const ProviderHome = () => {
   const totalSales = metrics?.totalRevenue || 0;
   const monthlyOffersCount = metrics?.monthlyOffersCount ?? 0;
   const pendingReleaseAmount = metrics?.pendingReleaseAmount ?? 0;
+  const pendingRequestsCount = metrics?.pendingRequestsCount ?? 0;
 
   // Combine loading and error states
   const loading = dashboardLoading || productsLoading;
   const error = dashboardError || productsError;
-
-  // Función para manejar la creación de nuevo producto con validaciones encadenadas
-  const handleNewProduct = () => {
-    // Primero verificar que esté verificado
-    verifiedCheckAndProceed(() => {
-      // Luego verificar info bancaria
-      checkAndProceed(null, () => {
-        navigate('/supplier/addproduct', {
-          state: { fromHome: true },
-        });
-      });
-    });
-  };
 
   // ============================================================================
   // CÁLCULO CORRECTO DE ESTADÍSTICAS
@@ -197,7 +185,7 @@ const ProviderHome = () => {
                       productsActive={productsActive}
                       monthlyOffersCount={monthlyOffersCount}
                       pendingReleaseAmount={pendingReleaseAmount}
-                      onNewProduct={handleNewProduct}
+                      pendingRequestsCount={pendingRequestsCount}
                     />
                   </Suspense>
                 </Box>

@@ -283,6 +283,22 @@ export const useSupplierDashboard = () => {
           /* noop */
         }
 
+        // Contar solicitudes (órdenes) pendientes (status = 'pending')
+        let pendingRequestsCount = 0;
+        try {
+          const { data: pendingRequests, error: pendingReqErr } = await supabase
+            .from('orders')
+            .select('id')
+            .contains('supplier_ids', [supplierId])
+            .eq('status', 'pending');
+
+          if (!pendingReqErr && Array.isArray(pendingRequests)) {
+            pendingRequestsCount = pendingRequests.length;
+          }
+        } catch (_) {
+          /* noop */
+        }
+
         // Calcular monto total por liberar (pedidos entregados pero no pagados al proveedor)
         // Calculamos desde product_sales con órdenes en estado 'delivered'
         // ya que payment_releases tiene RLS que solo permite acceso a admins
@@ -343,6 +359,7 @@ export const useSupplierDashboard = () => {
           monthlyRequestsCount,
           monthlyOffersCount,
           pendingReleaseAmount,
+          pendingRequestsCount,
         };
 
         // Datos para gráficos
