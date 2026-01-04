@@ -3,7 +3,7 @@
 -- =============================================================================
 -- Description: Updates the view to use LEFT JOIN instead of JOIN, ensuring
 --              all active products are returned even if they don't have a
---              daily rank yet. Products without rank will have daily_rank = NULL.
+--              daily rank yet. Products without rank will have daily_rank = NULL. a
 -- Date: 2026-01-04
 -- =============================================================================
 
