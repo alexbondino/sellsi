@@ -1,5 +1,12 @@
 import React from 'react';
-import { Box, Typography, Paper, Skeleton } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Paper,
+  Skeleton,
+  ToggleButtonGroup,
+  ToggleButton,
+} from '@mui/material';
 import { formatCurrency } from '../../../utils/formatters';
 
 /**
@@ -15,7 +22,10 @@ const HorizontalBarChart = ({
   maxItems = 5,
   showOthers = true,
   barColor = '#5B8DEF',
+  totalColor = 'primary.main',
   emptyMessage = 'No hay datos disponibles',
+  period = null,
+  onPeriodChange = null,
 }) => {
   // Procesar datos: ordenar y agrupar "Otros" si es necesario
   const processedData = React.useMemo(() => {
@@ -59,6 +69,12 @@ const HorizontalBarChart = ({
     return value.toLocaleString('es-CL');
   };
 
+  const handlePeriodChange = (event, newPeriod) => {
+    if (newPeriod !== null && onPeriodChange) {
+      onPeriodChange(newPeriod);
+    }
+  };
+
   if (loading) {
     return (
       <Paper sx={{ p: 2, borderRadius: 3, height: '100%' }}>
@@ -96,6 +112,8 @@ const HorizontalBarChart = ({
           justifyContent: 'space-between',
           alignItems: 'center',
           mb: 2,
+          flexWrap: 'wrap',
+          gap: 1,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -104,6 +122,31 @@ const HorizontalBarChart = ({
             {title}
           </Typography>
         </Box>
+
+        {onPeriodChange && (
+          <ToggleButtonGroup
+            value={period}
+            exclusive
+            onChange={handlePeriodChange}
+            size="small"
+            sx={{
+              '& .MuiToggleButton-root': {
+                textTransform: 'none',
+                px: 1.5,
+                py: 0.5,
+                fontSize: '0.75rem',
+              },
+              '& .Mui-selected': {
+                bgcolor: 'primary.main',
+                color: 'white',
+              },
+            }}
+          >
+            <ToggleButton value={7}>7d</ToggleButton>
+            <ToggleButton value={15}>15d</ToggleButton>
+            <ToggleButton value="ytd">YTD</ToggleButton>
+          </ToggleButtonGroup>
+        )}
       </Box>
 
       {/* Content */}
@@ -209,7 +252,11 @@ const HorizontalBarChart = ({
                 justifyContent: 'flex-end',
               }}
             >
-              <Typography variant="body1" fontWeight={600} color="primary.main">
+              <Typography
+                variant="body1"
+                fontWeight={600}
+                sx={{ color: totalColor }}
+              >
                 {formatValue(total)}
               </Typography>
             </Box>

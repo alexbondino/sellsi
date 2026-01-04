@@ -25,6 +25,7 @@ const SummaryCards = ({
   monthlyOffersCount = 0,
   pendingReleaseAmount = 0,
   pendingRequestsCount = 0,
+  pendingOffersCount = 0,
 }) => {
   const chartData = {
     products: generateChartData(productsActive ?? products.length, 'up'),
@@ -34,6 +35,7 @@ const SummaryCards = ({
     offers: generateChartData(monthlyOffersCount, 'neutral'),
     pendingRelease: generateChartData(pendingReleaseAmount / 1000, 'neutral'),
     pendingRequests: generateChartData(pendingRequestsCount, 'neutral'),
+    pendingOffers: generateChartData(pendingOffersCount, 'neutral'),
   };
 
   const dashboardData = [
@@ -59,13 +61,6 @@ const SummaryCards = ({
       icon: AssignmentIcon,
     },
     {
-      title: 'Solicitudes Pendientes',
-      value: Number(pendingRequestsCount || 0).toString(),
-      trend: pendingRequestsCount > 0 ? 'up' : 'neutral',
-      data: chartData.pendingRequests,
-      icon: PendingActionsIcon,
-    },
-    {
       title: 'Ofertas Este Mes',
       value: Number(monthlyOffersCount || 0).toString(),
       trend: 'neutral',
@@ -73,18 +68,25 @@ const SummaryCards = ({
       icon: LocalOfferIcon,
     },
     {
-      title: 'Productos Activos',
-      value: formatNumber(productsActive ?? products.length),
-      trend: 'up',
-      data: chartData.products,
-      icon: InventoryIcon,
-    },
-    {
       title: 'Productos Sin Stock',
       value: outOfStock.toString(),
       trend: outOfStock > 5 ? 'down' : 'neutral',
       data: chartData.outOfStock,
       icon: WarningIcon,
+    },
+    {
+      title: 'Solicitudes Pendientes',
+      value: Number(pendingRequestsCount || 0).toString(),
+      trend: pendingRequestsCount > 0 ? 'up' : 'neutral',
+      data: chartData.pendingRequests,
+      icon: PendingActionsIcon,
+    },
+    {
+      title: 'Ofertas Pendientes',
+      value: Number(pendingOffersCount || 0).toString(),
+      trend: pendingOffersCount > 0 ? 'up' : 'neutral',
+      data: chartData.pendingOffers,
+      icon: LocalOfferIcon,
     },
   ];
 

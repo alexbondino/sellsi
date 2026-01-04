@@ -436,23 +436,24 @@ export const useHomeQueries = () => {
 
   /**
    * Obtiene las ventas agrupadas por producto (solo pedidos entregados)
+   * @param {number|string} period - 7, 15 o 'ytd'
    * @param {Object} options - { skipCache: boolean }
    * @returns {Promise<{ data: Array<{label: string, value: number}>, total: number, error: string|null }>}
    */
   const fetchSalesByProduct = useCallback(
-    async (options = {}) => {
+    async (period = 7, options = {}) => {
       if (!supplierId) {
         return { data: [], total: 0, error: 'No supplier ID' };
       }
 
-      const cacheKey = getCacheKey('salesByProduct', { supplierId });
+      const cacheKey = getCacheKey('salesByProduct', { supplierId, period });
       if (!options.skipCache) {
         const cached = getFromCache(cacheKey);
         if (cached) return cached;
       }
 
       try {
-        const { monthStart, nextMonth } = getCurrentMonthRange();
+        const { startDate, endDate } = getDateRange(period);
 
         // Obtener ventas por producto con nombre del producto
         const { data, error } = await supabase
@@ -468,8 +469,8 @@ export const useHomeQueries = () => {
           .eq('supplier_id', supplierId)
           .eq('orders.status', 'delivered')
           .is('orders.cancelled_at', null)
-          .gte('trx_date', monthStart)
-          .lt('trx_date', nextMonth);
+          .gte('trx_date', startDate.toISOString())
+          .lte('trx_date', endDate.toISOString());
 
         if (error) {
           return { data: [], total: 0, error: error.message };
@@ -509,23 +510,24 @@ export const useHomeQueries = () => {
 
   /**
    * Obtiene las ventas agrupadas por cliente (solo pedidos entregados)
+   * @param {number|string} period - 7, 15 o 'ytd'
    * @param {Object} options - { skipCache: boolean }
    * @returns {Promise<{ data: Array<{label: string, value: number}>, total: number, error: string|null }>}
    */
   const fetchSalesByCustomer = useCallback(
-    async (options = {}) => {
+    async (period = 7, options = {}) => {
       if (!supplierId) {
         return { data: [], total: 0, error: 'No supplier ID' };
       }
 
-      const cacheKey = getCacheKey('salesByCustomer', { supplierId });
+      const cacheKey = getCacheKey('salesByCustomer', { supplierId, period });
       if (!options.skipCache) {
         const cached = getFromCache(cacheKey);
         if (cached) return cached;
       }
 
       try {
-        const { monthStart, nextMonth } = getCurrentMonthRange();
+        const { startDate, endDate } = getDateRange(period);
 
         // Obtener ventas con información del cliente (user_id de la orden)
         const { data, error } = await supabase
@@ -544,8 +546,8 @@ export const useHomeQueries = () => {
           .eq('supplier_id', supplierId)
           .eq('orders.status', 'delivered')
           .is('orders.cancelled_at', null)
-          .gte('trx_date', monthStart)
-          .lt('trx_date', nextMonth);
+          .gte('trx_date', startDate.toISOString())
+          .lte('trx_date', endDate.toISOString());
 
         if (error) {
           return { data: [], total: 0, error: error.message };

@@ -5,11 +5,12 @@ import { useHomeQueries } from '../hooks';
 
 /**
  * Gráfico de ventas por cliente para el dashboard del proveedor
- * Muestra los clientes con mayores compras en el mes actual
+ * Muestra los clientes con mayores compras en el período seleccionado
  */
 const SalesByCustomerChart = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState(7);
 
   const { supplierId, fetchSalesByCustomer } = useHomeQueries();
 
@@ -18,13 +19,17 @@ const SalesByCustomerChart = () => {
 
     const loadData = async () => {
       setLoading(true);
-      const result = await fetchSalesByCustomer();
+      const result = await fetchSalesByCustomer(period);
       setData(result.data || []);
       setLoading(false);
     };
 
     loadData();
-  }, [supplierId, fetchSalesByCustomer]);
+  }, [supplierId, fetchSalesByCustomer, period]);
+
+  const handlePeriodChange = newPeriod => {
+    setPeriod(newPeriod);
+  };
 
   return (
     <HorizontalBarChart
@@ -36,7 +41,9 @@ const SalesByCustomerChart = () => {
       maxItems={6}
       showOthers={true}
       barColor="#5B8DEF"
-      emptyMessage="No hay ventas a clientes este mes"
+      emptyMessage="No hay ventas a clientes en este período"
+      period={period}
+      onPeriodChange={handlePeriodChange}
     />
   );
 };

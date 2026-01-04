@@ -87,6 +87,7 @@ const ProviderHome = () => {
   const monthlyOffersCount = metrics?.monthlyOffersCount ?? 0;
   const pendingReleaseAmount = metrics?.pendingReleaseAmount ?? 0;
   const pendingRequestsCount = metrics?.pendingRequestsCount ?? 0;
+  const pendingOffersCount = metrics?.pendingOffersCount ?? 0;
 
   // Combine loading and error states
   const loading = dashboardLoading || productsLoading;
@@ -186,6 +187,7 @@ const ProviderHome = () => {
                       monthlyOffersCount={monthlyOffersCount}
                       pendingReleaseAmount={pendingReleaseAmount}
                       pendingRequestsCount={pendingRequestsCount}
+                      pendingOffersCount={pendingOffersCount}
                     />
                   </Suspense>
                 </Box>
