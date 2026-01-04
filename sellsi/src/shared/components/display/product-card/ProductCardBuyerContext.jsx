@@ -16,7 +16,10 @@ import {
   Verified as VerifiedIcon,
 } from '@mui/icons-material';
 
-// Custom hooks - OPTIMIZADO: Usar hook optimizado con cach├® global
+// Utilidades
+import { toTitleCase } from '../../../../utils/textFormatters';
+
+// Custom hooks - OPTIMIZADO: Usar hook optimizado con caché global
 import { useOptimizedUserShippingRegion } from '../../../../hooks/useOptimizedUserShippingRegion';
 
 // Utility imports (updated paths for shared location)
@@ -120,8 +123,9 @@ const ProductCardBuyerContext = React.memo(
       // Ô£à FIX: Usar minPrice/maxPrice del price summary cuando hay rango (sin necesidad de tiers cargados)
       const minPriceNum = Number(effectiveMinPrice) || 0;
       const maxPriceNum = Number(effectiveMaxPrice) || 0;
-      const hasRange = minPriceNum > 0 && maxPriceNum > 0 && minPriceNum !== maxPriceNum;
-      
+      const hasRange =
+        minPriceNum > 0 && maxPriceNum > 0 && minPriceNum !== maxPriceNum;
+
       if (hasRange) {
         return (
           <PriceDisplay
@@ -189,7 +193,7 @@ const ProductCardBuyerContext = React.memo(
                 color: '#1e293b',
               }}
             >
-              {nombre}
+              {toTitleCase(nombre)}
             </Typography>
           </Box>
           {/* Info section: responsive order */}

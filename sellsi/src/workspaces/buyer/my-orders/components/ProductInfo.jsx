@@ -1,25 +1,34 @@
 /**
  * ProductInfo Component
  * Extracted from BuyerOrders.jsx for reusability
- * 
+ *
  * Displays product information: name, supplier, price, quantity, document type
  */
 
-import React, { memo } from 'react'
-import { Box, Typography } from '@mui/material'
-import VerifiedIcon from '@mui/icons-material/Verified'
-import { calculateItemUnitPrice, calculateItemLineTotal } from '../utils/orderHelpers'
-import DocumentTypeSection from './DocumentTypeSection'
+import React, { memo } from 'react';
+import { Box, Typography } from '@mui/material';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import {
+  calculateItemUnitPrice,
+  calculateItemLineTotal,
+} from '../utils/orderHelpers';
+import DocumentTypeSection from './DocumentTypeSection';
+import { toTitleCase } from '../../../../utils/textFormatters';
 
-const ProductInfo = memo(function ProductInfo({ item, formatCurrency, isMobile, order }) {
-  const unit = calculateItemUnitPrice(item)
-  const lineTotal = calculateItemLineTotal(item)
-  
+const ProductInfo = memo(function ProductInfo({
+  item,
+  formatCurrency,
+  isMobile,
+  order,
+}) {
+  const unit = calculateItemUnitPrice(item);
+  const lineTotal = calculateItemLineTotal(item);
+
   const isOffered =
     item.isOffered ||
     item.metadata?.isOffered ||
     !!item.offer_id ||
-    !!item.offered_price
+    !!item.offered_price;
 
   return (
     <Box sx={{ flex: 1, minWidth: { xs: 'calc(100% - 100px)', md: 0 } }}>
@@ -50,7 +59,7 @@ const ProductInfo = memo(function ProductInfo({ item, formatCurrency, isMobile, 
               lineHeight: { xs: 1.3, md: 1.5 },
             }}
           >
-            {item.product.name}
+            {toTitleCase(item.product.name)}
           </Typography>
           {isOffered && (
             <Typography
@@ -75,7 +84,7 @@ const ProductInfo = memo(function ProductInfo({ item, formatCurrency, isMobile, 
           )}
         </Box>
       </Box>
-      
+
       <Box
         sx={{
           display: 'flex',
@@ -111,7 +120,7 @@ const ProductInfo = memo(function ProductInfo({ item, formatCurrency, isMobile, 
           />
         )}
       </Box>
-      
+
       <Typography
         variant="body1"
         fontWeight="medium"
@@ -120,15 +129,16 @@ const ProductInfo = memo(function ProductInfo({ item, formatCurrency, isMobile, 
           fontSize: { xs: '0.9rem', md: '1rem' },
         }}
       >
-        {item.quantity} uds a {formatCurrency(unit)} c/u = {formatCurrency(lineTotal)}
+        {item.quantity} uds a {formatCurrency(unit)} c/u ={' '}
+        {formatCurrency(lineTotal)}
       </Typography>
 
       {/* Documento tributario */}
       <DocumentTypeSection item={item} order={order} />
     </Box>
-  )
-})
+  );
+});
 
-ProductInfo.displayName = 'ProductInfo'
+ProductInfo.displayName = 'ProductInfo';
 
-export default ProductInfo
+export default ProductInfo;

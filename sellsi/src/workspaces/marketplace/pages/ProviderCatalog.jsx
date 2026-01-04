@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { toTitleCase } from '../../../utils/textFormatters';
 import {
   Box,
   Container,
@@ -390,7 +391,9 @@ const ProviderCatalog = () => {
 
       // Mostrar toast de confirmación
       toast.success(
-        `${product.nombre || product.name || 'Producto'} agregado al carrito`,
+        `${toTitleCase(
+          product.nombre || product.name || 'Producto'
+        )} agregado al carrito`,
         {
           icon: '🛒',
           duration: 3000,

@@ -8,14 +8,17 @@
 import React from 'react';
 import { Box, Typography, Divider } from '@mui/material';
 import { TYPOGRAPHY_STYLES, INFO_STYLES } from '../../styles/productPageStyles';
+import { toTitleCase } from '../../../../../utils/textFormatters';
 
 const ProductName = ({ nombre, isMobile = false }) => {
+  const formattedName = toTitleCase(nombre);
+
   // Versión móvil - centrado sin botón copiar
   if (isMobile) {
     return (
       <Box sx={INFO_STYLES.mobileTitleContainer}>
         <Typography variant="h5" sx={TYPOGRAPHY_STYLES.productTitleMobile}>
-          {nombre}
+          {formattedName}
         </Typography>
         <Divider
           sx={{
@@ -35,7 +38,7 @@ const ProductName = ({ nombre, isMobile = false }) => {
     <Box sx={INFO_STYLES.titleContainer}>
       <Box sx={{ width: '100%' }}>
         <Typography variant="h4" sx={TYPOGRAPHY_STYLES.productTitleDesktop}>
-          {nombre}
+          {formattedName}
         </Typography>
         <Divider
           sx={{
