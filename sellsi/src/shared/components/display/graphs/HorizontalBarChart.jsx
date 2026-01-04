@@ -116,9 +116,9 @@ const HorizontalBarChart = ({
           gap: 1,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           {icon}
-          <Typography variant="h6" fontWeight={600}>
+          <Typography variant="subtitle1" fontWeight={600} fontSize="0.95rem">
             {title}
           </Typography>
         </Box>
@@ -143,7 +143,7 @@ const HorizontalBarChart = ({
             }}
           >
             <ToggleButton value={7}>7d</ToggleButton>
-            <ToggleButton value={15}>15d</ToggleButton>
+            <ToggleButton value={30}>30d</ToggleButton>
             <ToggleButton value="ytd">YTD</ToggleButton>
           </ToggleButtonGroup>
         )}

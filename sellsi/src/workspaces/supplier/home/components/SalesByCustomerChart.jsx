@@ -36,7 +36,7 @@ const SalesByCustomerChart = () => {
       data={data}
       loading={loading}
       title="Ventas por cliente"
-      icon={<PeopleIcon sx={{ color: '#1565C0', fontSize: 28 }} />}
+      icon={<PeopleIcon sx={{ color: '#1565C0', fontSize: 22 }} />}
       isCurrency={true}
       maxItems={6}
       showOthers={true}

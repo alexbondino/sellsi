@@ -6,7 +6,9 @@ import CardContent from '@mui/material/CardContent';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useNavigate } from 'react-router-dom';
 
 export default function StatCard({
@@ -18,6 +20,7 @@ export default function StatCard({
   icon,
   linkTo,
   linkLabel,
+  tooltip,
 }) {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -63,21 +66,50 @@ export default function StatCard({
         }}
       >
         {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
           {displayIcon && (
             <Box
               component={displayIcon}
-              sx={{ fontSize: 28, color: displayColor, opacity: 0.85 }}
+              sx={{ fontSize: 22, color: displayColor, opacity: 0.85 }}
             />
           )}
 
           <Typography
             component="h2"
             variant="subtitle2"
-            sx={{ fontWeight: 700, fontSize: 'clamp(0.8rem, 1.3vw, 1.3rem)' }}
+            sx={{ fontWeight: 600, fontSize: 'clamp(0.7rem, 1.1vw, 0.95rem)' }}
           >
             {title}
           </Typography>
+
+          {tooltip && (
+            <Tooltip
+              title={tooltip}
+              arrow
+              placement="top"
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: 'grey.800',
+                    fontSize: '0.75rem',
+                    maxWidth: 280,
+                    p: 1.5,
+                    lineHeight: 1.4,
+                  },
+                },
+              }}
+            >
+              <InfoOutlinedIcon
+                sx={{
+                  fontSize: 16,
+                  color: 'text.secondary',
+                  cursor: 'help',
+                  opacity: 0.7,
+                  '&:hover': { opacity: 1 },
+                }}
+              />
+            </Tooltip>
+          )}
         </Box>
 
         {/* Valor centrado */}
@@ -93,11 +125,11 @@ export default function StatCard({
           }}
         >
           <Typography
-            variant="h3"
+            variant="h4"
             component="p"
             sx={{
-              fontWeight: 800,
-              fontSize: 'clamp(2rem, 3vw, 3rem)',
+              fontWeight: 700,
+              fontSize: 'clamp(1.5rem, 2.5vw, 2.25rem)',
               textAlign: 'center',
               lineHeight: 1,
               overflow: 'hidden',
