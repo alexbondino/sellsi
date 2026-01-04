@@ -136,10 +136,25 @@ export default function StatCard({
               whiteSpace: 'nowrap',
               textOverflow: 'ellipsis',
               maxWidth: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              // Reducir tamaño del símbolo de moneda
+              '& .currency-symbol': {
+                fontSize: '0.65em',
+                fontWeight: 600,
+                marginRight: '0.15em',
+                display: 'inline-flex',
+                alignItems: 'center',
+              },
             }}
-          >
-            {value}
-          </Typography>
+            dangerouslySetInnerHTML={{
+              __html:
+                typeof value === 'string' && value.startsWith('$')
+                  ? `<span class="currency-symbol">$</span>${value.slice(1)}`
+                  : value,
+            }}
+          />
         </Stack>
       </CardContent>
 
