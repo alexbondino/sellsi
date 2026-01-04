@@ -266,6 +266,81 @@ export const useSupplierDashboard = () => {
           /* noop */
         }
 
+        // Contar ofertas recibidas este mes
+        let monthlyOffersCount = 0;
+        try {
+          const { data: offersData, error: offersErr } = await supabase
+            .from('offers')
+            .select('id')
+            .eq('supplier_id', supplierId)
+            .gte('created_at', monthStart)
+            .lt('created_at', nextMonth);
+
+          if (!offersErr && Array.isArray(offersData)) {
+            monthlyOffersCount = offersData.length;
+          }
+        } catch (_) {
+          /* noop */
+        }
+
+        // Contar solicitudes (órdenes) pendientes (status = 'pending')
+        let pendingRequestsCount = 0;
+        try {
+          const { data: pendingRequests, error: pendingReqErr } = await supabase
+            .from('orders')
+            .select('id')
+            .contains('supplier_ids', [supplierId])
+            .eq('status', 'pending');
+
+          if (!pendingReqErr && Array.isArray(pendingRequests)) {
+            pendingRequestsCount = pendingRequests.length;
+          }
+        } catch (_) {
+          /* noop */
+        }
+
+        // Contar ofertas pendientes (status = 'pending')
+        let pendingOffersCount = 0;
+        try {
+          const { data: pendingOffers, error: pendingOffersErr } =
+            await supabase
+              .from('offers')
+              .select('id')
+              .eq('supplier_id', supplierId)
+              .eq('status', 'pending');
+
+          if (!pendingOffersErr && Array.isArray(pendingOffers)) {
+            pendingOffersCount = pendingOffers.length;
+          }
+        } catch (_) {
+          /* noop */
+        }
+
+        // Calcular monto total por liberar (pedidos entregados pero no pagados al proveedor)
+        // Calculamos desde product_sales con órdenes en estado 'delivered'
+        // ya que payment_releases tiene RLS que solo permite acceso a admins
+        let pendingReleaseAmount = 0;
+        try {
+          const { data: deliveredSales, error: deliveredErr } = await supabase
+            .from('product_sales')
+            .select('amount, orders!inner(status, cancelled_at)')
+            .eq('supplier_id', supplierId)
+            .eq('orders.status', 'delivered')
+            .is('orders.cancelled_at', null);
+
+          if (!deliveredErr && Array.isArray(deliveredSales)) {
+            // Aplicar el mismo descuento del 3%
+            const SERVICE_RATE = 0.03;
+            const netMultiplier = 1 - SERVICE_RATE;
+            pendingReleaseAmount = deliveredSales.reduce(
+              (sum, sale) => sum + (Number(sale.amount) || 0) * netMultiplier,
+              0
+            );
+          }
+        } catch (_) {
+          /* noop */
+        }
+
         // Obtener solicitudes que incluyen productos del proveedor
         // Usar join con request_products y products para filtrar por supplier_id
         const { data: quoteRequests, error: quoteError } = await supabase
@@ -299,6 +374,10 @@ export const useSupplierDashboard = () => {
           averageRating: 0, // Se puede agregar después
           totalOrders: orderMetrics.length,
           monthlyRequestsCount,
+          monthlyOffersCount,
+          pendingReleaseAmount,
+          pendingRequestsCount,
+          pendingOffersCount,
         };
 
         // Datos para gráficos

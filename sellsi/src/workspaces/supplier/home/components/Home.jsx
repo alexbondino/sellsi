@@ -84,23 +84,14 @@ const ProviderHome = () => {
   // Contador de solicitudes mensuales (órdenes del mes actual)
   const monthlyRequestsCount = metrics?.monthlyRequestsCount ?? 0;
   const totalSales = metrics?.totalRevenue || 0;
+  const monthlyOffersCount = metrics?.monthlyOffersCount ?? 0;
+  const pendingReleaseAmount = metrics?.pendingReleaseAmount ?? 0;
+  const pendingRequestsCount = metrics?.pendingRequestsCount ?? 0;
+  const pendingOffersCount = metrics?.pendingOffersCount ?? 0;
 
   // Combine loading and error states
   const loading = dashboardLoading || productsLoading;
   const error = dashboardError || productsError;
-
-  // Función para manejar la creación de nuevo producto con validaciones encadenadas
-  const handleNewProduct = () => {
-    // Primero verificar que esté verificado
-    verifiedCheckAndProceed(() => {
-      // Luego verificar info bancaria
-      checkAndProceed(null, () => {
-        navigate('/supplier/addproduct', {
-          state: { fromHome: true },
-        });
-      });
-    });
-  };
 
   // ============================================================================
   // CÁLCULO CORRECTO DE ESTADÍSTICAS
@@ -193,7 +184,10 @@ const ProviderHome = () => {
                       outOfStock={productsOutOfStock}
                       monthlyRequestsCount={monthlyRequestsCount}
                       productsActive={productsActive}
-                      onNewProduct={handleNewProduct}
+                      monthlyOffersCount={monthlyOffersCount}
+                      pendingReleaseAmount={pendingReleaseAmount}
+                      pendingRequestsCount={pendingRequestsCount}
+                      pendingOffersCount={pendingOffersCount}
                     />
                   </Suspense>
                 </Box>

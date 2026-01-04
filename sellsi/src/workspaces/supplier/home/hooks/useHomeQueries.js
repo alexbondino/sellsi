@@ -431,6 +431,158 @@ export const useHomeQueries = () => {
   );
 
   // ============================================================================
+  // QUERY: VENTAS POR PRODUCTO
+  // ============================================================================
+
+  /**
+   * Obtiene las ventas agrupadas por producto (solo pedidos entregados)
+   * @param {number|string} period - 7, 15 o 'ytd'
+   * @param {Object} options - { skipCache: boolean }
+   * @returns {Promise<{ data: Array<{label: string, value: number}>, total: number, error: string|null }>}
+   */
+  const fetchSalesByProduct = useCallback(
+    async (period = 7, options = {}) => {
+      if (!supplierId) {
+        return { data: [], total: 0, error: 'No supplier ID' };
+      }
+
+      const cacheKey = getCacheKey('salesByProduct', { supplierId, period });
+      if (!options.skipCache) {
+        const cached = getFromCache(cacheKey);
+        if (cached) return cached;
+      }
+
+      try {
+        const { startDate, endDate } = getDateRange(period);
+
+        // Obtener ventas por producto con nombre del producto
+        const { data, error } = await supabase
+          .from('product_sales')
+          .select(
+            `
+            amount,
+            product_id,
+            products!inner(productnm),
+            orders!inner(status, cancelled_at)
+          `
+          )
+          .eq('supplier_id', supplierId)
+          .eq('orders.status', 'delivered')
+          .is('orders.cancelled_at', null)
+          .gte('trx_date', startDate.toISOString())
+          .lte('trx_date', endDate.toISOString());
+
+        if (error) {
+          return { data: [], total: 0, error: error.message };
+        }
+
+        // Agrupar por producto
+        const productSales = {};
+        (data || []).forEach(sale => {
+          const productName = sale.products?.productnm || 'Sin nombre';
+          const amount = (Number(sale.amount) || 0) * NET_MULTIPLIER;
+          productSales[productName] = (productSales[productName] || 0) + amount;
+        });
+
+        // Convertir a array y ordenar
+        const chartData = Object.entries(productSales)
+          .map(([label, value]) => ({
+            label,
+            value: Math.round(value),
+          }))
+          .sort((a, b) => b.value - a.value);
+
+        const total = chartData.reduce((sum, d) => sum + d.value, 0);
+
+        const result = { data: chartData, total, error: null };
+        setToCache(cacheKey, result);
+        return result;
+      } catch (err) {
+        return { data: [], total: 0, error: err.message };
+      }
+    },
+    [supplierId]
+  );
+
+  // ============================================================================
+  // QUERY: VENTAS POR CLIENTE
+  // ============================================================================
+
+  /**
+   * Obtiene las ventas agrupadas por cliente (solo pedidos entregados)
+   * @param {number|string} period - 7, 15 o 'ytd'
+   * @param {Object} options - { skipCache: boolean }
+   * @returns {Promise<{ data: Array<{label: string, value: number}>, total: number, error: string|null }>}
+   */
+  const fetchSalesByCustomer = useCallback(
+    async (period = 7, options = {}) => {
+      if (!supplierId) {
+        return { data: [], total: 0, error: 'No supplier ID' };
+      }
+
+      const cacheKey = getCacheKey('salesByCustomer', { supplierId, period });
+      if (!options.skipCache) {
+        const cached = getFromCache(cacheKey);
+        if (cached) return cached;
+      }
+
+      try {
+        const { startDate, endDate } = getDateRange(period);
+
+        // Obtener ventas con información del cliente (user_id de la orden)
+        const { data, error } = await supabase
+          .from('product_sales')
+          .select(
+            `
+            amount,
+            orders!inner(
+              status,
+              cancelled_at,
+              user_id,
+              users!inner(user_nm)
+            )
+          `
+          )
+          .eq('supplier_id', supplierId)
+          .eq('orders.status', 'delivered')
+          .is('orders.cancelled_at', null)
+          .gte('trx_date', startDate.toISOString())
+          .lte('trx_date', endDate.toISOString());
+
+        if (error) {
+          return { data: [], total: 0, error: error.message };
+        }
+
+        // Agrupar por cliente
+        const customerSales = {};
+        (data || []).forEach(sale => {
+          const customerName = sale.orders?.users?.user_nm || 'Cliente';
+          const amount = (Number(sale.amount) || 0) * NET_MULTIPLIER;
+          customerSales[customerName] =
+            (customerSales[customerName] || 0) + amount;
+        });
+
+        // Convertir a array y ordenar
+        const chartData = Object.entries(customerSales)
+          .map(([label, value]) => ({
+            label,
+            value: Math.round(value),
+          }))
+          .sort((a, b) => b.value - a.value);
+
+        const total = chartData.reduce((sum, d) => sum + d.value, 0);
+
+        const result = { data: chartData, total, error: null };
+        setToCache(cacheKey, result);
+        return result;
+      } catch (err) {
+        return { data: [], total: 0, error: err.message };
+      }
+    },
+    [supplierId]
+  );
+
+  // ============================================================================
   // RETURN
   // ============================================================================
 
@@ -443,6 +595,8 @@ export const useHomeQueries = () => {
     fetchDailySales,
     fetchDailyRequests,
     fetchSummaryMetrics,
+    fetchSalesByProduct,
+    fetchSalesByCustomer,
 
     // Cache management
     invalidateCache,

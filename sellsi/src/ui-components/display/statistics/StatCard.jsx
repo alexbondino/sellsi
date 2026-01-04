@@ -5,6 +5,9 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { useNavigate } from 'react-router-dom';
 
 export default function StatCard({
   title,
@@ -13,8 +16,11 @@ export default function StatCard({
   trend,
   data,
   icon,
+  linkTo,
+  linkLabel,
 }) {
   const theme = useTheme();
+  const navigate = useNavigate();
 
   const trendColors = {
     up:
@@ -34,16 +40,26 @@ export default function StatCard({
   let displayIcon = icon;
   let displayColor = trendColors[trend];
 
-  if (title?.toLowerCase().includes('sin stock')) displayColor = '#f44336';
-  if (title?.toLowerCase().includes('solicitud')) displayColor = '#2E52B2';
+  // Colores específicos por tipo de card
+  if (title?.toLowerCase().includes('ventas este mes'))
+    displayColor = '#2E7D32'; // Verde
+  if (title?.toLowerCase().includes('monto por liberar'))
+    displayColor = '#2E7D32'; // Verde
+  if (title?.toLowerCase().includes('sin stock')) displayColor = '#f44336'; // Rojo
+  if (title?.toLowerCase().includes('solicitud')) displayColor = '#2E52B2'; // Azul
+  if (title?.toLowerCase().includes('oferta')) displayColor = '#7B1FA2'; // Púrpura
 
   return (
-    <Card variant="outlined" sx={{ height: '100%', flexGrow: 1 }}>
+    <Card
+      variant="outlined"
+      sx={{ height: '100%', flexGrow: 1, position: 'relative' }}
+    >
       <CardContent
         sx={{
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
+          pb: linkTo ? '36px !important' : undefined, // Espacio para el botón absoluto
         }}
       >
         {/* Header */}
@@ -72,8 +88,8 @@ export default function StatCard({
             justifyContent: 'center',
             alignItems: 'center',
             textAlign: 'center',
-            overflow: 'hidden', // 🔥 evita que desaparezca
-            minHeight: '60px', // 🔥 asegura espacio mínimo
+            overflow: 'hidden',
+            minHeight: '60px',
           }}
         >
           <Typography
@@ -81,20 +97,49 @@ export default function StatCard({
             component="p"
             sx={{
               fontWeight: 800,
-              // 🔥 escala más agresivamente para pantallas estrechas
               fontSize: 'clamp(2rem, 3vw, 3rem)',
               textAlign: 'center',
               lineHeight: 1,
               overflow: 'hidden',
               whiteSpace: 'nowrap',
               textOverflow: 'ellipsis',
-              maxWidth: '100%', // 🔥 evita salto o desaparición
+              maxWidth: '100%',
             }}
           >
             {value}
           </Typography>
         </Stack>
       </CardContent>
+
+      {/* Botón de enlace opcional - posición absoluta */}
+      {linkTo && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 8,
+            left: 16,
+          }}
+        >
+          <Button
+            size="small"
+            endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
+            onClick={() => navigate(linkTo)}
+            sx={{
+              textTransform: 'none',
+              fontSize: '0.75rem',
+              color: 'primary.main',
+              p: 0,
+              minWidth: 'auto',
+              '&:hover': {
+                bgcolor: 'transparent',
+                textDecoration: 'underline',
+              },
+            }}
+          >
+            {linkLabel || 'Ver más'}
+          </Button>
+        </Box>
+      )}
     </Card>
   );
 }

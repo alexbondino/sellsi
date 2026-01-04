@@ -6,6 +6,9 @@ import {
   AttachMoney as AttachMoneyIcon,
   Warning as WarningIcon,
   Assignment as AssignmentIcon,
+  LocalOffer as LocalOfferIcon,
+  AccountBalanceWallet as WalletIcon,
+  PendingActions as PendingActionsIcon,
 } from '@mui/icons-material';
 import { generateChartData } from '../utils/utils';
 import {
@@ -19,12 +22,20 @@ const SummaryCards = ({
   outOfStock = 0,
   monthlyRequestsCount = 0,
   productsActive = 0,
+  monthlyOffersCount = 0,
+  pendingReleaseAmount = 0,
+  pendingRequestsCount = 0,
+  pendingOffersCount = 0,
 }) => {
   const chartData = {
     products: generateChartData(productsActive ?? products.length, 'up'),
     sales: generateChartData(totalSales / 1000, 'up'),
     outOfStock: generateChartData(outOfStock, 'down'),
     requests: generateChartData(monthlyRequestsCount, 'neutral'),
+    offers: generateChartData(monthlyOffersCount, 'neutral'),
+    pendingRelease: generateChartData(pendingReleaseAmount / 1000, 'neutral'),
+    pendingRequests: generateChartData(pendingRequestsCount, 'neutral'),
+    pendingOffers: generateChartData(pendingOffersCount, 'neutral'),
   };
 
   const dashboardData = [
@@ -36,6 +47,13 @@ const SummaryCards = ({
       icon: AttachMoneyIcon,
     },
     {
+      title: 'Monto por Liberar',
+      value: formatCurrency(pendingReleaseAmount || 0),
+      trend: 'neutral',
+      data: chartData.pendingRelease,
+      icon: WalletIcon,
+    },
+    {
       title: 'Solicitudes Este Mes',
       value: Number(monthlyRequestsCount || 0).toString(),
       trend: 'neutral',
@@ -43,11 +61,11 @@ const SummaryCards = ({
       icon: AssignmentIcon,
     },
     {
-      title: 'Productos Activos',
-      value: formatNumber(productsActive ?? products.length),
-      trend: 'up',
-      data: chartData.products,
-      icon: InventoryIcon,
+      title: 'Ofertas Este Mes',
+      value: Number(monthlyOffersCount || 0).toString(),
+      trend: 'neutral',
+      data: chartData.offers,
+      icon: LocalOfferIcon,
     },
     {
       title: 'Productos Sin Stock',
@@ -55,6 +73,26 @@ const SummaryCards = ({
       trend: outOfStock > 5 ? 'down' : 'neutral',
       data: chartData.outOfStock,
       icon: WarningIcon,
+      linkTo: '/proveedor/productos',
+      linkLabel: 'Ir a Mis Productos',
+    },
+    {
+      title: 'Solicitudes Pendientes',
+      value: Number(pendingRequestsCount || 0).toString(),
+      trend: pendingRequestsCount > 0 ? 'up' : 'neutral',
+      data: chartData.pendingRequests,
+      icon: PendingActionsIcon,
+      linkTo: '/proveedor/pedidos',
+      linkLabel: 'Ir a Mis Pedidos',
+    },
+    {
+      title: 'Ofertas Pendientes',
+      value: Number(pendingOffersCount || 0).toString(),
+      trend: pendingOffersCount > 0 ? 'up' : 'neutral',
+      data: chartData.pendingOffers,
+      icon: LocalOfferIcon,
+      linkTo: '/proveedor/ofertas',
+      linkLabel: 'Ir a Mis Ofertas',
     },
   ];
 
@@ -67,7 +105,7 @@ const SummaryCards = ({
         gridTemplateColumns: {
           xs: 'repeat(2, 1fr)', // móvil: 2 columnas
           sm: 'repeat(2, 1fr)', // tablet: 2 columnas
-          md: 'repeat(4, 1fr)', // desktop: 4 columnas SOLO si caben
+          md: 'repeat(4, 1fr)', // desktop: 4 columnas (2 filas de 4 para 6 cards)
         },
 
         alignItems: 'stretch',
