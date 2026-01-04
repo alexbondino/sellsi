@@ -84,6 +84,8 @@ const ProviderHome = () => {
   // Contador de solicitudes mensuales (órdenes del mes actual)
   const monthlyRequestsCount = metrics?.monthlyRequestsCount ?? 0;
   const totalSales = metrics?.totalRevenue || 0;
+  const monthlyOffersCount = metrics?.monthlyOffersCount ?? 0;
+  const pendingReleaseAmount = metrics?.pendingReleaseAmount ?? 0;
 
   // Combine loading and error states
   const loading = dashboardLoading || productsLoading;
@@ -193,6 +195,8 @@ const ProviderHome = () => {
                       outOfStock={productsOutOfStock}
                       monthlyRequestsCount={monthlyRequestsCount}
                       productsActive={productsActive}
+                      monthlyOffersCount={monthlyOffersCount}
+                      pendingReleaseAmount={pendingReleaseAmount}
                       onNewProduct={handleNewProduct}
                     />
                   </Suspense>

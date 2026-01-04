@@ -13,6 +13,8 @@ const DashboardSummary = ({
   outOfStock,
   monthlyRequestsCount,
   productsActive,
+  monthlyOffersCount,
+  pendingReleaseAmount,
   onNewProduct,
 }) => (
   <Box sx={{ width: '100%' }}>
@@ -36,6 +38,8 @@ const DashboardSummary = ({
         outOfStock={outOfStock}
         monthlyRequestsCount={monthlyRequestsCount}
         productsActive={productsActive}
+        monthlyOffersCount={monthlyOffersCount}
+        pendingReleaseAmount={pendingReleaseAmount}
       />
 
       {/* Botón de nuevo producto entre cards y gráficas */}
