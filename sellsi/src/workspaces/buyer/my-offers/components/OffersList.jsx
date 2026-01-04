@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import {
   Paper,
   Box,
@@ -20,17 +20,21 @@ import {
   useMediaQuery,
   useTheme,
   Button,
-} from '@mui/material'
-import { useNavigate } from 'react-router-dom'
-import { AddToCart } from '../../../../shared/components'
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
-import DeleteIcon from '@mui/icons-material/Delete'
-import BlockIcon from '@mui/icons-material/Block'
-import { InfoOutlined as InfoOutlinedIcon, LocalOffer as LocalOfferIcon } from '@mui/icons-material'
-import MobileOfferCard from '../../../../shared/components/mobile/MobileOfferCard'
-import MobileOffersSkeleton from '../../../../shared/components/display/skeletons/MobileOffersSkeleton'
-import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion'
-import ConfirmDialog from '../../../../shared/components/modals/ConfirmDialog'
+} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { AddToCart } from '../../../../shared/components';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import DeleteIcon from '@mui/icons-material/Delete';
+import BlockIcon from '@mui/icons-material/Block';
+import {
+  InfoOutlined as InfoOutlinedIcon,
+  LocalOffer as LocalOfferIcon,
+} from '@mui/icons-material';
+import MobileOfferCard from '../../../../shared/components/mobile/MobileOfferCard';
+import MobileOffersSkeleton from '../../../../shared/components/display/skeletons/MobileOffersSkeleton';
+import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion';
+import ConfirmDialog from '../../../../shared/components/modals/ConfirmDialog';
+import { toTitleCase } from '../../../../utils/textFormatters';
 
 // Mapa canónico de estados visuales
 const STATUS_MAP = {
@@ -41,80 +45,80 @@ const STATUS_MAP = {
   cancelled: { label: 'Cancelada', color: 'error' },
   reserved: { label: 'En Carrito', color: 'info' },
   paid: { label: 'Pagada', color: 'success' },
-}
+};
 
 /**
  * Helper para detectar si una oferta ha caducado temporalmente.
  * Una oferta "approved" caduca si purchase_deadline (o expires_at como fallback) ya pasó.
  * Una oferta "pending" caduca si expires_at ya pasó.
  */
-const isOfferExpiredByDeadline = (offer) => {
-  if (!offer) return false
-  const now = Date.now()
-  const status = String(offer.status || '').toLowerCase()
+const isOfferExpiredByDeadline = offer => {
+  if (!offer) return false;
+  const now = Date.now();
+  const status = String(offer.status || '').toLowerCase();
 
   // Para ofertas approved/accepted: verificar purchase_deadline (fallback expires_at)
   if (status === 'approved' || status === 'accepted') {
-    const deadline = offer.purchase_deadline || offer.expires_at
+    const deadline = offer.purchase_deadline || offer.expires_at;
     if (deadline) {
-      const deadlineMs = new Date(deadline).getTime()
+      const deadlineMs = new Date(deadline).getTime();
       if (!Number.isNaN(deadlineMs) && deadlineMs < now) {
-        return true
+        return true;
       }
     }
   }
 
   // Para ofertas pending: verificar expires_at
   if (status === 'pending') {
-    const expiresAt = offer.expires_at
+    const expiresAt = offer.expires_at;
     if (expiresAt) {
-      const expiresMs = new Date(expiresAt).getTime()
+      const expiresMs = new Date(expiresAt).getTime();
       if (!Number.isNaN(expiresMs) && expiresMs < now) {
-        return true
+        return true;
       }
     }
   }
 
-  return false
-}
+  return false;
+};
 
 // Normalización (backend puede enviar "accepted" u otros legacy)
 // AHORA también considera si la oferta caducó temporalmente
 const normalizeStatus = (raw, offer = null) => {
-  if (!raw) return 'pending'
-  const s = String(raw).toLowerCase()
+  if (!raw) return 'pending';
+  const s = String(raw).toLowerCase();
 
   // Si la oferta está temporalmente caducada, retornar 'expired'
   if (offer && isOfferExpiredByDeadline({ ...offer, status: s })) {
-    return 'expired'
+    return 'expired';
   }
 
-  if (s === 'accepted') return 'approved'
-  if (s === 'success') return 'paid'
+  if (s === 'accepted') return 'approved';
+  if (s === 'success') return 'paid';
   // fallback
-  return STATUS_MAP[s] ? s : 'pending'
-}
+  return STATUS_MAP[s] ? s : 'pending';
+};
 
 // Wrapper that ensures onClick is a function before passing it to MUI Chip
-const SafeChip = (props) => {
-  const { onClick, ...rest } = props
-  const safeOnClick = typeof onClick === 'function' ? onClick : undefined
-  return <Chip {...rest} onClick={safeOnClick} />
-}
+const SafeChip = props => {
+  const { onClick, ...rest } = props;
+  const safeOnClick = typeof onClick === 'function' ? onClick : undefined;
+  return <Chip {...rest} onClick={safeOnClick} />;
+};
 
 // Formatea números como moneda con separador de miles y prefijo $ (ej: $1.234)
-const formatPrice = (value) => {
-  if (value == null) return ''
+const formatPrice = value => {
+  if (value == null) return '';
   const num =
     typeof value === 'number'
       ? value
-      : Number(String(value).replace(/[^0-9.-]+/g, ''))
-  if (Number.isNaN(num)) return String(value)
-  return '$' + new Intl.NumberFormat('es-CL').format(Math.round(num))
-}
+      : Number(String(value).replace(/[^0-9.-]+/g, ''));
+  if (Number.isNaN(num)) return String(value);
+  return '$' + new Intl.NumberFormat('es-CL').format(Math.round(num));
+};
 
-import { useThumbnailsBatch } from '../../../../hooks/useThumbnailQueries'
-import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton'
+import { useThumbnailsBatch } from '../../../../hooks/useThumbnailQueries';
+import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
 
 const OffersList = ({
   offers = [],
@@ -126,137 +130,137 @@ const OffersList = ({
   onDeleteOffer,
   onAddToCart,
 }) => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-  const navigate = useNavigate()
-  const [statusFilter, setStatusFilter] = React.useState('all')
-  const [statusOverrides, setStatusOverrides] = React.useState({}) // { offer_id: 'reserved' | 'paid' | ... }
-  const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false)
-  const [offerToCancel, setOfferToCancel] = React.useState(null)
-  const [cancelLoading, setCancelLoading] = React.useState(false)
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const navigate = useNavigate();
+  const [statusFilter, setStatusFilter] = React.useState('all');
+  const [statusOverrides, setStatusOverrides] = React.useState({}); // { offer_id: 'reserved' | 'paid' | ... }
+  const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
+  const [offerToCancel, setOfferToCancel] = React.useState(null);
+  const [cancelLoading, setCancelLoading] = React.useState(false);
 
   // Preparar petición batch de thumbnails para los productos mostrados
   const productIds = React.useMemo(
     () =>
-      (offers || []).map((o) => o.product?.id || o.product_id).filter(Boolean),
+      (offers || []).map(o => o.product?.id || o.product_id).filter(Boolean),
     [offers]
-  )
-  const thumbnailsQuery = useThumbnailsBatch(productIds)
+  );
+  const thumbnailsQuery = useThumbnailsBatch(productIds);
 
   // thumbnailsQuery is used below to resolve product thumbnails in batch
 
   const filtered = React.useMemo(() => {
-    if (!offers) return []
-    const normalized = offers.map((o) => {
-      const override = statusOverrides[o.id]
-      const rawStatus = override || o.status
+    if (!offers) return [];
+    const normalized = offers.map(o => {
+      const override = statusOverrides[o.id];
+      const rawStatus = override || o.status;
       // Pasar el objeto completo para que normalizeStatus pueda validar expiración
-      return { ...o, status: normalizeStatus(rawStatus, o) }
-    })
-    if (statusFilter === 'all') return normalized
-    return normalized.filter((o) => o.status === statusFilter)
-  }, [offers, statusFilter, statusOverrides])
+      return { ...o, status: normalizeStatus(rawStatus, o) };
+    });
+    if (statusFilter === 'all') return normalized;
+    return normalized.filter(o => o.status === statusFilter);
+  }, [offers, statusFilter, statusOverrides]);
 
   // Listener para mutaciones optimistas emitidas desde AddToCart
   React.useEffect(() => {
-    const handler = (ev) => {
+    const handler = ev => {
       try {
-        const detail = ev.detail || {}
-        if (!detail.offer_id || !detail.status) return
+        const detail = ev.detail || {};
+        if (!detail.offer_id || !detail.status) return;
         // Sólo aplicar si la oferta está presente actualmente
         const exists = (offers || []).some(
-          (o) => String(o.id) === String(detail.offer_id)
-        )
-        if (!exists) return
-        setStatusOverrides((prev) => {
+          o => String(o.id) === String(detail.offer_id)
+        );
+        if (!exists) return;
+        setStatusOverrides(prev => {
           // Evitar override si ya está en un estado final (paid) y el nuevo no lo supera
-          const current = prev[detail.offer_id]
-          if (current === 'paid') return prev
-          return { ...prev, [detail.offer_id]: detail.status }
-        })
+          const current = prev[detail.offer_id];
+          if (current === 'paid') return prev;
+          return { ...prev, [detail.offer_id]: detail.status };
+        });
       } catch (_) {}
-    }
-    window.addEventListener('offer-status-optimistic', handler)
-    return () => window.removeEventListener('offer-status-optimistic', handler)
-  }, [offers])
+    };
+    window.addEventListener('offer-status-optimistic', handler);
+    return () => window.removeEventListener('offer-status-optimistic', handler);
+  }, [offers]);
 
   // Debugging: limit noisy logs by counting a few rows only
-  const debugCounterRef = React.useRef(0)
+  const debugCounterRef = React.useRef(0);
 
-  const handleCancelOffer = (offerId) => {
-    const offer = offers.find((o) => o.id === offerId)
-    setOfferToCancel(offer)
-    setCancelDialogOpen(true)
-  }
+  const handleCancelOffer = offerId => {
+    const offer = offers.find(o => o.id === offerId);
+    setOfferToCancel(offer);
+    setCancelDialogOpen(true);
+  };
 
   const handleConfirmCancel = async () => {
-    if (!offerToCancel) return
+    if (!offerToCancel) return;
 
-    setCancelLoading(true)
+    setCancelLoading(true);
     try {
       if (onCancelOffer) {
-        await onCancelOffer(offerToCancel)
+        await onCancelOffer(offerToCancel);
       } else if (cancelOffer) {
-        await cancelOffer(offerToCancel.id)
+        await cancelOffer(offerToCancel.id);
       }
     } catch (error) {
-      console.error('Error canceling offer:', error)
+      console.error('Error canceling offer:', error);
     } finally {
-      setCancelLoading(false)
-      setCancelDialogOpen(false)
-      setOfferToCancel(null)
+      setCancelLoading(false);
+      setCancelDialogOpen(false);
+      setOfferToCancel(null);
     }
-  }
+  };
 
   const handleCloseCancelDialog = () => {
     if (!cancelLoading) {
-      setCancelDialogOpen(false)
-      setOfferToCancel(null)
+      setCancelDialogOpen(false);
+      setOfferToCancel(null);
     }
-  }
+  };
 
-  const handleDeleteOffer = async (offerId) => {
+  const handleDeleteOffer = async offerId => {
     try {
       if (onDeleteOffer)
-        return onDeleteOffer(offers.find((o) => o.id === offerId))
-      if (deleteOffer) return await deleteOffer(offerId, 'buyer')
+        return onDeleteOffer(offers.find(o => o.id === offerId));
+      if (deleteOffer) return await deleteOffer(offerId, 'buyer');
     } catch (error) {
-      console.error('Error deleting offer:', error)
+      console.error('Error deleting offer:', error);
     }
-  }
+  };
 
-  const handleAddToCart = (offer) => {
-    if (onAddToCart) return onAddToCart(offer)
-    console.log('Add to cart:', offer)
-  }
+  const handleAddToCart = offer => {
+    if (onAddToCart) return onAddToCart(offer);
+    console.log('Add to cart:', offer);
+  };
 
-  const hasOffers = offers && offers.length > 0
+  const hasOffers = offers && offers.length > 0;
 
   // Handler para acciones desde MobileOfferCard
   const handleMobileAction = (action, fullOffer) => {
     switch (action) {
       case 'addToCart':
-        handleAddToCart(fullOffer)
-        break
+        handleAddToCart(fullOffer);
+        break;
       case 'cancel':
-        handleCancelOffer(fullOffer.id)
-        break
+        handleCancelOffer(fullOffer.id);
+        break;
       case 'delete':
-        handleDeleteOffer(fullOffer.id)
-        break
+        handleDeleteOffer(fullOffer.id);
+        break;
       default:
-        console.warn(`Acción desconocida: ${action}`)
+        console.warn(`Acción desconocida: ${action}`);
     }
-  }
+  };
 
   // Calcular contadores para filtros mobile
   const filterCounts = React.useMemo(() => {
-    if (!offers) return {}
-    const normalized = offers.map((o) => {
-      const override = statusOverrides[o.id]
-      const rawStatus = override || o.status
-      return { ...o, status: normalizeStatus(rawStatus, o) }
-    })
+    if (!offers) return {};
+    const normalized = offers.map(o => {
+      const override = statusOverrides[o.id];
+      const rawStatus = override || o.status;
+      return { ...o, status: normalizeStatus(rawStatus, o) };
+    });
 
     const counts = {
       all: normalized.length,
@@ -267,16 +271,16 @@ const OffersList = ({
       expired: 0,
       reserved: 0,
       paid: 0,
-    }
+    };
 
-    normalized.forEach((o) => {
+    normalized.forEach(o => {
       if (counts[o.status] !== undefined) {
-        counts[o.status]++
+        counts[o.status]++;
       }
-    })
+    });
 
-    return counts
-  }, [offers, statusOverrides])
+    return counts;
+  }, [offers, statusOverrides]);
 
   const filterOptions = [
     { value: 'all', label: 'Todas', count: filterCounts.all },
@@ -287,20 +291,15 @@ const OffersList = ({
     { value: 'expired', label: 'Caducada', count: filterCounts.expired },
     { value: 'reserved', label: 'En Carrito', count: filterCounts.reserved },
     { value: 'paid', label: 'Pagada', count: filterCounts.paid },
-  ]
+  ];
 
   if (!hasOffers) {
     if (loading) {
       return isMobile ? (
         <MobileOffersSkeleton rows={3} />
       ) : (
-        <TableSkeleton
-          rows={6}
-          columns={4}
-          withAvatar
-          variant="table"
-        />
-      )
+        <TableSkeleton rows={6} columns={4} withAvatar variant="table" />
+      );
     }
     if (!error) {
       return (
@@ -308,11 +307,21 @@ const OffersList = ({
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
             <LocalOfferIcon sx={{ fontSize: 48, color: 'primary.main' }} />
           </Box>
-          <Typography variant="h6" color="text.secondary" sx={{ fontSize: { md: '1.5rem' } }}>
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            sx={{ fontSize: { md: '1.5rem' } }}
+          >
             Aun no has enviado ofertas
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3, fontSize: { md: '1.05rem' } }}>
-            En Sellsi puedes negociar precios, volumenes y condiciones directamente con proveedores. Envía tu primera oferta y comienza a cerrar negocios.
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 1, mb: 3, fontSize: { md: '1.05rem' } }}
+          >
+            En Sellsi puedes negociar precios, volumenes y condiciones
+            directamente con proveedores. Envía tu primera oferta y comienza a
+            cerrar negocios.
           </Typography>
           <Button
             variant="contained"
@@ -322,7 +331,7 @@ const OffersList = ({
             Ir al Marketplace
           </Button>
         </Paper>
-      )
+      );
     }
   }
 
@@ -354,35 +363,40 @@ const OffersList = ({
                 </Typography>
               </Paper>
             ) : (
-              filtered.map((o) => {
+              filtered.map(o => {
                 const product = o.product || {
                   name: o.product_name || 'Producto',
                   thumbnail: null,
-                }
-                const pid = product.id || product.product_id
+                };
+                const pid = product.id || product.product_id;
                 const thumbRow =
-                  thumbnailsQuery.data && pid ? thumbnailsQuery.data[pid] : null
+                  thumbnailsQuery.data && pid
+                    ? thumbnailsQuery.data[pid]
+                    : null;
 
-                let avatarSrc = null
+                let avatarSrc = null;
                 if (thumbRow) {
                   try {
                     if (
                       thumbRow.thumbnails &&
                       typeof thumbRow.thumbnails === 'object'
                     ) {
-                      avatarSrc = thumbRow.thumbnails.mobile || null
+                      avatarSrc = thumbRow.thumbnails.mobile || null;
                     }
                     if (!avatarSrc && thumbRow.thumbnail_url) {
                       avatarSrc = thumbRow.thumbnail_url.replace(
                         '_desktop_320x260.jpg',
                         '_mobile_190x153.jpg'
-                      )
+                      );
                     }
                   } catch (_) {}
                 }
                 if (!avatarSrc) {
                   avatarSrc =
-                    product.thumbnail || product.imagen || product.image || null
+                    product.thumbnail ||
+                    product.imagen ||
+                    product.image ||
+                    null;
                 }
 
                 return (
@@ -406,7 +420,7 @@ const OffersList = ({
                     }}
                     onAction={handleMobileAction}
                   />
-                )
+                );
               })
             )}
           </Box>
@@ -430,7 +444,7 @@ const OffersList = ({
           disabled={cancelLoading}
         />
       </>
-    )
+    );
   }
 
   // Desktop View: Table (original)
@@ -444,7 +458,7 @@ const OffersList = ({
             labelId="offers-filter-label"
             value={statusFilter}
             label="Estado"
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={e => setStatusFilter(e.target.value)}
             MenuProps={{ disableScrollLock: true }}
           >
             <MenuItem value="all">Todos</MenuItem>
@@ -552,33 +566,33 @@ const OffersList = ({
                 </TableCell>
               </TableRow>
             )}
-            {filtered.map((o) => {
+            {filtered.map(o => {
               const product = o.product || {
                 name: o.product_name || 'Producto',
                 thumbnail: null,
-              }
-              const pid = product.id || product.product_id
+              };
+              const pid = product.id || product.product_id;
               const thumbRow =
-                thumbnailsQuery.data && pid ? thumbnailsQuery.data[pid] : null
+                thumbnailsQuery.data && pid ? thumbnailsQuery.data[pid] : null;
               // Prioridad: thumbnails.mobile -> thumbnail_url transformed -> product.thumbnail -> product.imagen -> null
-              let avatarSrc = null
+              let avatarSrc = null;
               if (thumbRow) {
                 try {
                   if (
                     thumbRow.thumbnails &&
                     typeof thumbRow.thumbnails === 'object'
                   )
-                    avatarSrc = thumbRow.thumbnails.mobile || null
+                    avatarSrc = thumbRow.thumbnails.mobile || null;
                   if (!avatarSrc && thumbRow.thumbnail_url)
                     avatarSrc = thumbRow.thumbnail_url.replace(
                       '_desktop_320x260.jpg',
                       '_mobile_190x153.jpg'
-                    )
+                    );
                 } catch (_) {}
               }
               if (!avatarSrc)
                 avatarSrc =
-                  product.thumbnail || product.imagen || product.image || null
+                  product.thumbnail || product.imagen || product.image || null;
 
               // no-op: avatarSrc calculated above
               return (
@@ -602,7 +616,7 @@ const OffersList = ({
                   </TableCell>
                   <TableCell>
                     <Typography variant="subtitle1" fontWeight={700}>
-                      {product.name}
+                      {toTitleCase(product.name)}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {o.quantity} uds • {formatPrice(o.price)}
@@ -612,47 +626,53 @@ const OffersList = ({
                     {/* Mostrar tiempo restante para pendientes usando expires_at (si existe) */}
                     {(() => {
                       // Fuente primaria para ventana post-aceptación: purchase_deadline
-                      const now = Date.now()
+                      const now = Date.now();
                       const pdMs = o.purchase_deadline
                         ? new Date(o.purchase_deadline).getTime()
-                        : null
+                        : null;
                       const expMs = o.expires_at
                         ? new Date(o.expires_at).getTime()
-                        : null
+                        : null;
                       // Pending: usar expires_at (48h). Mostrar sólo si <48h (coherencia previa) y >0.
                       if (o.status === 'pending' && expMs != null) {
-                        const remaining = expMs - now
+                        const remaining = expMs - now;
                         if (remaining <= 0)
-                          return <Typography>Caducada</Typography>
+                          return <Typography>Caducada</Typography>;
                         if (remaining < 48 * 60 * 60 * 1000) {
-                          const hrs = Math.floor(remaining / 3600000)
-                          const mins = Math.floor((remaining % 3600000) / 60000)
+                          const hrs = Math.floor(remaining / 3600000);
+                          const mins = Math.floor(
+                            (remaining % 3600000) / 60000
+                          );
                           if (hrs >= 1)
                             return (
                               <Typography>{`${hrs} h ${mins} m`}</Typography>
-                            )
-                          return <Typography>{`${mins} m`}</Typography>
+                            );
+                          return <Typography>{`${mins} m`}</Typography>;
                         }
-                        return <Typography color="text.secondary">-</Typography>
+                        return (
+                          <Typography color="text.secondary">-</Typography>
+                        );
                       }
                       // Approved: usar purchase_deadline; fallback expires_at si falta.
                       if (o.status === 'approved') {
-                        const target = pdMs || expMs
+                        const target = pdMs || expMs;
                         if (target != null) {
-                          const remaining = target - now
+                          const remaining = target - now;
                           if (remaining <= 0)
-                            return <Typography>Caducada</Typography>
-                          const hrs = Math.floor(remaining / 3600000)
-                          const mins = Math.floor((remaining % 3600000) / 60000)
+                            return <Typography>Caducada</Typography>;
+                          const hrs = Math.floor(remaining / 3600000);
+                          const mins = Math.floor(
+                            (remaining % 3600000) / 60000
+                          );
                           if (hrs >= 1)
                             return (
                               <Typography>{`${hrs} h ${mins} m`}</Typography>
-                            )
-                          return <Typography>{`${mins} m`}</Typography>
+                            );
+                          return <Typography>{`${mins} m`}</Typography>;
                         }
-                        return <Typography>Menos de 24 horas</Typography>
+                        return <Typography>Menos de 24 horas</Typography>;
                       }
-                      return <Typography color="text.secondary">-</Typography>
+                      return <Typography color="text.secondary">-</Typography>;
                     })()}
                   </TableCell>
                   <TableCell>
@@ -760,7 +780,7 @@ const OffersList = ({
                     </Box>
                   </TableCell>
                 </TableRow>
-              )
+              );
             })}
           </TableBody>
         </Table>
@@ -784,7 +804,7 @@ const OffersList = ({
         disabled={cancelLoading}
       />
     </>
-  )
-}
+  );
+};
 
-export default OffersList
+export default OffersList;

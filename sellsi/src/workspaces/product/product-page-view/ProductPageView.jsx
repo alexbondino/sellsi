@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, Suspense, memo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { showErrorToast, showCartSuccess } from '../../../utils/toastHelpers';
+import { toTitleCase } from '../../../utils/textFormatters';
 import { useLayout } from '../../../infrastructure/providers/LayoutProvider';
 
 // Imports principales optimizados (solo lo esencial)
@@ -238,7 +239,7 @@ const ProductPageView = memo(
                     </Link>
                     {product && (
                       <Typography color="black" sx={{ fontWeight: 600 }}>
-                        {product.nombre}
+                        {toTitleCase(product.nombre)}
                       </Typography>
                     )}
                   </Breadcrumbs>
@@ -382,7 +383,7 @@ const ProductPageView = memo(
                         maxWidth: { xs: '120px', sm: '200px', md: '350px' }, // ✅ Ancho máximo ajustado
                       }}
                     >
-                      {product.nombre}
+                      {toTitleCase(product.nombre)}
                     </Typography>
                   )}
                 </Breadcrumbs>

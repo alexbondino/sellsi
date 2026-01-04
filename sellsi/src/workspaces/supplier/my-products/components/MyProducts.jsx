@@ -25,6 +25,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
+import { toTitleCase } from '../../../../utils/textFormatters';
 
 // Styles from Marketplace CategoryNavigation to keep category buttons consistent on desktop
 import { categoryNavigationStyles as catStyles } from '../../../marketplace/components/CategoryNavigation/CategoryNavigation.styles';
@@ -327,7 +328,7 @@ const MyProducts = () => {
     try {
       await deleteProduct(deleteModal.product.id);
       showProductSuccess(
-        `${deleteModal.product.nombre} eliminado correctamente`,
+        `${toTitleCase(deleteModal.product.nombre)} eliminado correctamente`,
         '🗑️'
       );
       setDeleteModal({ isOpen: false, product: null, loading: false });
@@ -349,8 +350,8 @@ const MyProducts = () => {
       await updateProduct(pauseModal.product.id, { is_active: newActive });
       showProductSuccess(
         newActive
-          ? `Producto "${pauseModal.product.nombre}" reactivado`
-          : `Producto "${pauseModal.product.nombre}" pausado`,
+          ? `Producto "${toTitleCase(pauseModal.product.nombre)}" reactivado`
+          : `Producto "${toTitleCase(pauseModal.product.nombre)}" pausado`,
         newActive ? '▶️' : '⏸️'
       );
       setPauseModal({ isOpen: false, product: null, loading: false });
@@ -897,7 +898,9 @@ const MyProducts = () => {
           loading={deleteModal.loading}
         >
           {deleteModal.product
-            ? `¿Estás seguro de que deseas eliminar "${deleteModal.product.nombre}"? Esta acción no se puede deshacer.`
+            ? `¿Estás seguro de que deseas eliminar "${toTitleCase(
+                deleteModal.product.nombre
+              )}"? Esta acción no se puede deshacer.`
             : ''}
         </Modal>
 
@@ -920,8 +923,12 @@ const MyProducts = () => {
         >
           {pauseModal.product &&
             (pauseModal.product.activo
-              ? `¿Seguro que deseas pausar "${pauseModal.product.nombre}"? Dejará de mostrarse en el Marketplace hasta que lo reactives.`
-              : `¿Deseas reactivar "${pauseModal.product.nombre}"? Volverá a mostrarse en el Marketplace.`)}
+              ? `¿Seguro que deseas pausar "${toTitleCase(
+                  pauseModal.product.nombre
+                )}"? Dejará de mostrarse en el Marketplace hasta que lo reactives.`
+              : `¿Deseas reactivar "${toTitleCase(
+                  pauseModal.product.nombre
+                )}"? Volverá a mostrarse en el Marketplace.`)}
         </Modal>
 
         {/* 🆕 Modal de Massive Import (ahora usando BigModal) */}
