@@ -4,6 +4,7 @@ import {
   Typography,
   TextField,
   FormControl,
+  InputLabel,
   Select,
   MenuItem,
 } from '@mui/material';
@@ -12,7 +13,6 @@ import { BANKS, ACCOUNT_TYPES } from '../../../../shared/constants/profile';
 import {
   getHighlightFieldStyle,
   getHighlightHelperText,
-  getHighlightLabelStyle,
 } from '../../../../utils/fieldHighlightStyles';
 
 /**
@@ -110,20 +110,19 @@ const TransferInfoSection = ({
             size="small"
             error={shouldHighlight && !formData.bank?.trim()}
           >
-            <Typography
-              variant="body2"
-              sx={{
-                mb: 1,
-                fontWeight: 500,
-                ...getHighlightLabelStyle(formData.bank, shouldHighlight),
-              }}
+            <InputLabel
+              sx={
+                shouldHighlight && !formData.bank?.trim()
+                  ? { color: '#f44336', fontWeight: 'bold' }
+                  : {}
+              }
             >
               Banco
-            </Typography>
+            </InputLabel>
             <Select
               value={formData.bank || ''}
               onChange={e => onFieldChange('bank', e.target.value)}
-              displayEmpty
+              label="Banco"
               sx={getHighlightFieldStyle(formData.bank, shouldHighlight)}
               MenuProps={{
                 disableScrollLock: true,
@@ -147,27 +146,24 @@ const TransferInfoSection = ({
           </FormControl>
 
           {/* Tipo de Cuenta */}
-          <Box>
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-              Tipo de Cuenta
-            </Typography>
-            <FormControl size="small" fullWidth>
-              <Select
-                value={formData.accountType || 'corriente'}
-                onChange={e => onFieldChange('accountType', e.target.value)}
-                MenuProps={{
-                  disableScrollLock: true,
-                  PaperProps: { style: { maxHeight: 48 * 5 + 8 } },
-                }}
-              >
-                {ACCOUNT_TYPES.map(type => (
-                  <MenuItem key={type.value} value={type.value}>
-                    {type.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
+          <FormControl fullWidth size="small">
+            <InputLabel>Tipo de Cuenta</InputLabel>
+            <Select
+              value={formData.accountType || 'corriente'}
+              onChange={e => onFieldChange('accountType', e.target.value)}
+              label="Tipo de Cuenta"
+              MenuProps={{
+                disableScrollLock: true,
+                PaperProps: { style: { maxHeight: 48 * 5 + 8 } },
+              }}
+            >
+              {ACCOUNT_TYPES.map(type => (
+                <MenuItem key={type.value} value={type.value}>
+                  {type.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
           {/* Número de Cuenta */}
           <TextField
