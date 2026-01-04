@@ -36,7 +36,7 @@ const SalesByProductChart = () => {
       data={data}
       loading={loading}
       title="Ventas por producto"
-      icon={<InventoryIcon sx={{ color: '#E65100', fontSize: 28 }} />}
+      icon={<InventoryIcon sx={{ color: '#E65100', fontSize: 22 }} />}
       isCurrency={true}
       maxItems={6}
       showOthers={true}

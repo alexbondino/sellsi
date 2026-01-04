@@ -38,6 +38,24 @@ const SummaryCards = ({
     pendingOffers: generateChartData(pendingOffersCount, 'neutral'),
   };
 
+  // Tooltips informativos para cada KPI
+  const tooltips = {
+    ventas:
+      'Suma del total de las ventas generadas desde el día 1 del mes actual hasta hoy, descontando el monto de comisión cobrada por Sellsi',
+    montoPorLiberar:
+      'Saldo retenido temporalmente por Sellsi hasta la confirmación de entrega de los pedidos',
+    solicitudesEsteMes:
+      'Número total de órdenes de compra recibidas durante el mes en curso, incluyendo las ya despachadas',
+    solicitudesPendientes:
+      'Pedidos recibidos que aún no has atendido. Requieren tu atención inmediata para gestionar su aprobación o rechazo',
+    productosSinStock:
+      'Productos con inventario en 0. Actualmente no están disponibles para los compradores hasta que repongas stock',
+    ofertasPendientes:
+      'Negociaciones iniciadas por potenciales compradores que esperan tu aprobación o rechazo',
+    ofertasEsteMes:
+      'Número total de ofertas recibidas por potenciales compradores este mes, se contabilizan tanto negociaciones exitosas, en curso y rechazadas',
+  };
+
   const dashboardData = [
     {
       title: 'Ventas Este Mes',
@@ -45,6 +63,7 @@ const SummaryCards = ({
       trend: 'up',
       data: chartData.sales,
       icon: AttachMoneyIcon,
+      tooltip: tooltips.ventas,
     },
     {
       title: 'Monto por Liberar',
@@ -52,6 +71,7 @@ const SummaryCards = ({
       trend: 'neutral',
       data: chartData.pendingRelease,
       icon: WalletIcon,
+      tooltip: tooltips.montoPorLiberar,
     },
     {
       title: 'Solicitudes Este Mes',
@@ -59,6 +79,7 @@ const SummaryCards = ({
       trend: 'neutral',
       data: chartData.requests,
       icon: AssignmentIcon,
+      tooltip: tooltips.solicitudesEsteMes,
     },
     {
       title: 'Ofertas Este Mes',
@@ -66,6 +87,7 @@ const SummaryCards = ({
       trend: 'neutral',
       data: chartData.offers,
       icon: LocalOfferIcon,
+      tooltip: tooltips.ofertasEsteMes,
     },
     {
       title: 'Productos Sin Stock',
@@ -75,6 +97,7 @@ const SummaryCards = ({
       icon: WarningIcon,
       linkTo: '/supplier/myproducts',
       linkLabel: 'Ir a Mis Productos',
+      tooltip: tooltips.productosSinStock,
     },
     {
       title: 'Solicitudes Pendientes',
@@ -84,6 +107,7 @@ const SummaryCards = ({
       icon: PendingActionsIcon,
       linkTo: '/supplier/my-orders',
       linkLabel: 'Ir a Mis Pedidos',
+      tooltip: tooltips.solicitudesPendientes,
     },
     {
       title: 'Ofertas Pendientes',
@@ -93,6 +117,7 @@ const SummaryCards = ({
       icon: LocalOfferIcon,
       linkTo: '/supplier/offers',
       linkLabel: 'Ir a Mis Ofertas',
+      tooltip: tooltips.ofertasPendientes,
     },
   ];
 
