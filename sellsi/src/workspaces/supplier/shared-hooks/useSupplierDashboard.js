@@ -228,21 +228,16 @@ export const useSupplierDashboard = () => {
                 0
               );
               const SERVICE_RATE = 0.03;
-              const IVA_RATE = 0.19;
-              const netMultiplier =
-                (1 - SERVICE_RATE) * (1 - IVA_RATE * SERVICE_RATE);
+              const netMultiplier = 1 - SERVICE_RATE; // Solo descontar 3% de comisión
               return grossRevenue * netMultiplier;
             }
             const grossRevenue = (psRows || []).reduce(
               (sum, r) => sum + (Number(r.amount) || 0),
               0
             );
-            // Descontar comisión Sellsi 3% + IVA sobre comisión (19% de 3% = 0.57%)
-            // Total descuento: 3.57% → Multiplicador: 0.9643
+            // Descontar solo comisión Sellsi 3%
             const SERVICE_RATE = 0.03; // 3% comisión Sellsi
-            const IVA_RATE = 0.19; // 19% IVA sobre la comisión
-            const netMultiplier =
-              (1 - SERVICE_RATE) * (1 - IVA_RATE * SERVICE_RATE);
+            const netMultiplier = 1 - SERVICE_RATE; // Solo descontar 3%
             const netRevenue = grossRevenue * netMultiplier;
             return netRevenue;
           },
