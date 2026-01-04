@@ -3,7 +3,8 @@ import { Box, Typography, Grid } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SummaryCards from './SummaryCards';
 import DailySalesChart from './DailySalesChart';
-import DailyRequestsChart from './DailyRequestsChart';
+import SalesByProductChart from './SalesByProductChart';
+import SalesByCustomerChart from './SalesByCustomerChart';
 
 const DashboardSummary = ({
   products,
@@ -41,13 +42,16 @@ const DashboardSummary = ({
         pendingRequestsCount={pendingRequestsCount}
       />
 
-      {/* Gráficos de ventas y solicitudes diarias en 2 columnas */}
+      {/* Gráficos: Ventas diarias (1/2), Ventas por producto (1/4), Ventas por cliente (1/4) */}
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 6 }}>
           <DailySalesChart />
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <DailyRequestsChart />
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <SalesByProductChart />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <SalesByCustomerChart />
         </Grid>
       </Grid>
     </Box>
