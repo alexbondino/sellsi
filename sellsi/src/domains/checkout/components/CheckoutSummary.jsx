@@ -124,7 +124,7 @@ const CheckoutSummary = ({
         feeLabel = 'Comisión Flow (3.8%)';
       } else if (selectedMethod.id === 'bank_transfer') {
         fee = Math.round(baseTotalCalc * 0.005); // 0.5% Transferencia Bancaria
-        feeLabel = 'Comisión';
+        feeLabel = 'Comisión Servicio (0.5%)';
       }
     }
 

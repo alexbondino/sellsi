@@ -367,7 +367,7 @@ const BuyerOrders = memo(function BuyerOrders() {
             context={selectedOrderContext}
           />
 
-          {/* Delete confirmation dialog for expired orders */}
+          {/* Delete confirmation dialog for expired or rejected payment orders */}
           <ConfirmDialog
             open={deleteDialogOpen}
             title="¿Eliminar este pedido?"
@@ -377,7 +377,7 @@ const BuyerOrders = memo(function BuyerOrders() {
                     orderToDelete.parent_order_id || orderToDelete.order_id
                   )
                 : ''
-            } con pago expirado será eliminado de tu lista de pedidos. Esta acción no se puede deshacer.`}
+            } con pago expirado o rechazado será eliminado de tu lista de pedidos. Esta acción no se puede deshacer.`}
             confirmText={deleteLoading ? 'Eliminando...' : 'Eliminar'}
             cancelText="Cancelar"
             onConfirm={handleConfirmDelete}

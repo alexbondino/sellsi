@@ -382,7 +382,7 @@ const PaymentReleasesTable = () => {
               <InfoIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          {params.row.status === STATUS.PENDING && (
+          {(params.row.status === STATUS.PENDING || params.row.status === 'pending_release') && (
             <Tooltip title="Marcar como liberado">
               <IconButton
                 size="small"
