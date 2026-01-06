@@ -16,7 +16,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import {
-  WarningAmber as WarningAmberIcon,
+  Info as InfoIcon,
 } from '@mui/icons-material';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
@@ -67,7 +67,7 @@ const BankTransferConfirmModal = ({
             width: 80,
             height: 80,
             borderRadius: '50%',
-            backgroundColor: 'warning.lighter',
+            backgroundColor: 'info.lighter',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -75,10 +75,10 @@ const BankTransferConfirmModal = ({
             mb: 2,
           }}
         >
-          <WarningAmberIcon
+          <InfoIcon
             sx={{
               fontSize: 50,
-              color: 'warning.main',
+              color: 'info.main',
             }}
           />
         </Box>
@@ -153,7 +153,7 @@ const BankTransferConfirmModal = ({
             borderRadius: 2,
           }}
         >
-          {loading ? 'Procesando...' : 'Confirmo'}
+          {loading ? 'Procesando...' : 'Si, ya transferí'}
         </Button>
       </DialogActions>
     </Dialog>

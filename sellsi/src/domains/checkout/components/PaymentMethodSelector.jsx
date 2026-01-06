@@ -130,6 +130,24 @@ const PaymentMethodSelector = () => {
     return Math.trunc(totalBruto) + shippingCost;
   }, [orderData.items, orderData.shipping]);
 
+  // ===== CÁLCULO DEL MONTO A MOSTRAR EN MODAL (incluye fee para transferencia manual si grand_total no está sellado por servidor) =====
+  const amountForBankModal = useMemo(() => {
+    const raw = orderData.grand_total ?? orderData.total ?? baseTotal;
+    if (raw == null) return null;
+    const base = Number(raw) || 0;
+
+    // Si grand_total existe lo consideramos sellado por server (incluye fees)
+    if (orderData.grand_total != null) return Math.round(base);
+
+    // Si el método seleccionado es transferencia bancaria, aplicar fee local
+    if (selectedMethod?.id === 'bank_transfer') {
+      const feePct = Number(selectedMethod?.fees?.percentage ?? 0);
+      return Math.round(base * (1 + feePct / 100));
+    }
+
+    return Math.round(base);
+  }, [orderData.grand_total, orderData.total, baseTotal, selectedMethod]);
+
   // ===== EFECTOS =====
 
   // Cargar métodos de pago desde Supabase al montar el componente
@@ -894,6 +912,7 @@ const PaymentMethodSelector = () => {
             onClose={handleBankTransferModalClose}
             onConfirm={handleBankTransferModalConfirm}
             bankDetails={selectedMethod.bankDetails}
+            amount={amountForBankModal}
           />
           
           <BankTransferConfirmModal

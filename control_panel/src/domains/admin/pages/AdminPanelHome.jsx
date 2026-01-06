@@ -208,39 +208,37 @@ const AdminPanelHome = () => {
         </Card>
       </Grid>
 
-      {/* Tarjeta Métricas DEV */}
-      {isDevelopment() && (
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ height: '100%', border: theme => `1px solid ${theme.palette.info.light}` }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <Insights color="info" />
-                <Typography variant="h6">
-                  Métricas DEV
-                </Typography>
-                <Chip label="Experimental" size="small" color="info" />
-              </Box>
-              <Typography variant="body2" color="textSecondary" paragraph>
-                Visualiza métricas y salud de Edge Functions y sistemas internos. Solo visible en entorno de desarrollo.
+      {/* Tarjeta Métricas — visible en producción */}
+      <Grid size={{ xs: 12, md: 6 }}>
+        <Card sx={{ height: '100%', border: theme => `1px solid ${theme.palette.info.light}` }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <Insights color="info" />
+              <Typography variant="h6">
+                Métricas
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Incluye invocaciones, errores y tiempos promedio.
-              </Typography>
-            </CardContent>
-            <CardActions>
-              <Button
-                onClick={() => navigate('/admin-panel/metrics')}
-                startIcon={<Insights />}
-                variant="contained"
-                color="info"
-                fullWidth
-              >
-                Ir a Métricas
-              </Button>
-            </CardActions>
-          </Card>
-        </Grid>
-      )}
+              <Chip label="Experimental" size="small" color="info" />
+            </Box>
+            <Typography variant="body2" color="textSecondary" paragraph>
+              Visualiza métricas y salud de Edge Functions y sistemas internos.
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Incluye invocaciones, errores y tiempos promedio.
+            </Typography>
+          </CardContent>
+          <CardActions>
+            <Button
+              onClick={() => navigate('/admin-panel/metrics')}
+              startIcon={<Insights />}
+              variant="contained"
+              color="info"
+              fullWidth
+            >
+              Ir a Métricas
+            </Button>
+          </CardActions>
+        </Card>
+      </Grid>
     </Grid>
   );
 

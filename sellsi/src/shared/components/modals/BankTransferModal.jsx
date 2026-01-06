@@ -27,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { formatCurrency } from '../../utils/formatters/priceFormatters';
 
 // ============================================================================
 // COMPONENTE PRINCIPAL
@@ -37,6 +38,7 @@ const BankTransferModal = ({
   onClose,
   onConfirm,
   bankDetails,
+  amount = null,
   loading = false,
 }) => {
   const theme = useTheme();
@@ -66,7 +68,7 @@ const BankTransferModal = ({
     <Paper
       elevation={0}
       sx={{
-        p: 1.5,
+        p: { xs: 0.2, md: 1.35 }, // reduce padding by ~10% on mobile and desktop
         backgroundColor: 'grey.50',
         borderRadius: 1.5,
         border: '1px solid',
@@ -133,8 +135,9 @@ const BankTransferModal = ({
       PaperProps={{
         sx: {
           borderRadius: isMobile ? 0 : 3,
-          overflow: 'hidden',
-        },
+          overflow: 'hidden',          width: { xs: '100%', md: 'auto' },
+          maxWidth: { md: '720px' }, // 20% wider than default sm (600px -> 720px)
+          margin: { md: '0 auto' },        },
       }}
     >
       {/* Header */}
@@ -142,8 +145,8 @@ const BankTransferModal = ({
         sx={{
           position: 'relative',
           textAlign: 'center',
-          pb: 1.5,
-          pt: 2.5,
+          pb: { xs: 0, md: 1.5 },
+          pt: { xs: 0, md: 2.5 },
         }}
       >
         {/* Botón cerrar */}
@@ -171,7 +174,7 @@ const BankTransferModal = ({
             alignItems: 'center',
             justifyContent: 'center',
             mx: 'auto',
-            mb: 1.5,
+            mb: { xs: 1, md: 1.5 },
           }}
         >
           <AccountBalanceIcon
@@ -196,6 +199,25 @@ const BankTransferModal = ({
       <DialogContent sx={{ px: 2.5, py: 2 }}>
         <Stack spacing={1.5}>
           <BankDataField
+            label="Monto a transferir"
+            value={amount != null ? formatCurrency(amount) : 'Monto no disponible'}
+            copyable={true}
+            fieldName="Monto a transferir"
+          />
+
+          <BankDataField
+            label="Nombre"
+            value={bankDetails.accountName}
+            fieldName="Nombre"
+          />
+
+          <BankDataField
+            label="RUT"
+            value={bankDetails.rut}
+            fieldName="RUT"
+          />
+
+          <BankDataField
             label="Banco"
             value={bankDetails.bank}
             copyable={false}
@@ -214,25 +236,13 @@ const BankTransferModal = ({
             value={bankDetails.accountNumber}
             fieldName="Número de Cuenta"
           />
-          
-          <BankDataField
-            label="Nombre"
-            value={bankDetails.accountName}
-            fieldName="Nombre"
-          />
-          
-          <BankDataField
-            label="RUT"
-            value={bankDetails.rut}
-            fieldName="RUT"
-          />
         </Stack>
 
         {/* Información adicional */}
         <Box
           sx={{
-            mt: 2,
-            p: 1.5,
+            mt: { xs: 1, md: 2 },
+            p: { xs: 1, md: 1.5 },
             backgroundColor: 'info.lighter',
             borderRadius: 1.5,
             border: '1px solid',
@@ -240,7 +250,7 @@ const BankTransferModal = ({
           }}
         >
           <Typography variant="body2" color="info.dark" sx={{ fontWeight: 500, fontSize: '0.85rem' }}>
-            ℹ️ <strong>Importante:</strong> Una vez realices la transferencia, haz clic en "Confirmar" para que tu pedido pase a estado de procesando. Sellsi verificará el pago en un plazo máximo de 24 horas.
+            ℹ️ <strong>Importante:</strong> Para que podamos empezar a preparar tu pedido, recuerda presionar el botón "Confirmar" después de realizar el pago. <br /> Validación: Máximo 24 horas hábiles. <br /> Consultas: contacto@sellsi.cl
           </Typography>
         </Box>
       </DialogContent>
