@@ -306,6 +306,10 @@ export const UnifiedAuthProvider = ({ children }) => {
           try {
             localStorage.removeItem('user_id');
           } catch (e) {}
+          // Ensure we redirect to onboarding even on create errors
+          try {
+            if (location.pathname !== '/onboarding') navigate('/onboarding', { replace: true });
+          } catch (e) {}
           return;
         }
 
@@ -316,6 +320,10 @@ export const UnifiedAuthProvider = ({ children }) => {
         // Asegurar que el nuevo perfil expuesto incluya user_id para consumidores
         setUserProfile({ ...newProfile, user_id: userId });
         setLoadingUserStatus(false);
+        // Force onboarding redirect immediately to avoid race with neutral redirects
+        try {
+          if (location.pathname !== '/onboarding') navigate('/onboarding', { replace: true });
+        } catch (e) {}
         return;
       }
 

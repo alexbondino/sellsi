@@ -42,6 +42,8 @@ export function mapSupplierOrderFromServiceObject(o) {
     supplierId: o.supplier_id || null,
     status: o.status,
     paymentStatus: o.payment_status || null,
+    paymentMethod: o.payment_method || null,
+    paymentRejectionReason: o.payment_rejection_reason || null,
     createdAt: o.created_at,
     updatedAt: o.updated_at,
     estimatedDeliveryDate: o.estimated_delivery_date || null,

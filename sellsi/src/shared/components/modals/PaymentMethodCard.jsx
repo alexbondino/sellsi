@@ -19,6 +19,7 @@ import {
   Security as SecurityIcon,
   Schedule as ScheduleIcon,
   CheckCircle as CheckCircleIcon,
+  AccountBalance as AccountBalanceIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
@@ -110,16 +111,35 @@ const PaymentMethodCard = ({
 
               {/* Icono del método */}
               <Box
-                component="img"
-                src={method.icon}
-                alt={method.name}
                 sx={{
                   width: 48,
                   height: 48,
-                  objectFit: 'contain',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   filter: disabled ? 'grayscale(100%)' : 'none',
                 }}
-              />
+              >
+                {method.icon === 'AccountBalance' ? (
+                  <AccountBalanceIcon
+                    sx={{
+                      fontSize: 48,
+                      color: disabled ? 'action.disabled' : 'primary.main',
+                    }}
+                  />
+                ) : (
+                  <Box
+                    component="img"
+                    src={method.icon}
+                    alt={method.name}
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      objectFit: 'contain',
+                    }}
+                  />
+                )}
+              </Box>
 
               {/* Información del método */}
               <Box sx={{ flex: 1 }}>

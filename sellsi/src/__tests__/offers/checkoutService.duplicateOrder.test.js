@@ -226,6 +226,7 @@ describe('checkoutService - Duplicate Order Handling', () => {
         total: 10000,
         payment_method: 'khipu',
         khipu_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // +10 min
+        khipu_payment_url: 'https://khipu.com/pay/123',
         payment_status: 'pending',
         created_at: new Date().toISOString()
       };
@@ -331,6 +332,7 @@ describe('checkoutService - Duplicate Order Handling', () => {
         total: 10000,
         payment_method: 'flow',
         flow_expires_at: new Date(Date.now() + 25 * 60 * 1000).toISOString(), // +25 min
+        flow_payment_url: 'https://flow.cl/pay/abc123',
         payment_status: 'pending',
         created_at: new Date().toISOString()
       };
@@ -505,6 +507,75 @@ describe('checkoutService - Duplicate Order Handling', () => {
       expect(mockInsert).toHaveBeenCalled();
       expect(errorSpy).toHaveBeenCalled();
       errorSpy.mockRestore();
+    });
+
+    // NEW TEST: Bank transfer payment fee and grand total
+    it('createOrder: incluye payment_fee y grand_total para transferencia bancaria', async () => {
+      // No hay orden existente
+      mockOrderMaybeSingle.mockResolvedValue({ data: null, error: null });
+      
+      const newOrder = { 
+        id: 'order-bank-transfer', 
+        total: 10000, 
+        payment_fee: 50,
+        grand_total: 10050,
+        payment_method: 'bank_transfer'
+      };
+      mockSingle.mockResolvedValue({ data: newOrder, error: null });
+
+      const orderData = {
+        cartId: 'cart-123',
+        items: [{ product_id: 'prod-1', quantity: 1 }],
+        userId: 'user-123',
+        total: 10000,
+        paymentMethod: 'bank_transfer',
+        paymentFee: 50,  // 0.5% de 10000
+        grandTotal: 10050
+      };
+
+      const result = await checkoutService.createOrder(orderData);
+      
+      // Verificar que INSERT incluye payment_fee y grand_total
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payment_fee: 50,
+          grand_total: 10050,
+          payment_method: 'bank_transfer'
+        })
+      );
+      
+      expect(result).toEqual(newOrder);
+    });
+
+    it('createOrder: payment_fee y grand_total son null si no se especifican', async () => {
+      // No hay orden existente
+      mockOrderMaybeSingle.mockResolvedValue({ data: null, error: null });
+      
+      const newOrder = { 
+        id: 'order-khipu', 
+        total: 5000,
+        payment_method: 'khipu'
+      };
+      mockSingle.mockResolvedValue({ data: newOrder, error: null });
+
+      const orderData = {
+        cartId: 'cart-123',
+        items: [{ product_id: 'prod-1', quantity: 1 }],
+        userId: 'user-123',
+        total: 5000,
+        paymentMethod: 'khipu'
+        // No paymentFee ni grandTotal
+      };
+
+      await checkoutService.createOrder(orderData);
+      
+      // Verificar que INSERT incluye payment_fee y grand_total como null
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payment_fee: null,
+          grand_total: null
+        })
+      );
     });
   });
 });

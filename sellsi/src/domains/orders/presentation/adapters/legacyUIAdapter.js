@@ -17,6 +17,8 @@ export function toSupplierUIOrder(domainOrder, { includeAliases = true } = {}) {
     buyer_id: o.buyerId || o.buyer_id,
     status: o.status, // se mantendrá en inglés, store hace display
     payment_status: o.paymentStatus || o.payment_status,
+    payment_method: o.paymentMethod || o.payment_method,
+    payment_rejection_reason: o.paymentRejectionReason || o.payment_rejection_reason,
     created_at: o.createdAt || o.created_at,
     updated_at: o.updatedAt || o.updated_at,
     estimated_delivery_date: o.estimatedDeliveryDate || o.estimated_delivery_date || null,

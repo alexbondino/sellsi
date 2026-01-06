@@ -66,6 +66,12 @@
   --glow-color-transparent: rgba(244, 67, 54, 0);
 }
 
+/* Pago Rechazado - Rojo intenso */
+.chip-glow-pago_rechazado {
+  --glow-color: rgba(244, 67, 54, 0.7);
+  --glow-color-transparent: rgba(244, 67, 54, 0);
+}
+
 /* Default - Gris */
 .chip-glow-default {
   --glow-color: rgba(158, 158, 158, 0.6);

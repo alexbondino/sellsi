@@ -272,8 +272,8 @@ export const useBuyerOrders = (buyerId) => {
             const row = payload.new
             const newPaymentStatus = (row?.payment_status || '').toLowerCase()
 
-            // Handle all relevant payment status transitions (pending, paid, expired)
-            if (['paid', 'pending', 'expired'].includes(newPaymentStatus)) {
+            // Handle all relevant payment status transitions (pending, paid, expired, rejected)
+            if (['paid', 'pending', 'expired', 'rejected'].includes(newPaymentStatus)) {
               setOrders((prev) => {
                 const exists = prev.some((o) => o.order_id === row.id)
                 if (exists) {
@@ -283,6 +283,8 @@ export const useBuyerOrders = (buyerId) => {
                       ? {
                           ...o,
                           payment_status: row.payment_status,
+                          payment_method: row.payment_method,
+                          payment_rejection_reason: row.payment_rejection_reason,
                           status: row.status || o.status,
                           updated_at: row.updated_at,
                         }

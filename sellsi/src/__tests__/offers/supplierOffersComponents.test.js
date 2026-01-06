@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BannerProvider } from '../../shared/components/display/banners/BannerContext';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
 import SupplierOffersList from '../../workspaces/supplier/my-offers/components/SupplierOffersList';
+import { MemoryRouter } from 'react-router-dom';
 
 const createClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
@@ -15,7 +16,9 @@ const Wrapper = ({ children }) => {
   return (
     <QueryClientProvider client={clientRef.current}>
       <BannerProvider>
-        <ThemeProvider theme={dashboardThemeCore}>{children}</ThemeProvider>
+        <ThemeProvider theme={dashboardThemeCore}>
+          <MemoryRouter>{children}</MemoryRouter>
+        </ThemeProvider>
       </BannerProvider>
     </QueryClientProvider>
   );
@@ -28,7 +31,7 @@ describe('SupplierOffersList filtered empty vs global empty', () => {
         <SupplierOffersList offers={[]} setOffers={() => {}} />
       </Wrapper>
     );
-    expect(screen.getByText('Aún no tienes ofertas')).toBeInTheDocument();
+    expect(screen.getByText(/Aún no (has recibido|tienes) ofertas/i)).toBeInTheDocument();
     expect(
       screen.queryByText('No hay ofertas con este estado')
     ).not.toBeInTheDocument();

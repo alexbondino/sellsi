@@ -58,6 +58,41 @@ export const PAYMENT_METHODS = {
       'Múltiples medios de pago'
     ]
   },
+  BANK_TRANSFER: {
+    id: 'bank_transfer',
+    name: 'Transferencia Bancaria',
+    description: 'Transferencia manual - Verificación en menos de 24 horas',
+    icon: 'AccountBalance', // Icono MUI - se manejará diferente
+    enabled: true,
+    fees: {
+      percentage: 0.5, // 0.5% del total
+      fixed: 0
+    },
+    minAmount: null, // Sin límite inferior
+    maxAmount: null, // Sin límite superior
+    supportedCurrencies: ['CLP'],
+    processingTime: 'Hasta 24 horas',
+    security: {
+      ssl: true,
+      encrypted: false,
+      verified: true,
+      description: 'Verificación manual por equipo Sellsi'
+    },
+    features: [
+      'Comisión de solo 0.5%',
+      'Sin límites de monto',
+      'Transferencia manual',
+      'Confirmación hasta 24 horas',
+      'Seguro y confiable'
+    ],
+    bankDetails: {
+      bank: 'Banco de Chile',
+      accountType: 'Cuenta Vista',
+      accountNumber: '000246625363',
+      accountName: 'Sellsi SpA',
+      rut: '78.322.743-6'
+    }
+  },
   // Métodos futuros
   WEBPAY: {
     id: 'webpay',
