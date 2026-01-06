@@ -37,7 +37,7 @@ import {
 import { PrimaryButton } from '../../../shared/components';
 import AdminAccountCreator from '../components/AdminAccountCreator';
 import AdminAccountManager from '../components/AdminAccountManager';
-import { isDevelopment, DEV_CONFIG } from '../config/devConfig';
+import { isDevelopment, DEV_CONFIG, canCreateAdminInDev } from '../config/devConfig';
 
 const AdminPanelHome = () => {
   const navigate = useNavigate();
@@ -53,7 +53,7 @@ const AdminPanelHome = () => {
   const renderDashboard = () => (
     <Grid container spacing={3}>
       {/* Advertencia de desarrollo */}
-      {isDevelopment() && (
+      {canCreateAdminInDev() && (
         <Grid size={12}>
           <Alert severity="warning" sx={{ mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -90,7 +90,7 @@ const AdminPanelHome = () => {
             </Typography>
             
             <Typography variant="body2" color="textSecondary">
-              {isDevelopment() 
+              {canCreateAdminInDev() 
                 ? '🚧 Modo desarrollo: Se permite crear el primer administrador'
                 : 'Requiere autenticación administrativa'
               }
@@ -187,22 +187,22 @@ const AdminPanelHome = () => {
             </Box>
             
             <Typography variant="body2" color="textSecondary" paragraph>
-              Ajustes del sistema y configuración de seguridad.
+              Gestiona métodos de pago y ajustes del sistema.
             </Typography>
             
             <Typography variant="body2" color="textSecondary">
-              Próximamente disponible
+              Habilita o deshabilita métodos de pago disponibles
             </Typography>
           </CardContent>
           
           <CardActions>
             <Button
-              disabled
               startIcon={<Settings />}
               variant="outlined"
               fullWidth
+              onClick={() => navigate('/admin-panel/config')}
             >
-              Configuración (Próximamente)
+              Ir a Configuración
             </Button>
           </CardActions>
         </Card>
@@ -267,7 +267,7 @@ const AdminPanelHome = () => {
           Gestiona usuarios, cuentas administrativas y configuración del sistema.
         </Typography>
         
-        {isDevelopment() && (
+        {canCreateAdminInDev() && (
           <Chip 
             label="MODO DESARROLLO" 
             color="warning" 

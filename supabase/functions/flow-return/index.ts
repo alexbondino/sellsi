@@ -3,6 +3,7 @@
 // Flow envía POST con token a urlReturn, esta función redirige al frontend
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { withMetrics } from '../_shared/metrics.ts';
 
 const FRONTEND_URLS: Record<string, string> = {
   production: 'https://sellsi.cl',
@@ -10,7 +11,7 @@ const FRONTEND_URLS: Record<string, string> = {
   development: 'http://localhost:3000', // ⭐ Soporte para desarrollo local
 };
 
-serve(async (req: Request) => {
+serve(req => withMetrics('flow-return', req, async () => {
   const flowEnv = Deno.env.get('FLOW_ENV') || 'development'; // Default a development
   const FRONTEND_URL = FRONTEND_URLS[flowEnv] || FRONTEND_URLS.development;
   
@@ -80,4 +81,4 @@ serve(async (req: Request) => {
       },
     });
   }
-});
+}));

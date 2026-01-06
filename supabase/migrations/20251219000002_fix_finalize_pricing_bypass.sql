@@ -218,6 +218,8 @@ BEGIN
     v_payment_fee := 500;
   ELSIF v_order.payment_method = 'flow' THEN
     v_payment_fee := ROUND(v_total_base * 0.038);
+  ELSIF v_order.payment_method = 'bank_transfer' THEN
+    v_payment_fee := ROUND(v_total_base * 0.005);
   ELSE
     v_payment_fee := 0;
   END IF;

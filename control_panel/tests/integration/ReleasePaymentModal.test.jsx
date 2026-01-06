@@ -6,7 +6,7 @@
  */
 
 import React from 'react'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import ReleasePaymentModal from '../../src/domains/admin/modals/ReleasePaymentModal'
@@ -93,7 +93,10 @@ describe('ReleasePaymentModal - Renderizado', () => {
       />
     )
 
-    expect(screen.getByText(/Orden #ORDER_TEST_001/)).toBeInTheDocument()
+    // Orden y chip
+    expect(screen.getByText('Orden:')).toBeInTheDocument()
+    expect(screen.getByText('#ORDER_TEST_001')).toBeInTheDocument()
+    // Monto y proveedor
     expect(screen.getByText(/\$150\.000/)).toBeInTheDocument()
     expect(screen.getByText('Proveedor Test S.A.')).toBeInTheDocument()
   })
@@ -138,9 +141,11 @@ describe('ReleasePaymentModal - Renderizado', () => {
       />
     )
 
-    const adminField = screen.getByDisplayValue('admin_test_001')
+    const adminField = screen.getByLabelText('Administrador')
     expect(adminField).toBeInTheDocument()
-    expect(adminField).toHaveAttribute('readonly')
+    // Mostrar ID en helper text y campo deshabilitado
+    expect(screen.getByText('ID: admin_test_001')).toBeInTheDocument()
+    expect(adminField).toBeDisabled()
   })
 
   test('muestra campo de notas (opcional)', () => {
@@ -356,28 +361,49 @@ describe('ReleasePaymentModal - Validaciones', () => {
   })
 
   test('valida que admin_id no esté vacío', async () => {
-    // Mock de hook sin admin
-    jest.mock('../../src/domains/admin/hooks/useCurrentAdmin', () => ({
-      __esModule: true,
-      default: () => ({
-        admin: null,
-        loading: false,
-        error: null
-      })
+    // Reemplazar la implementación del hook para simular admin ausente y restaurar luego
+    const useCurrentAdmin = require('../../src/domains/admin/hooks/useCurrentAdmin')
+    useCurrentAdmin.default.mockImplementation(() => ({
+      adminId: null,
+      adminName: null,
+      loading: false,
+      error: null
+    }))
+    useCurrentAdmin.useCurrentAdmin.mockImplementation(() => ({
+      adminId: null,
+      adminName: null,
+      loading: false,
+      error: null
     }))
 
-    render(
-      <ReleasePaymentModal
-        open={true}
-        onClose={mockOnClose}
-        release={mockPaymentReleasePending}
-        onConfirm={mockOnConfirm}
-      />
-    )
+    try {
+      render(
+        <ReleasePaymentModal
+          open={true}
+          onClose={mockOnClose}
+          release={mockPaymentReleasePending}
+          onConfirm={mockOnConfirm}
+        />
+      )
 
-    // Debería mostrar mensaje de error o deshabilitar submit
-    const submitBtn = screen.getByRole('button', { name: /marcar como liberado/i })
-    expect(submitBtn).toBeDisabled()
+      // Debería deshabilitar submit
+      const submitBtn = screen.getByRole('button', { name: /marcar como liberado/i })
+      expect(submitBtn).toBeDisabled()
+    } finally {
+      // Restaurar implementación por defecto para no afectar otros tests
+      useCurrentAdmin.default.mockImplementation(() => ({
+        adminId: 'admin_test_001',
+        adminName: 'Admin Test',
+        loading: false,
+        error: null
+      }))
+      useCurrentAdmin.useCurrentAdmin.mockImplementation(() => ({
+        adminId: 'admin_test_001',
+        adminName: 'Admin Test',
+        loading: false,
+        error: null
+      }))
+    }
   })
 
   test('valida formato de URL si se proporciona', async () => {
@@ -568,7 +594,8 @@ describe('ReleasePaymentModal - Edge Cases', () => {
     )
 
     const notasField = screen.getByLabelText(/Notas/)
-    await user.type(notasField, longNotes)
+    // Set value directly to avoid slow typing
+    fireEvent.change(notasField, { target: { value: longNotes } })
 
     const submitBtn = screen.getByRole('button', { name: /marcar como liberado/i })
     await user.click(submitBtn)
@@ -596,7 +623,8 @@ describe('ReleasePaymentModal - Edge Cases', () => {
     )
 
     const notasField = screen.getByLabelText(/Notas/)
-    await user.type(notasField, specialNotes)
+    // Set value directly (special characters)
+    fireEvent.change(notasField, { target: { value: specialNotes } })
 
     const submitBtn = screen.getByRole('button', { name: /marcar como liberado/i })
     await user.click(submitBtn)

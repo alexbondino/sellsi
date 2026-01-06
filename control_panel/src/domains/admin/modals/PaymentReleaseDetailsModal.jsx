@@ -286,9 +286,9 @@ const PaymentReleaseDetailsModal = ({ open, onClose, release }) => {
                 Días desde entrega:
               </Typography>
               <Chip
-                label={`${daysSinceDelivery} días`}
+                label={typeof daysSinceDelivery === 'number' ? `${daysSinceDelivery} días` : 'N/A'}
                 size="small"
-                color={daysSinceDelivery > 7 ? 'error' : daysSinceDelivery > 3 ? 'warning' : 'default'}
+                color={typeof daysSinceDelivery === 'number' ? (daysSinceDelivery > 7 ? 'error' : daysSinceDelivery > 3 ? 'warning' : 'default') : 'default'}
               />
             </Box>
 

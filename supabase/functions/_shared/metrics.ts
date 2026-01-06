@@ -41,7 +41,21 @@ export async function withMetrics<T>(functionName: string, request: Request, fn:
   const origin = request.headers.get('origin') || null;
   try {
     const result = await fn();
-    queueMicrotask(() => recordInvocation({ functionName, status: 'success', startedAt, requestOrigin: origin }));
+    
+    // Detectar errores basados en HTTP status code (>= 400)
+    if (result instanceof Response && result.status >= 400) {
+      queueMicrotask(() => recordInvocation({
+        functionName,
+        status: 'error',
+        startedAt,
+        requestOrigin: origin,
+        errorCode: `HTTP_${result.status}`,
+        errorMessage: `HTTP error response: ${result.status} ${result.statusText || ''}`
+      }));
+    } else {
+      queueMicrotask(() => recordInvocation({ functionName, status: 'success', startedAt, requestOrigin: origin }));
+    }
+    
     return result;
   } catch (e) {
     queueMicrotask(() => recordInvocation({
