@@ -283,7 +283,7 @@ export function useProducts() {
       if (supplierIds.length > 0) {
         const { data: usersData, error: uErr } = await supabase
           .from('users')
-          .select('user_id, user_nm, logo_url, descripcion_proveedor, verified')
+          .select('user_id, user_nm, logo_url, descripcion_proveedor, verified, minimum_purchase_amount')
           .in(
             'user_id',
             supplierIds.map(id => String(id))
@@ -300,6 +300,7 @@ export function useProducts() {
                 logo_url: u.logo_url,
                 descripcion_proveedor: u.descripcion_proveedor,
                 verified: u.verified,
+                minimum_purchase_amount: u.minimum_purchase_amount,
               },
             ])
           );
@@ -373,6 +374,7 @@ export function useProducts() {
               usersMap[p.supplier_id]?.descripcion_proveedor,
             verified: usersMap[p.supplier_id]?.verified || false,
             proveedorVerificado: usersMap[p.supplier_id]?.verified || false,
+            minimum_purchase_amount: usersMap[p.supplier_id]?.minimum_purchase_amount || 0,
             imagen,
             thumbnails,
             thumbnail_url,
@@ -499,6 +501,10 @@ export function useProducts() {
     return () => {
       mountedRef.current = false;
       controller.abort();
+      // Si se aborta durante inFlight, limpiar para que próximo useEffect no reutilice
+      if (productsCache.inFlight) {
+        productsCache.inFlight = null;
+      }
     };
   }, [refreshProducts]);
 

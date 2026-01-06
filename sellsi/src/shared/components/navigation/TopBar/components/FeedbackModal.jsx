@@ -80,6 +80,7 @@ const FeedbackModal = ({ open, onClose, userEmail, companyName, userName }) => {
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
+      disableScrollLock={true}
       PaperProps={{
         sx: { borderRadius: 2 },
       }}

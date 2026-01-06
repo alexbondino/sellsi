@@ -90,19 +90,17 @@ const ProviderCatalog = () => {
   useBodyScrollLock(shareModalOpen);
   const [catalogUrl, setCatalogUrl] = useState('');
 
-  // Calcular categorías disponibles basándose en los productos del proveedor
+  // Extraer categorías dinámicamente de los productos del proveedor
   const availableCategories = useMemo(() => {
-    if (!products || products.length === 0) {
-      return [];
-    }
-
-    // Obtener categorías únicas de los productos
-    const productCategories = new Set(
-      products.map(p => p.category).filter(Boolean)
-    );
-
-    // Filtrar solo las categorías que tienen productos
-    return CATEGORIAS.filter(cat => productCategories.has(cat));
+    if (!products || products.length === 0) return [];
+    const unique = [
+      ...new Set(
+        products
+          .map(p => (p.categoria || p.category || null))
+          .filter(Boolean)
+      ),
+    ];
+    return unique.sort();
   }, [products]);
 
   // Determinar de dónde viene el usuario (para el botón de volver)
@@ -214,7 +212,7 @@ const ProviderCatalog = () => {
           .select(
             `
             *,
-            product_images (image_url)
+            product_images (image_url, thumbnail_url)
           `
           )
           .eq('supplier_id', providerData.user_id)
@@ -301,6 +299,8 @@ const ProviderCatalog = () => {
             supplier_id: product.supplier_id, // Para getProductImageUrl
             productid: product.productid, // Para getProductImageUrl
             is_active: product.is_active, // ✅ AGREGAR estado activo de BD
+            // ✅ FIX: Agregar compra mínima del PROVEEDOR (monto total mínimo)
+            minimum_purchase_amount: providerData.minimum_purchase_amount || 0,
           };
         });
 

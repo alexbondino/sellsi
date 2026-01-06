@@ -5,7 +5,7 @@
  * - Liberación de Pagos (Principal)
  * - Gestión de Usuarios (Ban/Unban)
  * - Gestión de Productos Marketplace
- * - Solicitudes de Pago (EN DESARROLLO - Sistema Legacy)
+ * - Transferencias Manuales
  * 
  * @author Panel Administrativo Sellsi
  * @date 29 de Octubre de 2025
@@ -40,6 +40,7 @@ import AdminPanelTable from './AdminPanelTable';
 import UserManagementTable from './UserManagementTable';
 import ProductMarketplaceTable from './ProductMarketplaceTable';
 import PaymentReleasesTable from './PaymentReleasesTable';
+import AdminBankTransferPayments from './AdminBankTransferPayments';
 
 // ✅ CONSTANTS
 const TAB_ICONS = {
@@ -53,7 +54,7 @@ const TAB_LABELS = {
   liberaciones: 'Liberación de Pagos',
   usuarios: 'Gestión de Usuarios',
   productos: 'Productos Marketplace',
-  solicitudes: 'Solicitudes de Pago (EN DESARROLLO)'
+  solicitudes: 'Transferencias Manuales'
 };
 
 // ✅ STYLES
@@ -218,30 +219,57 @@ const AdminDashboard = memo(() => {
         textColor="primary"
         indicatorColor="primary"
       >
-        <Tab
-          icon={TAB_ICONS.liberaciones}
-          label={TAB_LABELS.liberaciones}
-          sx={dashboardStyles.tab}
-          {...getTabProps(0)}
-        />
-        <Tab
-          icon={TAB_ICONS.usuarios}
-          label={TAB_LABELS.usuarios}
-          sx={dashboardStyles.tab}
-          {...getTabProps(1)}
-        />
-        <Tab
-          icon={TAB_ICONS.productos}
-          label={TAB_LABELS.productos}
-          sx={dashboardStyles.tab}
-          {...getTabProps(2)}
-        />
-        <Tab
-          icon={TAB_ICONS.solicitudes}
-          label={TAB_LABELS.solicitudes}
-          sx={dashboardStyles.tab}
-          {...getTabProps(3)}
-        />
+        <Tooltip 
+          title="Liberar pagos a proveedores una vez confirmada la entrega de productos"
+          placement="bottom"
+          arrow
+        >
+          <Tab
+            icon={TAB_ICONS.liberaciones}
+            label={TAB_LABELS.liberaciones}
+            sx={dashboardStyles.tab}
+            {...getTabProps(0)}
+          />
+        </Tooltip>
+        
+        <Tooltip 
+          title="Confirmar pagos realizados por transferencia bancaria manual"
+          placement="bottom"
+          arrow
+        >
+          <Tab
+            icon={TAB_ICONS.solicitudes}
+            label={TAB_LABELS.solicitudes}
+            sx={dashboardStyles.tab}
+            {...getTabProps(1)}
+          />
+        </Tooltip>
+        
+        <Tooltip 
+          title="Gestionar usuarios: banear, desbanear, verificar y eliminar cuentas"
+          placement="bottom"
+          arrow
+        >
+          <Tab
+            icon={TAB_ICONS.usuarios}
+            label={TAB_LABELS.usuarios}
+            sx={dashboardStyles.tab}
+            {...getTabProps(2)}
+          />
+        </Tooltip>
+        
+        <Tooltip 
+          title="Administrar productos del marketplace: eliminar y editar listados"
+          placement="bottom"
+          arrow
+        >
+          <Tab
+            icon={TAB_ICONS.productos}
+            label={TAB_LABELS.productos}
+            sx={dashboardStyles.tab}
+            {...getTabProps(3)}
+          />
+        </Tooltip>
       </Tabs>
     </Paper>
   );
@@ -253,19 +281,19 @@ const AdminDashboard = memo(() => {
         <PaymentReleasesTable />
       </TabPanel>
 
-      {/* Pestaña de Gestión de Usuarios */}
+      {/* Pestaña de Transferencias Manuales */}
       <TabPanel value={currentTab} index={1}>
+        <AdminBankTransferPayments />
+      </TabPanel>
+
+      {/* Pestaña de Gestión de Usuarios */}
+      <TabPanel value={currentTab} index={2}>
         <UserManagementTable />
       </TabPanel>
 
       {/* Pestaña de Productos Marketplace */}
-      <TabPanel value={currentTab} index={2}>
-        <ProductMarketplaceTable />
-      </TabPanel>
-
-      {/* Pestaña de Solicitudes de Pago (EN DESARROLLO) */}
       <TabPanel value={currentTab} index={3}>
-        <AdminPanelTable />
+        <ProductMarketplaceTable />
       </TabPanel>
     </>
   );

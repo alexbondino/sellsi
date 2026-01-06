@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import CssBaseline from '@mui/material/CssBaseline'
 import { Toaster } from 'react-hot-toast'
 import Loader from './components/Loader'
-
+import SuspenseLoader from './shared/components/layout/SuspenseLoader'
 // ⚡ OPTIMIZACIÓN: Lazy loading de rutas para reducir bundle inicial
 // Reduce bundle de 1.2MB a ~250KB inicial
 const AdminLogin = lazy(() => import('./domains/admin/components/AdminLogin'))
@@ -13,6 +13,7 @@ const AdminGuard = lazy(() => import('./domains/admin/components/AdminGuard'))
 const AdminPanelHome = lazy(() => import('./domains/admin/pages/AdminPanelHome'))
 const AdminDashboard = lazy(() => import('./domains/admin/components/AdminDashboard'))
 const AdminMetrics = lazy(() => import('./domains/admin/pages/AdminMetrics'))
+const AdminConfig = lazy(() => import('./domains/admin/pages/AdminConfig'))
 const FirstAdminSetup = lazy(() => import('./domains/admin/components/FirstAdminSetup'))
 
 const theme = createTheme({
@@ -45,7 +46,7 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Router>
-          <Suspense fallback={<Loader />}>
+          <Suspense fallback={<SuspenseLoader />}>
             <Routes>
               {/* ========== RUTAS PÚBLICAS ========== */}
               
@@ -82,6 +83,13 @@ function App() {
               <Route path="/admin-panel/metrics" element={
                 <AdminGuard>
                   <AdminMetrics />
+                </AdminGuard>
+              } />
+              
+              {/* Configuración del sistema */}
+              <Route path="/admin-panel/config" element={
+                <AdminGuard>
+                  <AdminConfig />
                 </AdminGuard>
               } />
               

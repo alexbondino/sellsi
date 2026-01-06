@@ -5,6 +5,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { withMetrics } from '../_shared/metrics.ts';
 
 // Headers CORS
 const corsHeaders = {
@@ -20,7 +21,7 @@ interface FeedbackRequest {
   userName?: string;
 }
 
-serve(async (req: Request) => {
+serve(req => withMetrics('send-feedback', req, async () => {
   // Manejar preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -129,4 +130,4 @@ serve(async (req: Request) => {
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-});
+}));

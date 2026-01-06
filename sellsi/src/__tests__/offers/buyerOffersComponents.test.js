@@ -185,8 +185,8 @@ describe('OffersList Component', () => {
   it('debería renderizar tabla vacía cuando no hay ofertas', () => {
     renderWith(React.createElement(OffersList, defaultProps));
   // Ahora mostramos un estado vacío amigable en vez de la cabecera de la tabla
-  expect(screen.getByText('No has enviado ofertas')).toBeInTheDocument();
-  expect(screen.getByText('Envía ofertas a proveedores desde la ficha de producto. Aquí verás el estado de cada propuesta.')).toBeInTheDocument();
+  expect(screen.getByText(/no has enviado ofertas/i)).toBeInTheDocument();
+  expect(screen.getByText(/En Sellsi puedes negociar/i)).toBeInTheDocument();
   });
 
   it('debería renderizar ofertas cuando las hay', () => {

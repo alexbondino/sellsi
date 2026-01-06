@@ -46,6 +46,8 @@ export const mockPaymentReleasePending = {
   status: 'pending',
   purchased_at: '2025-10-20T10:00:00Z',
   delivered_at: '2025-10-25T15:30:00Z',
+  delivery_confirmed_at: '2025-10-25T15:30:00Z',
+  days_since_delivery: 0,
   released_at: null,
   released_by_admin_id: null,
   admin_name: null,
@@ -68,6 +70,8 @@ export const mockPaymentReleaseReleased = {
   status: 'released',
   purchased_at: '2025-10-15T10:00:00Z',
   delivered_at: '2025-10-20T14:00:00Z',
+  delivery_confirmed_at: '2025-10-20T14:00:00Z',
+  days_since_delivery: 2,
   released_at: '2025-10-22T11:00:00Z',
   released_by_admin_id: 'admin_test_001',
   admin_name: 'Admin Test',
@@ -90,6 +94,8 @@ export const mockPaymentReleaseCancelled = {
   status: 'cancelled',
   purchased_at: '2025-10-18T12:00:00Z',
   delivered_at: '2025-10-22T16:00:00Z',
+  delivery_confirmed_at: '2025-10-22T16:00:00Z',
+  days_since_delivery: 2,
   released_at: null,
   released_by_admin_id: null,
   admin_name: null,
@@ -108,14 +114,15 @@ export const mockPaymentReleasesList = [
 ]
 
 export const mockStats = {
-  total_count: 3,
+  total: 3,
   total_amount: 480000,
-  pending_count: 1,
+  pending_release: 1,
   pending_amount: 150000,
-  released_count: 1,
+  released: 1,
   released_amount: 250000,
-  cancelled_count: 1,
+  cancelled: 1,
   cancelled_amount: 80000,
+  avg_amount: 480000 / 3,
   avg_days_to_release: 2.0
 }
 
@@ -131,6 +138,8 @@ export const createMockPaymentRelease = (overrides = {}) => ({
   status: 'pending',
   purchased_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
   delivered_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  delivery_confirmed_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  days_since_delivery: 3,
   released_at: null,
   released_by_admin_id: null,
   admin_name: null,
@@ -144,27 +153,28 @@ export const createMockPaymentRelease = (overrides = {}) => ({
 })
 
 export const createMockStats = (overrides = {}) => ({
-  total_count: 0,
+  total: 0,
   total_amount: 0,
-  pending_count: 0,
+  pending_release: 0,
   pending_amount: 0,
-  released_count: 0,
+  released: 0,
   released_amount: 0,
-  cancelled_count: 0,
+  cancelled: 0,
   cancelled_amount: 0,
+  avg_amount: 0,
   avg_days_to_release: 0,
   ...overrides
 })
 
 // Mock de respuestas de la API
 export const mockApiSuccess = (data) => ({
-  data,
-  error: null
+  success: true,
+  data
 })
 
 export const mockApiError = (message = 'Error de prueba') => ({
-  data: null,
-  error: { message, code: 'TEST_ERROR' }
+  success: false,
+  error: message
 })
 
 // Mock delays para simular latencia

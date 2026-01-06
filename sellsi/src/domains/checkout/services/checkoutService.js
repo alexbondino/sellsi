@@ -388,6 +388,8 @@ class CheckoutService {
           status: 'pending',
           payment_method: orderData.paymentMethod,
           payment_status: 'pending',
+          payment_fee: orderData.paymentFee || null,
+          grand_total: orderData.grandTotal || null,
           shipping_address: shippingAddressObj,
           billing_address: billingAddressObj,
           cart_id: orderData.cartId || null, // ✅ Vincular con carrito para limpieza server-side
@@ -794,6 +796,24 @@ class CheckoutService {
       style: 'currency',
       currency,
     }).format(amount);
+  }
+
+  /**
+   * Finalizar precios de orden (validar stock, precios, calcular grand_total)
+   * @param {string} orderId - ID de la orden
+   * @throws {Error} Si hay error en la validación
+   */
+  async finalizeOrderPricing(orderId) {
+    const { data, error } = await supabase.rpc('finalize_order_pricing', { 
+      p_order_id: orderId 
+    });
+
+    if (error) {
+      console.error('[CheckoutService] finalize_order_pricing error:', error);
+      throw new Error(error.message || 'Error al finalizar precios de la orden');
+    }
+
+    return data;
   }
 
   /**

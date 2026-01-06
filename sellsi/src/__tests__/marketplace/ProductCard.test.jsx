@@ -201,7 +201,7 @@ describe('ProductCard', () => {
   it('pressing Enter on card does not trigger navigation (no keyboard handler implemented)', async () => {
     const product = { id: 'ke1', nombre: 'KeyEvent', imagen: null }
     render(<ProductCard product={product} type="buyer" registerProductNode={() => {}} />, { wrapper: createWrapper() })
-    const el = screen.getByText('KeyEvent')
+    const el = screen.getByText(/KeyEvent/i)
     el.focus()
     await user.keyboard('{Enter}')
     expect(mockNavigate).not.toHaveBeenCalled()
@@ -210,7 +210,7 @@ describe('ProductCard', () => {
   it('generates slugified product url when name has accents and special chars', async () => {
     const product = { id: 'p7', nombre: 'Ñandú café' }
     render(<ProductCard product={product} type="buyer" registerProductNode={() => {}} />, { wrapper: createWrapper() })
-    const el = screen.getByText('Ñandú café')
+    const el = screen.getByAltText('Ñandú café')
     await user.click(el)
     await waitFor(() => expect(mockNavigate).toHaveBeenCalled())
     expect(mockNavigate.mock.calls[0][0]).toEqual(expect.stringContaining(`/marketplace/product/${product.id}/nandu-cafe`))
@@ -219,7 +219,7 @@ describe('ProductCard', () => {
   it('space key does not trigger navigation', async () => {
     const product = { id: 'ksp1', nombre: 'SpaceKey' }
     render(<ProductCard product={product} type="buyer" registerProductNode={() => {}} />, { wrapper: createWrapper() })
-    const el = screen.getByText('SpaceKey')
+    const el = screen.getByText(/SpaceKey/i)
     el.focus()
     await user.keyboard(' ')
     expect(mockNavigate).not.toHaveBeenCalled()
@@ -266,7 +266,7 @@ describe('ProductCard', () => {
     const uuid = '123e4567-e89b-12d3-a456-426614174000'
     const product = { id: uuid, nombre: 'UUIDProd' }
     render(<ProductCard product={product} type="buyer" registerProductNode={() => {}} />, { wrapper: createWrapper() })
-    const el = screen.getByText('UUIDProd')
+    const el = screen.getByText(/UUIDProd/i)
     await user.click(el)
     await waitFor(() => expect(mockNavigate).toHaveBeenCalled())
     expect(mockNavigate.mock.calls[0][0]).toEqual(expect.stringContaining(uuid))
@@ -277,7 +277,7 @@ describe('ProductCard', () => {
     const originalPath = window.location.pathname
     window.history.pushState({}, '', '/buyer/marketplace')
     render(<ProductCard product={product} type="buyer" registerProductNode={() => {}} />, { wrapper: createWrapper() })
-    const el = screen.getByText('FromBuyer')
+    const el = screen.getByText(/FromBuyer/i)
     await user.click(el)
     await waitFor(() => expect(mockNavigate).toHaveBeenCalled())
     expect(mockNavigate.mock.calls[0][1]).toEqual(expect.objectContaining({ state: { from: '/buyer/marketplace' } }))

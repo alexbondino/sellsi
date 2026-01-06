@@ -335,8 +335,8 @@ describe('generate-thumbnail handler (unit)', () => {
         imageProcessor: dummyProcessor,
       }
     )
-    // After stricter validation, all-throw uploads should yield a 500 with failed variants
-    expect(res.status).toBe(500)
+    // After stricter validation, all-throw uploads should trigger fallback RPC and return 200 with failed variants
+    expect(res.status).toBe(200)
     expect(res.body.partial).toBe(true)
     expect(res.body.failed).toBe(true)
     expect(
@@ -399,12 +399,11 @@ describe('generate-thumbnail handler (unit)', () => {
       }
     )
 
-    expect(res.status).toBe(500)
+    // Fallback RPC must be called and handler returns 200 (fallback handled)
+    expect(res.status).toBe(200)
     expect(res.body.success).toBeFalsy()
     expect(res.body.failed).toBe(true)
-    expect(rpcCalled && rpcCalled.name === 'mark_thumbnail_job_error').toBe(
-      true
-    )
+    expect(rpcCalled && rpcCalled.name === 'mark_thumbnail_job_error').toBe(true)
     expect(
       rpcCalled && rpcCalled.payload && rpcCalled.payload.p_product_id === 'p1'
     ).toBe(true)

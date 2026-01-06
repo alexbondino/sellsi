@@ -17,6 +17,7 @@ import { supabase } from '../../../services/supabase';
 import useCartStore from '../../../stores/cart/cartStore';
 import { useRole } from '../../../../infrastructure/providers';
 import { setSkipScrollToTopOnce } from '../ScrollToTop/ScrollToTop';
+import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 import { useNotificationsContext } from '../../../../domains/notifications/components/NotificationProvider';
 import { ProfileAvatarButton } from './components/ProfileAvatarButton';
 import { NotificationsMenu } from './components/NotificationsMenu';
@@ -47,6 +48,7 @@ export default function TopBarContainer({
   const [notifAnchor, setNotifAnchor] = useState(null);
   const [notifModalOpen, setNotifModalOpen] = useState(null);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  useBodyScrollLock(feedbackModalOpen);
   const mobileSearchInputRef = useRef(null);
 
   const {

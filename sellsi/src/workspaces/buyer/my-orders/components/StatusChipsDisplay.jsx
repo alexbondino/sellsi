@@ -41,9 +41,18 @@ function calculateChipProps(chip, order, recentlyPaid) {
     } else if (order.payment_status === 'expired') {
       computedTooltip =
         'El tiempo para completar el pago se agotó (20 minutos).'
+    } else if (order.payment_status === 'pending' && order.payment_method === 'bank_transfer') {
+      computedTooltip =
+        'Tu transferencia bancaria está siendo verificada por nuestro equipo. Esto puede tomar hasta 24 horas.'
     } else {
       computedTooltip = 'Pago aún no confirmado.'
     }
+  } else if (chip.key === 'pago_rechazado') {
+    // Chip específico para pago rechazado
+    const reason = order.payment_rejection_reason;
+    computedTooltip = reason 
+      ? `El pago fue rechazado. Razón: "${reason}"`
+      : 'El pago fue rechazado. Por favor contacta a soporte para más información.';
   } else if (chip.key === 'aceptado') {
     computedTooltip = aceptadoReached
       ? 'El proveedor aceptó tu pedido.'
@@ -65,6 +74,8 @@ function calculateChipProps(chip, order, recentlyPaid) {
   }
 
   const isPagoChip = chip.key === 'pago'
+  const isPagoRechazadoChip = chip.key === 'pago_rechazado'
+  
   // No mostrar highlight en chip de pago si ya avanzamos a un status superior
   const hasAdvancedStatus = ['accepted', 'in_transit', 'delivered'].includes(
     order.status
@@ -77,7 +88,11 @@ function calculateChipProps(chip, order, recentlyPaid) {
     !hasAdvancedStatus
 
   // Glow effect: brillan chips activos y highlight
-  const shouldGlow = highlight || (chip.active && chip.key !== 'pago')
+  // Pago rechazado también debe brillar (en rojo) cuando está activo
+  const shouldGlow = highlight || 
+    (chip.active && chip.key !== 'pago') || 
+    (isPagoRechazadoChip && chip.active)
+    
   const glowClass = shouldGlow ? `chip-glow chip-glow-${chip.key}` : ''
 
   return { tooltip: computedTooltip, highlight, glowClass }

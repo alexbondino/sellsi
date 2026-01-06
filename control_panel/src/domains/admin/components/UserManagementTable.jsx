@@ -210,44 +210,84 @@ const UserManagementTable = memo(() => {
   const renderStatsCards = useCallback(() => (
     <Grid container spacing={3} sx={commonStyles.headerSection}>
       <Grid item xs={12} sm={6} md={2.4}>
-        <MemoAdminStatCard
-          title="Total Usuarios"
-          value={stats.totalUsers || 0}
-          icon={PersonIcon}
-          color="primary"
-        />
+        <Tooltip 
+          title="Cantidad total de usuarios registrados en la plataforma (activos y baneados)"
+          placement="top"
+          arrow
+        >
+          <Box>
+            <MemoAdminStatCard
+              title="Total Usuarios"
+              value={stats.totalUsers || 0}
+              icon={PersonIcon}
+              color="primary"
+            />
+          </Box>
+        </Tooltip>
       </Grid>
       <Grid item xs={12} sm={6} md={2.4}>
-        <MemoAdminStatCard
-          title="Usuarios Activos"
-          value={stats.activeUsers || 0}
-          icon={PersonIcon}
-          color="success"
-        />
+        <Tooltip 
+          title="Usuarios que pueden acceder y usar la plataforma normalmente"
+          placement="top"
+          arrow
+        >
+          <Box>
+            <MemoAdminStatCard
+              title="Usuarios Activos"
+              value={stats.activeUsers || 0}
+              icon={PersonIcon}
+              color="success"
+            />
+          </Box>
+        </Tooltip>
       </Grid>
       <Grid item xs={12} sm={6} md={2.4}>
-        <MemoAdminStatCard
-          title="Usuarios Verificados"
-          value={stats.verifiedUsers || 0}
-          icon={VerifiedIcon}
-          color="info"
-        />
+        <Tooltip 
+          title="Usuarios que han completado el proceso de verificación de identidad"
+          placement="top"
+          arrow
+        >
+          <Box>
+            <MemoAdminStatCard
+              title="Usuarios Verificados"
+              value={stats.verifiedUsers || 0}
+              icon={VerifiedIcon}
+              color="info"
+            />
+          </Box>
+        </Tooltip>
       </Grid>
       <Grid item xs={12} sm={6} md={2.4}>
-        <MemoAdminStatCard
-          title="Usuarios Baneados"
-          value={stats.bannedUsers || 0}
-          icon={BlockIcon}
-          color="error"
-        />
+        <Tooltip 
+          title="Usuarios suspendidos que no pueden acceder a la plataforma"
+          placement="top"
+          arrow
+        >
+          <Box>
+            <MemoAdminStatCard
+              title="Usuarios Baneados"
+              value={stats.bannedUsers || 0}
+              icon={BlockIcon}
+              color="error"
+            />
+          </Box>
+        </Tooltip>
       </Grid>
       <Grid item xs={12} sm={6} md={2.4}>
-        <MemoAdminStatCard
-          title="Proveedores"
-          value={stats.suppliers || 0}
-          icon={StoreIcon}
-          color="warning"
-        />
+        <Tooltip 
+          title="Usuarios que han publicado al menos un producto en el marketplace"
+          placement="top"
+          arrow
+        >
+          <Box>
+            <MemoAdminStatCard
+              title="Proveedores"
+              value={stats.suppliers || 0}
+              icon={StoreIcon}
+              color="warning"
+            />
+          </Box>
+        </Tooltip>
       </Grid>
     </Grid>
   ), [stats]);

@@ -205,7 +205,9 @@ describe('MobileOrderCard Component', () => {
       fireEvent.click(expandButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Documento Tributario')).toBeVisible();
+        // The component renders a 'Documento' section (header) and a status (e.g. 'No especificado')
+        expect(screen.getByText(/Documento/i)).toBeVisible();
+        expect(screen.getByText(/No especificado/i)).toBeVisible();
       });
     });
   });
@@ -349,7 +351,10 @@ describe('MobileOrderCard Component', () => {
       fireEvent.click(expandButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Documento Tributario')).toBeVisible();
+        // Ensure the Documento header is present and billing fields are rendered
+        expect(screen.getByText(/Documento/i)).toBeVisible();
+        expect(screen.getByText('Test Company')).toBeVisible();
+        expect(screen.getByText(/12345678-9/)).toBeVisible();
       });
     });
 

@@ -54,6 +54,7 @@ const MobilePaymentLayout = ({
     if (selectedMethod) {
       if (selectedMethod.id === 'khipu') fee = 500;
       else if (selectedMethod.id === 'flow') fee = Math.round(base * 0.038);
+      else if (selectedMethod.id === 'bank_transfer') fee = Math.round(base * 0.005);
     }
 
     return base + fee;

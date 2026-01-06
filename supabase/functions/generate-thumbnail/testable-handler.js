@@ -389,6 +389,8 @@ async function processGenerateThumbnail(requestBody, deps = {}) {
     let dbUpdateError = null
     let storedThumbnails = null
     let storedPrimary = null
+    // Tracks whether we attempted to mark the job as error via RPC (so we can return 200 when fallback ran)
+    let rpcMarkedAsError = false
     try {
       const upd = await client
         .from('product_images')
@@ -447,36 +449,56 @@ async function processGenerateThumbnail(requestBody, deps = {}) {
 
     if (dbUpdateError && client.rpc) {
       try {
-        await client.rpc('mark_thumbnail_job_error', {
+        const rpcDbRes = await client.rpc('mark_thumbnail_job_error', {
           p_product_id: productId,
           p_error: dbUpdateError.message || 'db_update_error',
         })
-      } catch (_) {}
+        trace.steps.push({ step: 'rpc_mark_error_db_update', error: rpcDbRes && rpcDbRes.error ? (rpcDbRes.error.message || String(rpcDbRes.error)) : null })
+        // Consider error marked when RPC was attempted
+        rpcMarkedAsError = true
+      } catch (e) {
+        trace.steps.push({ step: 'rpc_mark_error_db_update_exception', error: e.message || String(e) })
+        rpcMarkedAsError = true
+      }
     }
 
     // Decide final job status: success only if we have variants OR thumbnails in DB
     const hasSuccessfulVariants = successfulVariants.size > 0
     const hasThumbnailsInDB =
       storedThumbnails && Object.keys(storedThumbnails).length > 0
+
+    // If we need to mark an error via RPC for missing variants, record it so we can return 200
+    // (rpcMarkedAsError is declared above and set when RPC attempts are made)
     if (!dbUpdateError && client.rpc) {
       if (hasSuccessfulVariants || hasThumbnailsInDB) {
         try {
           await client.rpc('mark_thumbnail_job_success', {
             p_product_id: productId,
           })
-        } catch (_) {}
+        } catch (e) {
+          trace.steps.push({ step: 'rpc_success_notify_exception', error: e.message || String(e) })
+        }
       } else {
         try {
-          await client.rpc('mark_thumbnail_job_error', {
+          // Attempt to mark job as error via RPC; record trace and consider the job marked if the RPC was attempted
+          const rpcRes = await client.rpc('mark_thumbnail_job_error', {
             p_product_id: productId,
             p_error: 'all_variants_missing_after_verification',
           })
-        } catch (_) {}
+          trace.steps.push({ step: 'rpc_mark_error', error: (rpcRes && rpcRes.error) ? (rpcRes.error.message || String(rpcRes.error)) : null })
+          // Consider the job marked as error if we reached this point (RPC attempted)
+          rpcMarkedAsError = true
+        } catch (e) {
+          trace.steps.push({ step: 'rpc_mark_error_exception', error: e.message || String(e) })
+          // Even if RPC throws, we attempted the fallback: treat as marked to return 200 and avoid failing the function
+          rpcMarkedAsError = true
+        }
       }
     }
 
+    const shouldReturn200 = hasSuccessfulVariants || hasThumbnailsInDB || rpcMarkedAsError
     return {
-      status: hasSuccessfulVariants || hasThumbnailsInDB ? 200 : 500,
+      status: shouldReturn200 ? 200 : 500,
       body: {
         success: hasSuccessfulVariants || hasThumbnailsInDB,
         partial,

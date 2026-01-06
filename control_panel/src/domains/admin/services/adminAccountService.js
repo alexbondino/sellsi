@@ -30,83 +30,74 @@ export const createAdminAccount = async (adminData, createdById = null) => {
       return { success: false, error: 'Datos incompletos' };
     }
 
-    // Verificar si el email ya existe
-    const { data: existingAdmin, error: emailCheckError } = await supabase
-      .from('control_panel_users')
-      .select('email')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (emailCheckError) {
-      console.error('Error verificando email:', emailCheckError);
-      // Continuamos el proceso aunque falle la verificación
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { success: false, error: 'Email inválido' };
     }
 
-    if (existingAdmin) {
-      return { success: false, error: 'El email ya está registrado' };
+    // Validar longitud de contraseña
+    if (password.length < 8) {
+      return { success: false, error: 'La contraseña debe tener al menos 8 caracteres' };
     }
 
-    // Verificar si el usuario ya existe
-    const { data: existingUser, error: userCheckError } = await supabase
-      .from('control_panel_users')
-      .select('usuario')
-      .eq('usuario', usuario)
-      .maybeSingle();
-
-    if (userCheckError) {
-      console.error('Error verificando usuario:', userCheckError);
-      // Continuamos el proceso aunque falle la verificación
-    }
-
-    if (existingUser) {
-      return { success: false, error: 'El usuario ya está registrado' };
-    }
-
-    // Crear hash de la contraseña (en producción usar bcrypt)
-    const hashedPassword = btoa(password); // Temporal, cambiar por bcrypt
-
-    // Crear el nuevo administrador
-    const { data: newAdmin, error } = await supabase
-      .from('control_panel_users')
-      .insert([
-        {
-          usuario,
-          email,
-          password_hash: hashedPassword,
-          full_name: fullName,
-          role,
-          created_by: createdById,
-          is_active: true,
-          notes
-        }
-      ])
-      .select()
-      .single();
+    // Usar función RPC de Supabase para crear admin con bcrypt
+    const { data: newAdmin, error } = await supabase.rpc('create_admin_user', {
+      p_username: usuario,
+      p_email: email,
+      p_password: password,
+      p_full_name: fullName,
+      p_role: role,
+      p_notes: notes || null,
+      p_creator_id: createdById
+    });
 
     if (error) {
       console.error('Error creando admin:', error);
-      return { success: false, error: 'Error al crear la cuenta' };
+      
+      // Manejar errores específicos
+      if (error.message?.includes('email ya está registrado')) {
+        return { success: false, error: 'El email ya está registrado' };
+      }
+      if (error.message?.includes('usuario ya está registrado')) {
+        return { success: false, error: 'El usuario ya está registrado' };
+      }
+      if (error.message?.includes('autenticación de administrador')) {
+        return { success: false, error: 'Se requiere autenticación de administrador' };
+      }
+      
+      return { success: false, error: error.message || 'Error al crear la cuenta' };
+    }
+
+    // La función RPC retorna un array con un elemento
+    const admin = Array.isArray(newAdmin) ? newAdmin[0] : newAdmin;
+
+    if (!admin) {
+      return { success: false, error: 'No se pudo crear el usuario' };
     }
 
     // Registrar la acción en el log de auditoría usando RPC
     if (createdById) {
-      await supabase.rpc('log_admin_audit', {
-        p_admin_id: createdById,
-        p_action: 'create_admin',
-        p_target_id: newAdmin.id,
-        p_details: {
-          email,
-          full_name: fullName,
-          role
-        },
-        p_ip_address: null,
-        p_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
-      });
+      try {
+        await supabase.rpc('log_admin_audit', {
+          p_admin_id: createdById,
+          p_action: 'create_admin',
+          p_target_id: admin.id,
+          p_details: {
+            email,
+            full_name: fullName,
+            role
+          },
+          p_ip_address: null,
+          p_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+        });
+      } catch (auditError) {
+        console.warn('Error registrando auditoría:', auditError);
+        // No fallar si el log de auditoría falla
+      }
     }
 
-    // Retornar el admin creado sin la contraseña
-    const { password_hash, ...adminResponse } = newAdmin;
-    return { success: true, admin: adminResponse };
+    return { success: true, admin };
 
   } catch (error) {
     console.error('Error en createAdminAccount:', error);

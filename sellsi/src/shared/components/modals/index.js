@@ -7,3 +7,5 @@ export { default as DeleteMultipleProductsModal } from './DeleteMultipleProducts
 export { default as ShippingRegionsModal } from './ShippingRegionsModal';
 export { default as PaymentMethodCard } from './PaymentMethodCard';
 export { default as ContactModal } from './ContactModal';
+export { default as BankTransferModal } from './BankTransferModal';
+export { default as BankTransferConfirmModal } from './BankTransferConfirmModal';

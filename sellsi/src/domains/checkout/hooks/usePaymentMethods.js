@@ -4,17 +4,59 @@
 
 import { create } from 'zustand';
 import { PAYMENT_METHODS } from '../constants/paymentMethods';
+import { supabase } from '../../../services/supabase';
 
 const usePaymentMethods = create((set, get) => ({
   // ===== ESTADO =====
-  availableMethods: Object.values(PAYMENT_METHODS).filter(
-    method => method.enabled
-  ),
+  availableMethods: [],
   selectedMethod: null,
   isValidating: false,
   validationErrors: {},
+  isLoadingMethods: true,
 
   // ===== ACCIONES =====
+
+  // Cargar métodos de pago desde Supabase
+  loadPaymentMethods: async () => {
+    try {
+      set({ isLoadingMethods: true });
+      
+      const { data, error } = await supabase
+        .from('payment_methods_config')
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error loading payment methods config:', error);
+        // Fallback: usar configuración por defecto de PAYMENT_METHODS
+        set({
+          availableMethods: Object.values(PAYMENT_METHODS).filter(m => m.enabled),
+          isLoadingMethods: false,
+        });
+        return;
+      }
+
+      // Filtrar métodos según configuración de la BD
+      const enabledMethods = Object.values(PAYMENT_METHODS).filter(method => {
+        if (method.id === 'khipu') return data.khipu_enabled;
+        if (method.id === 'flow') return data.flow_enabled;
+        if (method.id === 'bank_transfer') return data.bank_transfer_enabled;
+        return false;
+      });
+
+      set({
+        availableMethods: enabledMethods,
+        isLoadingMethods: false,
+      });
+    } catch (error) {
+      console.error('Error in loadPaymentMethods:', error);
+      // Fallback
+      set({
+        availableMethods: Object.values(PAYMENT_METHODS).filter(m => m.enabled),
+        isLoadingMethods: false,
+      });
+    }
+  },
 
   // Seleccionar método de pago
   selectMethod: methodId => {

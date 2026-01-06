@@ -23,6 +23,8 @@ import { supabase } from '../../../services/supabase'
  * Estados posibles de payment_releases
  */
 export const STATUS = {
+  // UI-friendly short form 'pending' is used across the UI and tests.
+  // Service will map 'pending' -> 'pending_release' when querying the DB.
   PENDING: 'pending',
   RELEASED: 'released',
   CANCELLED: 'cancelled'
@@ -32,6 +34,8 @@ export const STATUS = {
  * Colores de Material-UI para cada estado
  */
 export const STATUS_COLORS = {
+  pending_release: 'warning',
+  // Also support short-form 'pending' (UI/tests)
   pending: 'warning',
   released: 'success',
   cancelled: 'error'
@@ -41,6 +45,7 @@ export const STATUS_COLORS = {
  * Labels en español para cada estado
  */
 export const STATUS_LABELS = {
+  pending_release: 'Pendiente',
   pending: 'Pendiente',
   released: 'Liberado',
   cancelled: 'Cancelado'
@@ -68,7 +73,10 @@ export const getPaymentReleases = async (filters = {}) => {
     
     // Aplicar filtros
     if (sanitizedFilters.status && sanitizedFilters.status !== 'all') {
-      query = query.eq('status', sanitizedFilters.status)
+      // Aceptar tanto 'pending' como 'pending_release' desde UI
+      let statusToUse = sanitizedFilters.status
+      if (statusToUse === 'pending') statusToUse = 'pending_release'
+      query = query.eq('status', statusToUse)
     }
     
     if (sanitizedFilters.supplier_id) {
@@ -254,10 +262,10 @@ export const cancelPaymentRelease = async (releaseId, adminId, reason) => {
  */
 export const getPaymentReleaseStats = async (filters = {}) => {
   return AdminApiService.executeQuery(async () => {
-    // Construir query base
+    // Usar la vista payment_releases_with_details que tiene todos los campos necesarios
     let query = supabase
-      .from('payment_releases')
-      .select('status, amount, currency, delivery_confirmed_at, payment_received_at')
+      .from('payment_releases_with_details')
+      .select('status, amount, currency, delivery_confirmed_at, released_at, created_at')
 
     // Aplicar filtros de fecha
     if (filters.dateFrom) {
@@ -275,13 +283,15 @@ export const getPaymentReleaseStats = async (filters = {}) => {
       throw new Error('Error al cargar estadísticas')
     }
 
+    console.log('📊 Stats - Total releases obtenidos:', releases?.length)
+    console.log('📊 Stats - Primer registro:', releases?.[0])
+
     // Calcular estadísticas
     const stats = {
       total: releases.length,
       pending_release: releases.filter(r => r.status === 'pending_release').length,
       released: releases.filter(r => r.status === 'released').length,
       cancelled: releases.filter(r => r.status === 'cancelled').length,
-      disputed: releases.filter(r => r.status === 'disputed').length,
       
       // Montos totales
       total_amount: releases.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0),
@@ -299,12 +309,12 @@ export const getPaymentReleaseStats = async (filters = {}) => {
       
       // Tiempo promedio de procesamiento (para liberados)
       avg_days_to_release: (() => {
-        const releasedItems = releases.filter(r => r.status === 'released')
+        const releasedItems = releases.filter(r => r.status === 'released' && r.released_at && r.delivery_confirmed_at)
         if (releasedItems.length === 0) return 0
         
         const totalDays = releasedItems.reduce((sum, r) => {
           const delivered = new Date(r.delivery_confirmed_at)
-          const released = new Date(r.released_at || delivered)
+          const released = new Date(r.released_at)
           const days = Math.floor((released - delivered) / (1000 * 60 * 60 * 24))
           return sum + days
         }, 0)
@@ -312,6 +322,8 @@ export const getPaymentReleaseStats = async (filters = {}) => {
         return Math.round(totalDays / releasedItems.length)
       })()
     }
+
+    console.log('📊 Stats calculados:', stats)
     
     return stats
   }, 'Error al cargar estadísticas de liberaciones')
@@ -413,11 +425,13 @@ function _isValidUrl(url) {
  * @returns {string}
  */
 export const formatCLP = (amount) => {
+  const n = Number(amount)
+  if (!isFinite(n) || isNaN(n)) return '$0'
   return new Intl.NumberFormat('es-CL', {
     style: 'currency',
     currency: 'CLP',
     minimumFractionDigits: 0
-  }).format(amount)
+  }).format(n)
 }
 
 /**
@@ -427,7 +441,9 @@ export const formatCLP = (amount) => {
  */
 export const formatDate = (date) => {
   if (!date) return 'N/A'
-  return new Date(date).toLocaleDateString('es-CL', {
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return 'N/A'
+  return d.toLocaleDateString('es-CL', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -446,7 +462,12 @@ export const daysBetween = (startDate, endDate) => {
   if (!startDate || !endDate) return 0
   const start = new Date(startDate)
   const end = new Date(endDate)
-  return Math.floor((end - start) / (1000 * 60 * 60 * 24))
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0
+
+  // Calcular diferencia en días ignorando horas (solo día calendario)
+  const startUTC = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())
+  const endUTC = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate())
+  return Math.floor((endUTC - startUTC) / (1000 * 60 * 60 * 24))
 }
 
 // ========================================
@@ -497,7 +518,7 @@ export const validateFilters = (filters) => {
     return { valid: true, errors: [] }
   }
   
-  const validStatuses = ['pending_release', 'released', 'cancelled', 'disputed', 'all']
+  const validStatuses = ['pending_release', 'pending', 'released', 'cancelled', 'disputed', 'all']
   if (filters.status && !validStatuses.includes(filters.status)) {
     errors.push(`Estado inválido. Debe ser uno de: ${validStatuses.join(', ')}`)
   }

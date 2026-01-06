@@ -27,7 +27,6 @@ export function useProductShippingValidationOnOpen({
   useEffect(() => {
     const newRegion = hookUserRegion || userRegionProp;
     if (newRegion && newRegion !== effectiveUserRegion) {
-      console.log('🔄 [useProductShippingValidationOnOpen] Actualizando effectiveUserRegion:', newRegion);
       setEffectiveUserRegion(newRegion);
     }
     // NO actualizar a null si ya teníamos un valor

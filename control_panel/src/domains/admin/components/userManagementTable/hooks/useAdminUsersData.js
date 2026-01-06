@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getUsers, getUserStats } from '../../../services/adminUserService';
 
 // Data loader (no filtering logic here)
@@ -8,8 +8,16 @@ export function useAdminUsersData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const fetchInProgressRef = useRef(false);
 
   const loadData = useCallback(async () => {
+    // Protección contra llamadas concurrentes
+    if (fetchInProgressRef.current) {
+      console.info('useAdminUsersData: fetch already in progress, skipping');
+      return;
+    }
+
+    fetchInProgressRef.current = true;
     setLoading(true);
     setError('');
     try {
@@ -27,10 +35,11 @@ export function useAdminUsersData() {
       setError('Error interno del servidor');
     } finally {
       setLoading(false);
+      fetchInProgressRef.current = false;
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadData(); }, []);
 
   return { users, stats, loading, error, setError, initialLoadComplete, loadData };
 }

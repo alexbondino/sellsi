@@ -71,6 +71,8 @@ const MobilePaymentCard = ({
               <Box component="img" src={method.icon || '/Checkout/khipu.svg'} alt="khipu" sx={{ width: 28, height: 28 }} />
             ) : method.id === 'flow' ? (
               <Box component="img" src={method.icon || '/Checkout/flow.svg'} alt="flow" sx={{ width: 28, height: 28 }} />
+            ) : method.icon === 'AccountBalance' ? (
+              <BankIcon sx={{ color: 'text.secondary', fontSize: 28 }} />
             ) : (
               React.cloneElement(getMethodIcon(method.id), {
                 sx: { 
