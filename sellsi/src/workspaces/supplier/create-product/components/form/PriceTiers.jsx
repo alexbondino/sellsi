@@ -109,6 +109,16 @@ const PriceTiers = ({
   const getCardBorderError = (tramo, index) => {
     return getPriceFieldError(tramo, index);
   };
+
+  // Formateador de números sin decimales y con separador de miles
+  const formatNumber = value => {
+    if (value === undefined || value === null || value === '') return '';
+    // Normalizar y extraer sólo dígitos
+    const num = Number(String(value).replace(/[^\d]/g, ''));
+    if (Number.isNaN(num)) return String(value);
+    return new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(num);
+  };
+
   return (
     <Box>
       <Box
@@ -620,8 +630,8 @@ const PriceTiers = ({
                     color="text.secondary"
                     display="block"
                   >
-                    Rango {idx + 1}: si el cliente compra <b>{min}</b> unidades
-                    o más, paga <b>${precio}</b> por unidad.
+                    Rango {idx + 1}: si el cliente compra <b>{formatNumber(min)}</b> unidades
+                    o más, paga <b>${formatNumber(precio)}</b> por unidad.
                   </Typography>
                 );
               } else {
@@ -633,8 +643,8 @@ const PriceTiers = ({
                     color="text.secondary"
                     display="block"
                   >
-                    Rango {idx + 1}: si el cliente compra entre <b>{min}</b> y{' '}
-                    <b>{max}</b> unidades, paga <b>${precio}</b> por unidad.
+                    Rango {idx + 1}: si el cliente compra entre <b>{formatNumber(min)}</b> y{' '}
+                    <b>{formatNumber(max)}</b> unidades, paga <b>${formatNumber(precio)}</b> por unidad.
                   </Typography>
                 );
               }
