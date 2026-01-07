@@ -1,12 +1,12 @@
 /**
  * 📊 Dashboard Principal del Panel Administrativo
- * 
+ *
  * Componente principal que contiene pestañas para diferentes funcionalidades:
  * - Liberación de Pagos (Principal)
  * - Gestión de Usuarios (Ban/Unban)
  * - Gestión de Productos Marketplace
  * - Transferencias Manuales
- * 
+ *
  * @author Panel Administrativo Sellsi
  * @date 29 de Octubre de 2025
  */
@@ -23,7 +23,7 @@ import {
   Divider,
   Badge,
   IconButton,
-  Tooltip
+  Tooltip,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -32,7 +32,7 @@ import {
   Inventory as InventoryIcon,
   Security as SecurityIcon,
   ArrowBack as ArrowBackIcon,
-  AttachMoney as AttachMoneyIcon
+  AttachMoney as AttachMoneyIcon,
 } from '@mui/icons-material';
 
 // Importar componentes de pestañas
@@ -41,20 +41,24 @@ import UserManagementTable from './UserManagementTable';
 import ProductMarketplaceTable from './ProductMarketplaceTable';
 import PaymentReleasesTable from './PaymentReleasesTable';
 import AdminBankTransferPayments from './AdminBankTransferPayments';
+import ToggleOnIcon from '@mui/icons-material/ToggleOn';
+import FeatureFlagTable from './FeatureFlagTable';
 
 // ✅ CONSTANTS
 const TAB_ICONS = {
   liberaciones: <AttachMoneyIcon />,
   usuarios: <PeopleIcon />,
   productos: <InventoryIcon />,
-  solicitudes: <PaymentIcon />
+  solicitudes: <PaymentIcon />,
+  feature_flags: <ToggleOnIcon />,
 };
 
 const TAB_LABELS = {
   liberaciones: 'Liberación de Pagos',
   usuarios: 'Gestión de Usuarios',
   productos: 'Productos Marketplace',
-  solicitudes: 'Transferencias Manuales'
+  solicitudes: 'Transferencias Manuales',
+  feature_flags: 'Feature Flags',
 };
 
 // ✅ STYLES
@@ -63,12 +67,12 @@ const dashboardStyles = {
     maxWidth: '80%',
     width: '100%',
     px: 3,
-    py: 3
+    py: 3,
   },
   header: {
     mb: 3,
     textAlign: 'center',
-    position: 'relative'
+    position: 'relative',
   },
   backButtonContainer: {
     position: 'absolute',
@@ -76,14 +80,14 @@ const dashboardStyles = {
     top: 0,
     display: 'flex',
     alignItems: 'center',
-    gap: 1
+    gap: 1,
   },
   backButton: {
     color: 'primary.main',
     '&:hover': {
       backgroundColor: 'primary.light',
-      color: 'white'
-    }
+      color: 'white',
+    },
   },
   backButtonText: {
     color: 'primary.main',
@@ -91,8 +95,8 @@ const dashboardStyles = {
     fontWeight: 'medium',
     cursor: 'pointer',
     '&:hover': {
-      color: 'primary.dark'
-    }
+      color: 'primary.dark',
+    },
   },
   securityBadge: {
     display: 'inline-flex',
@@ -105,22 +109,22 @@ const dashboardStyles = {
     borderRadius: 2,
     fontSize: '0.875rem',
     fontWeight: 'bold',
-    mb: 2
+    mb: 2,
   },
   tabsContainer: {
     borderBottom: 1,
     borderColor: 'divider',
-    mb: 3
+    mb: 3,
   },
   tabPanel: {
-    minHeight: '60vh'
+    minHeight: '60vh',
   },
   tab: {
     minHeight: 60,
     textTransform: 'none',
     fontSize: '0.95rem',
-    fontWeight: 'medium'
-  }
+    fontWeight: 'medium',
+  },
 };
 
 // ✅ TAB PANEL COMPONENT
@@ -133,11 +137,7 @@ const TabPanel = memo(({ children, value, index, ...other }) => {
       aria-labelledby={`admin-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={dashboardStyles.tabPanel}>
-          {children}
-        </Box>
-      )}
+      {value === index && <Box sx={dashboardStyles.tabPanel}>{children}</Box>}
     </div>
   );
 });
@@ -149,7 +149,7 @@ const AdminDashboard = memo(() => {
   // ========================================
   // 🔧 ESTADO Y NAVEGACIÓN
   // ========================================
-  
+
   const navigate = useNavigate();
   const [currentTab, setCurrentTab] = useState(0);
 
@@ -165,7 +165,7 @@ const AdminDashboard = memo(() => {
     navigate('/admin-panel');
   };
 
-  const getTabProps = (index) => ({
+  const getTabProps = index => ({
     id: `admin-tab-${index}`,
     'aria-controls': `admin-tabpanel-${index}`,
   });
@@ -185,10 +185,7 @@ const AdminDashboard = memo(() => {
         >
           <ArrowBackIcon />
         </IconButton>
-        <Typography
-          onClick={handleGoBack}
-          sx={dashboardStyles.backButtonText}
-        >
+        <Typography onClick={handleGoBack} sx={dashboardStyles.backButtonText}>
           Regresar a Menu Admin
         </Typography>
       </Box>
@@ -197,15 +194,15 @@ const AdminDashboard = memo(() => {
         <SecurityIcon fontSize="small" />
         PANEL DE CONTROL ADMINISTRATIVO
       </Box>
-      
+
       <Typography variant="h4" component="h1" gutterBottom>
         Dashboard Administrativo
       </Typography>
-      
+
       <Typography variant="body1" color="text.secondary">
         Gestión centralizada de solicitudes, usuarios y sistema
       </Typography>
-      
+
       <Divider sx={{ mt: 2 }} />
     </Box>
   );
@@ -219,7 +216,7 @@ const AdminDashboard = memo(() => {
         textColor="primary"
         indicatorColor="primary"
       >
-        <Tooltip 
+        <Tooltip
           title="Liberar pagos a proveedores una vez confirmada la entrega de productos"
           placement="bottom"
           arrow
@@ -231,8 +228,8 @@ const AdminDashboard = memo(() => {
             {...getTabProps(0)}
           />
         </Tooltip>
-        
-        <Tooltip 
+
+        <Tooltip
           title="Confirmar pagos realizados por transferencia bancaria manual"
           placement="bottom"
           arrow
@@ -244,8 +241,8 @@ const AdminDashboard = memo(() => {
             {...getTabProps(1)}
           />
         </Tooltip>
-        
-        <Tooltip 
+
+        <Tooltip
           title="Gestionar usuarios: banear, desbanear, verificar y eliminar cuentas"
           placement="bottom"
           arrow
@@ -257,8 +254,8 @@ const AdminDashboard = memo(() => {
             {...getTabProps(2)}
           />
         </Tooltip>
-        
-        <Tooltip 
+
+        <Tooltip
           title="Administrar productos del marketplace: eliminar y editar listados"
           placement="bottom"
           arrow
@@ -268,6 +265,18 @@ const AdminDashboard = memo(() => {
             label={TAB_LABELS.productos}
             sx={dashboardStyles.tab}
             {...getTabProps(3)}
+          />
+        </Tooltip>
+        <Tooltip
+          title="Disponibilizar o deshabilitar funcionalidades en la plataforma"
+          placement="bottom"
+          arrow
+        >
+          <Tab
+            icon={TAB_ICONS.feature_flags}
+            label={TAB_LABELS.feature_flags}
+            sx={dashboardStyles.tab}
+            {...getTabProps(4)}
           />
         </Tooltip>
       </Tabs>
@@ -294,6 +303,10 @@ const AdminDashboard = memo(() => {
       {/* Pestaña de Productos Marketplace */}
       <TabPanel value={currentTab} index={3}>
         <ProductMarketplaceTable />
+      </TabPanel>
+      {/* Pestaña de Feature Flags */}
+      <TabPanel value={currentTab} index={4}>
+        <FeatureFlagTable />
       </TabPanel>
     </>
   );
