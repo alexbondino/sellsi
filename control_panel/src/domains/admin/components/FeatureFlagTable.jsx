@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Paper,
@@ -10,104 +10,143 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Button,
-  TextField,
-  Stack,
+  CircularProgress,
 } from '@mui/material';
+
 import {
-  getFeatureFlags,
-  setFeatureFlag,
-  createFeatureFlag,
+  listWorkspacesFromFeatureFlags,
+  getFeatureFlagsByKey,
+  upsertFeatureFlag,
 } from '../services/featureFlagService';
 
-export default function FeatureFlagTable() {
-  const [flags, setFlags] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [newFlag, setNewFlag] = useState({
-    key: '',
-    label: '',
-    workspace: 'supplier',
-  });
+const FEATURE_KEY = 'my_offers_supplier';
 
-  // Cargar flags al montar
+export default function FeatureFlagTable() {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const meta = useMemo(
+    () => ({
+      label: 'My Offers supplier',
+      description: 'Habilita modo proveedor para el workspace My Offers',
+    }),
+    []
+  );
+
   useEffect(() => {
     fetchFlags();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchFlags = async () => {
-    setLoading(true);
-    const data = await getFeatureFlags('supplier');
-    setFlags(data);
-    setLoading(false);
-  };
+    try {
+      setLoading(true);
 
-  const handleToggle = async (key, enabled) => {
-    await setFeatureFlag('supplier', key, enabled);
-    fetchFlags();
-  };
+      // 1) Workspaces existentes en la tabla (distinct)
+      const workspaces = await listWorkspacesFromFeatureFlags();
 
-  const handleCreate = async () => {
-    if (!newFlag.key || !newFlag.label) return;
-    await createFeatureFlag(newFlag);
-    setNewFlag({ key: '', label: '', workspace: 'supplier' });
-    fetchFlags();
-  };
+      // 2) Flags existentes SOLO para esta key
+      const flagsForKey = await getFeatureFlagsByKey(FEATURE_KEY);
 
-  // Crear el primer flag si no existe
-  useEffect(() => {
-    if (!flags.find(f => f.key === 'my_offers_supplier')) {
-      createFeatureFlag({
-        workspace: 'supplier',
-        key: 'my_offers_supplier',
-        label: 'Mis Ofertas - Proveedor',
-        description: 'Habilita la sección Mis Ofertas para proveedores',
-      }).then(fetchFlags);
+      // 3) Normalizar 1 fila por workspace
+      const normalized = workspaces.map(workspace => {
+        const found = flagsForKey.find(
+          f => f.workspace === workspace && f.key === FEATURE_KEY
+        );
+
+        if (found) return { ...found, missing: false };
+
+        return {
+          workspace,
+          key: FEATURE_KEY,
+          enabled: false,
+          missing: true,
+        };
+      });
+
+      setRows(normalized);
+    } catch (e) {
+      console.error('Error cargando feature flags', e);
+      setRows([]);
+    } finally {
+      setLoading(false);
     }
-  }, [flags]);
+  };
+
+  const handleToggle = async (workspace, enabled) => {
+    try {
+      await upsertFeatureFlag({
+        workspace,
+        key: FEATURE_KEY,
+        enabled,
+        label: meta.label,
+        description: meta.description,
+      });
+
+      await fetchFlags();
+    } catch (e) {
+      console.error('Error actualizando feature flag', e);
+    }
+  };
 
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" sx={{ mb: 2 }}>
-        Feature Flags
+        Feature Flag:{' '}
+        <Box component="span" sx={{ fontFamily: 'monospace' }}>
+          {FEATURE_KEY}
+        </Box>
       </Typography>
-      <TableContainer component={Paper} sx={{ mb: 4 }}>
+
+      <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Activo</TableCell>
+              <TableCell>Workspace</TableCell>
+              <TableCell align="center">Activo</TableCell>
+              <TableCell align="center">Estado</TableCell>
             </TableRow>
           </TableHead>
+
           <TableBody>
-            {flags.map(flag => (
-              <TableRow key={flag.key}>
-                <TableCell>{flag.label}</TableCell>
-                <TableCell>
-                  <Switch
-                    checked={flag.enabled}
-                    onChange={e => handleToggle(flag.key, e.target.checked)}
-                  />
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={3} align="center">
+                  <CircularProgress size={22} />
                 </TableCell>
               </TableRow>
-            ))}
+            )}
+
+            {!loading &&
+              rows.map(row => (
+                <TableRow key={`${row.workspace}:${row.key}`}>
+                  <TableCell>{row.workspace}</TableCell>
+
+                  <TableCell align="center">
+                    <Switch
+                      checked={!!row.enabled}
+                      onChange={e =>
+                        handleToggle(row.workspace, e.target.checked)
+                      }
+                    />
+                  </TableCell>
+
+                  <TableCell align="center">
+                    {row.missing ? 'Se creará al activar' : 'OK'}
+                  </TableCell>
+                </TableRow>
+              ))}
+
+            {!loading && rows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={3} align="center">
+                  No hay workspaces configurados
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          label="Nombre del Feature"
-          value={newFlag.label}
-          onChange={e => setNewFlag(f => ({ ...f, label: e.target.value }))}
-        />
-        <TextField
-          label="Key"
-          value={newFlag.key}
-          onChange={e => setNewFlag(f => ({ ...f, key: e.target.value }))}
-        />
-        <Button variant="contained" onClick={handleCreate}>
-          Crear Feature
-        </Button>
-      </Stack>
     </Box>
   );
 }
