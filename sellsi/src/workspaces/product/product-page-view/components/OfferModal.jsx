@@ -21,6 +21,7 @@ import {
   Info as InfoIcon,
   Gavel as GavelIcon,
   Schedule as ScheduleIcon,
+  Inventory as InventoryIcon,
 } from '@mui/icons-material';
 import { useOfferStore } from '../../../../stores/offerStore';
 import { toast } from 'react-hot-toast';
@@ -379,7 +380,7 @@ const OfferModal = ({
       <DialogTitle
         sx={{
           m: 0,
-          p: { xs: 1.5, sm: 2 },
+          p: { xs: 1, sm: 2 },
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -412,7 +413,7 @@ const OfferModal = ({
             transform: 'translateY(-50%)',
             color: '#fff',
             backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            p: { xs: 0.75, sm: 1 },
+            p: { xs: 0.5, sm: 1 },
             '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
           }}
         >
@@ -420,19 +421,37 @@ const OfferModal = ({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.5 } }}>
+      <DialogContent dividers sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 1.5, sm: 2.5 } }}>
         {/* Información del producto */}
-        <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+        <Box sx={{ mb: { xs: 1.5, sm: 3 } }}>
           <Typography 
             variant="subtitle1" 
             gutterBottom 
             sx={{ 
               fontWeight: 600,
-              fontSize: { xs: '0.95rem', sm: '1rem' }
+              fontSize: { xs: '1rem', md: '1.25rem' }
             }}
           >
             {product.name || product.productnm || product.nombre}
           </Typography>
+
+          {/* Supplier name (fallbacks) */}
+          {(
+            product.supplier_name ||
+            product.supplier?.name ||
+            product.proveedor ||
+            product.supplierName ||
+            product.supplier
+          ) && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.9rem', sm: '0.9rem' }, mb: 1 }}
+            >
+              {product.supplier_name || product.supplier?.name || product.proveedor || product.supplierName || product.supplier}
+            </Typography>
+          )}
+
           {product.price && (
             <Typography 
               variant="body2" 
@@ -444,23 +463,23 @@ const OfferModal = ({
           )}
         </Box>
 
-        <Divider sx={{ mb: { xs: 2, sm: 3 } }} />
+        <Divider sx={{ mb: { xs: 1.5, sm: 3 } }} />
+
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' }, mb: { xs: 0.75, sm: 1.5 } }}
+        >
+          Envía una oferta al proveedor indicando tu precio y cantidad deseada. El proveedor puede aceptarla o rechazarla, y tendrás un máximo de 3 intentos mensuales para ofertar por este producto.
+        </Typography>
 
         {/* Información de límites */}
         {limitsValidation && (
           <Alert
             data-testid="limits-alert"
             severity={limitsValidation.allowed ? 'info' : 'warning'}
-            sx={{ mb: { xs: 2, sm: 3 } }}
+            sx={{ mb: { xs: 1.5, sm: 3 } }}
           >
-            <Typography 
-              variant="body2" 
-              gutterBottom
-              sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-            >
-              <strong>Límites de ofertas:</strong>
-            </Typography>
-            {/* Mostrar contador legible (incluye 0) */}
             {(() => {
               const productCount =
                 limitsValidation.product_count ?? limitsValidation.currentCount;
@@ -469,9 +488,10 @@ const OfferModal = ({
               return (
                 <Typography 
                   variant="body2"
+                  gutterBottom
                   sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
                 >
-                  • Ofertas por este producto este mes: {count} de {limit}
+                  <strong>Límite mensual:</strong> {count} de {limit} ofertas usadas
                 </Typography>
               );
             })()}
@@ -512,7 +532,7 @@ const OfferModal = ({
           <Alert
             severity="warning"
             sx={{ 
-              mb: { xs: 2, sm: 3 },
+              mb: { xs: 1.5, sm: 3 },
               '& .MuiAlert-message': {
                 fontSize: { xs: '0.8125rem', sm: '0.875rem' }
               }
@@ -525,7 +545,7 @@ const OfferModal = ({
         )}
 
         {/* Formulario */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, sm: 2 } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 2 } }}>
           {/* Precio ofertado */}
           <TextField
             label="Precio por unidad"
@@ -583,35 +603,40 @@ const OfferModal = ({
 
           {/* Stock moved below Cantidad and above Total */}
           {/* Stock */}
-          <Typography 
-            variant="body2" 
-            color="text.secondary"
-            sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-          >
-            Stock disponible: {effectiveStock} unidades
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
+            <InventoryIcon sx={{ fontSize: { xs: '1rem', sm: '1.125rem' }, color: 'text.secondary' }} />
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+            >
+              Stock disponible: {effectiveStock} unidades
+            </Typography>
+          </Box>
 
-          {/* Total calculado - simple texto (no box) */}
-          <Typography 
-            variant="body2" 
-            color="text.secondary"
-            sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-          >
-            Total de la oferta:
-          </Typography>
-          <Typography
-            variant="h6"
-            color="primary"
-            sx={{ 
-              fontWeight: 700,
-              fontSize: { xs: '1.25rem', sm: '1.5rem' }
-            }}
-            title={
-              totalValue > 0 ? `$${totalValue.toLocaleString('es-CL')}` : '$0'
-            }
-          >
-            {formatTotal(totalValue)}
-          </Typography>
+          {/* Total calculado - centrado */}
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+            >
+              Total de la oferta:
+            </Typography>
+            <Typography
+              variant="h6"
+              color="primary"
+              sx={{ 
+                fontWeight: 700,
+                fontSize: { xs: '1.25rem', sm: '1.5rem' }
+              }}
+              title={
+                totalValue > 0 ? `$${totalValue.toLocaleString('es-CL')}` : '$0'
+              }
+            >
+              {formatTotal(totalValue)}
+            </Typography>
+          </Box>
 
           {/* Error de límites */}
           {!limitsValidation?.allowed && limitsValidation?.reason && (
@@ -639,7 +664,7 @@ const OfferModal = ({
           )}
 
           {/* Información de tiempo */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1 }, mt: { xs: 1.5, sm: 2 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1 }, mt: { xs: 1, sm: 2 } }}> 
             <ScheduleIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }} color="primary" />
             <Typography 
               variant="body2" 
@@ -655,9 +680,9 @@ const OfferModal = ({
       <DialogActions
         sx={{
           flexDirection: { xs: 'column', sm: 'row' },
-          gap: { xs: 1.5, sm: 2 },
-          p: { xs: 2, sm: 3 },
-          pt: { xs: 1.5, sm: 1 },
+          gap: { xs: 1, sm: 2 },
+          p: { xs: 1.5, sm: 3 },
+          pt: { xs: 1, sm: 1 },
           justifyContent: 'center',
         }}
       >

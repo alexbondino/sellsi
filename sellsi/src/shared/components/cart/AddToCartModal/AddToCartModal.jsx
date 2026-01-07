@@ -182,8 +182,8 @@ const ProductSummary = React.memo(function ProductSummary({
       <Box
         sx={{
           width: '100%',
-          px: 2,
-          py: 1,
+          px: 1.2,
+          py: 0.5,
         }}
       >
         <Typography
@@ -191,7 +191,7 @@ const ProductSummary = React.memo(function ProductSummary({
           sx={{
             fontWeight: 600,
             color: 'text.primary',
-            fontSize: { xs: '0.875rem', sm: '1rem' },
+            fontSize: { xs: '0.875rem', sm: '1rem', md: '1.25rem' },
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -205,7 +205,7 @@ const ProductSummary = React.memo(function ProductSummary({
         direction="row"
         spacing={2}
         alignItems="center"
-        sx={{ p: { xs: 1.3, sm: 2 } }}
+        sx={{ px: { xs: 1, md: 1.2 }, pt: { xs: 0.5, md: 0 }, pb: { xs: 1, md: 1.2 } }}
       >
         <Box
           sx={{
@@ -868,7 +868,7 @@ const AddToCartModal = ({
                   },
                 }}
               >
-                Proveedor exige una compra mínima de:{' '}
+                Proveedor exige una compra mínima de{' '}
                 <strong>
                   $
                   {(

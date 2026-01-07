@@ -213,11 +213,9 @@ const MyOrdersPage = () => {
       all: orders.length,
       pending: 0,
       accepted: 0,
-      dispatched: 0,
+      rejected: 0,
       in_transit: 0,
       delivered: 0,
-      cancelled: 0,
-      paid: 0,
     }
 
     // Normalizar status display a key
@@ -225,12 +223,10 @@ const MyOrdersPage = () => {
       const statusMap = {
         Pendiente: 'pending',
         Aceptado: 'accepted',
+        Rechazado: 'rejected',
         'En Transito': 'in_transit',
         'En Tránsito': 'in_transit',
-        Despachado: 'dispatched',
         Entregado: 'delivered',
-        Cancelado: 'cancelled',
-        Pagado: 'paid',
       }
       return (
         statusMap[displayStatus] || displayStatus?.toLowerCase() || 'pending'
@@ -250,19 +246,13 @@ const MyOrdersPage = () => {
     { value: 'Todos', label: 'Todos', count: filterCounts.all },
     { value: 'Pendiente', label: 'Pendiente', count: filterCounts.pending },
     { value: 'Aceptado', label: 'Aceptado', count: filterCounts.accepted },
-    {
-      value: 'Despachado',
-      label: 'Despachado',
-      count: filterCounts.dispatched,
-    },
+    { value: 'Rechazado', label: 'Rechazado', count: filterCounts.rejected },
     {
       value: 'En Transito',
       label: 'En Tránsito',
       count: filterCounts.in_transit,
     },
     { value: 'Entregado', label: 'Entregado', count: filterCounts.delivered },
-    { value: 'Cancelado', label: 'Cancelado', count: filterCounts.cancelled },
-    { value: 'Pagado', label: 'Pagado', count: filterCounts.paid },
   ]
 
   // Efecto para inicializar el store con el ID del proveedor al cargar el componente

@@ -63,7 +63,7 @@ const Logo = memo(() => (
     <Typography
       variant="h6"
       sx={{
-        color: '#0772D2', //Azul Logo Sellsi
+        color: '#2E52B2', //Azul Logo Sellsi
         fontWeight: 700,
         fontSize: 18,
         fontStyle: 'italic',

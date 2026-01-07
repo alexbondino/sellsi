@@ -327,7 +327,6 @@ export const useOrdersStore = create((set, get) => ({
       Rechazado: 'rejected',
       'En Transito': 'in_transit',
       Entregado: 'delivered',
-      Cancelado: 'cancelled',
     }
 
     // Convertir el filtro de UI a estado de backend

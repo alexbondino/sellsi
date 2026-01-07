@@ -108,9 +108,9 @@ describe('OfferModal restrictions', () => {
 
     render(React.createElement(Wrapper, null, React.createElement(OfferModal, { open: true, onClose: () => {}, product })));
 
-    // Esperar aparición de texto de límites (puede tardar un ciclo en validar)
-    const limitsNode = await screen.findByText(/límites de ofertas/i, {}, { timeout: 3000 });
-    expect(limitsNode).toBeInTheDocument();
+    // Esperar aparición del alert de límites
+    const limitsAlert = await screen.findByTestId('limits-alert', {}, { timeout: 3000 });
+    expect(limitsAlert).toBeInTheDocument();
 
     // Verificar que validateOfferLimits (RPC) fue invocado con buyer/supplier/product
     const validateCall = mockSupabase.rpc.mock.calls.find(c => c[0] === 'validate_offer_limits');
@@ -120,10 +120,6 @@ describe('OfferModal restrictions', () => {
     expect(JSON.stringify(args)).toMatch(/prod_2/);
 
     // Confirmar que muestra la razón de proveedor exactamente (al menos uno visible)
-    // Buscar la alerta específica de límites y verificar dentro de ella
-    const alerts = await screen.findAllByRole('alert');
-    const limitsAlert = alerts.find(a => /límites de ofertas/i.test(a.textContent));
-    expect(limitsAlert).toBeDefined();
     expect(within(limitsAlert).getByText(/Se alcanzó el límite mensual de ofertas \(proveedor\)/i)).toBeDefined();
   });
 
@@ -145,8 +141,7 @@ describe('OfferModal restrictions', () => {
     render(React.createElement(Wrapper, null, React.createElement(OfferModal, { open: true, onClose: () => {}, product })));
     
 
-    const alerts = await screen.findAllByRole('alert');
-    const limitsAlert = alerts.find(a => /límites de ofertas/i.test(a.textContent));
+    const limitsAlert = await screen.findByTestId('limits-alert');
     expect(limitsAlert).toBeDefined();
     expect(within(limitsAlert).getByText(/límite mensual de ofertas \(producto\)/i)).toBeDefined();
   });

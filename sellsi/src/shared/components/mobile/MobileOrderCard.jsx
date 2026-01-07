@@ -62,12 +62,9 @@ const MobileOrderCard = ({ order, onAction }) => {
     const configs = {
       pending: { color: 'warning', label: 'Pendiente' },
       accepted: { color: 'info', label: 'Aceptado' },
-      dispatched: { color: 'secondary', label: 'Despachado' },
+      rejected: { color: 'error', label: 'Rechazado' },
       in_transit: { color: 'secondary', label: 'En Tránsito' },
       delivered: { color: 'success', label: 'Entregado' },
-      cancelled: { color: 'error', label: 'Cancelado' },
-      rejected: { color: 'error', label: 'Rechazado' },
-      paid: { color: 'primary', label: 'Pagado' },
     }
     return configs[status] || { color: 'default', label: status }
   }
@@ -77,13 +74,10 @@ const MobileOrderCard = ({ order, onAction }) => {
     const statusMap = {
       Pendiente: 'pending',
       Aceptado: 'accepted',
+      Rechazado: 'rejected',
       'En Transito': 'in_transit',
       'En Tránsito': 'in_transit',
-      Despachado: 'dispatched',
       Entregado: 'delivered',
-      Cancelado: 'cancelled',
-      Rechazado: 'rejected',
-      Pagado: 'paid',
     }
     return statusMap[displayStatus] || displayStatus?.toLowerCase() || 'pending'
   }
