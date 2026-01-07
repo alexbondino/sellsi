@@ -25,6 +25,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
+import { toTitleCase } from '../../../../utils/textFormatters';
 
 // Styles from Marketplace CategoryNavigation to keep category buttons consistent on desktop
 import { categoryNavigationStyles as catStyles } from '../../../marketplace/components/CategoryNavigation/CategoryNavigation.styles';
@@ -327,7 +328,7 @@ const MyProducts = () => {
     try {
       await deleteProduct(deleteModal.product.id);
       showProductSuccess(
-        `${deleteModal.product.nombre} eliminado correctamente`,
+        `${toTitleCase(deleteModal.product.nombre)} eliminado correctamente`,
         '🗑️'
       );
       setDeleteModal({ isOpen: false, product: null, loading: false });
@@ -349,8 +350,8 @@ const MyProducts = () => {
       await updateProduct(pauseModal.product.id, { is_active: newActive });
       showProductSuccess(
         newActive
-          ? `Producto "${pauseModal.product.nombre}" reactivado`
-          : `Producto "${pauseModal.product.nombre}" pausado`,
+          ? `Producto "${toTitleCase(pauseModal.product.nombre)}" reactivado`
+          : `Producto "${toTitleCase(pauseModal.product.nombre)}" pausado`,
         newActive ? '▶️' : '⏸️'
       );
       setPauseModal({ isOpen: false, product: null, loading: false });
@@ -508,222 +509,6 @@ const MyProducts = () => {
                     </span>
                   </Tooltip>
                 </Box>
-              </Box>
-
-              {/* Estadísticas del inventario */}
-              <Box sx={{ mb: 3 }}>
-                <Paper
-                  sx={{
-                    overflow: 'hidden',
-                    width: '100%',
-                  }}
-                >
-                  <Box
-                    sx={{
-                      p: 2,
-                      bgcolor: 'grey.50',
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      sx={{ fontWeight: 600, color: 'text.primary' }}
-                    >
-                      Resumen del Inventario
-                    </Typography>
-                  </Box>
-
-                  <Box
-                    sx={{
-                      p: 0,
-                      mx: 'auto',
-                    }}
-                  >
-                    <Grid container columns={12} justifyContent="center">
-                      {/* Primera fila mobile: Total productos (50%) + Productos activos (50%) */}
-                      <Grid item xs={6} md={4} width={{ xs: '50%', md: '31%' }}>
-                        <Box
-                          sx={{
-                            p: 2,
-                            borderRight: '1px solid',
-                            borderColor: 'divider',
-                            borderBottom: { xs: '1px solid', md: 'none' },
-                            borderBottomColor: { xs: 'divider' },
-                            minHeight: { xs: '110px', md: 'auto' },
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              flexDirection: { xs: 'column', md: 'row' },
-                              alignItems: { xs: 'flex-start', md: 'center' },
-                              gap: { xs: 0.5, md: 1.5 },
-                            }}
-                          >
-                            <InventoryIcon
-                              color="primary"
-                              sx={{ fontSize: { xs: 32, md: 40 } }}
-                            />
-                            <Box>
-                              <Typography
-                                variant="h6"
-                                sx={{
-                                  fontWeight: 600,
-                                  fontSize: { xs: '1.1rem', md: '1.25rem' },
-                                }}
-                              >
-                                {stats.total}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                  fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                }}
-                              >
-                                Total de productos
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      </Grid>
-
-                      <Grid item xs={6} md={4} width={{ xs: '50%', md: '31%' }}>
-                        <Box
-                          sx={{
-                            p: 2,
-                            borderRight: { md: '1px solid' },
-                            borderColor: { md: 'divider' },
-                            borderBottom: { xs: '1px solid', md: 'none' },
-                            borderBottomColor: { xs: 'divider' },
-                            minHeight: { xs: '110px', md: 'auto' },
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              flexDirection: { xs: 'column', md: 'row' },
-                              alignItems: { xs: 'flex-start', md: 'center' },
-                              gap: { xs: 0.5, md: 1.5 },
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                color: 'success.main',
-                                fontSize: { xs: '32px', md: '40px' },
-                                fontWeight: 'bold',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: { xs: '32px', md: '40px' },
-                                height: { xs: '32px', md: '40px' },
-                                lineHeight: 1,
-                              }}
-                            >
-                              ✓
-                            </Box>
-                            <Box>
-                              <Typography
-                                variant="h6"
-                                sx={{
-                                  fontWeight: 600,
-                                  fontSize: { xs: '1.1rem', md: '1.25rem' },
-                                }}
-                              >
-                                {stats.active}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                  fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                }}
-                              >
-                                Productos activos
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      </Grid>
-
-                      {/* Segunda fila mobile: Valor inventario (100%) */}
-                      <Grid
-                        item
-                        xs={12}
-                        md={4}
-                        width={{ xs: '100%', md: '31%' }}
-                      >
-                        <Box
-                          sx={{
-                            p: 2,
-                            width: '100%',
-                            minHeight: { xs: '90px', md: 'auto' },
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1.5,
-                            }}
-                          >
-                            <AttachMoneyIcon
-                              color="success"
-                              sx={{ fontSize: { xs: 32, md: 40 } }}
-                            />
-                            <Box>
-                              <Typography
-                                variant="h6"
-                                sx={{
-                                  fontWeight: 600,
-                                  fontSize: { xs: '1.1rem', md: '1.25rem' },
-                                }}
-                              >
-                                {stats.inventoryRange &&
-                                stats.inventoryRange.min !==
-                                  stats.inventoryRange.max
-                                  ? `${formatPrice(
-                                      stats.inventoryRange.min
-                                    )} - ${formatPrice(
-                                      stats.inventoryRange.max
-                                    )}`
-                                  : stats.hasTieredProducts
-                                  ? formatPrice(
-                                      stats.inventoryRange?.min ||
-                                        stats.totalValue
-                                    )
-                                  : formatPrice(stats.totalValue)}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                  fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                }}
-                              >
-                                Valor del inventario
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      </Grid>
-
-                      {process.env.NODE_ENV === 'development' &&
-                        stats.hasTieredProducts && (
-                          <Grid item xs={12}>
-                            <Box
-                              sx={{
-                                p: 2,
-                                borderTop: '1px dashed',
-                                borderColor: 'divider',
-                              }}
-                            ></Box>
-                          </Grid>
-                        )}
-                    </Grid>
-                  </Box>
-                </Paper>
               </Box>
             </Box>
 
@@ -1113,7 +898,9 @@ const MyProducts = () => {
           loading={deleteModal.loading}
         >
           {deleteModal.product
-            ? `¿Estás seguro de que deseas eliminar "${deleteModal.product.nombre}"? Esta acción no se puede deshacer.`
+            ? `¿Estás seguro de que deseas eliminar "${toTitleCase(
+                deleteModal.product.nombre
+              )}"? Esta acción no se puede deshacer.`
             : ''}
         </Modal>
 
@@ -1136,8 +923,12 @@ const MyProducts = () => {
         >
           {pauseModal.product &&
             (pauseModal.product.activo
-              ? `¿Seguro que deseas pausar "${pauseModal.product.nombre}"? Dejará de mostrarse en el Marketplace hasta que lo reactives.`
-              : `¿Deseas reactivar "${pauseModal.product.nombre}"? Volverá a mostrarse en el Marketplace.`)}
+              ? `¿Seguro que deseas pausar "${toTitleCase(
+                  pauseModal.product.nombre
+                )}"? Dejará de mostrarse en el Marketplace hasta que lo reactives.`
+              : `¿Deseas reactivar "${toTitleCase(
+                  pauseModal.product.nombre
+                )}"? Volverá a mostrarse en el Marketplace.`)}
         </Modal>
 
         {/* 🆕 Modal de Massive Import (ahora usando BigModal) */}

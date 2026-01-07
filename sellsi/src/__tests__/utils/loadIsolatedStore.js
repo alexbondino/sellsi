@@ -3,7 +3,8 @@ module.exports = {
   loadIsolatedSpecStore: (serviceOverrides = {}) => {
     jest.resetModules()
     jest.clearAllMocks()
-    jest.doMock('../../workspaces/marketplace/services', () => ({
+    // Mock the exact module imported by the hook implementation so our override is effective
+    jest.doMock('../../workspaces/marketplace/services/productSpecificationsService', () => ({
       updateProductSpecifications: jest.fn(() => Promise.resolve(true)),
       ...serviceOverrides
     }))

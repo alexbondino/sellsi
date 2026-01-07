@@ -118,7 +118,7 @@ const OrderHeader = memo(function OrderHeader({
           }}
         >
           <Box>
-            {order.payment_status === 'expired' && (
+            {(order.payment_status === 'expired' || order.payment_status === 'rejected') && (
               <Button
                 size="small"
                 color="error"
@@ -250,8 +250,8 @@ const OrderHeader = memo(function OrderHeader({
               mt: { xs: 1, md: 0 },
             }}
           >
-            {/* Delete button for expired payment orders */}
-            {order.payment_status === 'expired' ? (
+            {/* Delete button for expired or rejected payment orders */}
+            {(order.payment_status === 'expired' || order.payment_status === 'rejected') ? (
               <Tooltip title="Eliminar pedido de la lista">
                 <IconButton
                   size="small"

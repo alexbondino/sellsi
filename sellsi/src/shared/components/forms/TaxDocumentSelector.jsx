@@ -3,10 +3,11 @@ import {
   Box,
   Typography,
   FormControl,
+  InputLabel,
   Select,
   MenuItem,
   Chip,
-  Tooltip
+  Tooltip,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -16,25 +17,28 @@ import { DOCUMENT_TYPES } from '../../../shared/constants/profile';
  * Componente modular para selección de tipos de documento tributario
  * Reutilizable entre Profile y Onboarding
  */
-const TaxDocumentSelector = ({ 
+const TaxDocumentSelector = ({
   documentTypes = [],
   onDocumentTypesChange,
   showTitle = true,
-  size = 'medium' // 'small' | 'medium' | 'large'
+  size = 'medium', // 'small' | 'medium' | 'large'
 }) => {
-  
   // ✅ DEFENSIVE: Asegurar que documentTypes sea siempre un array
   const safeDocumentTypes = Array.isArray(documentTypes) ? documentTypes : [];
-  
-  const handleDocumentTypeChange = (event) => {
+
+  const handleDocumentTypeChange = event => {
     const value = event.target.value;
     const currentSelection = safeDocumentTypes;
-    
+
     // Si se selecciona "No ofrecer documento tributario", eliminar Boleta y Factura
     if (value.includes('ninguno') && !currentSelection.includes('ninguno')) {
       // "No ofrecer documento tributario" se está agregando, eliminar todo lo demás
       onDocumentTypesChange(['ninguno']);
-    } else if (value.includes('ninguno') && currentSelection.includes('ninguno') && value.length > 1) {
+    } else if (
+      value.includes('ninguno') &&
+      currentSelection.includes('ninguno') &&
+      value.length > 1
+    ) {
       // "No ofrecer documento tributario" ya estaba seleccionado y se está agregando algo más, eliminar "ninguno"
       const filteredValue = value.filter(item => item !== 'ninguno');
       onDocumentTypesChange(filteredValue);
@@ -47,16 +51,16 @@ const TaxDocumentSelector = ({
     }
   };
 
-  const renderValue = (selected) => {
+  const renderValue = selected => {
     // ✅ DEFENSIVE: Asegurar que selected sea siempre un array
     const selectedArray = Array.isArray(selected) ? selected : [];
-    
+
     if (selectedArray.length === 0) {
       return 'Seleccionar';
     }
     return (
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-        {selectedArray.map((value) => {
+        {selectedArray.map(value => {
           const docType = DOCUMENT_TYPES.find(type => type.value === value);
           return (
             <Chip
@@ -89,72 +93,79 @@ const TaxDocumentSelector = ({
       {showTitle && (
         <Typography variant={variant} sx={{ fontWeight: 600 }}>
           Documento Tributario
-          <Tooltip title="Elige el tipo de documento que estás dispuesto a entregarle a tus compradores" placement="right">
-            <InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary', cursor: 'help', ml: 1 }} />
+          <Tooltip
+            title="Elige el tipo de documento que estás dispuesto a entregarle a tus compradores"
+            placement="right"
+          >
+            <InfoOutlinedIcon
+              sx={{
+                fontSize: 18,
+                color: 'text.secondary',
+                cursor: 'help',
+                ml: 1,
+              }}
+            />
           </Tooltip>
         </Typography>
       )}
-      
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Typography variant="body2" sx={{ minWidth: 120 }}>
-          Documento de Venta
-        </Typography>
-        
-        <FormControl size={selectSize} sx={{ flexGrow: 1 }}>
-          <Select
-            multiple
-            value={safeDocumentTypes}
-            onChange={handleDocumentTypeChange}
-            renderValue={renderValue}
-            displayEmpty
-            MenuProps={{
-              disableScrollLock: true,
-              disablePortal: false,
-              anchorOrigin: {
-                vertical: 'bottom',
-                horizontal: 'left',
+
+      <FormControl size={selectSize} fullWidth>
+        <InputLabel shrink>Documento de Venta</InputLabel>
+        <Select
+          multiple
+          value={safeDocumentTypes}
+          onChange={handleDocumentTypeChange}
+          renderValue={renderValue}
+          displayEmpty
+          label="Documento de Venta"
+          notched
+          MenuProps={{
+            disableScrollLock: true,
+            disablePortal: false,
+            anchorOrigin: {
+              vertical: 'bottom',
+              horizontal: 'left',
+            },
+            transformOrigin: {
+              vertical: 'top',
+              horizontal: 'left',
+            },
+            PaperProps: {
+              style: {
+                maxHeight: 48 * 5 + 8,
+                overflowX: 'hidden',
+                overflowY: 'auto',
               },
-              transformOrigin: {
-                vertical: 'top',
-                horizontal: 'left',
-              },
-              PaperProps: {
-                style: {
-                  maxHeight: 48 * 5 + 8,
-                  overflowX: 'hidden',
-                  overflowY: 'auto',
-                },
-              },
-            }}
-          >
-            {DOCUMENT_TYPES.map((docType) => {
-              const isSelected = safeDocumentTypes.includes(docType.value);
-              return (
-                <MenuItem 
-                  key={docType.value} 
-                  value={docType.value}
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Typography>{docType.label}</Typography>
-                  {isSelected && (
-                    <CheckCircleIcon 
-                      sx={{ 
-                        color: 'primary.main', 
-                        fontSize: 20,
-                        ml: 1 
-                      }} 
-                    />
-                  )}
-                </MenuItem>
-              );
-            })}
-          </Select>
-        </FormControl>
-      </Box>
+            },
+          }}
+        >
+          {DOCUMENT_TYPES.map(docType => {
+            const isSelected = safeDocumentTypes.includes(docType.value);
+            return (
+              <MenuItem
+                key={docType.value}
+                value={docType.value}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Typography>{docType.label}</Typography>
+                {isSelected && (
+                  <CheckCircleIcon
+                    sx={{
+                      color: 'primary.main',
+                      fontSize: 20,
+                      ml: 1,
+                    }}
+                  />
+                )}
+              </MenuItem>
+            );
+          })}
+        </Select>
+      </FormControl>
     </Box>
   );
 };

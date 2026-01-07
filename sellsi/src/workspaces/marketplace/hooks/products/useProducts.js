@@ -238,13 +238,40 @@ export function useProducts() {
     }
 
     productsCache.inFlight = (async () => {
-      // 1) Products activos
-      const { data, error: pErr } = await supabase
-        .from('products')
+      // 1) Intentar obtener productos con ranking diario desde la vista marketplace_products_daily
+      // La vista ya filtra is_active=true y ordena por daily_rank ASC
+      let data = null;
+      let pErr = null;
+
+      // Primero intentar con la vista de ranking diario
+      const viewResult = await supabase
+        .from('marketplace_products_daily')
         .select(
-          'productid,supplier_id,productnm,price,category,product_type,productqty,minimum_purchase,negotiable,is_active,free_shipping_enabled,free_shipping_min_quantity,product_images(image_url,thumbnail_url,thumbnails,image_order),product_delivery_regions(region)'
-        )
-        .eq('is_active', true);
+          'productid,supplier_id,productnm,price,category,product_type,productqty,minimum_purchase,negotiable,is_active,free_shipping_enabled,free_shipping_min_quantity,daily_rank,product_images(image_url,thumbnail_url,thumbnails,image_order),product_delivery_regions(region)'
+        );
+
+      // Si la vista funciona y tiene datos, usarla
+      if (!viewResult.error && viewResult.data && viewResult.data.length > 0) {
+        data = viewResult.data;
+      } else {
+        // Fallback: Si la vista está vacía o falla, usar tabla products directamente
+        // Esto ocurre si no se ha ejecutado refresh_products_daily_rank() hoy
+        console.warn(
+          '[useProducts] Vista marketplace_products_daily vacía o con error, usando fallback a products'
+        );
+        const fallbackResult = await supabase
+          .from('products')
+          .select(
+            'productid,supplier_id,productnm,price,category,product_type,productqty,minimum_purchase,negotiable,is_active,free_shipping_enabled,free_shipping_min_quantity,product_images(image_url,thumbnail_url,thumbnails,image_order),product_delivery_regions(region)'
+          )
+          .eq('is_active', true);
+
+        if (fallbackResult.error) {
+          pErr = fallbackResult.error;
+        } else {
+          data = fallbackResult.data;
+        }
+      }
 
       if (pErr) throw pErr;
 
@@ -256,7 +283,7 @@ export function useProducts() {
       if (supplierIds.length > 0) {
         const { data: usersData, error: uErr } = await supabase
           .from('users')
-          .select('user_id, user_nm, logo_url, descripcion_proveedor, verified')
+          .select('user_id, user_nm, logo_url, descripcion_proveedor, verified, minimum_purchase_amount')
           .in(
             'user_id',
             supplierIds.map(id => String(id))
@@ -273,6 +300,7 @@ export function useProducts() {
                 logo_url: u.logo_url,
                 descripcion_proveedor: u.descripcion_proveedor,
                 verified: u.verified,
+                minimum_purchase_amount: u.minimum_purchase_amount,
               },
             ])
           );
@@ -346,6 +374,7 @@ export function useProducts() {
               usersMap[p.supplier_id]?.descripcion_proveedor,
             verified: usersMap[p.supplier_id]?.verified || false,
             proveedorVerificado: usersMap[p.supplier_id]?.verified || false,
+            minimum_purchase_amount: usersMap[p.supplier_id]?.minimum_purchase_amount || 0,
             imagen,
             thumbnails,
             thumbnail_url,
@@ -371,6 +400,8 @@ export function useProducts() {
             maxPrice: basePrice,
             tiersStatus: basePrice > 0 ? 'loaded' : 'idle',
             shippingRegions,
+            // Ranking diario para ordenamiento en marketplace
+            daily_rank: p.daily_rank ?? null,
           };
         });
 
@@ -470,6 +501,10 @@ export function useProducts() {
     return () => {
       mountedRef.current = false;
       controller.abort();
+      // Si se aborta durante inFlight, limpiar para que próximo useEffect no reutilice
+      if (productsCache.inFlight) {
+        productsCache.inFlight = null;
+      }
     };
   }, [refreshProducts]);
 

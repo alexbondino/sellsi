@@ -20,6 +20,7 @@ export class OrdersRepository {
           currency,
           status,
           payment_status,
+          payment_rejection_reason,
           estimated_delivery_date,
           payment_method,
           created_at,
@@ -30,7 +31,7 @@ export class OrdersRepository {
         { count: 'exact' }
       ) // Agregamos count para paginación
       .eq('user_id', buyerId)
-      .in('payment_status', ['paid', 'pending', 'expired'])
+      .in('payment_status', ['paid', 'pending', 'expired', 'rejected'])
       // Filter out orders hidden by buyer (soft-delete for expired orders)
       .or('hidden_by_buyer.is.null,hidden_by_buyer.eq.false')
       .order('created_at', { ascending: false })
@@ -59,7 +60,7 @@ export class OrdersRepository {
       .from('orders')
       .select('id, payment_status, status, updated_at')
       .eq('user_id', buyerId)
-      .in('payment_status', ['paid', 'pending', 'expired'])
+      .in('payment_status', ['paid', 'pending', 'expired', 'rejected'])
       .order('updated_at', { ascending: false })
   }
 

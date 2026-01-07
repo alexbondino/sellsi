@@ -11,7 +11,7 @@
  * @date 10 de Julio de 2025
  */
 
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -136,6 +136,7 @@ const ProductMarketplaceTable = memo(() => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const fetchInProgressRef = useRef(false);
   
   // Filtros
   const [filters, setFilters] = useState({
@@ -361,6 +362,13 @@ const ProductMarketplaceTable = memo(() => {
   // ========================================
 
   const loadData = async () => {
+    // Protección contra llamadas concurrentes
+    if (fetchInProgressRef.current) {
+      console.info('ProductMarketplace: fetch already in progress, skipping');
+      return;
+    }
+
+    fetchInProgressRef.current = true;
     setLoading(true);
     setError('');
 
@@ -386,6 +394,7 @@ const ProductMarketplaceTable = memo(() => {
       setError('Error interno del servidor');
     } finally {
       setLoading(false);
+      fetchInProgressRef.current = false;
     }
   };
 
@@ -567,36 +576,68 @@ const ProductMarketplaceTable = memo(() => {
   const renderStatsCards = useCallback(() => (
     <Grid container spacing={3} sx={commonStyles.headerSection}>
       <Grid item xs={12} sm={6} md={3}>
-        <MemoAdminStatCard
-          title="Total Productos"
-          value={stats.totalProducts || 0}
-          icon={InventoryIcon}
-          color="primary"
-        />
+        <Tooltip 
+          title="Cantidad total de productos publicados en el marketplace"
+          placement="top"
+          arrow
+        >
+          <Box>
+            <MemoAdminStatCard
+              title="Total Productos"
+              value={stats.totalProducts || 0}
+              icon={InventoryIcon}
+              color="primary"
+            />
+          </Box>
+        </Tooltip>
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
-        <MemoAdminStatCard
-          title="Productos Disponibles"
-          value={stats.availableProducts || 0}
-          icon={ShoppingCartIcon}
-          color="success"
-        />
+        <Tooltip 
+          title="Productos con stock suficiente para comprar (stock >= compra mínima)"
+          placement="top"
+          arrow
+        >
+          <Box>
+            <MemoAdminStatCard
+              title="Productos Disponibles"
+              value={stats.availableProducts || 0}
+              icon={ShoppingCartIcon}
+              color="success"
+            />
+          </Box>
+        </Tooltip>
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
-        <MemoAdminStatCard
-          title="Stock Bajo"
-          value={stats.lowStockProducts || 0}
-          icon={InventoryIcon}
-          color="warning"
-        />
+        <Tooltip 
+          title="Productos con stock cercano a agotarse (menos de 1.5x la compra mínima)"
+          placement="top"
+          arrow
+        >
+          <Box>
+            <MemoAdminStatCard
+              title="Stock Bajo"
+              value={stats.lowStockProducts || 0}
+              icon={InventoryIcon}
+              color="warning"
+            />
+          </Box>
+        </Tooltip>
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
-        <MemoAdminStatCard
-          title="Proveedores Activos"
-          value={stats.activeSuppliers || 0}
-          icon={StoreIcon}
-          color="info"
-        />
+        <Tooltip 
+          title="Proveedores que tienen productos activos en el marketplace"
+          placement="top"
+          arrow
+        >
+          <Box>
+            <MemoAdminStatCard
+              title="Proveedores Activos"
+              value={stats.activeSuppliers || 0}
+              icon={StoreIcon}
+              color="info"
+            />
+          </Box>
+        </Tooltip>
       </Grid>
     </Grid>
   ), [stats]);
@@ -959,12 +1000,25 @@ const ProductMarketplaceTable = memo(() => {
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1, py: 2, flexWrap: 'wrap' }}>
           <Button variant="outlined" disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}>‹ Anterior</Button>
 
-          {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
-            const page = Math.min(totalPages, Math.max(1, currentPage - 3 + i));
-            return (
-              <Button key={page} variant={page === currentPage ? 'contained' : 'outlined'} onClick={() => handlePageChange(page)} sx={{ minWidth: 40, fontSize: '0.875rem' }}>{page}</Button>
-            );
-          })}
+          {(() => {
+            const maxButtons = Math.min(7, totalPages);
+            let pages = [];
+            if (totalPages <= maxButtons) {
+              pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+            } else {
+              const half = Math.floor(maxButtons / 2);
+              let start = currentPage - half;
+              if (start < 1) start = 1;
+              if (start + maxButtons - 1 > totalPages) start = totalPages - maxButtons + 1;
+              pages = Array.from({ length: maxButtons }, (_, i) => start + i);
+            }
+
+            return pages.map((page) => (
+              <Button key={page} variant={page === currentPage ? 'contained' : 'outlined'} onClick={() => handlePageChange(page)} sx={{ minWidth: 40, fontSize: '0.875rem' }}>
+                {page}
+              </Button>
+            ));
+          })()}
 
           <Button variant="outlined" disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}>Siguiente ›</Button>
 

@@ -59,6 +59,8 @@ const CompactCheckoutSummary = ({
         fee = 500;
       } else if (selectedMethod.id === 'flow') {
         fee = Math.round(base * 0.038);
+      } else if (selectedMethod.id === 'bank_transfer') {
+        fee = Math.round(base * 0.005);
       }
     }
 

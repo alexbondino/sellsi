@@ -181,6 +181,8 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
       buyer_id: row.user_id,
       status: row.status || 'pending',
       payment_status: row.payment_status || 'pending',
+      payment_method: row.payment_method || null,
+      payment_rejection_reason: row.payment_rejection_reason || null,
       created_at: row.created_at,
       updated_at: row.updated_at,
       estimated_delivery_date: row.estimated_delivery_date || null,

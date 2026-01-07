@@ -57,6 +57,7 @@ import {
   isDevelopment, 
   FIRST_ADMIN_CONFIG 
 } from '../config/devConfig';
+import { useCurrentAdmin } from '../hooks/useCurrentAdmin';
 
 // ✅ VALIDACIÓN DE CONTRASEÑA
 const validatePassword = (password) => {
@@ -85,6 +86,8 @@ const ADMIN_ROLES = {
 
 const AdminAccountCreator = ({ open, onClose, onSuccess }) => {
   const theme = useTheme();
+  const { adminId } = useCurrentAdmin(); // Obtener ID del admin autenticado
+  
   const [formData, setFormData] = useState({
     usuario: '',
     email: '',
@@ -287,7 +290,8 @@ const AdminAccountCreator = ({ open, onClose, onSuccess }) => {
         notes: formData.notes
       };
       
-      const result = await createAdminAccount(dataToSend);
+      // Pasar adminId del administrador autenticado
+      const result = await createAdminAccount(dataToSend, adminId);
       
       if (result.success) {
         setSuccess('Cuenta administrativa creada exitosamente');
@@ -466,7 +470,7 @@ const AdminAccountCreator = ({ open, onClose, onSuccess }) => {
           {!checkingPermissions && canCreate && (
             <>
               {/* Alerta de modo desarrollo */}
-              {isDevelopment() && (
+              {canCreateAdminInDev() && (
                 <Alert 
                   severity="info" 
                   sx={{ 

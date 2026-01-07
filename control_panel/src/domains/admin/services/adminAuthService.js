@@ -212,6 +212,7 @@ export const generate2FASecret = async (adminId, email, password = null) => {
     }
 
     return {
+      success: true,
       secret: data.secret,
       qrCode: data.qrCode
     }

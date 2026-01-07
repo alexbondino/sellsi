@@ -43,23 +43,62 @@ const AdminMetrics = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [fnDaily, setFnDaily] = useState([]);
+  const fetchInProgressRef = React.useRef(false);
 
   const fetchData = async () => {
+    // Protección inflight
+    if (fetchInProgressRef.current) {
+      console.info('AdminMetrics: fetch already in progress, skipping');
+      return;
+    }
+
+    fetchInProgressRef.current = true;
     setLoading(true); setError(null);
+
     try {
       const fromDate = new Date();
       fromDate.setDate(fromDate.getDate() - range.days);
+
+      // Mover la filtración al servidor para evitar inconsistencias de zona horaria y grandes payloads
       const { data: edgeData, error: edgeErr } = await supabase
         .from('vw_edge_function_daily_ext')
-        .select('*')
+        .select('function_name, day, invocations, errors, avg_duration_ms, p95_duration_ms, sla_breach_pct, sla_ms')
+        .gte('day', fromDate.toISOString())
         .order('day', { ascending: true });
+
       if (edgeErr) throw edgeErr;
-      const filteredEdge = (edgeData||[]).filter(r => new Date(r.day) >= fromDate);
-      setFnDaily(filteredEdge);
+
+      const rows = edgeData || [];
+      console.debug('AdminMetrics: fetched rows', { requestedFrom: fromDate.toISOString(), rowsCount: rows.length, sample: rows?.[0] });
+
+      // Defensive: normalize day and numeric fields
+      const safeNumber = (v) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : 0;
+      };
+
+      const normalized = rows.map(r => ({
+        function_name: r.function_name || r.display_name || 'unknown',
+        day: r.day,
+        invocations: safeNumber(r.invocations),
+        errors: safeNumber(r.errors),
+        avg_duration_ms: r.avg_duration_ms != null ? safeNumber(r.avg_duration_ms) : 0,
+        p95_duration_ms: r.p95_duration_ms != null ? safeNumber(r.p95_duration_ms) : 0,
+        sla_breach_pct: r.sla_breach_pct != null ? safeNumber(r.sla_breach_pct) : 0,
+        sla_ms: r.sla_ms != null ? safeNumber(r.sla_ms) : 0
+      }));
+
+      if (normalized.length === 0) {
+        console.info('AdminMetrics: query returned 0 rows for the given range');
+      }
+
+      setFnDaily(normalized);
     } catch (e) {
-      setError(e.message);
+      console.error('AdminMetrics: fetch error', e);
+      setError(e.message || String(e));
     } finally {
       setLoading(false);
+      fetchInProgressRef.current = false;
     }
   };
 
@@ -70,6 +109,13 @@ const AdminMetrics = () => {
     const set = new Set(fnDaily.map(r => r.function_name));
     return Array.from(set).sort();
   }, [fnDaily]);
+
+  // Debug guard: si hay datos pero no se detectan funciones
+  useEffect(() => {
+    if (fnDaily.length > 0 && functions.length === 0) {
+      console.warn('AdminMetrics: fnDaily has rows but no functions detected', { fnDailySample: fnDaily.slice(0,3) });
+    }
+  }, [fnDaily, functions]);
 
   const totals = useMemo(() => {
     const m = {};
@@ -94,11 +140,47 @@ const AdminMetrics = () => {
     <div role="tabpanel" hidden={tab !== index} id={`metrics-tabpanel-${index}`} aria-labelledby={`metrics-tab-${index}`}>{tab === index && (<Box sx={{ pt: 3 }}>{children}</Box>)}</div>
   );
 
-  const lineSeries = (fn) => [
-    { data: fnDaily.filter(r=>r.function_name===fn).map(r=>r.avg_duration_ms||0), label: 'Avg', color: palette.primary },
-    { data: fnDaily.filter(r=>r.function_name===fn).map(r=>r.p95_duration_ms||0), label: 'p95', color: palette.warning },
-  ];
-  const lineX = (fn) => fnDaily.filter(r=>r.function_name===fn).map(r=> new Date(r.day).toLocaleDateString());
+  // Generar lista de días continuos según el rango para garantizar xAxis consistente
+  const fullDays = useMemo(() => {
+    const out = [];
+    const start = new Date();
+    start.setHours(0,0,0,0);
+    start.setDate(start.getDate() - range.days + 1); // include today-range.days+1 to have 'days' entries
+    const end = new Date();
+    end.setHours(0,0,0,0);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      out.push(new Date(d).toISOString().split('T')[0]);
+    }
+    return out;
+  }, [range.days]);
+
+  const lineSeries = (fn) => {
+    // Map fullDays to values, filling 0 or null where missing
+    const rows = fnDaily.filter(r => r.function_name === fn);
+    const byDay = new Map(rows.map(r => [new Date(r.day).toISOString().split('T')[0], r]));
+
+    const avgSeries = fullDays.map(day => { const v = byDay.get(day); const val = v ? (v.avg_duration_ms || 0) : 0; if (!Number.isFinite(val)) console.warn('AdminMetrics: NaN in avgSeries', { fn, day, val }); return Number.isFinite(val) ? val : 0; });
+    const p95Series = fullDays.map(day => { const v = byDay.get(day); const val = v ? (v.p95_duration_ms || 0) : 0; if (!Number.isFinite(val)) console.warn('AdminMetrics: NaN in p95Series', { fn, day, val }); return Number.isFinite(val) ? val : 0; });
+
+    return [
+      { data: avgSeries, label: 'Avg', color: palette.primary },
+      { data: p95Series, label: 'p95', color: palette.warning }
+    ];
+  };
+
+  const lineX = () => fullDays.map(d => new Date(d));
+
+  const validateSeries = (series, xAxisData) => {
+    if (!xAxisData || !Array.isArray(xAxisData)) return false;
+    const len = xAxisData.length;
+    for (const s of series) {
+      if (!Array.isArray(s.data) || s.data.length !== len) return false;
+      for (const v of s.data) {
+        if (!Number.isFinite(Number(v))) return false;
+      }
+    }
+    return true;
+  };
 
   return (
     <Box sx={{ p: 3, position: 'relative' }}>
@@ -154,7 +236,17 @@ const AdminMetrics = () => {
           {functions.map(fn => (
             <Paper key={fn} variant="outlined" sx={{ mb:3, p:2 }}>
               <Typography variant="subtitle2" sx={{ mb:1, fontWeight:600 }}>{fn}</Typography>
-              <LineChart height={240} series={lineSeries(fn)} xAxis={[{ data: lineX(fn) }]} />
+            {
+              (() => {
+                const xData = lineX();
+                const series = lineSeries(fn);
+                if (!validateSeries(series, xData)) {
+                  console.error('AdminMetrics: invalid series/xAxis for latencias', { series, xData });
+                  return <Alert severity="warning">Datos incompletos para graficar</Alert>;
+                }
+                return <LineChart height={240} series={series} xAxis={[{ data: xData, scaleType: 'time' }]} />;
+              })()
+            }
             </Paper>
           ))}
         </TabPanel>
@@ -190,7 +282,17 @@ const AdminMetrics = () => {
                     {breachPct != null && <Tooltip title="Porcentaje de invocaciones que superaron el SLA"><Chip label={`SLA%: ${breachPct}`} color={breachPct>1? 'warning':'success'} size="small" /></Tooltip>}
                   </Stack>
                   <Box sx={{ mt:2 }}>
-                    <LineChart height={200} series={lineSeries(fn)} xAxis={[{ data: lineX(fn) }]} />
+                          {
+                      (() => {
+                        const xData = lineX();
+                        const series = lineSeries(fn);
+                        if (!validateSeries(series, xData)) {
+                          console.error('AdminMetrics: invalid series/xAxis for function', fn, { series, xData });
+                          return <Alert severity="warning">Datos incompletos para graficar</Alert>;
+                        }
+                        return <LineChart height={200} series={series} xAxis={[{ data: xData, scaleType: 'time' }]} />;
+                      })()
+                    }
                   </Box>
                 </Paper>
               );

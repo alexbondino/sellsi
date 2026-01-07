@@ -10,11 +10,17 @@ import {
   Tooltip,
   CircularProgress,
   Button,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import { useTheme, useMediaQuery } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import PersonIcon from '@mui/icons-material/Person';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import ReceiptIcon from '@mui/icons-material/Receipt';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import ProfileImageModal from '../../../shared/components/modals/ProfileImageModal';
 import { useBanner } from '../../../shared/components/display/banners/BannerContext';
@@ -35,9 +41,18 @@ import CompanyInfoSection from '../components/sections/CompanyInfoSection';
 // Documento Tributario eliminado
 
 // Utilidades
-import { getInitials, mapFormDataToUserProfile, mapUserProfileToFormData } from '../../../utils/profileHelpers';
+import {
+  getInitials,
+  mapFormDataToUserProfile,
+  mapUserProfileToFormData,
+} from '../../../utils/profileHelpers';
 import { trackUserAction } from '../../../services/security';
-import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages } from '../../../services/user';
+import {
+  getUserProfile,
+  updateUserProfile,
+  uploadProfileImage,
+  deleteAllUserImages,
+} from '../../../services/user';
 import { supabase } from '../../../services/supabase';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { invalidateTransferInfoCache } from '../../../shared/hooks/profile/useTransferInfoValidation'; // Para invalidar cache bancario
@@ -45,19 +60,22 @@ import { invalidateBillingInfoCache } from '../../../shared/hooks/profile/useBil
 
 /**
  * 🎭 Profile - Orquestador Universal de Perfiles
- * 
+ *
  * Componente orquestador que maneja la carga de datos y delega
  * la renderización a componentes modulares especializados.
- * 
+ *
  * Responsabilidades:
  * - Carga y mapeo de datos del usuario
- * - Orquestación de componentes modulares  
+ * - Orquestación de componentes modulares
  * - Gestión de estado global del perfil
  * - Coordinación de actualizaciones
- * 
+ *
  * NO es monolítico: delega UI a secciones especializadas
  */
-const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpdateHandler }) => {
+const Profile = ({
+  userProfile: initialUserProfile,
+  onUpdateProfile: externalUpdateHandler,
+}) => {
   const { showBanner } = useBanner();
   const location = useLocation(); // Para obtener parámetros de URL
   const { refreshUserProfile } = useAuth(); // Para actualizar avatar en TopBar sin F5
@@ -71,60 +89,55 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
   const [loading, setLoading] = useState(true);
 
   // ✅ NUEVO: Estado para highlight de campos bancarios
-  const [shouldHighlightTransferFields, setShouldHighlightTransferFields] = useState(false);
+  const [shouldHighlightTransferFields, setShouldHighlightTransferFields] =
+    useState(false);
   // ✅ NUEVO: Estado para highlight de campos de despacho
-  const [shouldHighlightShippingFields, setShouldHighlightShippingFields] = useState(false);
+  const [shouldHighlightShippingFields, setShouldHighlightShippingFields] =
+    useState(false);
   // ✅ NUEVO: Estado para highlight de campos de facturación
-  const [shouldHighlightBillingFields, setShouldHighlightBillingFields] = useState(false);
+  const [shouldHighlightBillingFields, setShouldHighlightBillingFields] =
+    useState(false);
+
+  // Estado para el tab activo del perfil
+  const [activeTab, setActiveTab] = useState(0);
 
   // ✅ NUEVO: Verificar parámetros de URL al montar y cuando cambie la location
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const section = urlParams.get('section');
     const highlight = urlParams.get('highlight');
-    
-    if (section === 'transfer' && highlight === 'true') {
-      setShouldHighlightTransferFields(true);
-      console.log('🎯 Resaltando campos de información bancaria por redirección');
-      // Scroll automático a la sección de transferencia
-      setTimeout(() => {
-        const transferSection = document.getElementById('transfer-info-section');
-        if (transferSection) {
-          transferSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 500);
-      // Remover el highlight después de 10 segundos para mejor UX
-      const timer = setTimeout(() => {
-        setShouldHighlightTransferFields(false);
-      }, 10000);
-      
-      return () => clearTimeout(timer);
-    }
-    if (section === 'shipping' && highlight === 'true') {
-      setShouldHighlightShippingFields(true);
-      console.log('🎯 Resaltando campos de dirección de despacho por redirección');
-      // Scroll automático a la sección de shipping
-      setTimeout(() => {
-        const shippingSection = document.getElementById('shipping-info-section');
-        if (shippingSection) {
-          shippingSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 500);
-      const timer = setTimeout(() => { setShouldHighlightShippingFields(false); }, 10000);
-      return () => clearTimeout(timer);
-    }
-    if (section === 'billing' && highlight === 'true') {
-      setShouldHighlightBillingFields(true);
-      console.log('🎯 Resaltando campos de facturación por redirección');
-      // Scroll to billing section
-      setTimeout(() => {
-        const billingSection = document.getElementById('billing-info-section');
-        if (billingSection) {
-          billingSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 500);
-      const timer = setTimeout(() => { setShouldHighlightBillingFields(false); }, 10000);
-      return () => clearTimeout(timer);
+
+    // Mapear sección de URL a tab correspondiente
+    if (section === 'transfer') {
+      setActiveTab(1);
+      if (highlight === 'true') {
+        setShouldHighlightTransferFields(true);
+        console.log(
+          '🎯 Resaltando campos de información bancaria por redirección'
+        );
+        const timer = setTimeout(() => {
+          setShouldHighlightTransferFields(false);
+        }, 10000);
+        return () => clearTimeout(timer);
+      }
+    } else if (section === 'shipping') {
+      setActiveTab(2);
+      if (highlight === 'true') {
+        setShouldHighlightShippingFields(true);
+        const timer = setTimeout(() => {
+          setShouldHighlightShippingFields(false);
+        }, 10000);
+        return () => clearTimeout(timer);
+      }
+    } else if (section === 'billing') {
+      setActiveTab(3);
+      if (highlight === 'true') {
+        setShouldHighlightBillingFields(true);
+        const timer = setTimeout(() => {
+          setShouldHighlightBillingFields(false);
+        }, 10000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [location.search]);
 
@@ -135,21 +148,23 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
 
   const fetchUserProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('Usuario no autenticado');
       }
 
       // ✅ Forzar bypass del cache para obtener datos frescos
       const { data, error } = await getUserProfile(user.id, { force: true });
-      
+
       console.log('📞 [PROFILE DEBUG] Datos crudos de getUserProfile:', {
         phone_nbr: data?.phone_nbr,
         country: data?.country,
         email: data?.email,
-        user_nm: data?.user_nm
+        user_nm: data?.user_nm,
       });
-      
+
       if (error) {
         throw error;
       }
@@ -162,12 +177,12 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         logo_url: data.logo_url,
         ...mapUserProfileToFormData(data), // Delegar mapeo a la función especializada
       };
-      
+
       console.log('📞 [PROFILE DEBUG] Perfil mapeado:', {
         phone: mappedProfile.phone,
         phone_nbr_original: data.phone_nbr,
         country: mappedProfile.country,
-        email: mappedProfile.email
+        email: mappedProfile.email,
       });
 
       setUserProfile(mappedProfile);
@@ -178,58 +193,99 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       showBanner({
         message: '❌ Error al cargar el perfil',
         severity: 'error',
-        duration: 6000
+        duration: 6000,
       });
     }
   };
 
   // Handler de actualización (lógica antes duplicada en ambos profiles)
-  const handleUpdateProfile = async (profileData) => {
+  const handleUpdateProfile = async profileData => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('Usuario no autenticado');
       }
 
       // Actualizar usando el servicio
       await updateUserProfile(user.id, profileData);
-      
-  // ✅ INVALIDAR CACHE DE INFORMACIÓN BANCARIA si se actualizaron campos relacionados
+
+      // ✅ INVALIDAR CACHE DE INFORMACIÓN BANCARIA si se actualizaron campos relacionados
       // NOTA: Los campos que llegan aquí están en formato BD (snake_case)
-      const transferFields = ['account_holder', 'bank', 'account_number', 'transfer_rut', 'confirmation_email'];
-      const hasTransferFieldUpdate = transferFields.some(field => profileData.hasOwnProperty(field));
-      
+      const transferFields = [
+        'account_holder',
+        'bank',
+        'account_number',
+        'transfer_rut',
+        'confirmation_email',
+      ];
+      const hasTransferFieldUpdate = transferFields.some(field =>
+        profileData.hasOwnProperty(field)
+      );
+
       // ✅ TAMBIÉN verificar campos de formulario (camelCase) en caso de que vengan así
-      const transferFieldsForm = ['accountHolder', 'accountNumber', 'transferRut', 'confirmationEmail'];
-      const hasTransferFieldFormUpdate = transferFieldsForm.some(field => profileData.hasOwnProperty(field));
-      
+      const transferFieldsForm = [
+        'accountHolder',
+        'accountNumber',
+        'transferRut',
+        'confirmationEmail',
+      ];
+      const hasTransferFieldFormUpdate = transferFieldsForm.some(field =>
+        profileData.hasOwnProperty(field)
+      );
+
       if (hasTransferFieldUpdate || hasTransferFieldFormUpdate) {
-        console.log('🏦 Invalidando cache de información bancaria por actualización de perfil');
+        console.log(
+          '🏦 Invalidando cache de información bancaria por actualización de perfil'
+        );
         invalidateTransferInfoCache();
       }
 
       // ✅ INVALIDAR CACHE DE FACTURACIÓN si se actualizaron campos billing
-      const billingFields = ['business_name','billing_rut','business_line','billing_address','billing_region','billing_commune'];
-      const hasBillingUpdate = billingFields.some(field => profileData.hasOwnProperty(field));
+      const billingFields = [
+        'business_name',
+        'billing_rut',
+        'business_line',
+        'billing_address',
+        'billing_region',
+        'billing_commune',
+      ];
+      const hasBillingUpdate = billingFields.some(field =>
+        profileData.hasOwnProperty(field)
+      );
       if (hasBillingUpdate) {
-        console.log('🧾 Invalidando cache de facturación por actualización de perfil');
+        console.log(
+          '🧾 Invalidando cache de facturación por actualización de perfil'
+        );
         invalidateBillingInfoCache();
       }
-      
+
       // ✅ INVALIDAR CACHE DE PRODUCTOS si se actualizó compra mínima o descripción de proveedor
-      const supplierFields = ['minimum_purchase_amount', 'descripcion_proveedor', 'minimumPurchaseAmount', 'descripcionProveedor'];
-      const hasSupplierUpdate = supplierFields.some(field => profileData.hasOwnProperty(field));
+      const supplierFields = [
+        'minimum_purchase_amount',
+        'descripcion_proveedor',
+        'minimumPurchaseAmount',
+        'descripcionProveedor',
+      ];
+      const hasSupplierUpdate = supplierFields.some(field =>
+        profileData.hasOwnProperty(field)
+      );
       if (hasSupplierUpdate) {
-        console.log('🛒 Invalidando cache de productos del marketplace por cambio en datos de proveedor');
-        try { window.invalidateProductsCache?.(); } catch(e) {}
+        console.log(
+          '🛒 Invalidando cache de productos del marketplace por cambio en datos de proveedor'
+        );
+        try {
+          window.invalidateProductsCache?.();
+        } catch (e) {}
       }
-      
+
       // Recargar perfil después de actualizar
       await fetchUserProfile();
-      
+
       // ✅ Refrescar perfil en UnifiedAuthProvider para actualizar main_supplier, verified, etc.
       await refreshUserProfile();
-      
+
       // Notificar al componente padre si existe
       if (externalUpdateHandler) {
         await externalUpdateHandler(profileData);
@@ -252,28 +308,26 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
   }, [userProfile?.user_id]);
 
   // Usar los hooks modulares con el perfil cargado
-  const { formData, hasChanges, updateField, resetForm, updateInitialData } = useProfileForm(loadedProfile);
-  
-  const { 
-    pendingImage, 
-    handleImageChange: _handleImageChange, 
+  const { formData, hasChanges, updateField, resetForm, updateInitialData } =
+    useProfileForm(loadedProfile);
+
+  const {
+    pendingImage,
+    handleImageChange: _handleImageChange,
     getDisplayImageUrl,
-    clearPendingImage 
+    clearPendingImage,
   } = useProfileImage(userProfile?.logo_url);
 
   // Wrapper to log when image change is triggered from modal
-  const handleImageChange = (imageData) => {
+  const handleImageChange = imageData => {
     _handleImageChange(imageData);
-  } 
-  const { 
-    showSensitiveData, 
-    toggleSensitiveData, 
-    getSensitiveFieldValue 
-  } = useSensitiveFields();
+  };
+  const { showSensitiveData, toggleSensitiveData, getSensitiveFieldValue } =
+    useSensitiveFields();
 
   // Hook para invalidar caché de shipping
   const { invalidateUserCache } = useOptimizedUserShippingRegion();
-  
+
   // ✅ NUEVO: Hook para sincronización automática de roles
   const { isInSync, debug } = useRoleSync();
 
@@ -305,7 +359,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
   }, [isInSync, debug]);
 
   // Handlers simplificados que usan los hooks
-  const handleSwitchChange = (field) => (event, newValue) => {
+  const handleSwitchChange = field => (event, newValue) => {
     if (newValue !== null) {
       updateField(field, newValue);
     }
@@ -327,7 +381,11 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
     if (field.startsWith('shipping')) {
       setShowShippingErrors(false);
     }
-    if (field.startsWith('billing') || field === 'businessName' || field === 'businessLine') {
+    if (
+      field.startsWith('billing') ||
+      field === 'businessName' ||
+      field === 'businessLine'
+    ) {
       setShowBillingErrors(false);
     }
   };
@@ -342,78 +400,147 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
     const hasFormChanges = hasChanges;
 
     if (!hasFormChanges) {
-      showBanner({ message: 'No hay cambios para actualizar', severity: 'info', duration: 3000 });
+      showBanner({
+        message: 'No hay cambios para actualizar',
+        severity: 'info',
+        duration: 3000,
+      });
       return;
     }
 
     setLoading(true);
     try {
       // ✅ MAPEAR CORRECTAMENTE: FormData → BD format
-      console.log('📋 FormData antes del mapeo (COMPLETO):', JSON.stringify(formData, null, 2));
+      console.log(
+        '📋 FormData antes del mapeo (COMPLETO):',
+        JSON.stringify(formData, null, 2)
+      );
       let dataToUpdate = mapFormDataToUserProfile(formData, loadedProfile);
-      console.log('🔄 Datos después del mapeo (COMPLETO):', JSON.stringify(dataToUpdate, null, 2));
-      
+      console.log(
+        '🔄 Datos después del mapeo (COMPLETO):',
+        JSON.stringify(dataToUpdate, null, 2)
+      );
+
       // Eliminar campos que se manejan automáticamente
       delete dataToUpdate.profileImage;
       delete dataToUpdate.user_nm;
       delete dataToUpdate.logo_url;
 
-      console.log('📤 Datos finales a enviar (COMPLETO):', JSON.stringify(dataToUpdate, null, 2));
+      console.log(
+        '📤 Datos finales a enviar (COMPLETO):',
+        JSON.stringify(dataToUpdate, null, 2)
+      );
       // Strict validation: check both the raw formData and the already-mapped dataToUpdate.
       // This prevents cases where mapping or missing properties would allow an update to proceed
       // even though the user has partially filled required fields.
       const regionValue = formData?.shippingRegion;
       const communeValue = formData?.shippingCommune;
       const addressValue = formData?.shippingAddress;
-      const regionSelected = regionValue !== undefined && regionValue !== null && String(regionValue).trim() !== '';
+      const regionSelected =
+        regionValue !== undefined &&
+        regionValue !== null &&
+        String(regionValue).trim() !== '';
 
       // Also inspect mapped data (snake_case) because mapFormDataToUserProfile may materialize changes there
-      const finalRegion = dataToUpdate.shipping_region ?? dataToUpdate.shippingRegion ?? regionValue;
-      const finalCommune = dataToUpdate.shipping_commune ?? dataToUpdate.shippingCommune ?? communeValue;
-      const finalAddress = dataToUpdate.shipping_address ?? dataToUpdate.shippingAddress ?? addressValue;
+      const finalRegion =
+        dataToUpdate.shipping_region ??
+        dataToUpdate.shippingRegion ??
+        regionValue;
+      const finalCommune =
+        dataToUpdate.shipping_commune ??
+        dataToUpdate.shippingCommune ??
+        communeValue;
+      const finalAddress =
+        dataToUpdate.shipping_address ??
+        dataToUpdate.shippingAddress ??
+        addressValue;
 
-      const communeFilled = finalCommune !== undefined && finalCommune !== null && String(finalCommune).trim() !== '';
-      const addressFilled = finalAddress !== undefined && finalAddress !== null && String(finalAddress).trim() !== '';
+      const communeFilled =
+        finalCommune !== undefined &&
+        finalCommune !== null &&
+        String(finalCommune).trim() !== '';
+      const addressFilled =
+        finalAddress !== undefined &&
+        finalAddress !== null &&
+        String(finalAddress).trim() !== '';
 
-      if ((regionSelected || finalRegion) && (!communeFilled || !addressFilled)) {
+      if (
+        (regionSelected || finalRegion) &&
+        (!communeFilled || !addressFilled)
+      ) {
         // Mostrar errores inline en los campos y evitar enviar la petición
         setShowShippingErrors(true);
-        showBanner({ message: 'Por favor completa Comuna y Dirección de Envío para actualizar el perfil.', severity: 'error', duration: 6000 });
+        showBanner({
+          message:
+            'Por favor completa Comuna y Dirección de Envío para actualizar el perfil.',
+          severity: 'error',
+          duration: 6000,
+        });
         setLoading(false);
         return;
       }
 
       // Billing: if business name exists in either form or mapped data, require full billing fields
-      const businessNameFilled = (formData?.businessName && formData.businessName.trim() !== '') || (dataToUpdate.business_name && String(dataToUpdate.business_name).trim() !== '');
+      const businessNameFilled =
+        (formData?.businessName && formData.businessName.trim() !== '') ||
+        (dataToUpdate.business_name &&
+          String(dataToUpdate.business_name).trim() !== '');
       if (businessNameFilled) {
         const billingRut = dataToUpdate.billing_rut ?? formData?.billingRut;
-        const businessLine = dataToUpdate.business_line ?? formData?.businessLine;
-        const billingAddress = dataToUpdate.billing_address ?? formData?.billingAddress;
-        const billingRegion = dataToUpdate.billing_region ?? formData?.billingRegion;
-        const billingCommune = dataToUpdate.billing_commune ?? formData?.billingCommune;
-        const anyMissing = [billingRut, businessLine, billingAddress, billingRegion, billingCommune].some(v => !v || String(v).trim() === '');
+        const businessLine =
+          dataToUpdate.business_line ?? formData?.businessLine;
+        const billingAddress =
+          dataToUpdate.billing_address ?? formData?.billingAddress;
+        const billingRegion =
+          dataToUpdate.billing_region ?? formData?.billingRegion;
+        const billingCommune =
+          dataToUpdate.billing_commune ?? formData?.billingCommune;
+        const anyMissing = [
+          billingRut,
+          businessLine,
+          billingAddress,
+          billingRegion,
+          billingCommune,
+        ].some(v => !v || String(v).trim() === '');
         if (anyMissing) {
           setShowBillingErrors(true);
-          showBanner({ message: 'Completa todos los campos de Facturación para actualizar (RUT, Giro, Dirección, Región, Comuna).', severity: 'error', duration: 6000 });
+          showBanner({
+            message:
+              'Completa todos los campos de Facturación para actualizar (RUT, Giro, Dirección, Región, Comuna).',
+            severity: 'error',
+            duration: 6000,
+          });
           setLoading(false);
           return;
         }
       }
-  await handleUpdateProfile(dataToUpdate);
+      await handleUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
 
       // ✅ INVALIDAR / PRIMAR CACHÉ DE SHIPPING si cambió la región o campos de despacho
-      const shippingFields = ['shipping_region', 'shipping_commune', 'shipping_address', 'shipping_number'];
-      const hasShippingUpdate = shippingFields.some(field => dataToUpdate.hasOwnProperty(field));
-      const newRegion = dataToUpdate.shipping_region || dataToUpdate.shippingRegion;
-      
+      const shippingFields = [
+        'shipping_region',
+        'shipping_commune',
+        'shipping_address',
+        'shipping_number',
+      ];
+      const hasShippingUpdate = shippingFields.some(field =>
+        dataToUpdate.hasOwnProperty(field)
+      );
+      const newRegion =
+        dataToUpdate.shipping_region || dataToUpdate.shippingRegion;
+
       if (newRegion || hasShippingUpdate) {
         invalidateUserCache();
         if (newRegion) {
-          try { window.primeUserShippingRegionCache?.(newRegion); } catch(e) {}
+          try {
+            window.primeUserShippingRegionCache?.(newRegion);
+          } catch (e) {}
         }
         // ✅ FIX: Invalidar cache de validación de shipping para que AddToCart lo reconozca
-        try { window.invalidateShippingInfoCache?.(); } catch(e) {}
+        try {
+          window.invalidateShippingInfoCache?.();
+        } catch (e) {}
       }
 
       // Registrar IP del usuario al actualizar perfil (solo si tenemos perfil cargado)
@@ -422,7 +549,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           await trackUserAction(loadedProfile.user_id, 'profile_updated');
         } catch (trackError) {
           // Error silencioso para no afectar la experiencia del usuario
-          }
+        }
       }
 
       // Limpiar imagen pendiente después de guardar exitosamente
@@ -432,17 +559,16 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       showBanner({
         message: '✅ Perfil actualizado correctamente',
         severity: 'success',
-        duration: 4000
+        duration: 4000,
       });
-
     } catch (error) {
       // Mostrar banner de error
       showBanner({
-        message: '❌ Error al actualizar el perfil. Por favor, inténtalo nuevamente.',
+        message:
+          '❌ Error al actualizar el perfil. Por favor, inténtalo nuevamente.',
         severity: 'error',
-        duration: 6000
+        duration: 6000,
       });
-      
     } finally {
       setLoading(false);
       inFlightUpdateRef.current = false;
@@ -467,7 +593,9 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       try {
         setLoading(true);
         // Guardar automáticamente en Supabase
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           await updateUserProfile(user.id, { user_nm: editedName.trim() });
           // Actualizar estado local
@@ -475,7 +603,10 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           updateInitialData();
         }
       } catch (error) {
-  showBanner({ message: 'Error al actualizar el nombre', severity: 'error' });
+        showBanner({
+          message: 'Error al actualizar el nombre',
+          severity: 'error',
+        });
       } finally {
         setLoading(false);
       }
@@ -488,7 +619,9 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
     if (editedName.trim() && editedName !== getFullName()) {
       try {
         // Guardar automáticamente en Supabase
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           await updateUserProfile(user.id, { user_nm: editedName.trim() });
           // Actualizar estado local
@@ -496,7 +629,10 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           updateInitialData();
         }
       } catch (error) {
-  showBanner({ message: 'Error al actualizar el nombre', severity: 'error' });
+        showBanner({
+          message: 'Error al actualizar el nombre',
+          severity: 'error',
+        });
       }
     }
     setIsEditingName(false);
@@ -513,9 +649,11 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
   };
 
   // Función para guardar imagen automáticamente en Supabase
-  const handleSaveImageAutomatic = async (imageFile) => {
+  const handleSaveImageAutomatic = async imageFile => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('Usuario no autenticado');
       }
@@ -526,7 +664,10 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         // Eliminar imagen
         const deleteResult = await deleteAllUserImages(user.id);
         if (!deleteResult.success) {
-          console.warn('No se pudieron eliminar las imágenes previas:', deleteResult.error);
+          console.warn(
+            'No se pudieron eliminar las imágenes previas:',
+            deleteResult.error
+          );
         }
       } else {
         // Subir nueva imagen
@@ -552,11 +693,14 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         setLoadedProfile(updatedProfile.data);
         setUserProfile(mappedProfile);
       }
-      
+
       // ✅ IMPORTANTE: Actualizar el contexto global para que TopBar/Avatar se actualicen sin F5
       await refreshUserProfile();
-      
-      showBanner({ message: 'Imagen actualizada correctamente', severity: 'success' });
+
+      showBanner({
+        message: 'Imagen actualizada correctamente',
+        severity: 'success',
+      });
     } catch (error) {
       throw new Error(error.message || 'Error al guardar la imagen');
     }
@@ -568,33 +712,37 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
     if (logoUrl) {
       return {
         src: logoUrl,
-        sx: { bgcolor: 'transparent' }
+        sx: { bgcolor: 'transparent' },
       };
     } else {
       const initials = getInitials(getDisplayName());
       if (initials && initials.trim()) {
         return {
           children: initials, // Mostrar iniciales si no hay logo
-          sx: { 
-            bgcolor: 'primary.main', 
+          sx: {
+            bgcolor: 'primary.main',
             color: 'white !important',
-            '& .MuiAvatar-fallback': { color: 'white !important' }
-          }
+            '& .MuiAvatar-fallback': { color: 'white !important' },
+          },
         };
       } else {
         return {
-          children: <PersonIcon sx={{ 
-            color: 'white !important', 
+          children: (
+            <PersonIcon
+              sx={{
+                color: 'white !important',
+                transition: 'none !important',
+                '&:hover': { color: 'white !important' },
+                '&:focus': { color: 'white !important' },
+                '&:active': { color: 'white !important' },
+              }}
+            />
+          ), // Mostrar icono de persona con color blanco
+          sx: {
+            bgcolor: 'primary.main !important',
+            color: 'white !important',
             transition: 'none !important',
-            '&:hover': { color: 'white !important' },
-            '&:focus': { color: 'white !important' },
-            '&:active': { color: 'white !important' }
-          }} />, // Mostrar icono de persona con color blanco
-          sx: { 
-            bgcolor: 'primary.main !important', 
-            color: 'white !important', 
-            transition: 'none !important' 
-          }
+          },
         };
       }
     }
@@ -605,9 +753,11 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
   };
 
   // Función para guardar imagen automáticamente en Supabase
-  const handleSaveImageToSupabase = async (imageFile) => {
+  const handleSaveImageToSupabase = async imageFile => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('Usuario no autenticado');
       }
@@ -618,20 +768,26 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         await updateUserProfile(user.id, { logo_url: null });
         clearPendingImage();
         updateInitialData();
-  showBanner({ message: 'Imagen eliminada correctamente', severity: 'success' });
+        showBanner({
+          message: 'Imagen eliminada correctamente',
+          severity: 'success',
+        });
       } else {
         // Subir nueva imagen
         const { url, error } = await uploadProfileImage(user.id, imageFile);
         if (error) {
           throw new Error(error.message);
         }
-        
+
         await updateUserProfile(user.id, { logo_url: url });
         clearPendingImage();
         updateInitialData();
-  showBanner({ message: 'Imagen actualizada correctamente', severity: 'success' });
+        showBanner({
+          message: 'Imagen actualizada correctamente',
+          severity: 'success',
+        });
       }
-      
+
       // Refrescar el perfil
       if (onUpdateProfile) {
         await onUpdateProfile({});
@@ -642,11 +798,11 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
   };
 
   // Handlers para campos sensibles
-  const handleSensitiveFocus = (field) => {
+  const handleSensitiveFocus = field => {
     toggleSensitiveData(field);
   };
 
-  const handleSensitiveBlur = (field) => {
+  const handleSensitiveBlur = field => {
     toggleSensitiveData(field);
   };
 
@@ -670,184 +826,267 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           </Typography>
         </Box>
       ) : (
-        <Box sx={{ backgroundColor: 'background.default', minHeight: '100vh', pt: { xs: 2, md: 4 }, px: { xs: 0, md: 3 }, pb: SPACING_BOTTOM_MAIN, ml: { xs: 0, md: 10, lg: 14, xl: 24 } }}>
-          <Box sx={{ p: { xs: 0, md: 3 }, maxWidth: 1200, mx: 'auto', width: '100%', boxSizing: 'border-box' }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-        {/* Avatar con hover clickeable */}
-        <Tooltip title="Cambiar imagen de perfil" placement="top">
-          <Box sx={{ position: 'relative', mr: 2 }}>
-            <Avatar 
-              {...getAvatarProps()}
-              onClick={handleImageClick}
-              sx={{ 
-                width: 96, 
-                height: 96, 
-                fontSize: 29, 
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'scale(1.05)',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                },
-                ...getAvatarProps().sx 
-              }}
-            />
-            
-            {/* Icono de cámara en hover */}
-            <Box
+        <Box
+          sx={{
+            backgroundColor: 'background.default',
+            minHeight: '100vh',
+            pt: { xs: 2, md: 4 },
+            px: { xs: 0, md: 3 },
+            pb: SPACING_BOTTOM_MAIN,
+            ml: { xs: 0, md: 10, lg: 14, xl: 24 },
+          }}
+        >
+          <Box
+            sx={{
+              p: { xs: 0, md: 3 },
+              maxWidth: 1200,
+              mx: 'auto',
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
+          >
+            {/* Header */}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+              {/* Avatar con hover clickeable */}
+              <Tooltip title="Cambiar imagen de perfil" placement="top">
+                <Box sx={{ position: 'relative', mr: 2 }}>
+                  <Avatar
+                    {...getAvatarProps()}
+                    onClick={handleImageClick}
+                    sx={{
+                      width: 96,
+                      height: 96,
+                      fontSize: 29,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'scale(1.05)',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                      },
+                      ...getAvatarProps().sx,
+                    }}
+                  />
+
+                  {/* Icono de cámara en hover */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      bgcolor: 'primary.main',
+                      borderRadius: '50%',
+                      p: 0.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 2,
+                      opacity: 0.9,
+                      transition: 'opacity 0.3s ease',
+                      '&:hover': { opacity: 1 },
+                    }}
+                  >
+                    <CameraAltIcon sx={{ fontSize: 16, color: 'white' }} />
+                  </Box>
+                </Box>
+              </Tooltip>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {isEditingName ? (
+                  <TextField
+                    value={editedName}
+                    onChange={e => setEditedName(e.target.value)}
+                    size="small"
+                    variant="standard"
+                    sx={{ fontSize: 32, fontWeight: 500, minWidth: 180 }}
+                    onBlur={handleNameBlur}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleNameSave();
+                      if (e.key === 'Escape') handleNameCancel();
+                    }}
+                    autoFocus
+                    inputProps={{
+                      style: { fontSize: 32, fontWeight: 500, padding: 0 },
+                    }}
+                  />
+                ) : (
+                  <Typography variant="h4" sx={{ color: 'text.primary' }}>
+                    {getDisplayName()}
+                    <IconButton
+                      size="small"
+                      sx={{ ml: 1 }}
+                      title="Editar nombre de usuario"
+                      onClick={() => {
+                        setEditedName(getFullName()); // Usar getFullName en lugar de getDisplayName
+                        setIsEditingName(true);
+                      }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+
+            {/* Tabs de navegación para secciones del perfil */}
+            <Paper
               sx={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                bgcolor: 'primary.main',
-                borderRadius: '50%',
-                p: 0.5,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                bgcolor: '#fff',
                 boxShadow: 2,
-                opacity: 0.9,
-                transition: 'opacity 0.3s ease',
-                '&:hover': { opacity: 1 }
+                borderRadius: 3,
+                mb: 4,
+                overflow: 'hidden',
               }}
             >
-              <CameraAltIcon sx={{ fontSize: 16, color: 'white' }} />
-            </Box>
-          </Box>
-        </Tooltip>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          {isEditingName ? (
-            <TextField
-              value={editedName}
-              onChange={e => setEditedName(e.target.value)}
-              size="small"
-              variant="standard"
-              sx={{ fontSize: 32, fontWeight: 500, minWidth: 180 }}
-              onBlur={handleNameBlur}
-              onKeyDown={e => {
-                if (e.key === 'Enter') handleNameSave();
-                if (e.key === 'Escape') handleNameCancel();
-              }}
-              autoFocus
-              inputProps={{ style: { fontSize: 32, fontWeight: 500, padding: 0 } }}
-            />
-          ) : (
-            <Typography variant="h4" sx={{ color: 'text.primary' }}>
-              {getDisplayName()}
-              <IconButton
-                size="small"
-                sx={{ ml: 1 }}
-                title="Editar nombre de usuario"
-                onClick={() => {
-                  setEditedName(getFullName()); // Usar getFullName en lugar de getDisplayName
-                  setIsEditingName(true);
+              {/* Tabs Header */}
+              <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tabs
+                  value={activeTab}
+                  onChange={(e, newValue) => setActiveTab(newValue)}
+                  variant={isMobile ? 'scrollable' : 'fullWidth'}
+                  scrollButtons={isMobile ? 'auto' : false}
+                  sx={{
+                    '& .MuiTab-root': {
+                      textTransform: 'none',
+                      fontWeight: 500,
+                      fontSize: '0.95rem',
+                      minHeight: 56,
+                    },
+                    '& .Mui-selected': {
+                      fontWeight: 600,
+                    },
+                  }}
+                >
+                  <Tab
+                    icon={<InfoOutlinedIcon />}
+                    iconPosition="start"
+                    label="General"
+                  />
+                  <Tab
+                    icon={<AccountBalanceIcon />}
+                    iconPosition="start"
+                    label="Transferencia"
+                  />
+                  <Tab
+                    icon={<LocalShippingIcon />}
+                    iconPosition="start"
+                    label="Despacho"
+                  />
+                  <Tab
+                    icon={<ReceiptIcon />}
+                    iconPosition="start"
+                    label="Facturación"
+                  />
+                </Tabs>
+              </Box>
+
+              {/* Tab Content */}
+              <Box sx={{ p: 0 }}>
+                {/* Tab 0: Información General */}
+                {activeTab === 0 && (
+                  <CompanyInfoSection
+                    formData={formData}
+                    onFieldChange={updateField}
+                    onPasswordModalOpen={() => setIsPasswordModalOpen(true)}
+                  />
+                )}
+
+                {/* Tab 1: Información de Transferencia */}
+                {activeTab === 1 && (
+                  <TransferInfoSection
+                    formData={formData}
+                    onFieldChange={updateField}
+                    showSensitiveData={showSensitiveData}
+                    toggleSensitiveData={toggleSensitiveData}
+                    getSensitiveFieldValue={getSensitiveFieldValue}
+                    shouldHighlight={shouldHighlightTransferFields}
+                    id="transfer-info-section"
+                  />
+                )}
+
+                {/* Tab 2: Dirección de Despacho */}
+                {activeTab === 2 && (
+                  <ShippingInfoSection
+                    formData={formData}
+                    onFieldChange={handleFieldChange}
+                    onRegionChange={(type, regionField, comunaField, value) => {
+                      handleRegionChange(type, regionField, comunaField, value);
+                    }}
+                    showErrors={showShippingErrors}
+                    shouldHighlight={shouldHighlightShippingFields}
+                  />
+                )}
+
+                {/* Tab 3: Facturación */}
+                {activeTab === 3 && (
+                  <BillingInfoSection
+                    id="billing-info-section"
+                    formData={formData}
+                    onFieldChange={updateField}
+                    onRegionChange={handleRegionChange}
+                    hasChanges={hasPendingChanges}
+                    loading={loading}
+                    onUpdate={handleUpdate}
+                    getSensitiveFieldValue={getSensitiveFieldValue}
+                    onFocusSensitive={handleSensitiveFocus}
+                    onBlurSensitive={handleSensitiveBlur}
+                    showBilling={true}
+                    showUpdateButton={false}
+                    showErrors={showBillingErrors}
+                    shouldHighlight={shouldHighlightBillingFields}
+                  />
+                )}
+              </Box>
+
+              {/* Botón Actualizar al fondo del Paper */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  p: 2,
+                  borderTop: 1,
+                  borderColor: 'divider',
                 }}
               >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Typography>
-          )}
-        </Box>
-      </Box>
+                <Button
+                  variant="contained"
+                  onClick={handleUpdate}
+                  disabled={loading}
+                  sx={{
+                    bgcolor: 'primary.main',
+                    '&:hover': { bgcolor: 'primary.dark' },
+                  }}
+                >
+                  {loading ? 'Actualizando...' : 'Actualizar'}
+                </Button>
+              </Box>
+            </Paper>
 
-      {/* Grid Layout 2x2 - PRESERVANDO ESTRUCTURA VISUAL ORIGINAL CON NUEVAS FUNCIONALIDADES */}
-      <Paper sx={{ p: 0, bgcolor: '#fff', boxShadow: 2, borderRadius: 3, mb: 4 }}>
-        <Box sx={{ 
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gridTemplateRows: 'repeat(2, auto)',
-          gap: 3,
-          '@media (max-width: 768px)': {
-            gridTemplateColumns: '1fr',
-            gridTemplateRows: 'repeat(4, auto)',
-          }
-        }}>
-          {/* Primera fila - Primera columna: Información General */}
-          <CompanyInfoSection 
-            formData={formData}
-            onFieldChange={updateField}
-            onPasswordModalOpen={() => setIsPasswordModalOpen(true)}
-          />
+            {/* Modal de Cambio de Contraseña */}
+            <ChangePasswordModal
+              open={isPasswordModalOpen}
+              onClose={() => setIsPasswordModalOpen(false)}
+              showBanner={showBanner}
+              onPasswordChanged={() => {
+                setIsPasswordModalOpen(false);
+                // Mostrar banner de éxito
+                showBanner({
+                  message: '✅ Contraseña actualizada correctamente',
+                  severity: 'success',
+                  duration: 4000,
+                });
+              }}
+            />
 
-          {/* Primera fila - Segunda columna: Información de Transferencia */}
-          <TransferInfoSection 
-            formData={formData}
-            onFieldChange={updateField}
-            showSensitiveData={showSensitiveData}
-            toggleSensitiveData={toggleSensitiveData}
-            getSensitiveFieldValue={getSensitiveFieldValue}
-            shouldHighlight={shouldHighlightTransferFields}
-            id="transfer-info-section"
-          />
-
-          {/* Segunda fila - Primera columna: Dirección de Despacho */}
-          <ShippingInfoSection 
-            formData={formData}
-            onFieldChange={handleFieldChange}
-            onRegionChange={(type, regionField, comunaField, value) => { handleRegionChange(type, regionField, comunaField, value); }}
-            showErrors={showShippingErrors}
-            shouldHighlight={shouldHighlightShippingFields}
-          />
-
-          {/* Segunda fila - Segunda columna: Facturación (independiente) */}
-          <BillingInfoSection
-            id="billing-info-section"
-            formData={formData}
-            onFieldChange={updateField}
-            onRegionChange={handleRegionChange}
-            hasChanges={hasPendingChanges}
-            loading={loading}
-            onUpdate={handleUpdate}
-            getSensitiveFieldValue={getSensitiveFieldValue}
-            onFocusSensitive={handleSensitiveFocus}
-            onBlurSensitive={handleSensitiveBlur}
-            showBilling={true}
-            showUpdateButton={false}
-            showErrors={showBillingErrors}
-            shouldHighlight={shouldHighlightBillingFields}
-          />
-        </Box>
-        {/* Botón Actualizar al fondo del Paper */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2, pt: 0 }}>
-          <Button 
-            variant="contained"
-            onClick={handleUpdate}
-            disabled={loading}
-            sx={{ bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }}
-          >
-            {loading ? 'Actualizando...' : 'Actualizar'}
-          </Button>
-        </Box>
-      </Paper>
-
-      {/* Modal de Cambio de Contraseña */}
-      <ChangePasswordModal
-        open={isPasswordModalOpen}
-        onClose={() => setIsPasswordModalOpen(false)}
-        showBanner={showBanner}
-        onPasswordChanged={() => {
-          setIsPasswordModalOpen(false);
-          // Mostrar banner de éxito
-          showBanner({
-            message: '✅ Contraseña actualizada correctamente',
-            severity: 'success',
-            duration: 4000
-          });
-        }}
-      />
-
-      {/* Modal de Cambio de Imagen de Perfil */}
-      <ProfileImageModal
-        open={isImageModalOpen}
-        onClose={handleImageModalClose}
-        onImageChange={handleImageChange}
-        onSaveImage={handleSaveImageAutomatic}
-        currentImageUrl={userProfile?.logo_url}
-        userInitials={getInitials(getDisplayName())}
-      />
-        </Box>
+            {/* Modal de Cambio de Imagen de Perfil */}
+            <ProfileImageModal
+              open={isImageModalOpen}
+              onClose={handleImageModalClose}
+              onImageChange={handleImageChange}
+              onSaveImage={handleSaveImageAutomatic}
+              currentImageUrl={userProfile?.logo_url}
+              userInitials={getInitials(getDisplayName())}
+            />
           </Box>
+        </Box>
       )}
     </>
   );

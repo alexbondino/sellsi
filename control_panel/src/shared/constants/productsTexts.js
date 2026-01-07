@@ -10,6 +10,6 @@ export const PRODUCTS_TEXTS = {
   clearFilters: 'Limpiar filtros',
   clearSearch: 'Limpiar búsqueda',
   providerNoDescription: 'Proveedor sin descripción.',
-  pageEndMessage: '✨ Has visto todos los productos de esta página. Usa la paginación para ver más.',
+  pageEndMessage: 'Has visto todos los productos de esta página. Usa la paginación para ver más.',
   loadMoreSpinner: 'Cargando más productos...'
 };

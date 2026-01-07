@@ -9,7 +9,7 @@ import { formatCurrency } from '../../../../shared/utils/formatters/priceFormatt
 /**
  * Hook para manejar los pedidos de un comprador.
  * Este hook obtiene todos los pedidos incluyendo los que tienen payment_status='pending' (procesando pago),
- * 'paid' (pago confirmado) y 'expired' (pago expirado).
+ * 'paid' (pago confirmado), 'expired' (pago expirado) y 'rejected' (pago rechazado).
  * @param {string | null} buyerId - ID del comprador.
  * @returns {Object} El estado y las funciones para manejar los pedidos.
  */
@@ -272,8 +272,8 @@ export const useBuyerOrders = (buyerId) => {
             const row = payload.new
             const newPaymentStatus = (row?.payment_status || '').toLowerCase()
 
-            // Handle all relevant payment status transitions (pending, paid, expired)
-            if (['paid', 'pending', 'expired'].includes(newPaymentStatus)) {
+            // Handle all relevant payment status transitions (pending, paid, expired, rejected)
+            if (['paid', 'pending', 'expired', 'rejected'].includes(newPaymentStatus)) {
               setOrders((prev) => {
                 const exists = prev.some((o) => o.order_id === row.id)
                 if (exists) {
@@ -283,6 +283,8 @@ export const useBuyerOrders = (buyerId) => {
                       ? {
                           ...o,
                           payment_status: row.payment_status,
+                          payment_method: row.payment_method,
+                          payment_rejection_reason: row.payment_rejection_reason,
                           status: row.status || o.status,
                           updated_at: row.updated_at,
                         }
@@ -437,9 +439,9 @@ export const useBuyerOrders = (buyerId) => {
   }
 
   /**
-   * Hide an expired payment order from the buyer's list.
+   * Hide an expired or rejected payment order from the buyer's list.
    * Calls RPC mark_order_hidden_by_buyer which sets hidden_by_buyer = true.
-   * Only works for orders with payment_status = 'expired'.
+   * Only works for orders with payment_status IN ('expired', 'rejected').
    * @param {string} orderId - The order ID to hide
    * @returns {Promise<{success: boolean, error?: string}>}
    */

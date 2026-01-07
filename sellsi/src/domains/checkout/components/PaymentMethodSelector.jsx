@@ -37,6 +37,8 @@ import CheckoutSummary from './CheckoutSummary';
 import PaymentMethodCard from '../../../shared/components/modals/PaymentMethodCard';
 import { CheckoutProgressStepper } from '../../../shared/components/navigation';
 import MobilePaymentLayout from './MobilePaymentLayout';
+import BankTransferModal from '../../../shared/components/modals/BankTransferModal';
+import BankTransferConfirmModal from '../../../shared/components/modals/BankTransferConfirmModal';
 
 // ============================================================================
 // COMPONENTE PRINCIPAL
@@ -78,12 +80,18 @@ const PaymentMethodSelector = () => {
     isValidating,
     validationErrors,
     getMethodFees,
+    loadPaymentMethods,
+    isLoadingMethods,
   } = usePaymentMethods();
 
   // Estado local
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedMethodId, setSelectedMethodId] = useState(null);
   const [isCompleted, setIsCompleted] = useState(false);
+  
+  // Estados para modales de transferencia bancaria
+  const [showBankTransferModal, setShowBankTransferModal] = useState(false);
+  const [showBankTransferConfirmModal, setShowBankTransferConfirmModal] = useState(false);
 
   // Refs para bloqueo inmediato anti-doble-click
   const isProcessingRef = useRef(false);
@@ -122,7 +130,31 @@ const PaymentMethodSelector = () => {
     return Math.trunc(totalBruto) + shippingCost;
   }, [orderData.items, orderData.shipping]);
 
+  // ===== CÁLCULO DEL MONTO A MOSTRAR EN MODAL (incluye fee para transferencia manual si grand_total no está sellado por servidor) =====
+  const amountForBankModal = useMemo(() => {
+    const raw = orderData.grand_total ?? orderData.total ?? baseTotal;
+    if (raw == null) return null;
+    const base = Number(raw) || 0;
+
+    // Si grand_total existe lo consideramos sellado por server (incluye fees)
+    if (orderData.grand_total != null) return Math.round(base);
+
+    // Si el método seleccionado es transferencia bancaria, aplicar fee local
+    if (selectedMethod?.id === 'bank_transfer') {
+      const feePct = Number(selectedMethod?.fees?.percentage ?? 0);
+      return Math.round(base * (1 + feePct / 100));
+    }
+
+    return Math.round(base);
+  }, [orderData.grand_total, orderData.total, baseTotal, selectedMethod]);
+
   // ===== EFECTOS =====
+
+  // Cargar métodos de pago desde Supabase al montar el componente
+  useEffect(() => {
+    loadPaymentMethods();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!orderData.items || orderData.items.length === 0) {
@@ -174,6 +206,205 @@ const PaymentMethodSelector = () => {
     navigate('/buyer/marketplace');
   };
 
+  // ===== HANDLERS PARA TRANSFERENCIA BANCARIA =====
+  
+  const handleBankTransferModalClose = () => {
+    setShowBankTransferModal(false);
+    setIsProcessing(false);
+  };
+  
+  const handleBankTransferModalConfirm = () => {
+
+    setShowBankTransferModal(false);
+    setShowBankTransferConfirmModal(true);
+  };
+  
+  const handleBankTransferConfirmClose = () => {
+    setShowBankTransferConfirmModal(false);
+    setIsProcessing(false);
+  };
+  
+  const handleBankTransferConfirmBack = () => {
+    setShowBankTransferConfirmModal(false);
+    setShowBankTransferModal(true);
+  };
+  
+  const handleBankTransferConfirmFinal = async () => {
+    // Bloqueo inmediato
+    if (isProcessingRef.current || paymentSuccessRef.current) {
+      console.log('[PaymentMethodSelector] Click ignorado - ya procesando');
+      return;
+    }
+    isProcessingRef.current = true;
+    setIsProcessing(true);
+    
+    try {
+      const userId = localStorage.getItem('user_id');
+      const userEmail = localStorage.getItem('user_email');
+      
+      if (!userId) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      const validation = checkoutService.validateCheckoutData({
+        ...orderData,
+        paymentMethod: selectedMethod.id,
+        userId: userId,
+      });
+
+      if (!validation.isValid) {
+        const errorMessage = Object.values(validation.errors).join(', ');
+        throw new Error(errorMessage);
+      }
+
+      startPaymentProcessing();
+
+      // Calcular el total exactamente igual que en CheckoutSummary.jsx
+      const getItemPrice = item => {
+        if (item.price_tiers && item.price_tiers.length > 0) {
+          const basePrice =
+            item.originalPrice ||
+            item.precioOriginal ||
+            item.price ||
+            item.precio ||
+            0;
+          return calculatePriceForQuantity(
+            item.quantity,
+            item.price_tiers,
+            basePrice
+          );
+        }
+        return item.price || 0;
+      };
+      const totalBruto = orderData.items.reduce((total, item) => {
+        const unitPrice = getItemPrice(item);
+        const quantity = item.quantity || 0;
+        return total + quantity * unitPrice;
+      }, 0);
+      const calculatedIva = Math.trunc(totalBruto * 0.19);
+      const calculatedSubtotal = Math.trunc(totalBruto) - calculatedIva;
+      const shippingCost = orderData.shipping || 0;
+      // Total BASE (sin fee). La comisión se aplicará en finalize_order_pricing
+      const orderTotal = Math.round(
+        calculatedSubtotal + calculatedIva + shippingCost
+      );
+
+      // Normalizar a un único campo document_type
+      const itemsWithDocType = (orderData.items || []).map(it => {
+        const raw = it.document_type || it.documentType;
+        const norm =
+          raw && ['boleta', 'factura'].includes(String(raw).toLowerCase())
+            ? String(raw).toLowerCase()
+            : 'ninguno';
+        return { ...it, document_type: norm };
+      });
+
+      // Obtener cartId del store para vincular orden con carrito
+      const cartId = useCartStore.getState().cartId;
+
+      // Calcular payment_fee para transferencia bancaria (0.5%)
+      const paymentFee = Math.round(orderTotal * 0.005);
+      const grandTotal = orderTotal + paymentFee;
+
+      const order = await checkoutService.createOrder({
+        userId: userId,
+        items: itemsWithDocType,
+        subtotal: orderData.subtotal,
+        tax: orderData.tax,
+        shipping: orderData.shipping,
+        total: orderTotal,
+        currency: orderData.currency || 'CLP',
+        paymentMethod: selectedMethod.id,
+        paymentFee: paymentFee,
+        grandTotal: grandTotal,
+        shippingAddress: orderData.shippingAddress,
+        billingAddress: orderData.billingAddress,
+        cartId: cartId,
+      });
+
+      console.log('[PaymentMethodSelector] Orden creada con transferencia bancaria:', order);
+
+      // Finalizar precios y validar (stock, precios, compra mínima)
+      await checkoutService.finalizeOrderPricing(order.id);
+      console.log('[PaymentMethodSelector] Precios finalizados y validados para orden:', order.id);
+
+      // Para transferencia bancaria, marcar como pending y redirigir a Mis Pedidos
+      paymentSuccessRef.current = true;
+      
+      // Cerrar modal de confirmación
+      setShowBankTransferConfirmModal(false);
+      
+      // Vaciar el carrito ya que la orden pasó a pending
+      await useCartStore.getState().clearCart();
+      console.log('[PaymentMethodSelector] Carrito vaciado después de crear orden pending');
+      
+      toast.success('¡Pedido registrado! Recibirás confirmación cuando se verifique el pago.');
+      
+      // Redirigir inmediatamente a Mis Pedidos
+      navigate('/buyer/orders');
+      
+    } catch (error) {
+      console.error('Error processing bank transfer:', error);
+
+      // Manejo de errores igual que en otros métodos de pago
+      const errorMessages = {
+        MINIMUM_PURCHASE_VIOLATION:
+          'No se cumple la compra mínima de uno o más proveedores.',
+        MINIMUM_PURCHASE_NOT_MET:
+          'No se cumple la compra mínima requerida por el proveedor.',
+        INSUFFICIENT_STOCK: 'Stock insuficiente para uno o más productos.',
+        PRODUCT_NOT_FOUND: 'Uno o más productos ya no están disponibles.',
+        INVALID_ITEM: 'Hay items inválidos en el carrito.',
+        INVALID_QUANTITY: 'La cantidad de uno o más productos es inválida.',
+        INVALID_PRODUCT: 'Uno o más productos no tienen proveedor asignado.',
+        INVALID_SUPPLIER: 'El proveedor de uno o más productos no existe.',
+        INVALID_ORDER: 'La orden está vacía o es inválida.',
+      };
+
+      const knownError = Object.keys(errorMessages).find(key =>
+        error.message?.includes(key)
+      );
+
+      if (knownError) {
+        const userMessage = errorMessages[knownError];
+        console.log(
+          `[PaymentMethodSelector] Error de validación: ${knownError}`
+        );
+        toast.error(userMessage + ' Revisa tu carrito.');
+        navigate('/buyer/cart');
+        return;
+      }
+
+      const isDuplicateOrder =
+        error.message?.includes('uniq_orders_cart_pending') ||
+        error.message?.includes('duplicate key');
+
+      if (isDuplicateOrder) {
+        console.log(
+          '[PaymentMethodSelector] Orden duplicada detectada, redirigiendo a pedidos'
+        );
+        toast.info(
+          'Ya tienes un pago en proceso para este carrito. Revisa tus pedidos.'
+        );
+        navigate('/buyer/orders');
+        return;
+      }
+
+      setError(error.message);
+      toast.error(error.message);
+      failPayment(error.message);
+      
+      // Cerrar modal en caso de error
+      setShowBankTransferConfirmModal(false);
+      setShowBankTransferModal(false);
+    } finally {
+      setIsProcessing(false);
+      if (!paymentSuccessRef.current) {
+        isProcessingRef.current = false;
+      }
+    }
+  };
+
   const handleContinue = async () => {
     // Bloqueo inmediato con ref (no espera re-render de useState)
     if (isProcessingRef.current || paymentSuccessRef.current) {
@@ -182,13 +413,25 @@ const PaymentMethodSelector = () => {
       );
       return;
     }
-    isProcessingRef.current = true;
 
     if (!selectedMethod) {
-      isProcessingRef.current = false;
       toast.error('Debe seleccionar un método de pago');
       return;
     }
+    
+    // ===== MANEJO ESPECIAL PARA TRANSFERENCIA BANCARIA =====
+    if (selectedMethod.id === 'bank_transfer') {
+      // Para transferencia bancaria, mostrar el modal
+      // Usamos isProcessing solo para sincronizar con CheckoutSummary
+      console.log('[DEBUG] Abriendo modal de transferencia bancaria');
+      setIsProcessing(true);
+      setShowBankTransferModal(true);
+      return;
+    }
+    
+    // Para otros métodos de pago, SÍ bloquear con ref
+    isProcessingRef.current = true;
+    
     setIsProcessing(true);
     try {
       const userId = localStorage.getItem('user_id');
@@ -431,6 +674,29 @@ const PaymentMethodSelector = () => {
 
   // ===== RENDERIZADO (COMPLETO) =====
 
+  // Mostrar loader mientras se cargan los métodos de pago
+  if (isLoadingMethods) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Validar que haya métodos de pago disponibles
+  if (availableMethods.length === 0) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', px: 3 }}>
+        <Typography variant="h6" color="text.secondary" gutterBottom>
+          No hay métodos de pago disponibles
+        </Typography>
+        <Typography variant="body2" color="text.secondary" align="center">
+          Por favor, escribenos si crees que esto es un error.
+        </Typography>
+      </Box>
+    );
+  }
+
   // Derivar total para barra inferior (replicado del summary calculado allí) - simple fallback
   const totalForBar = orderData.total || 0;
 
@@ -635,6 +901,26 @@ const PaymentMethodSelector = () => {
               </Box>
             </Stack>
           </Box>
+        </>
+      )}
+      
+      {/* Modales de Transferencia Bancaria */}
+      {selectedMethod?.id === 'bank_transfer' && selectedMethod.bankDetails && (
+        <>
+          <BankTransferModal
+            open={showBankTransferModal}
+            onClose={handleBankTransferModalClose}
+            onConfirm={handleBankTransferModalConfirm}
+            bankDetails={selectedMethod.bankDetails}
+            amount={amountForBankModal}
+          />
+          
+          <BankTransferConfirmModal
+            open={showBankTransferConfirmModal}
+            onClose={handleBankTransferConfirmClose}
+            onBack={handleBankTransferConfirmBack}
+            onConfirm={handleBankTransferConfirmFinal}
+          />
         </>
       )}
     </motion.div>

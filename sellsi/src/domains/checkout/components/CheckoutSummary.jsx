@@ -57,6 +57,14 @@ const CheckoutSummary = ({
   // Estado local para bloquear permanentemente el botón tras el click
   const [localProcessing, setLocalProcessing] = useState(false);
   const ITEMS_PER_PAGE = 1;
+  
+  // Sincronizar localProcessing con isProcessing
+  // Cuando isProcessing vuelve a false (modal cerrado), reseteamos localProcessing
+  React.useEffect(() => {
+    if (!isProcessing) {
+      setLocalProcessing(false);
+    }
+  }, [isProcessing]);
 
   // Paginación de productos
   const paginatedItems = useMemo(() => {
@@ -114,6 +122,9 @@ const CheckoutSummary = ({
       } else if (selectedMethod.id === 'flow') {
         fee = Math.round(baseTotalCalc * 0.038); // 3.8% Flow
         feeLabel = 'Comisión Flow (3.8%)';
+      } else if (selectedMethod.id === 'bank_transfer') {
+        fee = Math.round(baseTotalCalc * 0.005); // 0.5% Transferencia Bancaria
+        feeLabel = 'Comisión Servicio (0.5%)';
       }
     }
 

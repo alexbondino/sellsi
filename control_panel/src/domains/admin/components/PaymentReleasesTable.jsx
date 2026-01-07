@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Box,
   Paper,
@@ -15,7 +15,8 @@ import {
   TextField,
   MenuItem,
   Stack,
-  Divider
+  Divider,
+  InputAdornment
 } from '@mui/material'
 import {
   Refresh as RefreshIcon,
@@ -25,7 +26,8 @@ import {
   Info as InfoIcon,
   AttachMoney as AttachMoneyIcon,
   GetApp as GetAppIcon,
-  SearchOff as SearchOffIcon
+  SearchOff as SearchOffIcon,
+  CalendarToday as CalendarTodayIcon
 } from '@mui/icons-material'
 import { DataGrid } from '@mui/x-data-grid'
 import { esES } from '@mui/x-data-grid/locales'
@@ -37,12 +39,14 @@ import {
   getPaymentReleasesReport,
   formatCLP,
   formatDate,
+  daysBetween,
   STATUS,
   STATUS_COLORS,
   STATUS_LABELS
 } from '../services/adminPaymentReleaseService'
 import ReleasePaymentModal from '../modals/ReleasePaymentModal'
 import PaymentReleaseDetailsModal from '../modals/PaymentReleaseDetailsModal'
+import { exportPaymentReleasesToExcel } from '../utils/exportPaymentReleasesToExcel'
 
 // 🎭 Importar mocks para desarrollo (comentar en producción)
 import mockData from '../mocks/paymentReleasesMocks'
@@ -58,6 +62,7 @@ const PaymentReleasesTable = () => {
 
   // Estados de filtros
   const [filters, setFilters] = useState({
+    // Default to 'pending' (short form used by UI). Service maps 'pending' -> 'pending_release' for DB queries.
     status: 'pending', // Por defecto mostrar pendientes. Usar 'all' para todos
     supplier_id: '',
     date_from: '',
@@ -75,12 +80,27 @@ const PaymentReleasesTable = () => {
     pageSize: 10
   })
 
+  // Refs para inputs de fecha
+  const dateFromRef = useRef(null)
+  const dateToRef = useRef(null)
+
   // Cargar datos iniciales
+  const fetchInProgressRef = useRef(false)
+
   useEffect(() => {
     loadData()
   }, [filters])
 
   const loadData = async () => {
+    // Evitar llamadas concurrentes (defensa frente a múltiples mounts/refresh rápidos)
+    if (fetchInProgressRef.current) {
+      console.info('loadData: request already in progress, skipping')
+      return
+    }
+
+    fetchInProgressRef.current = true
+    const startedAt = Date.now()
+
     try {
       setLoading(true)
       setError(null)
@@ -103,8 +123,27 @@ const PaymentReleasesTable = () => {
       ])
 
       if (releasesResponse.success) {
-        console.log('Releases loaded:', releasesResponse.data)
-        setReleases(Array.isArray(releasesResponse.data) ? releasesResponse.data : [])
+        console.info('Releases loaded (start => end):', releasesResponse.data && releasesResponse.data.length)
+        console.log('🔍 PRIMER REGISTRO COMPLETO:', releasesResponse.data?.[0])
+        console.log('🔍 purchased_at del primer registro:', releasesResponse.data?.[0]?.purchased_at)
+        console.log('🔍 delivery_confirmed_at del primer registro:', releasesResponse.data?.[0]?.delivery_confirmed_at)
+        const data = Array.isArray(releasesResponse.data) ? releasesResponse.data : []
+        // Deduplicar por id (protección defensiva frente a respuestas duplicadas)
+        const unique = []
+        const seen = new Set()
+        const duplicates = []
+        data.forEach(r => {
+          if (seen.has(r.id)) {
+            duplicates.push(r.id)
+          } else {
+            seen.add(r.id)
+            unique.push(r)
+          }
+        })
+        if (duplicates.length) {
+          console.warn('Se detectaron liberaciones duplicadas en la respuesta:', Array.from(new Set(duplicates)))
+        }
+        setReleases(unique)
       } else {
         console.error('Error loading releases:', releasesResponse.error)
         setError(releasesResponse.error || 'Error al cargar datos')
@@ -118,6 +157,9 @@ const PaymentReleasesTable = () => {
       setError(err.message || 'Error al cargar las liberaciones de pago')
     } finally {
       setLoading(false)
+      fetchInProgressRef.current = false
+      const duration = Date.now() - startedAt
+      console.info(`loadData completed in ${duration}ms`)
     }
   }
 
@@ -192,30 +234,27 @@ const PaymentReleasesTable = () => {
 
   const handleExportReport = async () => {
     try {
-      if (!filters.date_from || !filters.date_to) {
-        setError('Debe seleccionar un rango de fechas para exportar el reporte')
+      // Si se especificaron fechas, obtener reporte desde servicio
+      if (filters.date_from && filters.date_to) {
+        const report = await getPaymentReleasesReport(filters.date_from, filters.date_to)
+        const reportReleases = report?.releases || []
+        if (reportReleases.length === 0) {
+          setError('No hay datos para exportar en el período seleccionado')
+          return
+        }
+        exportPaymentReleasesToExcel(reportReleases)
         return
       }
 
-      const response = await getPaymentReleasesReport(filters.date_from, filters.date_to)
-      
-      if (!response.success) {
-        throw new Error(response.error || 'Error al generar el reporte')
+      if (releases.length === 0) {
+        setError('No hay datos para exportar')
+        return
       }
 
-      const report = response.data
-      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `liberaciones-pago-${new Date().toISOString().split('T')[0]}.json`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      exportPaymentReleasesToExcel(releases)
     } catch (err) {
       console.error('Error exportando reporte:', err)
-      setError(err.message || 'Error al generar el reporte')
+      setError(err.message || 'Error al generar el reporte Excel')
     }
   }
 
@@ -267,14 +306,22 @@ const PaymentReleasesTable = () => {
       headerName: 'Fecha Compra',
       flex: 1,
       minWidth: 150,
-      valueGetter: (params) => formatDate(params.value)
+      valueGetter: (params) => {
+        // MUI puede pasar el valor directamente o como params.value
+        const value = typeof params === 'string' ? params : params?.value
+        return formatDate(value)
+      }
     },
     {
       field: 'delivery_confirmed_at',
       headerName: 'Fecha Entrega',
       flex: 1,
       minWidth: 150,
-      valueGetter: (params) => formatDate(params.value)
+      valueGetter: (params) => {
+        // MUI puede pasar el valor directamente o como params.value
+        const value = typeof params === 'string' ? params : params?.value
+        return formatDate(value)
+      }
     },
     {
       field: 'days_since_delivery',
@@ -282,11 +329,14 @@ const PaymentReleasesTable = () => {
       flex: 1,
       minWidth: 130,
       renderCell: (params) => {
-        const days = params.value
-        const color = days > 7 ? 'error' : days > 3 ? 'warning' : 'default'
+        const raw = params.value
+        // Si la vista no trae el valor, calcular por fallback usando delivery_confirmed_at
+        let days = Number.isFinite(raw) ? raw : (params.row?.delivery_confirmed_at ? daysBetween(params.row.delivery_confirmed_at, params.row.released_at || new Date().toISOString()) : null)
+        const color = (typeof days === 'number') ? (days > 7 ? 'error' : days > 3 ? 'warning' : 'default') : 'default'
+        const label = (typeof days === 'number') ? `${days} días` : 'N/A'
         return (
           <Chip
-            label={`${days} días`}
+            label={label}
             size="small"
             color={color}
           />
@@ -332,7 +382,7 @@ const PaymentReleasesTable = () => {
               <InfoIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          {params.row.status === STATUS.PENDING && (
+          {(params.row.status === STATUS.PENDING || params.row.status === 'pending_release') && (
             <Tooltip title="Marcar como liberado">
               <IconButton
                 size="small"
@@ -364,7 +414,7 @@ const PaymentReleasesTable = () => {
             variant="outlined"
             startIcon={<GetAppIcon />}
             onClick={handleExportReport}
-            disabled={loading || releases.length === 0}
+            disabled={loading || (releases.length === 0 && !(filters.date_from && filters.date_to))}
           >
             Exportar
           </Button>
@@ -379,68 +429,108 @@ const PaymentReleasesTable = () => {
       {/* Tarjetas de estadísticas */}
       {stats && (
         <Grid container spacing={2} sx={{ mb: 3 }}>
+          {/* Card: Pendientes */}
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="text.secondary" gutterBottom variant="body2">
-                  {filters.status === 'all' ? 'Todos' : 'Pendientes'}
-                </Typography>
-                <Typography variant="h4" fontWeight={600} color="warning.main">
-                  {stats.pending_count}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {formatCLP(stats.pending_amount)}
-                </Typography>
-              </CardContent>
-            </Card>
+            <Tooltip 
+              title="Liberaciones de pago pendientes de procesar. Estos pagos están esperando ser liberados a los proveedores tras confirmar la entrega."
+              placement="top"
+              arrow
+            >
+              <Card sx={{ cursor: 'help' }}>
+                <CardContent>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                    <AccessTimeIcon color="warning" fontSize="small" />
+                    <Typography color="text.secondary" variant="body2" fontWeight={500}>
+                      Pendientes
+                    </Typography>
+                  </Stack>
+                  <Typography variant="h4" fontWeight={700} color="warning.main">
+                    {stats.pending_release || 0}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {formatCLP(stats.pending_amount || 0)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Tooltip>
           </Grid>
 
+          {/* Card: Liberados */}
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="text.secondary" gutterBottom variant="body2">
-                  {filters.status === 'all' ? 'Todos' : 'Liberados'}
-                </Typography>
-                <Typography variant="h4" fontWeight={600} color="success.main">
-                  {stats.released_count}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {formatCLP(stats.released_amount)}
-                </Typography>
-              </CardContent>
-            </Card>
+            <Tooltip 
+              title="Pagos que ya han sido liberados y transferidos a los proveedores. Estas transacciones han sido completadas exitosamente."
+              placement="top"
+              arrow
+            >
+              <Card sx={{ cursor: 'help' }}>
+                <CardContent>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                    <CheckCircleIcon color="success" fontSize="small" />
+                    <Typography color="text.secondary" variant="body2" fontWeight={500}>
+                      Liberados
+                    </Typography>
+                  </Stack>
+                  <Typography variant="h4" fontWeight={700} color="success.main">
+                    {stats.released || 0}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {formatCLP(stats.released_amount || 0)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Tooltip>
           </Grid>
 
+          {/* Card: Total */}
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="text.secondary" gutterBottom variant="body2">
-                  {filters.status === 'all' ? 'Todos' : 'Total Procesado'}
-                </Typography>
-                <Typography variant="h4" fontWeight={600}>
-                  {stats.total_count}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {formatCLP(stats.total_amount)}
-                </Typography>
-              </CardContent>
-            </Card>
+            <Tooltip 
+              title="Total de liberaciones de pago en el sistema (pendientes + liberados + cancelados). Incluye el monto acumulado de todas las transacciones."
+              placement="top"
+              arrow
+            >
+              <Card sx={{ cursor: 'help' }}>
+                <CardContent>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                    <AttachMoneyIcon color="primary" fontSize="small" />
+                    <Typography color="text.secondary" variant="body2" fontWeight={500}>
+                      Total Procesado
+                    </Typography>
+                  </Stack>
+                  <Typography variant="h4" fontWeight={700} color="primary.main">
+                    {stats.total || 0}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {formatCLP(stats.total_amount || 0)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Tooltip>
           </Grid>
 
+          {/* Card: Promedio Días */}
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="text.secondary" gutterBottom variant="body2">
-                  {filters.status === 'all' ? 'Todos' : 'Promedio Días'}
-                </Typography>
-                <Typography variant="h4" fontWeight={600} color="info.main">
-                  {stats.avg_days_to_release?.toFixed(1) || '0'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Días para liberar
-                </Typography>
-              </CardContent>
-            </Card>
+            <Tooltip 
+              title="Promedio de días transcurridos entre la confirmación de entrega por el proveedor y la liberación del pago por el administrador"
+              placement="top"
+              arrow
+            >
+              <Card sx={{ cursor: 'help' }}>
+                <CardContent>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                    <InfoIcon color="info" fontSize="small" />
+                    <Typography color="text.secondary" variant="body2" fontWeight={500}>
+                      Promedio Días
+                    </Typography>
+                  </Stack>
+                  <Typography variant="h4" fontWeight={700} color="info.main">
+                    {stats.avg_days_to_release?.toFixed(1) || '0.0'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    Días para liberar
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Tooltip>
           </Grid>
         </Grid>
       )}
@@ -461,7 +551,7 @@ const PaymentReleasesTable = () => {
               onChange={(e) => handleFilterChange('status', e.target.value)}
             >
               <MenuItem value="all">Todos</MenuItem>
-              <MenuItem value={STATUS.PENDING}>Pendiente</MenuItem>
+              <MenuItem value="pending">Pendiente</MenuItem>
               <MenuItem value={STATUS.RELEASED}>Liberado</MenuItem>
               <MenuItem value={STATUS.CANCELLED}>Cancelado</MenuItem>
             </TextField>
@@ -473,9 +563,24 @@ const PaymentReleasesTable = () => {
               size="small"
               label="Fecha Desde"
               type="date"
+              inputRef={dateFromRef}
               InputLabelProps={{ shrink: true }}
               value={filters.date_from}
               onChange={(e) => handleFilterChange('date_from', e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      edge="end"
+                      onClick={() => dateFromRef.current?.showPicker?.()}
+                      sx={{ p: 0.5 }}
+                    >
+                      <CalendarTodayIcon fontSize="small" color="action" />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
             />
           </Grid>
 
@@ -485,9 +590,24 @@ const PaymentReleasesTable = () => {
               size="small"
               label="Fecha Hasta"
               type="date"
+              inputRef={dateToRef}
               InputLabelProps={{ shrink: true }}
               value={filters.date_to}
               onChange={(e) => handleFilterChange('date_to', e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      edge="end"
+                      onClick={() => dateToRef.current?.showPicker?.()}
+                      sx={{ p: 0.5 }}
+                    >
+                      <CalendarTodayIcon fontSize="small" color="action" />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
             />
           </Grid>
 

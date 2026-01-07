@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { toTitleCase } from '../../../utils/textFormatters';
 import {
   Box,
   Container,
@@ -89,8 +90,18 @@ const ProviderCatalog = () => {
   useBodyScrollLock(shareModalOpen);
   const [catalogUrl, setCatalogUrl] = useState('');
 
-  // Usar las categorías estandarizadas
-  const availableCategories = CATEGORIAS;
+  // Extraer categorías dinámicamente de los productos del proveedor
+  const availableCategories = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    const unique = [
+      ...new Set(
+        products
+          .map(p => (p.categoria || p.category || null))
+          .filter(Boolean)
+      ),
+    ];
+    return unique.sort();
+  }, [products]);
 
   // Determinar de dónde viene el usuario (para el botón de volver)
   const fromPath = location.state?.from || '/buyer/marketplace';
@@ -98,8 +109,9 @@ const ProviderCatalog = () => {
   const isFromSupplier = fromPath.includes('/supplier/');
 
   // Helper: Verificar si es un UUID válido
-  const isValidUUID = (str) => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isValidUUID = str => {
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(str);
   };
 
@@ -116,11 +128,14 @@ const ProviderCatalog = () => {
         // Solo intentar exact match si userId es un UUID válido completo
         if (isValidUUID(userId)) {
           try {
-            const { data: providerExact, error: providerExactError } = await supabase
-              .from('users')
-              .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified, minimum_purchase_amount')
-              .eq('user_id', userId)
-              .single();
+            const { data: providerExact, error: providerExactError } =
+              await supabase
+                .from('users')
+                .select(
+                  'user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified, minimum_purchase_amount'
+                )
+                .eq('user_id', userId)
+                .single();
 
             if (!providerExactError && providerExact) {
               providerData = providerExact;
@@ -135,11 +150,13 @@ const ProviderCatalog = () => {
         if (!providerData) {
           try {
             console.log('[DEBUG] Llamando RPC con:', { userId, userNm });
-            const { data: rpcResult, error: rpcError } = await supabase
-              .rpc('find_supplier_by_short_id', { 
+            const { data: rpcResult, error: rpcError } = await supabase.rpc(
+              'find_supplier_by_short_id',
+              {
                 short_id: userId,
-                expected_name_slug: userNm || null  // Validar nombre para evitar colisiones
-              });
+                expected_name_slug: userNm || null, // Validar nombre para evitar colisiones
+              }
+            );
 
             console.log('[DEBUG] RPC response:', { rpcResult, rpcError });
 
@@ -163,7 +180,9 @@ const ProviderCatalog = () => {
             try {
               const { data: nameMatches, error: nameError } = await supabase
                 .from('users')
-                .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified, minimum_purchase_amount')
+                .select(
+                  'user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified, minimum_purchase_amount'
+                )
                 .ilike('user_nm', `%${normalizedName}%`)
                 .limit(1);
 
@@ -193,7 +212,7 @@ const ProviderCatalog = () => {
           .select(
             `
             *,
-            product_images (image_url)
+            product_images (image_url, thumbnail_url)
           `
           )
           .eq('supplier_id', providerData.user_id)
@@ -280,6 +299,8 @@ const ProviderCatalog = () => {
             supplier_id: product.supplier_id, // Para getProductImageUrl
             productid: product.productid, // Para getProductImageUrl
             is_active: product.is_active, // ✅ AGREGAR estado activo de BD
+            // ✅ FIX: Agregar compra mínima del PROVEEDOR (monto total mínimo)
+            minimum_purchase_amount: providerData.minimum_purchase_amount || 0,
           };
         });
 
@@ -370,7 +391,9 @@ const ProviderCatalog = () => {
 
       // Mostrar toast de confirmación
       toast.success(
-        `${product.nombre || product.name || 'Producto'} agregado al carrito`,
+        `${toTitleCase(
+          product.nombre || product.name || 'Producto'
+        )} agregado al carrito`,
         {
           icon: '🛒',
           duration: 3000,
@@ -664,7 +687,11 @@ const ProviderCatalog = () => {
             <Box
               sx={{
                 display: 'flex',
-                alignItems: { xs: 'flex-start', sm: 'flex-start', md: 'center' },
+                alignItems: {
+                  xs: 'flex-start',
+                  sm: 'flex-start',
+                  md: 'center',
+                },
                 flexDirection: { xs: 'column', sm: 'column', md: 'row' },
                 gap: { xs: 2, sm: 2, md: 3 },
                 mb: { xs: 2, md: 3 },
@@ -692,7 +719,11 @@ const ProviderCatalog = () => {
                     gap: { xs: 0.5, md: 1 },
                     mb: { xs: 0.5, md: 1 },
                     flexWrap: 'wrap',
-                    justifyContent: { xs: 'center', sm: 'center', md: 'space-between' },
+                    justifyContent: {
+                      xs: 'center',
+                      sm: 'center',
+                      md: 'space-between',
+                    },
                   }}
                 >
                   <Box
@@ -722,11 +753,15 @@ const ProviderCatalog = () => {
                         arrow
                       >
                         {isMobile ? (
-                          <VerifiedUser sx={{ fontSize: '1rem', color: 'primary.main' }} />
+                          <VerifiedUser
+                            sx={{ fontSize: '1rem', color: 'primary.main' }}
+                          />
                         ) : (
                           <Chip
                             icon={
-                              <VerifiedUser sx={{ fontSize: { xs: '0.8rem', md: '1rem' } }} />
+                              <VerifiedUser
+                                sx={{ fontSize: { xs: '0.8rem', md: '1rem' } }}
+                              />
                             }
                             label="Verificado"
                             color="primary"
@@ -786,21 +821,33 @@ const ProviderCatalog = () => {
                 <Typography
                   variant="body2"
                   color="text.secondary"
-                  sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.8rem', md: '0.95rem' } }}
+                  sx={{
+                    mt: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    fontSize: { xs: '0.8rem', md: '0.95rem' },
+                  }}
                 >
                   {isMobile ? (
                     <>
-                      <ShoppingCartIcon sx={{ fontSize: 18, color: 'action.active', mr: 0.5 }} />
-                      <b>Productos publicados:</b>
-                      {' '}
-                      <Box component="span" sx={{ fontWeight: 700, mx: 0 }}>{formatNumber(provider?.productCount ?? 0)}</Box>
+                      <ShoppingCartIcon
+                        sx={{ fontSize: 18, color: 'action.active', mr: 0.5 }}
+                      />
+                      <b>Productos publicados:</b>{' '}
+                      <Box component="span" sx={{ fontWeight: 700, mx: 0 }}>
+                        {formatNumber(provider?.productCount ?? 0)}
+                      </Box>
                     </>
                   ) : (
                     <>
-                      <Inventory2Icon sx={{ fontSize: 18, color: 'action.active', mr: 0.25 }} />
-                      <b>Este proveedor actualmente tiene</b>
-                      {' '}
-                      <Box component="span" sx={{ fontWeight: 700, mx: 0 }}>{formatNumber(provider?.productCount ?? 0)}</Box>
+                      <Inventory2Icon
+                        sx={{ fontSize: 18, color: 'action.active', mr: 0.25 }}
+                      />
+                      <b>Este proveedor actualmente tiene</b>{' '}
+                      <Box component="span" sx={{ fontWeight: 700, mx: 0 }}>
+                        {formatNumber(provider?.productCount ?? 0)}
+                      </Box>
                       <b>productos publicados</b>
                     </>
                   )}
@@ -810,21 +857,46 @@ const ProviderCatalog = () => {
                 <Typography
                   variant="body2"
                   color="text.secondary"
-                  sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.8rem', md: '0.95rem' } }}
+                  sx={{
+                    mt: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    fontSize: { xs: '0.8rem', md: '0.95rem' },
+                  }}
                 >
-                  <ShoppingCartIcon sx={{ fontSize: 18, color: 'action.active', mr: 0.25 }} />
-                  <b>Compra mínima exigida:</b>
-                  {' '}
+                  <ShoppingCartIcon
+                    sx={{ fontSize: 18, color: 'action.active', mr: 0.25 }}
+                  />
+                  <b>Compra mínima exigida:</b>{' '}
                   <Tooltip
                     title="El proveedor no despacha productos si el monto total entre todos los productos que compres es inferior al indicado"
                     arrow
                     placement="bottom"
                   >
-                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
-                      <Box component="span" sx={{ fontWeight: 700 }}>{'$' + formatNumber(
-                        provider?.minimum_purchase_amount ?? provider?.minimumPurchaseAmount ?? 0
-                      )}</Box>
-                      <InfoOutlined sx={{ fontSize: 16, color: 'action.active', cursor: 'help' }} />
+                    <Box
+                      component="span"
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                      }}
+                    >
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        {'$' +
+                          formatNumber(
+                            provider?.minimum_purchase_amount ??
+                              provider?.minimumPurchaseAmount ??
+                              0
+                          )}
+                      </Box>
+                      <InfoOutlined
+                        sx={{
+                          fontSize: 16,
+                          color: 'action.active',
+                          cursor: 'help',
+                        }}
+                      />
                     </Box>
                   </Tooltip>
                 </Typography>
@@ -911,7 +983,9 @@ const ProviderCatalog = () => {
                     flexShrink: 0,
                   }}
                 >
-                  <InputLabel id="provider-mobile-category-label">Categoría</InputLabel>
+                  <InputLabel id="provider-mobile-category-label">
+                    Categoría
+                  </InputLabel>
                   <Select
                     labelId="provider-mobile-category-label"
                     label="Categoría"
@@ -951,7 +1025,9 @@ const ProviderCatalog = () => {
                       disableScrollLock: true,
                     }}
                   >
-                    <MenuItem value="all">{isXs ? 'Todas' : 'Todas las categorías'}</MenuItem>
+                    <MenuItem value="all">
+                      {isXs ? 'Todas' : 'Todas las categorías'}
+                    </MenuItem>
                     {availableCategories.map(category => (
                       <MenuItem key={category} value={category}>
                         {category}
@@ -1016,8 +1092,6 @@ const ProviderCatalog = () => {
                   </Select>
                 </FormControl>
               </Box>
-
-
             </Box>
           </Paper>
 

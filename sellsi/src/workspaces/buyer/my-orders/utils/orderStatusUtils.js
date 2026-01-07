@@ -7,16 +7,26 @@
 
 /**
  * Get payment chip information based on payment status.
- * @param {string} paymentStatus - 'paid' | 'expired' | 'pending'
+ * @param {string} paymentStatus - 'paid' | 'expired' | 'pending' | 'rejected'
+ * @param {string} paymentMethod - 'khipu' | 'flow' | 'bank_transfer'
+ * @param {string} rejectionReason - Optional reason for rejection
  * @returns {{ label: string, color: string, tooltip: string }}
  */
-export const getPaymentChipInfo = (paymentStatus) => {
+export const getPaymentChipInfo = (paymentStatus, paymentMethod = null, rejectionReason = null) => {
   switch (paymentStatus) {
     case 'paid':
       return {
         label: 'Pago Confirmado',
         color: 'success',
-        tooltip: 'Pago confirmado.'
+        tooltip: 'Tu pago fue verificado y confirmado.'
+      };
+    case 'rejected':
+      return {
+        label: 'Pago Rechazado',
+        color: 'error',
+        tooltip: rejectionReason 
+          ? `El pago fue rechazado. Razón: "${rejectionReason}"`
+          : 'El pago fue rechazado. Por favor contacta a soporte para más información.'
       };
     case 'expired':
       return {
@@ -25,6 +35,19 @@ export const getPaymentChipInfo = (paymentStatus) => {
         tooltip: 'El tiempo para completar el pago se agotó (20 minutos).'
       };
     case 'pending':
+      // Si es transferencia bancaria, mostrar "En Revisión"
+      if (paymentMethod === 'bank_transfer') {
+        return {
+          label: 'Pago en Revisión',
+          color: 'warning',
+          tooltip: 'Tu transferencia bancaria está siendo verificada por nuestro equipo. Esto puede tomar hasta 24 horas.'
+        };
+      }
+      return {
+        label: 'Procesando Pago',
+        color: 'warning',
+        tooltip: 'Pago en proceso.'
+      };
     default:
       return {
         label: 'Procesando Pago',
@@ -46,13 +69,53 @@ export const getPaymentChipInfo = (paymentStatus) => {
 export const getStatusChips = (status, paymentStatus, order = null) => {
   // FIX: Verificar cancelled_at además de status para determinar cancelación real
   const isPaymentExpired = paymentStatus === 'expired';
+  const isPaymentRejected = paymentStatus === 'rejected';
+  
   // Do not treat a payment expiration alone as a rejected/cancelled order for UI chips.
   // If payment expired, avoid marking cancelled/rejected chips as active.
   const isCancelled = (status === 'cancelled' || (order && order.cancelled_at)) && !isPaymentExpired;
   const isRejected = (status === 'rejected' && !isPaymentExpired) || isCancelled;
 
+  // Obtener información de pago
+  const paymentMethod = order?.payment_method || null;
+  const rejectionReason = order?.payment_rejection_reason || null;
+  const paymentInfo = getPaymentChipInfo(paymentStatus, paymentMethod, rejectionReason);
+
+  // Si el pago fue rechazado, mostrar configuración especial
+  if (isPaymentRejected) {
+    return [
+      {
+        key: 'pago_rechazado',
+        label: paymentInfo.label,
+        active: true,
+        color: paymentInfo.color,
+        tooltip: paymentInfo.tooltip
+      },
+      { 
+        key: 'aceptado',
+        label: 'Pedido Aceptado', 
+        active: false, 
+        color: 'default', 
+        tooltip: 'En espera de confirmación de pago.' 
+      },
+      { 
+        key: 'en_transito', 
+        label: 'En Transito', 
+        active: false, 
+        color: 'default', 
+        tooltip: 'Pendiente de despacho.' 
+      },
+      { 
+        key: 'entregado', 
+        label: 'Entregado', 
+        active: false, 
+        color: 'default', 
+        tooltip: 'Aún no se ha entregado.' 
+      }
+    ];
+  }
+
   if (isRejected) {
-    const paymentInfo = getPaymentChipInfo(paymentStatus);
     return [
       // Un único chip de pago que evoluciona según payment_status
       {
@@ -105,22 +168,14 @@ export const getStatusChips = (status, paymentStatus, order = null) => {
     // Un único chip de pago. La etiqueta y el estilo se deciden por el estado de pago.
     {
       key: 'pago',
-      label: paymentStatus === 'paid' 
-        ? 'Pago Confirmado' 
-        : paymentStatus === 'expired' 
-          ? 'Pago Expirado' 
-          : 'Procesando Pago',
+      label: paymentInfo.label,
       active: activeKey === 'pago',
       // IMPROVEMENT: Si ya hemos avanzado más allá del pago, mostrar como completado
       color: (activeKey === 'pago') 
-        ? (paymentStatus === 'paid' ? 'success' : paymentStatus === 'expired' ? 'error' : 'warning')
+        ? paymentInfo.color
         : (paymentStatus === 'paid' && ['aceptado', 'en_transito', 'entregado'].includes(activeKey)) 
           ? 'success' : 'default',
-      tooltip: paymentStatus === 'paid'
-        ? 'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.'
-        : paymentStatus === 'expired'
-          ? 'El tiempo para completar el pago se agotó (20 minutos).'
-          : 'Estamos verificando tu pago.'
+      tooltip: paymentInfo.tooltip
     },
     {
       key: 'aceptado',

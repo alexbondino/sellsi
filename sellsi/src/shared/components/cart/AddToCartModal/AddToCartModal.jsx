@@ -523,32 +523,41 @@ const AddToCartModal = ({
   }, [open, product, loadProductShippingRegions]);
 
   // ============================================================================
-  // SCROLL LOCK SIMPLIFICADO - Evita desmontajes al minimizar navegador
+  // SCROLL LOCK MEJORADO - Previene scroll del body cuando modal está abierto
   // ============================================================================
 
   useEffect(() => {
-    // Diagnostic: log open changes to trace unexpected unmounts
-    // try {
-    //   if (
-    //     (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production') ||
-    //     (import.meta.env?.DEV)
-    //   ) {
-    //     // eslint-disable-next-line no-console
-    //     console.debug('[AddToCartModal] useEffect(open) - open=', open);
-    //   }
-    // } catch (e) {}
-
     if (open) {
-      // Aplicar scroll lock mínimo: solo overflow
-      document.body.dataset.scrollY = String(window.scrollY || 0);
+      // Guardar posición actual y dimensiones
+      const scrollY = window.scrollY;
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      
+      // Aplicar scroll lock con compensación de scrollbar
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
       document.body.style.overflow = 'hidden';
+      
+      // Compensar el ancho de la scrollbar para evitar "salto" de contenido
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+      
+      // Guardar scrollY para restaurar después
+      document.body.dataset.scrollY = String(scrollY);
     } else {
-      // Restaurar overflow cuando se cierra
-      const savedScrollY = parseInt(document.body.dataset.scrollY || '0', 10);
+      // Restaurar estado original
+      const scrollY = parseInt(document.body.dataset.scrollY || '0', 10);
+      
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
       document.body.style.overflow = '';
-      try {
-        window.scrollTo(0, savedScrollY);
-      } catch (e) {}
+      document.body.style.paddingRight = '';
+      
+      // Restaurar posición de scroll
+      window.scrollTo(0, scrollY);
+      
       delete document.body.dataset.scrollY;
     }
   }, [open]);
@@ -853,9 +862,9 @@ const AddToCartModal = ({
               <Alert
                 severity="info"
                 sx={{
-                  fontSize: '0.75rem',
+                  fontSize: '0.8rem',
                   '& .MuiAlert-icon': {
-                    fontSize: '1.1rem',
+                    fontSize: '1.5rem',
                   },
                 }}
               >
@@ -888,7 +897,7 @@ const AddToCartModal = ({
               <Alert
                 severity="warning"
                 icon={<WarningIcon />}
-                sx={{ fontSize: { xs: '0.8rem', md: '0.95rem' } }}
+                sx={{ fontSize: { xs: '0.8rem', md: '0.8rem' } }}
               >
                 Venta de alcohol y tabaco solo para mayores de 18 años.
               </Alert>

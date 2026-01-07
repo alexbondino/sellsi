@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
   Paper,
   Grid,
@@ -15,7 +15,7 @@ import {
   MenuItem,
   Divider,
   Checkbox,
-} from '@mui/material'
+} from '@mui/material';
 import {
   Add as AddIcon,
   Remove as RemoveIcon,
@@ -27,20 +27,21 @@ import {
   Warning as WarningIcon,
   LocalShipping as LocalShippingIcon,
   Search as SearchIcon,
-} from '@mui/icons-material'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import PriceDisplay from '../../../../shared/components/display/price/PriceDisplay'
-import { StockIndicator } from '../../../../workspaces/marketplace'
-import QuantitySelector from '../../../../shared/components/forms/QuantitySelector'
-import LazyImage from '../../../../shared/components/display/LazyImage/LazyImage'
+} from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import PriceDisplay from '../../../../shared/components/display/price/PriceDisplay';
+import { StockIndicator } from '../../../../workspaces/marketplace';
+import QuantitySelector from '../../../../shared/components/forms/QuantitySelector';
+import LazyImage from '../../../../shared/components/display/LazyImage/LazyImage';
 import {
   calculatePriceForQuantity,
   formatProductForCart,
-} from '../../../../utils/priceCalculation'
-import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'
-import { CartItemImage } from '../../../../components/UniversalProductImage' // Nueva imagen universal
-import ShippingDisplay from './components/ShippingDisplay'
+} from '../../../../utils/priceCalculation';
+import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback';
+import { CartItemImage } from '../../../../components/UniversalProductImage'; // Nueva imagen universal
+import ShippingDisplay from './components/ShippingDisplay';
+import { toTitleCase } from '../../../../utils/textFormatters';
 
 /*
 ========== GUÍA DE IDENTIFICACIÓN DE ELEMENTOS DEL CARRITO ==========
@@ -86,28 +87,29 @@ const CartItem = ({
 
   // Normaliza nombre de proveedor para slug de URL
   // Simple normalization: lowercase + alphanumeric only (matches SQL)
-  const normalizeProviderSlug = (providerName) => {
-    return providerName
-      ?.toLowerCase()
-      ?.replace(/[^a-z0-9]/g, '');
+  const normalizeProviderSlug = providerName => {
+    return providerName?.toLowerCase()?.replace(/[^a-z0-9]/g, '');
   };
 
   // Handler para click en nombre del proveedor
   const handleSupplierClick = React.useCallback(() => {
     const providerName = item.proveedor || item.supplier;
     const supplierId = item.supplier_id || item.supplierId;
-    
+
     console.log('🔍 [CartItem] Click en proveedor:', {
       providerName,
       supplierId,
-      item
+      item,
     });
-    
+
     if (!providerName || !supplierId) {
-      console.error('❌ Falta información del proveedor:', { providerName, supplierId });
+      console.error('❌ Falta información del proveedor:', {
+        providerName,
+        supplierId,
+      });
       return;
     }
-    
+
     const proveedorSlug = normalizeProviderSlug(providerName);
     const shortSupplierId = supplierId.toString().slice(0, 4);
     const catalogUrl = `/catalog/${proveedorSlug}/${shortSupplierId}`;
@@ -116,7 +118,7 @@ const CartItem = ({
   }, [navigate, item]);
 
   // Construir slug SEO a partir del nombre del producto
-  const getProductSlug = (name) => {
+  const getProductSlug = name => {
     if (!name) return '';
     return name
       .toLowerCase()
@@ -130,61 +132,89 @@ const CartItem = ({
     const id = item.product_id || item.id;
     const slug = getProductSlug(item.name || item.nombre);
     // Cuando la navegación proviene del carrito, marcar el origen como buyer/marketplace
-    navigate(`/marketplace/product/${id}${slug ? `/${slug}` : ''}`, { state: { from: '/buyer/marketplace' } });
+    navigate(`/marketplace/product/${id}${slug ? `/${slug}` : ''}`, {
+      state: { from: '/buyer/marketplace' },
+    });
   }, [navigate, item]);
-  const [selectedShipping, setSelectedShipping] = useState('standard')
-  const [openDeleteModal, setOpenDeleteModal] = useState(false)
+  const [selectedShipping, setSelectedShipping] = useState('standard');
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
   // ===== CÁLCULOS DE PRECIOS OPTIMIZADOS (USAR priceCalculations MEMOIZADO) =====
   // Los precios se calculan en priceCalculations para evitar recálculos innecesarios
   // Función optimizada para manejar el cambio de envío y calcular el precio
-  const handleShippingChange = React.useCallback((shippingId) => {
-    setSelectedShipping(shippingId)
-    if (onShippingChange) {
-      onShippingChange(item.id, shippingId)
-    }
-  }, [item.id, onShippingChange])
+  const handleShippingChange = React.useCallback(
+    shippingId => {
+      setSelectedShipping(shippingId);
+      if (onShippingChange) {
+        onShippingChange(item.id, shippingId);
+      }
+    },
+    [item.id, onShippingChange]
+  );
 
   // Obtener el precio del envío seleccionado  // ===== OPTIMIZACIONES DE RENDIMIENTO =====
   // Memoizar datos del producto para evitar recálculos
-  const productData = React.useMemo(() => ({
-    name: item.name || item.nombre || 'Producto sin nombre',
-    supplier: item.supplier || item.proveedor || 'Proveedor no especificado',
-    image: item.image || item.imagen || '/placeholder-product.jpg',
-    price_tiers: item.price_tiers || [],
-    minimum_purchase: item.minimum_purchase || item.compraMinima || 1,
-    // ⚠️ CRÍTICO: Convertir a Number para evitar bypass con valores falsy
-    basePrice: Number(item.originalPrice || item.precioOriginal || item.price || item.precio) || 0,
-    maxStock: item.maxStock || item.stock || 50
-  }), [item])
+  const productData = React.useMemo(
+    () => ({
+      name: toTitleCase(item.name || item.nombre || 'Producto sin nombre'),
+      supplier: item.supplier || item.proveedor || 'Proveedor no especificado',
+      image: item.image || item.imagen || '/placeholder-product.jpg',
+      price_tiers: item.price_tiers || [],
+      minimum_purchase: item.minimum_purchase || item.compraMinima || 1,
+      // ⚠️ CRÍTICO: Convertir a Number para evitar bypass con valores falsy
+      basePrice:
+        Number(
+          item.originalPrice || item.precioOriginal || item.price || item.precio
+        ) || 0,
+      maxStock: item.maxStock || item.stock || 50,
+    }),
+    [item]
+  );
 
   // Memoizar cálculos de precio para evitar recálculos innecesarios
   const priceCalculations = React.useMemo(() => {
-    const unitPrice = calculatePriceForQuantity(item.quantity, productData.price_tiers, productData.basePrice)
-    const subtotal = unitPrice * item.quantity
-    return { unitPrice, subtotal }
-  }, [item.quantity, productData.price_tiers, productData.basePrice])
+    const unitPrice = calculatePriceForQuantity(
+      item.quantity,
+      productData.price_tiers,
+      productData.basePrice
+    );
+    const subtotal = unitPrice * item.quantity;
+    return { unitPrice, subtotal };
+  }, [item.quantity, productData.price_tiers, productData.basePrice]);
 
   // Debug flag to force-show offer badge when visiting URL with ?debugShowOffers=1
-  const showOfferDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debugShowOffers') === '1';
+  const showOfferDebug =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('debugShowOffers') === '1';
 
-  const isOfferedFlag = !!(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price);
+  const isOfferedFlag = !!(
+    item.isOffered ||
+    item.metadata?.isOffered ||
+    item.offer_id ||
+    item.offered_price
+  );
 
   // Memoizar opciones de envío - ahora calculado dinámicamente
-  const shippingData = React.useMemo(() => ({
-    price: 0,
-    label: 'Según región'
-  }), [selectedShipping])
+  const shippingData = React.useMemo(
+    () => ({
+      price: 0,
+      label: 'Según región',
+    }),
+    [selectedShipping]
+  );
 
   // Handler optimizado para cambio de cantidad
-  const handleQuantityChange = React.useCallback((newQuantity) => {
-    updateQuantity(item.id, newQuantity)
-  }, [item.id, updateQuantity])
+  const handleQuantityChange = React.useCallback(
+    newQuantity => {
+      updateQuantity(item.id, newQuantity);
+    },
+    [item.id, updateQuantity]
+  );
 
   // Handler optimizado para eliminar item
   const handleDeleteItem = React.useCallback(() => {
-    handleRemoveWithAnimation(item.id)
-  }, [item.id, handleRemoveWithAnimation])
+    handleRemoveWithAnimation(item.id);
+  }, [item.id, handleRemoveWithAnimation]);
 
   return (
     <motion.div
@@ -228,7 +258,8 @@ const CartItem = ({
         {isSelectionMode && (
           <motion.div
             initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}            exit={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
             style={{
               position: 'absolute',
               top: 16,
@@ -243,7 +274,8 @@ const CartItem = ({
                   : 'rgba(255, 255, 255, 0.9)',
                 borderRadius: '50%',
                 padding: '4px',
-                backdropFilter: 'blur(8px)',                border: isSelected
+                backdropFilter: 'blur(8px)',
+                border: isSelected
                   ? '2px solid rgba(25, 118, 210, 0.3)'
                   : '2px solid rgba(0, 0, 0, 0.1)',
                 boxShadow: isSelected
@@ -261,7 +293,8 @@ const CartItem = ({
                     color: '#2E52B2',
                   },
                   '&:hover': {
-                    transform: 'scale(1.1)',                  },
+                    transform: 'scale(1.1)',
+                  },
                 }}
               />
             </Box>
@@ -278,7 +311,8 @@ const CartItem = ({
           alignItems="flex-start"
           sx={{ overflow: 'hidden' }}
         >
-          {' '}          {/* Imagen optimizada */}{' '}
+          {' '}
+          {/* Imagen optimizada */}{' '}
           <Grid size={{ xs: 12, sm: 2.4, md: 2.4, lg: 2.4, xl: 2.4 }}>
             <Box
               sx={{
@@ -286,7 +320,7 @@ const CartItem = ({
                 width: '100%',
                 maxWidth: { xs: '160px', md: '140px', lg: '160px' },
                 height: { xs: '160px', md: '140px', lg: '160px' },
-                mx: 'auto'
+                mx: 'auto',
               }}
             >
               <CartItemImage
@@ -294,13 +328,14 @@ const CartItem = ({
                 height={160}
                 sx={{
                   width: '100%',
-                  height: '100%'
+                  height: '100%',
                 }}
                 // removed debug onLoad/onError logs
               />
             </Box>
-          </Grid>{' '}          {/* Información del producto */}
-          <Grid size={{ xs: 12, sm: 3.6, md: 3.6, lg: 3.6, xl: 3.6 }} >
+          </Grid>{' '}
+          {/* Información del producto */}
+          <Grid size={{ xs: 12, sm: 3.6, md: 3.6, lg: 3.6, xl: 3.6 }}>
             <Box
               sx={{
                 display: 'flex',
@@ -313,7 +348,14 @@ const CartItem = ({
               {/* ========== TÍTULO DEL PRODUCTO ========== */}
               {/* Este Typography contiene el título/nombre del producto */}
               {/* IMPORTANTE: Aquí está el título que debe tener el margin-top removido */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 2, md: 1.5 } }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  mb: { xs: 2, md: 1.5 },
+                }}
+              >
                 <Typography
                   variant="h6"
                   sx={{
@@ -324,12 +366,16 @@ const CartItem = ({
                     flex: 1,
                     mb: 0,
                     minWidth: 0,
-                    fontSize: { xs: '1.25rem', md: '1.1rem', lg: '1.25rem' }
+                    fontSize: { xs: '1.25rem', md: '1.1rem', lg: '1.25rem' },
                   }}
                 >
                   {productData.name}
                 </Typography>
-                {((item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) || showOfferDebug) && (
+                {(item.isOffered ||
+                  item.metadata?.isOffered ||
+                  item.offer_id ||
+                  item.offered_price ||
+                  showOfferDebug) && (
                   <Typography
                     data-testid="chip-ofertado-text"
                     variant="subtitle2"
@@ -345,7 +391,7 @@ const CartItem = ({
                       borderRadius: '6px',
                       border: '1px solid',
                       borderColor: 'success.main',
-                      bgcolor: 'rgba(76, 175, 80, 0.06)'
+                      bgcolor: 'rgba(76, 175, 80, 0.06)',
                     }}
                   >
                     OFERTADO
@@ -382,7 +428,10 @@ const CartItem = ({
                   {item.proveedor || 'Proveedor no encontrado'}
                 </Typography>
                 {/* Mostrar icono si está verificado - agregando múltiples condiciones para debug */}
-                {(item.proveedorVerificado || item.verified || item.supplier_verified || item.supplierVerified) && (
+                {(item.proveedorVerificado ||
+                  item.verified ||
+                  item.supplier_verified ||
+                  item.supplierVerified) && (
                   <VerifiedIcon
                     sx={{
                       fontSize: { xs: 16, md: 14, lg: 16 },
@@ -394,20 +443,36 @@ const CartItem = ({
               {/* (El Chip visual de 'Ofertado' fue removido; se mantiene el texto "OFERTADO") */}
               {/* Price - Usando precio dinámico basado en quantity y price_tiers */}
               <Box sx={{ mb: { xs: 2, md: 1.2, lg: 2 } }}>
-                <Typography variant="body2" sx={{ color: '#222', fontWeight: 500, mb: 0.5, fontSize: { xs: '0.9rem', md: '0.8rem', lg: '0.9rem' } }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#222',
+                    fontWeight: 500,
+                    mb: 0.5,
+                    fontSize: { xs: '0.9rem', md: '0.8rem', lg: '0.9rem' },
+                  }}
+                >
                   Precio Unitario:
                 </Typography>
                 <PriceDisplay
                   price={priceCalculations.unitPrice}
                   variant="h6"
-                  sx={{ color: '#222', fontWeight: 700, fontSize: { xs: '1rem', md: '0.9rem', lg: '1rem' } }}
+                  sx={{
+                    color: '#222',
+                    fontWeight: 700,
+                    fontSize: { xs: '1rem', md: '0.9rem', lg: '1rem' },
+                  }}
                 />
               </Box>
               {/* Feature badges */}
               {/* Stack de badges eliminado: Chip "Verificado" removido */}
             </Box>{' '}
-          </Grid>{' '}          {/* Controles y acciones */}
-          <Grid size={{ xs: 12, sm: 3.2, md: 3.2, lg: 3.2, xl: 3.2 }} sx={{ marginLeft: 'auto !important' }}>
+          </Grid>{' '}
+          {/* Controles y acciones */}
+          <Grid
+            size={{ xs: 12, sm: 3.2, md: 3.2, lg: 3.2, xl: 3.2 }}
+            sx={{ marginLeft: 'auto !important' }}
+          >
             <Box
               sx={{
                 display: 'flex',
@@ -475,10 +540,18 @@ const CartItem = ({
                 </Box>
               )}
               {/* Información de stock centrada */}
-              <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}
+              >
                 <StockIndicator
                   stock={productData.maxStock}
-                  lowStockThreshold={Math.round((productData.maxStock || 0) * 0.2)}
+                  lowStockThreshold={Math.round(
+                    (productData.maxStock || 0) * 0.2
+                  )}
                   showUnits={true}
                   variant="caption"
                   sx={{
@@ -505,7 +578,7 @@ const CartItem = ({
                     fontWeight: 500,
                     mb: 0,
                     textAlign: 'center',
-                    fontSize: { xs: '0.9rem', md: '0.8rem', lg: '0.9rem' }
+                    fontSize: { xs: '0.9rem', md: '0.8rem', lg: '0.9rem' },
                   }}
                 >
                   Precio Total:
@@ -520,14 +593,15 @@ const CartItem = ({
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     opacity: isSelectionMode ? 0.5 : 1,
-                    fontSize: { xs: '1.5rem', md: '1.3rem', lg: '1.5rem' }
+                    fontSize: { xs: '1.5rem', md: '1.3rem', lg: '1.5rem' },
                   }}
                 >
                   {formatPrice(priceCalculations.subtotal)}
                 </Typography>
               </Box>
             </Box>
-          </Grid>{' '}          {/* Opciones de Envío */}
+          </Grid>{' '}
+          {/* Opciones de Envío */}
           <Grid size={{ xs: 12, sm: 2.8, md: 2.8, lg: 2.8, xl: 2.8 }}>
             <Box
               sx={{
@@ -545,7 +619,18 @@ const CartItem = ({
               }}
             >
               {/* Botón de eliminar en la esquina superior derecha */}
-              <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  zIndex: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 0.5,
+                }}
+              >
                 <Tooltip
                   title={
                     isSelectionMode
@@ -560,7 +645,12 @@ const CartItem = ({
                       onClick={() => setOpenDeleteModal(true)}
                       color="default"
                       disabled={isSelectionMode}
-                      sx={{ bgcolor: 'transparent', border: 'none', p: 1.5, mb: 2 }}
+                      sx={{
+                        bgcolor: 'transparent',
+                        border: 'none',
+                        p: 1.5,
+                        mb: 2,
+                      }}
                     >
                       <DeleteIcon sx={{ color: 'grey.600' }} />
                     </IconButton>
@@ -606,19 +696,21 @@ const CartItem = ({
                 </Modal>
               </Box>
               {/* Despacho label and truck icon removed as requested */}
-              <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                width: { xs: '140px', md: '100%', lg: '140px' },
-                minWidth: { xs: '140px', md: '120px', lg: '140px' },
-                maxWidth: { xs: '140px', md: '100%', lg: '140px' },
-                py: 1,
-                px: 0,
-                borderRadius: 1,
-                bgcolor: 'transparent',
-                border: 'none',
-              }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  width: { xs: '140px', md: '100%', lg: '140px' },
+                  minWidth: { xs: '140px', md: '120px', lg: '140px' },
+                  maxWidth: { xs: '140px', md: '100%', lg: '140px' },
+                  py: 1,
+                  px: 0,
+                  borderRadius: 1,
+                  bgcolor: 'transparent',
+                  border: 'none',
+                }}
+              >
                 <ShippingDisplay
                   product={item}
                   shippingValidation={shippingValidation}
@@ -631,7 +723,7 @@ const CartItem = ({
         </Grid>
       </Paper>
     </motion.div>
-  )
-}
+  );
+};
 
-export default CartItem
+export default CartItem;
