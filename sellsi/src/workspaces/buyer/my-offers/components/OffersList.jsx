@@ -234,8 +234,6 @@ const OffersList = ({
     console.log('Add to cart:', offer);
   };
 
-  const hasOffers = offers && offers.length > 0;
-
   // Handler para acciones desde MobileOfferCard
   const handleMobileAction = (action, fullOffer) => {
     switch (action) {
@@ -293,46 +291,61 @@ const OffersList = ({
     { value: 'paid', label: 'Pagada', count: filterCounts.paid },
   ];
 
-  if (!hasOffers) {
-    if (loading) {
-      return isMobile ? (
-        <MobileOffersSkeleton rows={3} />
-      ) : (
-        <TableSkeleton rows={6} columns={4} withAvatar variant="table" />
-      );
-    }
-    if (!error) {
-      return (
-        <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <LocalOfferIcon sx={{ fontSize: 48, color: 'primary.main' }} />
-          </Box>
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{ fontSize: { md: '1.5rem' } }}
-          >
-            Aun no has enviado ofertas
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 1, mb: 3, fontSize: { md: '1.05rem' } }}
-          >
-            En Sellsi puedes negociar precios, volumenes y condiciones
-            directamente con proveedores. Envía tu primera oferta y comienza a
-            cerrar negocios.
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => navigate('/buyer/marketplace')}
-          >
-            Ir al Marketplace
-          </Button>
-        </Paper>
-      );
-    }
+  // Estado vacío global (componente reutilizable)
+  const EmptyStateGlobal = () => (
+    <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+        <LocalOfferIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+      </Box>
+      <Typography
+        variant="h6"
+        color="text.secondary"
+        sx={{ fontSize: { md: '1.5rem' } }}
+      >
+        Aun no has enviado ofertas
+      </Typography>
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mt: 1, mb: 3, fontSize: { md: '1.05rem' } }}
+      >
+        En Sellsi puedes negociar precios, volumenes y condiciones
+        directamente con proveedores. Envía tu primera oferta y comienza a
+        cerrar negocios.
+      </Typography>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => navigate('/buyer/marketplace')}
+      >
+        Ir al Marketplace
+      </Button>
+    </Paper>
+  );
+
+  // Estado vacío por filtro (componente reutilizable)
+  const EmptyStateFiltered = () => (
+    <Paper sx={{ p: { xs: 3, md: 4 }, textAlign: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+        <LocalOfferIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
+      </Box>
+      <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+        No hay ofertas con este estado
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        Intenta seleccionar otro filtro para ver tus ofertas en diferentes estados,
+        o cambia a "Todas" para ver el listado completo.
+      </Typography>
+    </Paper>
+  );
+
+  // Loading inicial (sin datos previos)
+  if (loading && (!offers || offers.length === 0)) {
+    return isMobile ? (
+      <MobileOffersSkeleton rows={3} />
+    ) : (
+      <TableSkeleton rows={6} columns={4} withAvatar variant="table" />
+    );
   }
 
   // Mobile View: Cards
@@ -340,7 +353,7 @@ const OffersList = ({
     return (
       <>
         <Box sx={{ position: 'relative' }}>
-          {loading && hasOffers && (
+          {loading && offers && offers.length > 0 && (
             <Box sx={{ position: 'absolute', top: 8, right: 12, zIndex: 10 }}>
               <Typography variant="caption" color="text.secondary">
                 Actualizando…
@@ -348,6 +361,7 @@ const OffersList = ({
             </Box>
           )}
 
+          {/* Filtros SIEMPRE visibles */}
           <MobileFilterAccordion
             currentFilter={statusFilter}
             onFilterChange={setStatusFilter}
@@ -357,46 +371,43 @@ const OffersList = ({
 
           <Box sx={{ px: { xs: 2, sm: 0 } }}>
             {filtered.length === 0 ? (
-              <Paper sx={{ p: 4, textAlign: 'center' }}>
-                <Typography variant="body2" color="text.secondary">
-                  No hay ofertas con este estado
-                </Typography>
-              </Paper>
+              // Diferenciar entre sin datos globales vs sin datos por filtro
+              (!offers || offers.length === 0) ? (
+                <EmptyStateGlobal />
+              ) : (
+                <EmptyStateFiltered />
+              )
             ) : (
               filtered.map(o => {
-                const product = o.product || {
+                // Construir objeto product fusionando datos de la vista SQL
+                const product = {
+                  id: o.product_id,
                   name: o.product_name || 'Producto',
-                  thumbnail: null,
+                  thumbnails: o.product_thumbnails || null,
+                  thumbnail_url: o.product_thumbnail_url || null,
+                  imagen: o.product_image || null,
+                  ...(o.product || {}), // Fusionar datos adicionales si existen
                 };
-                const pid = product.id || product.product_id;
-                const thumbRow =
-                  thumbnailsQuery.data && pid
-                    ? thumbnailsQuery.data[pid]
-                    : null;
 
+                // Calcular avatarSrc usando thumbnails de la vista SQL
                 let avatarSrc = null;
-                if (thumbRow) {
-                  try {
-                    if (
-                      thumbRow.thumbnails &&
-                      typeof thumbRow.thumbnails === 'object'
-                    ) {
-                      avatarSrc = thumbRow.thumbnails.mobile || null;
-                    }
-                    if (!avatarSrc && thumbRow.thumbnail_url) {
-                      avatarSrc = thumbRow.thumbnail_url.replace(
-                        '_desktop_320x260.jpg',
-                        '_mobile_190x153.jpg'
-                      );
-                    }
-                  } catch (_) {}
+                
+                // Prioridad 1: thumbnails.mobile
+                if (product.thumbnails && typeof product.thumbnails === 'object') {
+                  avatarSrc = product.thumbnails.mobile || null;
                 }
-                if (!avatarSrc) {
-                  avatarSrc =
-                    product.thumbnail ||
-                    product.imagen ||
-                    product.image ||
-                    null;
+                
+                // Prioridad 2: thumbnail_url transformado a mobile
+                if (!avatarSrc && product.thumbnail_url) {
+                  avatarSrc = product.thumbnail_url.replace(
+                    '_desktop_320x260.jpg',
+                    '_mobile_190x153.jpg'
+                  );
+                }
+                
+                // Prioridad 3: imagen principal (para WebP sin thumbnails)
+                if (!avatarSrc && product.imagen) {
+                  avatarSrc = product.imagen;
                 }
 
                 return (
@@ -414,7 +425,20 @@ const OffersList = ({
                       offered_price: o.price,
                       purchase_deadline: o.purchase_deadline,
                       expires_at: o.expires_at,
-                      product: o.product,
+                      product: {
+                        id: o.product_id,
+                        productid: o.product_id,
+                        name: o.product_name,
+                        nombre: o.product_name,
+                        thumbnail: avatarSrc,
+                        imagen: avatarSrc,
+                        supplier_id: o.supplier_id,
+                        supplierId: o.supplier_id,
+                        price: o.current_product_price,
+                        precio: o.current_product_price,
+                        stock: o.current_stock,
+                        ...(o.product || {}),
+                      },
                       product_id: o.product_id || product.id,
                       product_image: o.product_image || product.thumbnail,
                     }}
@@ -447,9 +471,10 @@ const OffersList = ({
     );
   }
 
-  // Desktop View: Table (original)
+  // Desktop View: Table
   return (
     <>
+      {/* Filtros SIEMPRE visibles */}
       <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
         <Typography fontWeight={600}>Filtrar por estado:</Typography>
         <FormControl size="small" sx={{ minWidth: 180 }}>
@@ -472,127 +497,140 @@ const OffersList = ({
           </Select>
         </FormControl>
       </Box>
-      <TableContainer
-        component={Paper}
-        sx={{ p: 0, position: 'relative', scrollbarGutter: 'stable' }}
-      >
-        {loading && hasOffers && (
-          <Box
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              bgcolor: 'rgba(255,255,255,0.55)',
-              zIndex: 2,
-            }}
-          >
-            <Box sx={{ position: 'absolute', top: 8, right: 12 }}>
-              <Typography variant="caption" color="text.secondary">
-                Actualizando…
-              </Typography>
+      
+      {/* Tabla o Estado Vacío */}
+      {filtered.length === 0 ? (
+        // Diferenciar entre sin datos globales vs sin datos por filtro
+        (!offers || offers.length === 0) ? (
+          <EmptyStateGlobal />
+        ) : (
+          <EmptyStateFiltered />
+        )
+      ) : (
+        <TableContainer
+          component={Paper}
+          sx={{ p: 0, position: 'relative', scrollbarGutter: 'stable' }}
+        >
+          {loading && offers && offers.length > 0 && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                bgcolor: 'rgba(255,255,255,0.55)',
+                zIndex: 2,
+              }}
+            >
+              <Box sx={{ position: 'absolute', top: 8, right: 12 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Actualizando…
+                </Typography>
+              </Box>
             </Box>
-          </Box>
-        )}
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell colSpan={2}>
-                <Typography fontWeight={700}>Producto</Typography>
-              </TableCell>
-              <TableCell>
-                <Typography fontWeight={700}>Tiempo restante</Typography>
-              </TableCell>
-              <TableCell>
-                <Typography fontWeight={700}>Estado</Typography>
-              </TableCell>
-              <TableCell>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Typography fontWeight={700}>Acciones</Typography>
-                  <Tooltip
-                    placement="right"
-                    componentsProps={{
-                      tooltip: { sx: { maxWidth: 320, p: 1.25 } },
-                    }}
-                    title={
-                      <Box>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{ color: 'common.white', fontWeight: 'bold' }}
-                          gutterBottom
-                        >
-                          Cómo usar Acciones
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{ color: 'common.white' }}
-                          display="block"
-                        >
-                          Cuando una oferta es aprobada, la forma de completar
-                          la compra es agregando esa oferta al carrito desde
-                          esta sección. <br /> <br />
-                          Contarás con un máximo de 24 horas para hacer esto
-                          antes de que la oferta caduque.
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{ color: 'common.white', mt: 1 }}
-                          display="block"
-                        >
-                          Para cancelar una oferta (Pendiente o Aprobada),
-                          utiliza la acción "Cancelar Oferta". Una vez
-                          cancelada, la oferta se marcará como "Cancelada" y
-                          podrás limpiarla si lo deseas.
-                        </Typography>
-                      </Box>
-                    }
-                  >
-                    <IconButton
-                      size="small"
-                      aria-label="Información de acciones"
-                    >
-                      <InfoOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filtered.length === 0 && (
+          )}
+          <Table>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={5} sx={{ textAlign: 'center', py: 6 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    No hay ofertas con este estado
-                  </Typography>
+                <TableCell colSpan={2}>
+                  <Typography fontWeight={700}>Producto</Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography fontWeight={700}>Tiempo restante</Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography fontWeight={700}>Estado</Typography>
+                </TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography fontWeight={700}>Acciones</Typography>
+                    <Tooltip
+                      placement="right"
+                      componentsProps={{
+                        tooltip: { sx: { maxWidth: 320, p: 1.25 } },
+                      }}
+                      title={
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ color: 'common.white', fontWeight: 'bold' }}
+                            gutterBottom
+                          >
+                            Cómo usar Acciones
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: 'common.white' }}
+                            display="block"
+                          >
+                            Cuando una oferta es aprobada, la forma de completar
+                            la compra es agregando esa oferta al carrito desde
+                            esta sección. <br /> <br />
+                            Contarás con un máximo de 24 horas para hacer esto
+                            antes de que la oferta caduque.
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: 'common.white', mt: 1 }}
+                            display="block"
+                          >
+                            Para cancelar una oferta (Pendiente o Aprobada),
+                            utiliza la acción "Cancelar Oferta". Una vez
+                            cancelada, la oferta se marcará como "Cancelada" y
+                            podrás limpiarla si lo deseas.
+                          </Typography>
+                        </Box>
+                      }
+                    >
+                      <IconButton
+                        size="small"
+                        aria-label="Información de acciones"
+                      >
+                        <InfoOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </TableCell>
               </TableRow>
-            )}
-            {filtered.map(o => {
-              const product = o.product || {
+            </TableHead>
+            <TableBody>
+              {filtered.map(o => {
+              // Construir objeto product fusionando datos de la vista SQL
+              const product = {
+                id: o.product_id,
                 name: o.product_name || 'Producto',
-                thumbnail: null,
+                thumbnails: o.product_thumbnails || null,
+                thumbnail_url: o.product_thumbnail_url || null,
+                imagen: o.product_image || null,
+                ...(o.product || {}), // Fusionar datos adicionales si existen
               };
-              const pid = product.id || product.product_id;
-              const thumbRow =
-                thumbnailsQuery.data && pid ? thumbnailsQuery.data[pid] : null;
-              // Prioridad: thumbnails.mobile -> thumbnail_url transformed -> product.thumbnail -> product.imagen -> null
+
+              // Calcular avatarSrc usando batch query (thumbnailsQuery) o fallback a vista SQL
+              const pid = product.id || o.product_id;
+              const thumbRow = thumbnailsQuery?.data?.[pid] ?? null;
               let avatarSrc = null;
+              
+              // Prioridad 1: thumbnailsQuery batch (más fresco)
               if (thumbRow) {
-                try {
-                  if (
-                    thumbRow.thumbnails &&
-                    typeof thumbRow.thumbnails === 'object'
-                  )
-                    avatarSrc = thumbRow.thumbnails.mobile || null;
-                  if (!avatarSrc && thumbRow.thumbnail_url)
-                    avatarSrc = thumbRow.thumbnail_url.replace(
-                      '_desktop_320x260.jpg',
-                      '_mobile_190x153.jpg'
-                    );
-                } catch (_) {}
+                if (thumbRow.thumbnails?.mobile) {
+                  avatarSrc = thumbRow.thumbnails.mobile;
+                } else if (thumbRow.thumbnail_url) {
+                  avatarSrc = thumbRow.thumbnail_url.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
+                }
               }
-              if (!avatarSrc)
-                avatarSrc =
-                  product.thumbnail || product.imagen || product.image || null;
+              
+              // Prioridad 2: thumbnails de la vista SQL
+              if (!avatarSrc && product.thumbnails?.mobile) {
+                avatarSrc = product.thumbnails.mobile;
+              }
+              
+              // Prioridad 3: thumbnail_url transformado a mobile
+              if (!avatarSrc && product.thumbnail_url) {
+                avatarSrc = product.thumbnail_url.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
+              }
+              
+              // Prioridad 4: imagen principal (para WebP sin thumbnails)
+              if (!avatarSrc && product.imagen) {
+                avatarSrc = product.imagen;
+              }
 
               // no-op: avatarSrc calculated above
               return (
@@ -712,13 +750,20 @@ const OffersList = ({
                             </IconButton>
                           ) : (
                             <AddToCart
-                              product={
-                                o.product || {
-                                  id: o.product_id,
-                                  name: o.product_name,
-                                  thumbnail: o.product_image,
-                                }
-                              }
+                              product={{
+                                id: o.product_id,
+                                productid: o.product_id,
+                                name: o.product_name,
+                                nombre: o.product_name,
+                                thumbnail: avatarSrc,
+                                imagen: avatarSrc,
+                                supplier_id: o.supplier_id,
+                                supplierId: o.supplier_id,
+                                price: o.current_product_price,
+                                precio: o.current_product_price,
+                                stock: o.current_stock,
+                                ...(o.product || {}),
+                              }}
                               variant="icon"
                               size="small"
                               color="primary"
@@ -785,7 +830,8 @@ const OffersList = ({
           </TableBody>
         </Table>
       </TableContainer>
-
+      )}
+      
       {/* Modal de confirmación para cancelar oferta */}
       <ConfirmDialog
         open={cancelDialogOpen}

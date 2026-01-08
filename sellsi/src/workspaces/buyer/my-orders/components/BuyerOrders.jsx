@@ -353,7 +353,14 @@ const BuyerOrders = memo(function BuyerOrders() {
               <Button
                 variant="contained"
                 color="primary"
+                size="large"
                 onClick={() => navigate('/buyer/marketplace')}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: 3,
+                }}
               >
                 Ir al Marketplace
               </Button>
