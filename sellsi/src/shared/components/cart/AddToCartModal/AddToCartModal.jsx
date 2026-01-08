@@ -149,7 +149,11 @@ const ProductSummary = React.memo(function ProductSummary({
     );
 
     if (!userRegionConfig) {
-      return null;
+      // No hay despacho disponible para la región del usuario
+      return {
+        available: false,
+        text: 'Despacho No Disponible',
+      };
     }
 
     // Obtener días de entrega
@@ -164,7 +168,10 @@ const ProductSummary = React.memo(function ProductSummary({
 
     // Formatear texto según cantidad de días
     const daysText = days === 1 ? 'día hábil' : 'días hábiles';
-    return `Disponible ${days} ${daysText}`;
+    return {
+      available: true,
+      text: `Disponible ${days} ${daysText}`,
+    };
   }, [shippingRegions, effectiveUserRegion]);
 
   return (
@@ -232,28 +239,57 @@ const ProductSummary = React.memo(function ProductSummary({
               justifyContent: 'center',
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.3 }}>
-              <ShippingIcon
-                sx={{ fontSize: 16, color: 'success.main', mr: 0.5 }}
-              />
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 'bold',
-                  color: 'success.main',
-                  fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                }}
-              >
-                Disponible
-              </Typography>
-            </Box>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
-            >
-              {deliveryInfo.replace('Disponible ', '')}
-            </Typography>
+            {deliveryInfo.available ? (
+              <>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.3 }}>
+                  <ShippingIcon
+                    sx={{ fontSize: 16, color: 'success.main', mr: 0.5 }}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 'bold',
+                      color: 'success.main',
+                      fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                    }}
+                  >
+                    Disponible
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
+                >
+                  {deliveryInfo.text.replace('Disponible ', '')}
+                </Typography>
+              </>
+            ) : (
+              <>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.3 }}>
+                  <WarningIcon
+                    sx={{ fontSize: 16, color: 'warning.main', mr: 0.5 }}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 'bold',
+                      color: 'warning.main',
+                      fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                    }}
+                  >
+                    Despacho No Disponible
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
+                >
+                  Hacia tu región
+                </Typography>
+              </>
+            )}
           </Box>
         )}
 

@@ -6,6 +6,7 @@ import {
   Alert,
   Container,
   TextField,
+  Paper,
   ThemeProvider, // Necesario para aplicar el tema
   useTheme,
   useMediaQuery,
@@ -206,6 +207,37 @@ const MyOrdersPage = () => {
 
   // Obtener los pedidos filtrados utilizando un selector del store
   const filteredOrders = getFilteredOrders()
+
+  // Estado vacío global (componente reutilizable)
+  const EmptyStateGlobal = () => (
+    <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+        <AssignmentIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+      </Box>
+      <Typography variant="h6" color="text.secondary" sx={{ fontSize: { md: '1.5rem' }, mb: 1 }}>
+        Aún no tienes pedidos
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ fontSize: { md: '1.05rem' } }}>
+        Tus pedidos se generan cuando concretas una venta, ya sea desde el marketplace o a partir de una oferta recibida.
+      </Typography>
+    </Paper>
+  );
+
+  // Estado vacío por filtro (componente reutilizable)
+  const EmptyStateFiltered = () => (
+    <Paper sx={{ p: { xs: 3, md: 4 }, textAlign: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+        <AssignmentIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
+      </Box>
+      <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+        No hay pedidos con este estado
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        Intenta seleccionar otro filtro para ver tus pedidos en diferentes estados,
+        o cambia a "Todos" para ver el listado completo.
+      </Typography>
+    </Paper>
+  );
 
   // Calcular counts para filterOptions
   const filterCounts = React.useMemo(() => {
@@ -865,28 +897,46 @@ const MyOrdersPage = () => {
                 label="Estado de pedidos"
               />
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {filteredOrders.map((order) => (
-                  <MobileOrderCard
-                    key={order.order_id}
-                    order={order}
-                    onAction={(actionType, orderData) =>
-                      handleActionClick(orderData, actionType)
-                    }
-                  />
-                ))}
+                {filteredOrders.length === 0 ? (
+                  // Diferenciar entre sin datos globales vs sin datos por filtro
+                  (!orders || orders.length === 0) ? (
+                    <EmptyStateGlobal />
+                  ) : (
+                    <EmptyStateFiltered />
+                  )
+                ) : (
+                  filteredOrders.map((order) => (
+                    <MobileOrderCard
+                      key={order.order_id}
+                      order={order}
+                      onAction={(actionType, orderData) =>
+                        handleActionClick(orderData, actionType)
+                      }
+                    />
+                  ))
+                )}
               </Box>
             </>
           ) : (
             <>
-              {/* Desktop: TableFilter + Table */}
+              {/* Desktop: TableFilter + Table o Estado Vacío */}
               <TableFilter
                 statusFilter={statusFilter}
                 setStatusFilter={setStatusFilter}
               />
-              <Table
-                orders={filteredOrders}
-                onActionClick={handleActionClick}
-              />
+              {filteredOrders.length === 0 ? (
+                // Diferenciar entre sin datos globales vs sin datos por filtro
+                (!orders || orders.length === 0) ? (
+                  <EmptyStateGlobal />
+                ) : (
+                  <EmptyStateFiltered />
+                )
+              ) : (
+                <Table
+                  orders={filteredOrders}
+                  onActionClick={handleActionClick}
+                />
+              )}
             </>
           )}
 
