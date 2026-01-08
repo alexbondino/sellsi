@@ -5,6 +5,8 @@ import { AddToCart } from '../../../../shared/components';
 import OfferModal from './OfferModal';
 import { useOfferStore } from '../../../../stores/offerStore';
 
+import { useFeatureFlag } from '../../../../shared/hooks/useFeatureFlag.js';
+
 const PurchaseActions = ({
   stock,
   product,
@@ -27,6 +29,14 @@ const PurchaseActions = ({
   const userNm =
     localStorage.getItem('user_nm') || localStorage.getItem('user_email');
   const userEmail = localStorage.getItem('user_email');
+
+  const { enabled: offersEnabled, loading: offersFlagLoading } = useFeatureFlag(
+    {
+      workspace: 'my-offers',
+      key: 'my_offers_supplier',
+      defaultValue: true, // default UX: mostrar mientras carga / si falla
+    }
+  );
 
   // Verificar límites cuando el componente se monta y el usuario está logueado
   const checkOfferLimits = useCallback(async () => {
@@ -99,7 +109,7 @@ const PurchaseActions = ({
           mt: 3, // Margen superior para separar de precios
         }}
       >
-        {isLoggedIn && (
+        {isLoggedIn && !offersFlagLoading && offersEnabled && (
           <Box
             sx={{
               flex: 1, // ✅ Ambos botones ocupan el mismo espacio (50% cada uno)

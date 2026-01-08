@@ -33,52 +33,7 @@ import { useRole } from '../../../../infrastructure/providers';
 import { useAuth } from '../../../../infrastructure/providers';
 import { useLayout } from '../../../../infrastructure/providers';
 
-// ✅ Supabase client (ajusta si tu path real es distinto)
-import { supabase } from '../../../services/supabase';
-
-// -----------------------------------------------------------------------------
-// ✅ Feature flag hook (inline) para leer flags desde control_panel.feature_flags
-// -----------------------------------------------------------------------------
-const useFeatureFlag = ({ workspace, key, defaultValue = false }) => {
-  const [enabled, setEnabled] = React.useState(defaultValue);
-  const [loading, setLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
-        setLoading(true);
-
-        const { data, error } = await supabase
-          .schema('control_panel')
-          .from('feature_flags')
-          .select('enabled')
-          .eq('workspace', workspace)
-          .eq('key', key)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (!cancelled) setEnabled(!!data?.enabled);
-      } catch (e) {
-        console.error('Sidebar feature flag error', e);
-        if (!cancelled) setEnabled(defaultValue);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    if (workspace && key) load();
-    else setLoading(false);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [workspace, key, defaultValue]);
-
-  return { enabled, loading };
-};
+import { useFeatureFlag } from '../../../../shared/hooks/useFeatureFlag';
 
 // Define los ítems de menú para cada rol directamente en este archivo con iconos
 const buyerMenuItems = [
