@@ -81,10 +81,9 @@ describe('SupplierOffersList filtered empty vs global empty', () => {
       expect(screen.queryByText('P1')).not.toBeInTheDocument();
       expect(screen.queryByText('P2')).not.toBeInTheDocument();
 
-      // Y existe una fila que muestra el mensaje contextual para el filtro
+      // El mensaje contextual se muestra como EmptyStateFiltered (no dentro de la tabla)
       const rows = utils.container.querySelectorAll('tbody tr');
-      expect(rows.length).toBe(1);
-      expect(rows[0].textContent).toContain('No hay ofertas con este estado');
+      expect(rows.length).toBe(0);
     });
   });
 

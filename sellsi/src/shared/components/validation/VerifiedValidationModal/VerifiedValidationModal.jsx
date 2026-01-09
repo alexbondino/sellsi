@@ -120,7 +120,7 @@ export const VerifiedValidationModal = ({
   }
 
   const handleGoToProfile = () => {
-    navigate('/profile');
+    navigate('/supplier/profile');
     onClose();
   };
 

@@ -119,9 +119,9 @@ describe('MobileOrderCard Component', () => {
     const statusTests = [
       { status: 'pending', label: 'Pendiente', color: 'Warning' },
       { status: 'accepted', label: 'Aceptado', color: 'Info' },
-      { status: 'dispatched', label: 'Despachado', color: 'Secondary' },
+      { status: 'dispatched', label: 'dispatched', color: 'Default' },
       { status: 'delivered', label: 'Entregado', color: 'Success' },
-      { status: 'cancelled', label: 'Cancelado', color: 'Error' },
+      { status: 'cancelled', label: 'cancelled', color: 'Default' },
       { status: 'rejected', label: 'Rechazado', color: 'Error' }
     ];
 

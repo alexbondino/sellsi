@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Container, ThemeProvider } from '@mui/material';
-import { LocalOffer as OffersIcon } from '@mui/icons-material'
+import { LocalOffer as OffersIcon } from '@mui/icons-material';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
@@ -23,18 +23,29 @@ const BuyerOffers = () => {
           pb: SPACING_BOTTOM_MAIN,
         }}
       >
-        <Container maxWidth={false} disableGutters={isMobile ? true : false} sx={{ width: '100%' }}>
+        <Container
+          maxWidth={false}
+          disableGutters={isMobile ? true : false}
+          sx={{ width: '100%' }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-            <OffersIcon sx={{ color: 'primary.main', mr: 1, fontSize: '1.75rem' }} />
-            <Typography variant="h4" fontWeight={600} color="primary.main" gutterBottom>
+            <OffersIcon
+              sx={{ color: 'primary.main', mr: 1, fontSize: '1.75rem' }}
+            />
+            <Typography
+              variant="h4"
+              fontWeight={600}
+              color="primary.main"
+              gutterBottom
+            >
               Mis Ofertas
             </Typography>
           </Box>
 
-          <OffersList 
-            offers={offers} 
-            loading={loading} 
-            error={error} 
+          <OffersList
+            offers={offers}
+            loading={loading}
+            error={error}
             cancelOffer={cancelOffer}
             deleteOffer={deleteOffer}
           />

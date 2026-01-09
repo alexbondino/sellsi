@@ -149,7 +149,11 @@ const ProductSummary = React.memo(function ProductSummary({
     );
 
     if (!userRegionConfig) {
-      return null;
+      // No hay despacho disponible para la región del usuario
+      return {
+        available: false,
+        text: 'Despacho No Disponible',
+      };
     }
 
     // Obtener días de entrega
@@ -164,7 +168,10 @@ const ProductSummary = React.memo(function ProductSummary({
 
     // Formatear texto según cantidad de días
     const daysText = days === 1 ? 'día hábil' : 'días hábiles';
-    return `Disponible ${days} ${daysText}`;
+    return {
+      available: true,
+      text: `Disponible ${days} ${daysText}`,
+    };
   }, [shippingRegions, effectiveUserRegion]);
 
   return (
@@ -182,8 +189,8 @@ const ProductSummary = React.memo(function ProductSummary({
       <Box
         sx={{
           width: '100%',
-          px: 2,
-          py: 1,
+          px: 1.2,
+          py: 0.5,
         }}
       >
         <Typography
@@ -191,7 +198,7 @@ const ProductSummary = React.memo(function ProductSummary({
           sx={{
             fontWeight: 600,
             color: 'text.primary',
-            fontSize: { xs: '0.875rem', sm: '1rem' },
+            fontSize: { xs: '0.875rem', sm: '1rem', md: '1.25rem' },
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -205,7 +212,7 @@ const ProductSummary = React.memo(function ProductSummary({
         direction="row"
         spacing={2}
         alignItems="center"
-        sx={{ p: { xs: 1.3, sm: 2 } }}
+        sx={{ px: { xs: 1, md: 1.2 }, pt: { xs: 0.5, md: 0 }, pb: { xs: 1, md: 1.2 } }}
       >
         <Box
           sx={{
@@ -232,28 +239,57 @@ const ProductSummary = React.memo(function ProductSummary({
               justifyContent: 'center',
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.3 }}>
-              <ShippingIcon
-                sx={{ fontSize: 16, color: 'success.main', mr: 0.5 }}
-              />
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 'bold',
-                  color: 'success.main',
-                  fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                }}
-              >
-                Disponible
-              </Typography>
-            </Box>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
-            >
-              {deliveryInfo.replace('Disponible ', '')}
-            </Typography>
+            {deliveryInfo.available ? (
+              <>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.3 }}>
+                  <ShippingIcon
+                    sx={{ fontSize: 16, color: 'success.main', mr: 0.5 }}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 'bold',
+                      color: 'success.main',
+                      fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                    }}
+                  >
+                    Disponible
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
+                >
+                  {deliveryInfo.text.replace('Disponible ', '')}
+                </Typography>
+              </>
+            ) : (
+              <>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.3 }}>
+                  <WarningIcon
+                    sx={{ fontSize: 16, color: 'warning.main', mr: 0.5 }}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 'bold',
+                      color: 'warning.main',
+                      fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                    }}
+                  >
+                    Despacho No Disponible
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
+                >
+                  Hacia tu región
+                </Typography>
+              </>
+            )}
           </Box>
         )}
 
@@ -868,7 +904,7 @@ const AddToCartModal = ({
                   },
                 }}
               >
-                Proveedor exige una compra mínima de:{' '}
+                Proveedor exige una compra mínima de{' '}
                 <strong>
                   $
                   {(

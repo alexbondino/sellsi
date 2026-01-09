@@ -1,5 +1,5 @@
 // 📁 shared/components/navigation/SideBar/SideBar.jsx
-import React, { useState } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
 import {
   Box,
@@ -32,6 +32,8 @@ import {
 import { useRole } from '../../../../infrastructure/providers';
 import { useAuth } from '../../../../infrastructure/providers';
 import { useLayout } from '../../../../infrastructure/providers';
+
+import { useFeatureFlag } from '../../../../shared/hooks/useFeatureFlag';
 
 // Define los ítems de menú para cada rol directamente en este archivo con iconos
 const buyerMenuItems = [
@@ -74,6 +76,16 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
   // ✅ Usar estado global del LayoutProvider en lugar de estado local
   const { sideBarCollapsed, setSideBarCollapsed } = useLayout();
   const isCollapsed = sideBarCollapsed;
+
+  // ✅ Feature flag: controla si se muestra "Mis Ofertas" (buyer + supplier)
+  // OFF => ocultar "Mis Ofertas" en ambos menús
+  const { enabled: offersEnabled, loading: offersFlagLoading } = useFeatureFlag(
+    {
+      workspace: 'my-offers',
+      key: 'my_offers_supplier',
+      defaultValue: true, // default UX: mostrar mientras carga / si falla
+    }
+  );
 
   // Never render sidebar if user is not authenticated
   if (!session) return null;
@@ -145,9 +157,18 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
     return w;
   };
 
-  const expandedWidth = React.useMemo(() => calculateWidth(width, false), [width]);
-  const collapsedWidth = React.useMemo(() => calculateWidth(width, true), [width]);
-  const currentWidth = React.useMemo(() => isCollapsed ? collapsedWidth : expandedWidth, [isCollapsed, collapsedWidth, expandedWidth]);
+  const expandedWidth = React.useMemo(
+    () => calculateWidth(width, false),
+    [width]
+  );
+  const collapsedWidth = React.useMemo(
+    () => calculateWidth(width, true),
+    [width]
+  );
+  const currentWidth = React.useMemo(
+    () => (isCollapsed ? collapsedWidth : expandedWidth),
+    [isCollapsed, collapsedWidth, expandedWidth]
+  );
 
   // Notificar cambios de ancho al componente padre si el callback está disponible
   React.useEffect(() => {
@@ -178,6 +199,14 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
     menuItemsToDisplay = providerMenuItems;
   } else {
     // Si el rol no está definido o es nulo (ej. no logueado), no se mostrarán ítems de menú.
+  }
+
+  // ✅ Feature flag aplicado: ocultar "Mis Ofertas" en buyer + supplier si está OFF
+  // Para evitar flicker, solo filtramos cuando ya cargó el flag.
+  if (!offersFlagLoading && !offersEnabled) {
+    menuItemsToDisplay = menuItemsToDisplay.filter(
+      item => !(item.path && item.path.includes('/offers'))
+    );
   }
 
   // Asegurarse que en desktop el botón "Mis Ofertas" se muestre al final de la lista
@@ -221,7 +250,6 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
         overflowX: 'hidden',
         borderRight: 'none',
         transition: 'width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-        // ...estilos existentes...
         '& .MuiListItemButton-root': {
           color: '#FFFFFF !important',
           fontWeight: 'normal',

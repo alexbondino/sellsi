@@ -13,11 +13,9 @@ const Filter = ({ statusFilter, setStatusFilter }) => {
     'Todos',
     'Pendiente',
     'Aceptado',
-    'Despachado',
+    'Rechazado',
     'En Transito',
     'Entregado',
-    'Cancelado',
-    'Pagado',
   ];
 
   const handleFilterChange = (event) => {

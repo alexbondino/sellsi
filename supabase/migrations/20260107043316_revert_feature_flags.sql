@@ -1,0 +1,1 @@
+drop table if exists marketplace.feature_flags cascade;

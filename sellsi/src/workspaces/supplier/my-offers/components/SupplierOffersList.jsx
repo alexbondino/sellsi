@@ -276,74 +276,90 @@ const SupplierOffersList = ({
     { value: 'paid', label: 'Aceptada', count: filterCounts.paid },
   ];
 
-  const hasOffers = offers && offers.length > 0;
-  if (!hasOffers) {
-    if (initializing || loading) {
-      return isMobile ? (
-        <MobileOffersSkeleton rows={3} />
-      ) : (
-        <TableSkeleton rows={6} columns={5} variant="table" />
-      );
-    }
-    return (
-      <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-          <LocalOfferIcon sx={{ fontSize: 48, color: 'primary.main' }} />
-        </Box>
+  // Estado vacío global (componente reutilizable)
+  const EmptyStateGlobal = () => (
+    <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+        <LocalOfferIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+      </Box>
+      <Typography
+        variant="h6"
+        color="text.secondary"
+        sx={{ fontSize: { md: '1.5rem' } }}
+      >
+        Aún no has recibido ofertas
+      </Typography>
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mt: 1, mb: 2, fontSize: { md: '1.05rem' } }}
+      >
+        Aquí verás las propuestas de tus compradores. Podrás revisarlas,
+        aceptarlas o rechazarlas.
+      </Typography>
+      <Box sx={{ textAlign: 'left', maxWidth: 600, mx: 'auto', mb: 3 }}>
         <Typography
-          variant="h6"
+          variant="body2"
           color="text.secondary"
-          sx={{ fontSize: { md: '1.5rem' } }}
+          sx={{
+            fontWeight: 600,
+            mb: 1,
+            fontSize: { md: '1.05rem' },
+            lineHeight: { md: 1.35 },
+          }}
         >
-          Aún no has recibido ofertas
+          Consejos para recibir más ofertas:
         </Typography>
         <Typography
           variant="body2"
           color="text.secondary"
-          sx={{ mt: 1, mb: 2, fontSize: { md: '1.05rem' } }}
+          component="ul"
+          sx={{
+            pl: 4,
+            listStyleType: 'disc',
+            listStylePosition: 'outside',
+            fontSize: { md: '1.05rem' },
+            lineHeight: { md: 1.35 },
+          }}
         >
-          Aquí verás las propuestas de tus compradores. Podrás revisarlas,
-          aceptarlas o rechazarlas.
+          <li>Usa descripciones claras y completas</li>
+          <li>Incluye fotos de buena calidad</li>
+          <li>Responde con rapidez cuando recibas propuestas</li>
+          <li>Define precios, cantidades mínimas y tramos de compra</li>
         </Typography>
-        <Box sx={{ textAlign: 'left', maxWidth: 600, mx: 'auto', mb: 3 }}>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              fontWeight: 600,
-              mb: 1,
-              fontSize: { md: '1.05rem' },
-              lineHeight: { md: 1.35 },
-            }}
-          >
-            Consejos para recibir más ofertas:
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            component="ul"
-            sx={{
-              pl: 4,
-              listStyleType: 'disc',
-              listStylePosition: 'outside',
-              fontSize: { md: '1.05rem' },
-              lineHeight: { md: 1.35 },
-            }}
-          >
-            <li>Usa descripciones claras y completas</li>
-            <li>Incluye fotos de buena calidad</li>
-            <li>Responde con rapidez cuando recibas propuestas</li>
-            <li>Define precios, cantidades mínimas y tramos de compra</li>
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => navigate('/supplier/myproducts')}
-        >
-          Ver mis productos publicados
-        </Button>
-      </Paper>
+      </Box>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => navigate('/supplier/myproducts')}
+      >
+        Ver mis productos publicados
+      </Button>
+    </Paper>
+  );
+
+  // Estado vacío por filtro (componente reutilizable)
+  const EmptyStateFiltered = () => (
+    <Paper sx={{ p: { xs: 3, md: 4 }, textAlign: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+        <LocalOfferIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
+      </Box>
+      <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+        No hay ofertas con este estado
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        Intenta seleccionar otro filtro para ver tus ofertas en diferentes estados,
+        o cambia a "Todas" para ver el listado completo.
+      </Typography>
+    </Paper>
+  );
+
+  // Loading inicial (sin datos previos)
+  if ((initializing || loading) && (!offers || offers.length === 0)) {
+    return isMobile ? (
+      <MobileOffersSkeleton rows={3} />
+    ) : (
+      <TableSkeleton rows={6} columns={5} variant="table" />
     );
   }
 
@@ -351,6 +367,7 @@ const SupplierOffersList = ({
   if (isMobile) {
     return (
       <>
+        {/* Filtros SIEMPRE visibles */}
         <MobileFilterAccordion
           currentFilter={statusFilter}
           onFilterChange={setStatusFilter}
@@ -360,11 +377,12 @@ const SupplierOffersList = ({
 
         <Box sx={{ px: { xs: 2, sm: 0 } }}>
           {filtered.length === 0 ? (
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                No hay ofertas con este estado
-              </Typography>
-            </Paper>
+            // Diferenciar entre sin datos globales vs sin datos por filtro
+            (!offers || offers.length === 0) ? (
+              <EmptyStateGlobal />
+            ) : (
+              <EmptyStateFiltered />
+            )
           ) : (
             filtered.map(o => {
               const product = o.product || {
@@ -441,6 +459,7 @@ const SupplierOffersList = ({
   // Desktop View: Table
   return (
     <>
+      {/* Filtros SIEMPRE visibles */}
       <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
         <Typography fontWeight={600}>Filtrar por estado:</Typography>
         <FormControl size="small" sx={{ minWidth: 180 }}>
@@ -460,87 +479,88 @@ const SupplierOffersList = ({
           </Select>
         </FormControl>
       </Box>
-      <TableContainer component={Paper} sx={{ p: 0 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>
-                <Typography fontWeight={700}>Producto</Typography>
-              </TableCell>
-              <TableCell>
-                <Typography fontWeight={700}>Precio Ofertado</Typography>
-              </TableCell>
-              <TableCell>
-                <Typography fontWeight={700}>Ofertante</Typography>
-              </TableCell>
-              <TableCell>
-                <Typography fontWeight={700}>Tiempo restante</Typography>
-              </TableCell>
-              <TableCell>
-                <Typography fontWeight={700}>Estado</Typography>
-              </TableCell>
-              <TableCell>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Typography fontWeight={700}>Acciones</Typography>
-                  <Tooltip
-                    placement="right"
-                    componentsProps={{
-                      tooltip: { sx: { maxWidth: 300, p: 1.25 } },
-                    }}
-                    title={
-                      <Box>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{ color: 'common.white', fontWeight: 'bold' }}
-                          gutterBottom
-                        >
-                          Acciones disponibles
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{ color: 'common.white' }}
-                          display="block"
-                        >
-                          Acepta o rechaza ofertas pendientes. <br></br>Cuando
-                          una oferta queda aceptada o rechazada puedes limpiarla
-                          (eliminarla) con el basurero.
-                        </Typography>
-                      </Box>
-                    }
-                  >
-                    <IconButton
-                      size="small"
-                      aria-label="Información de acciones"
-                      sx={{
-                        '&.Mui-focusVisible': {
-                          outline: 'none',
-                          boxShadow: 'none',
-                        },
-                        '&:focus': { outline: 'none', boxShadow: 'none' },
-                        '&:focus-visible': {
-                          outline: 'none',
-                          boxShadow: 'none',
-                        },
-                      }}
-                    >
-                      <InfoOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filtered.length === 0 && (
+      
+      {/* Tabla o Estado Vacío */}
+      {filtered.length === 0 ? (
+        // Diferenciar entre sin datos globales vs sin datos por filtro
+        (!offers || offers.length === 0) ? (
+          <EmptyStateGlobal />
+        ) : (
+          <EmptyStateFiltered />
+        )
+      ) : (
+        <TableContainer component={Paper} sx={{ p: 0 }}>
+          <Table>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: 'center', py: 6 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    No hay ofertas con este estado
-                  </Typography>
+                <TableCell>
+                  <Typography fontWeight={700}>Producto</Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography fontWeight={700}>Precio Ofertado</Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography fontWeight={700}>Ofertante</Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography fontWeight={700}>Tiempo restante</Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography fontWeight={700}>Estado</Typography>
+                </TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography fontWeight={700}>Acciones</Typography>
+                    <Tooltip
+                      placement="right"
+                      componentsProps={{
+                        tooltip: { sx: { maxWidth: 300, p: 1.25 } },
+                      }}
+                      title={
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ color: 'common.white', fontWeight: 'bold' }}
+                            gutterBottom
+                          >
+                            Acciones disponibles
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: 'common.white' }}
+                            display="block"
+                          >
+                            Acepta o rechaza ofertas pendientes. <br></br>Cuando
+                            una oferta queda aceptada o rechazada puedes limpiarla
+                            (eliminarla) con el basurero.
+                          </Typography>
+                        </Box>
+                      }
+                    >
+                      <IconButton
+                        size="small"
+                        aria-label="Información de acciones"
+                        sx={{
+                          '&.Mui-focusVisible': {
+                            outline: 'none',
+                            boxShadow: 'none',
+                          },
+                          '&:focus': { outline: 'none', boxShadow: 'none' },
+                          '&:focus-visible': {
+                            outline: 'none',
+                            boxShadow: 'none',
+                          },
+                        }}
+                      >
+                        <InfoOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </TableCell>
               </TableRow>
-            )}
-            {filtered.map(o => {
+            </TableHead>
+            <TableBody>
+              {filtered.map(o => {
               const total = o.quantity * o.price;
               // calcular tiempo restante si existe expires_at
               const remainingMs = o.expires_at
@@ -694,17 +714,20 @@ const SupplierOffersList = ({
             })}
           </TableBody>
         </Table>
-        <SupplierOfferActionModals
-          open={modalState.open}
-          mode={modalState.mode}
-          offer={modalState.offer}
-          onClose={closeModal}
-          onAccept={handleAccept}
-          onReject={handleReject}
-          onCleanup={handleCleanup}
-          isMobile={isMobile}
-        />
       </TableContainer>
+      )}
+      
+      {/* Modales globales */}
+      <SupplierOfferActionModals
+        open={modalState.open}
+        mode={modalState.mode}
+        offer={modalState.offer}
+        onClose={closeModal}
+        onAccept={handleAccept}
+        onReject={handleReject}
+        onCleanup={handleCleanup}
+        isMobile={isMobile}
+      />
     </>
   );
 };
