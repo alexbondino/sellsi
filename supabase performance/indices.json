@@ -1,0 +1,100 @@
+[
+  {
+    "Tabla": "admin_audit_log",
+    "Columna_Problematica": "admin_id",
+    "Nombre_Constraint_FK": "admin_audit_log_admin_id_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "32 kB"
+  },
+  {
+    "Tabla": "admin_sessions",
+    "Columna_Problematica": "admin_id",
+    "Nombre_Constraint_FK": "admin_sessions_admin_id_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "16 kB"
+  },
+  {
+    "Tabla": "banned_ips",
+    "Columna_Problematica": "banned_by",
+    "Nombre_Constraint_FK": "banned_ips_banned_by_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "16 kB"
+  },
+  {
+    "Tabla": "control_panel",
+    "Columna_Problematica": "procesado_por",
+    "Nombre_Constraint_FK": "control_panel_procesado_por_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "24 kB"
+  },
+  {
+    "Tabla": "invoices_meta",
+    "Columna_Problematica": "user_id",
+    "Nombre_Constraint_FK": "invoices_meta_user_id_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "48 kB"
+  },
+  {
+    "Tabla": "invoices_meta",
+    "Columna_Problematica": "supplier_id",
+    "Nombre_Constraint_FK": "invoices_meta_supplier_id_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "48 kB"
+  },
+  {
+    "Tabla": "notifications",
+    "Columna_Problematica": "supplier_id",
+    "Nombre_Constraint_FK": "notifications_supplier_id_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "128 kB"
+  },
+  {
+    "Tabla": "orders",
+    "Columna_Problematica": "payment_reviewed_by",
+    "Nombre_Constraint_FK": "orders_payment_reviewed_by_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "680 kB"
+  },
+  {
+    "Tabla": "payment_releases",
+    "Columna_Problematica": "released_by_admin_id",
+    "Nombre_Constraint_FK": "payment_releases_released_by_admin_id_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "128 kB"
+  },
+  {
+    "Tabla": "payment_releases",
+    "Columna_Problematica": "buyer_id",
+    "Nombre_Constraint_FK": "payment_releases_buyer_id_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "128 kB"
+  },
+  {
+    "Tabla": "request_products",
+    "Columna_Problematica": "request_id",
+    "Nombre_Constraint_FK": "request_products_request_id_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "8192 bytes"
+  },
+  {
+    "Tabla": "request_products",
+    "Columna_Problematica": "product_id",
+    "Nombre_Constraint_FK": "request_products_product_id_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "8192 bytes"
+  },
+  {
+    "Tabla": "requests",
+    "Columna_Problematica": "buyer_id",
+    "Nombre_Constraint_FK": "requests_buyer_id_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "16 kB"
+  },
+  {
+    "Tabla": "sales",
+    "Columna_Problematica": "user_id",
+    "Nombre_Constraint_FK": "sales_user_id_fkey",
+    "Diagnostico": "Falta Índice",
+    "Peso_Tabla": "32 kB"
+  }
+]

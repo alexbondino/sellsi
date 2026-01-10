@@ -1,0 +1,122 @@
+[
+  {
+    "url": "supabase-DBX5QpDr.js",
+    "params": "undefined...",
+    "stalling_ms": 15,
+    "ttfb_ms": 73,
+    "download_ms": 3,
+    "total_ms": 91
+  },
+  {
+    "url": "user",
+    "params": "undefined...",
+    "stalling_ms": -243,
+    "ttfb_ms": 0,
+    "download_ms": 474,
+    "total_ms": 231
+  },
+  {
+    "url": "users",
+    "params": "select=*%2Cbank_info%28*%29%2Cshipping_info%28*%29...",
+    "stalling_ms": -722,
+    "ttfb_ms": 0,
+    "download_ms": 950,
+    "total_ms": 228
+  },
+  {
+    "url": "notifications",
+    "params": "select=*&order=created_at.desc&limit=20&user_id=eq...",
+    "stalling_ms": -739,
+    "ttfb_ms": 0,
+    "download_ms": 965,
+    "total_ms": 226
+  },
+  {
+    "url": "feature_flags",
+    "params": "select=enabled&workspace=eq.my-offers&key=eq.my_of...",
+    "stalling_ms": -756,
+    "ttfb_ms": 0,
+    "download_ms": 981,
+    "total_ms": 225
+  },
+  {
+    "url": "carts",
+    "params": "select=cart_id%2Cstatus%2Ccreated_at%2Cupdated_at&...",
+    "stalling_ms": -772,
+    "ttfb_ms": 0,
+    "download_ms": 1001,
+    "total_ms": 230
+  },
+  {
+    "url": "marketplace_products_daily",
+    "params": "select=productid%2Csupplier_id%2Cproductnm%2Cprice...",
+    "stalling_ms": -1085,
+    "ttfb_ms": 0,
+    "download_ms": 1497,
+    "total_ms": 412
+  },
+  {
+    "url": "logo.png",
+    "params": "cb=1768064077494...",
+    "stalling_ms": -1158,
+    "ttfb_ms": 0,
+    "download_ms": 2069,
+    "total_ms": 911
+  },
+  {
+    "url": "logo.png",
+    "params": "cb=1768064078423...",
+    "stalling_ms": -1169,
+    "ttfb_ms": 0,
+    "download_ms": 2093,
+    "total_ms": 924
+  },
+  {
+    "url": "cart_items",
+    "params": "select=cart_items_id%2Cproduct_id%2Cquantity%2Cpri...",
+    "stalling_ms": -1180,
+    "ttfb_ms": 0,
+    "download_ms": 1403,
+    "total_ms": 222
+  },
+  {
+    "url": "users",
+    "params": "select=user_id%2Cuser_nm%2Clogo_url%2Cdescripcion_...",
+    "stalling_ms": -1499,
+    "ttfb_ms": 0,
+    "download_ms": 1743,
+    "total_ms": 244
+  },
+  {
+    "url": "product_price_summary",
+    "params": "select=product_id%2Cmin_price%2Cmax_price%2Ctiers_...",
+    "stalling_ms": -1745,
+    "ttfb_ms": 0,
+    "download_ms": 2014,
+    "total_ms": 269
+  },
+  {
+    "url": "product_price_summary",
+    "params": "select=product_id%2Cmin_price%2Cmax_price%2Ctiers_...",
+    "stalling_ms": -1745,
+    "ttfb_ms": 0,
+    "download_ms": 1988,
+    "total_ms": 243
+  },
+  {
+    "url": "product_price_summary",
+    "params": "select=product_id%2Cmin_price%2Cmax_price%2Ctiers_...",
+    "stalling_ms": -1746,
+    "ttfb_ms": 0,
+    "download_ms": 1971,
+    "total_ms": 226
+  },
+  {
+    "url": "product_quantity_ranges",
+    "params": "select=*&product_id=in.%286c4e7f0d-0ad5-4c27-8df1-...",
+    "stalling_ms": -1746,
+    "ttfb_ms": 0,
+    "download_ms": 1987,
+    "total_ms": 241
+  }
+]
