@@ -11,6 +11,7 @@ import {
   Paper,
   Chip,
 } from '@mui/material';
+import { formatCurrency as formatCurrencyShared } from '../../../utils/formatters';
 
 /**
  * Componente para mostrar las regiones de despacho configuradas
@@ -59,16 +60,11 @@ const ShippingRegionsDisplay = ({ regions = [] }) => {
   }
 
   const formatCurrency = value => {
-    // Si el valor es 0, mostrar "GRATIS" en lugar de "$0"
+    // Si el valor es 0, mostrar "GRATIS" en lugar de "$0" (contexto shipping)
     if (value === 0 || value === '0') {
       return 'GRATIS';
     }
-
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP',
-      minimumFractionDigits: 0,
-    }).format(value);
+    return formatCurrencyShared(value);
   };
 
   return (

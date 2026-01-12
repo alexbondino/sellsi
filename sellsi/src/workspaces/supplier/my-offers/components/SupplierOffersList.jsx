@@ -21,15 +21,16 @@ import {
   Button,
 } from '@mui/material';
 import { useBanner } from '../../../../shared/components/display/banners/BannerContext';
+import ActionIconButton from '../../../../shared/components/buttons/ActionIconButton';
 import {
   Check as CheckIcon,
+  Close as CloseIcon,
   LocalOffer as LocalOfferIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import SupplierOfferActionModals from './SupplierOfferActionModals';
 import { supabase } from '../../../../services/supabase';
 import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
-import BlockIcon from '@mui/icons-material/Block';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import MobileOfferCard from '../../../../shared/components/mobile/MobileOfferCard';
@@ -635,78 +636,37 @@ const SupplierOffersList = ({
                   </TableCell>
                   <TableCell>
                     {o.status === 'pending' && (
-                      <Tooltip title="Aceptar Oferta">
-                        <IconButton
-                          size="small"
-                          aria-label="Aceptar Oferta"
-                          onClick={() => openModal('accept', o)}
-                          color="success"
-                          sx={{
-                            ml: 1,
-                            '&.Mui-focusVisible': {
-                              outline: 'none',
-                              boxShadow: 'none',
-                            },
-                            '&:focus': { outline: 'none', boxShadow: 'none' },
-                            '&:focus-visible': {
-                              outline: 'none',
-                              boxShadow: 'none',
-                            },
-                          }}
-                        >
-                          <CheckIcon />
-                        </IconButton>
-                      </Tooltip>
+                      <ActionIconButton
+                        tooltip="Aceptar Oferta"
+                        variant="success"
+                        onClick={() => openModal('accept', o)}
+                        ariaLabel="Aceptar Oferta"
+                      >
+                        <CheckIcon fontSize="small" />
+                      </ActionIconButton>
                     )}
                     {o.status === 'pending' && (
-                      <Tooltip title="Rechazar Oferta">
-                        <IconButton
-                          size="small"
-                          aria-label="Rechazar Oferta"
-                          onClick={() => openModal('reject', o)}
-                          color="error"
-                          sx={{
-                            ml: 1,
-                            '&.Mui-focusVisible': {
-                              outline: 'none',
-                              boxShadow: 'none',
-                            },
-                            '&:focus': { outline: 'none', boxShadow: 'none' },
-                            '&:focus-visible': {
-                              outline: 'none',
-                              boxShadow: 'none',
-                            },
-                          }}
-                        >
-                          <BlockIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      <ActionIconButton
+                        tooltip="Rechazar Oferta"
+                        variant="error"
+                        onClick={() => openModal('reject', o)}
+                        ariaLabel="Rechazar Oferta"
+                      >
+                        <CloseIcon fontSize="small" />
+                      </ActionIconButton>
                     )}
                     {(o.status === 'approved' ||
                       o.status === 'paid' ||
                       o.status === 'rejected' ||
                       o.status === 'expired') && (
-                      <Tooltip title="Limpiar Oferta">
-                        <IconButton
-                          size="small"
-                          aria-label="Limpiar Oferta"
-                          onClick={() => openModal('cleanup', o)}
-                          sx={{
-                            ml: 1,
-                            '&.Mui-focusVisible': {
-                              outline: 'none',
-                              boxShadow: 'none',
-                            },
-                            '&:focus': { outline: 'none', boxShadow: 'none' },
-                            '&:focus-visible': {
-                              outline: 'none',
-                              boxShadow: 'none',
-                            },
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      <ActionIconButton
+                        tooltip="Limpiar Oferta"
+                        variant="default"
+                        onClick={() => openModal('cleanup', o)}
+                        ariaLabel="Limpiar Oferta"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </ActionIconButton>
                     )}
                   </TableCell>
                 </TableRow>

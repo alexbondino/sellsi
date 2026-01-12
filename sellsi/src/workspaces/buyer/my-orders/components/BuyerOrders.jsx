@@ -15,7 +15,7 @@ import { ThemeProvider, useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore'
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing'
-import { formatDate as formatDateUnified } from '../../../../workspaces/marketplace'
+import { formatDate as formatDateUnified } from '../../../../shared/utils/formatters'
 
 // Hooks
 import { useAuthenticatedBuyer } from '../../shared-hooks'

@@ -23,6 +23,7 @@ import {
   Inventory as ProductsIcon,
   InfoOutlined as InfoIcon,
   LocalOffer as OffersIcon,
+  RequestQuote as FinancingIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -44,6 +45,7 @@ const buyerMenuItems = [
   },
   { text: 'Mis Ofertas', path: '/buyer/offers', icon: <OffersIcon /> },
   { text: 'Mis Pedidos', path: '/buyer/orders', icon: <OrdersIcon /> },
+  { text: 'Mis Financiamientos', path: '/buyer/my-financing', icon: <FinancingIcon /> },
   // { text: 'Mi Performance', path: '/buyer/performance', icon: <PerformanceIcon /> }, // Eliminado
 ];
 
@@ -83,6 +85,16 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
     {
       workspace: 'my-offers',
       key: 'my_offers_supplier',
+      defaultValue: true, // default UX: mostrar mientras carga / si falla
+    }
+  );
+
+  // ✅ Feature flag: controla si se muestra "Mis Financiamientos" (buyer)
+  // OFF => ocultar "Mis Financiamientos" del menú buyer
+  const { enabled: financingEnabled, loading: financingFlagLoading } = useFeatureFlag(
+    {
+      workspace: 'my-financing',
+      key: 'financing_enabled',
       defaultValue: true, // default UX: mostrar mientras carga / si falla
     }
   );
@@ -206,6 +218,13 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
   if (!offersFlagLoading && !offersEnabled) {
     menuItemsToDisplay = menuItemsToDisplay.filter(
       item => !(item.path && item.path.includes('/offers'))
+    );
+  }
+
+  // ✅ Feature flag aplicado: ocultar "Mis Financiamientos" en buyer si está OFF
+  if (!financingFlagLoading && !financingEnabled) {
+    menuItemsToDisplay = menuItemsToDisplay.filter(
+      item => !(item.path && item.path.includes('/my-financing'))
     );
   }
 

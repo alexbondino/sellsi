@@ -1,0 +1,122 @@
+[
+  {
+    "minutos_totales_gastados": "9.22",
+    "veces_ejecutada": 16138,
+    "promedio_ms_por_request": "34.29",
+    "query_corta": "SELECT public.cancel_stale_payment_orders()"
+  },
+  {
+    "minutos_totales_gastados": "2.46",
+    "veces_ejecutada": 365,
+    "promedio_ms_por_request": "405.04",
+    "query_corta": "SELECT name FROM pg_timezone_names"
+  },
+  {
+    "minutos_totales_gastados": "0.79",
+    "veces_ejecutada": 111046,
+    "promedio_ms_por_request": "0.43",
+    "query_corta": "WITH pgrst_source AS ( SELECT \"public\".\"users\".*, row_to_json(\"users_bank_info_1\".*)::jsonb AS \"bank_info\", row_to_json(\"users_shipping_info_1\".*)::jsonb AS \"shipping_info\", row_to_json(\"users_billing"
+  },
+  {
+    "minutos_totales_gastados": "0.52",
+    "veces_ejecutada": 241224,
+    "promedio_ms_por_request": "0.13",
+    "query_corta": "select set_config('search_path', $1, true), set_config($2, $3, true), set_config('role', $4, true), set_config('request.jwt.claims', $5, true), set_config('request.method', $6, true), set_config('requ"
+  },
+  {
+    "minutos_totales_gastados": "0.39",
+    "veces_ejecutada": 365,
+    "promedio_ms_por_request": "64.53",
+    "query_corta": "WITH\n-- Recursively get the base types of domains\nbase_types AS (\n  WITH RECURSIVE\n  recurse AS (\n    SELECT\n      oid,\n      typbasetype,\n      typnamespace AS base_namespace,\n      COALESCE(NULLIF(t"
+  },
+  {
+    "minutos_totales_gastados": "0.35",
+    "veces_ejecutada": 4251,
+    "promedio_ms_por_request": "4.94",
+    "query_corta": "select * from storage.search($1,$2,$3,$4,$5,$6,$7,$8)"
+  },
+  {
+    "minutos_totales_gastados": "0.30",
+    "veces_ejecutada": 365,
+    "promedio_ms_por_request": "49.61",
+    "query_corta": "WITH\n-- Recursively get the base types of domains\nbase_types AS (\n  WITH RECURSIVE\n  recurse AS (\n    SELECT\n      oid,\n      typbasetype,\n      typnamespace AS base_namespace,\n      COALESCE(NULLIF(t"
+  },
+  {
+    "minutos_totales_gastados": "0.28",
+    "veces_ejecutada": 17444,
+    "promedio_ms_por_request": "0.97",
+    "query_corta": "SELECT * FROM pgbouncer.get_auth($1)"
+  },
+  {
+    "minutos_totales_gastados": "0.25",
+    "veces_ejecutada": 118,
+    "promedio_ms_por_request": "129.63",
+    "query_corta": "with f as (\n      \n-- CTE with sane arg_modes, arg_names, and arg_types.\n-- All three are always of the same length.\n-- All three include all args, including OUT and TABLE args.\nwith functions as (\n  "
+  },
+  {
+    "minutos_totales_gastados": "0.25",
+    "veces_ejecutada": 61,
+    "promedio_ms_por_request": "246.78",
+    "query_corta": "with tables as (\nSELECT\n  c.oid :: int8 AS id,\n  nc.nspname AS schema,\n  c.relname AS name,\n  c.relrowsecurity AS rls_enabled,\n  c.relforcerowsecurity AS rls_forced,\n  CASE\n    WHEN c.relreplident = $"
+  },
+  {
+    "minutos_totales_gastados": "0.21",
+    "veces_ejecutada": 130,
+    "promedio_ms_por_request": "95.57",
+    "query_corta": "with tables as (\nSELECT\n  c.oid :: int8 AS id,\n  nc.nspname AS schema,\n  c.relname AS name,\n  c.relrowsecurity AS rls_enabled,\n  c.relforcerowsecurity AS rls_forced,\n  CASE\n    WHEN c.relreplident = $"
+  },
+  {
+    "minutos_totales_gastados": "0.19",
+    "veces_ejecutada": 163,
+    "promedio_ms_por_request": "70.96",
+    "query_corta": "SELECT\n  e.name,\n  n.nspname AS schema,\n  e.default_version,\n  x.extversion AS installed_version,\n  e.comment\nFROM\n  pg_available_extensions() e(name, default_version, comment)\n  LEFT JOIN pg_extensio"
+  },
+  {
+    "minutos_totales_gastados": "0.18",
+    "veces_ejecutada": 2119,
+    "promedio_ms_por_request": "5.05",
+    "query_corta": "WITH pgrst_source AS (INSERT INTO \"public\".\"edge_function_invocations\"(\"duration_ms\", \"error_code\", \"error_message\", \"finished_at\", \"function_name\", \"meta\", \"request_origin\", \"started_at\", \"status\") S"
+  },
+  {
+    "minutos_totales_gastados": "0.18",
+    "veces_ejecutada": 914,
+    "promedio_ms_por_request": "11.50",
+    "query_corta": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_buyer_id\", \"p_supplier_id\", \"p_product_id\" FROM json_to_record(pgrst_payload.json_d"
+  },
+  {
+    "minutos_totales_gastados": "0.16",
+    "veces_ejecutada": 98,
+    "promedio_ms_por_request": "97.84",
+    "query_corta": "with tables as (\nSELECT\n  c.oid :: int8 AS id,\n  nc.nspname AS schema,\n  c.relname AS name,\n  c.relrowsecurity AS rls_enabled,\n  c.relforcerowsecurity AS rls_forced,\n  CASE\n    WHEN c.relreplident = $"
+  },
+  {
+    "minutos_totales_gastados": "0.16",
+    "veces_ejecutada": 365,
+    "promedio_ms_por_request": "25.82",
+    "query_corta": "with recursive\npks_fks as (\n  -- pk + fk referencing col\n  select\n    contype::text as contype,\n    conname,\n    array_length(conkey, $3) as ncol,\n    conrelid as resorigtbl,\n    col as resorigcol,\n  "
+  },
+  {
+    "minutos_totales_gastados": "0.15",
+    "veces_ejecutada": 1214,
+    "promedio_ms_por_request": "7.34",
+    "query_corta": "INSERT INTO \"refresh_tokens\" (\"created_at\", \"instance_id\", \"parent\", \"revoked\", \"session_id\", \"token\", \"updated_at\", \"user_id\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) returning id"
+  },
+  {
+    "minutos_totales_gastados": "0.13",
+    "veces_ejecutada": 11575,
+    "promedio_ms_por_request": "0.67",
+    "query_corta": "select \"id\", \"name\", \"version\", \"bucket_id\", \"metadata\", \"user_metadata\", \"updated_at\", \"created_at\" from \"objects\" where \"name\" = $1 and \"bucket_id\" = $2 limit $3"
+  },
+  {
+    "minutos_totales_gastados": "0.12",
+    "veces_ejecutada": 326,
+    "promedio_ms_por_request": "21.53",
+    "query_corta": "with base_table_info as ( select c.oid::int8 as id, nc.nspname as schema, c.relname as name, c.relkind, c.relrowsecurity as rls_enabled, c.relforcerowsecurity as rls_forced, c.relreplident, c.relowner"
+  },
+  {
+    "minutos_totales_gastados": "0.12",
+    "veces_ejecutada": 689,
+    "promedio_ms_por_request": "10.09",
+    "query_corta": "WITH pgrst_source AS (SELECT \"pgrst_call\".* FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_buyer_id\" FROM json_to_record(pgrst_payload.json_data) AS _(\"p_buyer_id\" uuid) LIMIT $4) pgr"
+  }
+]

@@ -71,6 +71,17 @@ const BuyerOffers = React.lazy(() =>
     default: module.BuyerOffers,
   }))
 );
+const MyFinancings = React.lazy(() =>
+  import('../../workspaces/buyer/my-financing').then(module => ({
+    default: module.MyFinancings,
+  }))
+);
+const BuyerMyFinancing = React.lazy(() =>
+  import('../../workspaces/buyer/my-financing/pages/MyFinancing')
+);
+const SupplierMyFinancing = React.lazy(() =>
+  import('../../workspaces/supplier/my-financing/pages/MyFinancing')
+);
 // Eliminado: TechnicalSpecs como página propia. Usaremos redirect desde /technicalspecs a la ruta unificada.
 const ProviderCatalog = React.lazy(() =>
   import('../../workspaces/marketplace').then(module => ({
@@ -251,6 +262,45 @@ export const AppRouter = ({ scrollTargets }) => {
               redirectTo="/"
             >
               <BuyerOffers />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/buyer/my-financings"
+          element={
+            <PrivateRoute
+              isAuthenticated={!!session}
+              needsOnboarding={needsOnboarding}
+              loading={loadingUserStatus}
+              redirectTo="/"
+            >
+              <MyFinancings />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/buyer/my-financing"
+          element={
+            <PrivateRoute
+              isAuthenticated={!!session}
+              needsOnboarding={needsOnboarding}
+              loading={loadingUserStatus}
+              redirectTo="/"
+            >
+              <BuyerMyFinancing />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/supplier/my-financing"
+          element={
+            <PrivateRoute
+              isAuthenticated={!!session}
+              needsOnboarding={needsOnboarding}
+              loading={loadingUserStatus}
+              redirectTo="/"
+            >
+              <SupplierMyFinancing />
             </PrivateRoute>
           }
         />

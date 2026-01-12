@@ -26,6 +26,11 @@ import {
 import { useOfferStore } from '../../../../stores/offerStore';
 import { toast } from 'react-hot-toast';
 import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
+import {
+  MODAL_DIALOG_ACTIONS_STYLES,
+  MODAL_CANCEL_BUTTON_STYLES,
+  MODAL_SUBMIT_BUTTON_STYLES,
+} from '../../../../shared/components/feedback/Modal/Modal';
 
 const OfferModal = ({
   open,
@@ -677,29 +682,12 @@ const OfferModal = ({
         </Box>
       </DialogContent>
 
-      <DialogActions
-        sx={{
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: { xs: 1, sm: 2 },
-          p: { xs: 1.5, sm: 3 },
-          pt: { xs: 1, sm: 1 },
-          justifyContent: 'center',
-        }}
-      >
+      <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
         <Button
           onClick={handleClose}
           disabled={loading}
           variant="outlined"
-          sx={{
-            textTransform: 'none',
-            fontWeight: 500,
-            borderRadius: 2,
-            fontSize: { xs: '0.875rem', sm: '0.875rem' },
-            px: 2,
-            py: { xs: 1, sm: 0.75 },
-            width: { xs: '100%', sm: '160px' },
-            boxSizing: 'border-box',
-          }}
+          sx={MODAL_CANCEL_BUTTON_STYLES}
         >
           Cancelar
         </Button>
@@ -708,17 +696,7 @@ const OfferModal = ({
           onClick={handleSubmit}
           variant="contained"
           disabled={loading || !isFormValid() || hasPendingForProduct}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: 2,
-            order: { xs: -1, sm: 0 },
-            fontSize: { xs: '0.875rem', sm: '0.875rem' },
-            px: 2,
-            py: { xs: 1, sm: 0.75 },
-            width: { xs: '100%', sm: '160px' },
-            boxSizing: 'border-box',
-          }}
+          sx={MODAL_SUBMIT_BUTTON_STYLES}
         >
           {loading ? 'Enviando...' : 'Enviar Oferta'}
         </Button>
