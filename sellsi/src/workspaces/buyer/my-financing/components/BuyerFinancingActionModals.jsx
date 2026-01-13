@@ -260,7 +260,7 @@ const SignModal = ({ open, financing, onConfirm, onClose }) => {
           variant="outlined"
           sx={MODAL_CANCEL_BUTTON_STYLES}
         >
-          Volver
+          Cerrar
         </Button>
         <Button
           onClick={handleConfirm}
@@ -385,7 +385,7 @@ const CancelModal = ({ open, financing, onConfirm, onClose }) => {
           variant="outlined"
           sx={MODAL_CANCEL_BUTTON_STYLES}
         >
-          Volver
+          Cerrar
         </Button>
         <Button
           onClick={handleConfirm}
@@ -481,7 +481,7 @@ const PayOnlineModal = ({ open, financing, onConfirm, onClose }) => {
           variant="outlined"
           sx={MODAL_CANCEL_BUTTON_STYLES}
         >
-          Volver
+          Cerrar
         </Button>
         <Button
           onClick={() => onConfirm(financing)}

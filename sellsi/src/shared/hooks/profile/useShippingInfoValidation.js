@@ -151,13 +151,22 @@ export const useShippingInfoValidation = () => {
         missing.push({ field: r.field, label: r.label });
     });
     // No forzamos los opcionales; solo se informan como "optionalMissing" si hiciera falta mostrarlos en UI
+    const optionalMissing = optional.filter(
+      r => !r.value || (typeof r.value === 'string' && r.value.trim() === '')
+    );
+
+    const errors = [];
+    if (data.shippingNumber && String(data.shippingNumber).trim() !== '' && !/^\d+$/.test(String(data.shippingNumber).trim())) {
+      errors.push({ field: 'shippingNumber', message: 'Número de Dirección debe contener solo dígitos' });
+    }
+
+    const isComplete = missing.length === 0 && errors.length === 0;
+
     return {
-      isComplete: missing.length === 0,
+      isComplete,
       missing,
-      optionalMissing: optional.filter(
-        r => !r.value || (typeof r.value === 'string' && r.value.trim() === '')
-      ),
-      errors: [],
+      optionalMissing,
+      errors,
     };
   }, []);
 

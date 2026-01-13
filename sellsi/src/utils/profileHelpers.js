@@ -61,7 +61,10 @@ export const mapUserProfileToFormData = (userProfile) => {
     role: userProfile.main_supplier ? 'supplier' : 'buyer', // Convertir boolean → string
     user_nm: userProfile.user_nm || '',
     descripcionProveedor: userProfile.descripcion_proveedor || '', // <--- MAPEO CORRECTO
-    minimumPurchaseAmount: userProfile.minimum_purchase_amount || 0,
+    // minimum_purchase_amount: para buyers puede ser 0, para suppliers mínimo 1
+    minimumPurchaseAmount: userProfile.main_supplier 
+      ? (userProfile.minimum_purchase_amount || 1) 
+      : (userProfile.minimum_purchase_amount || 0),
 
     // Información de Despacho
     shippingRegion: userProfile.shipping_region || '',
@@ -120,7 +123,10 @@ export const mapFormDataToUserProfile = (formData, userProfile) => {
     main_supplier: formData.role === 'supplier', // Convertir string → boolean
     user_nm: formData.user_nm || userProfile?.user_nm, // Preservar nombre de usuario
     descripcion_proveedor: formData.descripcionProveedor || '', // <--- MAPEO CORRECTO
-    minimum_purchase_amount: formData.minimumPurchaseAmount || 0,
+    // minimum_purchase_amount: suppliers mínimo $1, buyers pueden ser $0
+    minimum_purchase_amount: formData.role === 'supplier'
+      ? (formData.minimumPurchaseAmount && formData.minimumPurchaseAmount !== '' && formData.minimumPurchaseAmount !== '0' ? parseInt(formData.minimumPurchaseAmount) : 1)
+      : (formData.minimumPurchaseAmount && formData.minimumPurchaseAmount !== '' ? parseInt(formData.minimumPurchaseAmount) : 0),
     
     // Información de Despacho
     shipping_region: formData.shippingRegion,
