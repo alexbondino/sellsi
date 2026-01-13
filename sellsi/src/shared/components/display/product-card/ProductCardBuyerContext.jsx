@@ -18,6 +18,7 @@ import {
 
 // Utilidades
 import { toTitleCase } from '../../../../utils/textFormatters';
+import { formatNumber } from '../../../../shared/utils/formatters';
 
 // Custom hooks - OPTIMIZADO: Usar hook optimizado con caché global
 import { useOptimizedUserShippingRegion } from '../../../../hooks/useOptimizedUserShippingRegion';
@@ -253,7 +254,7 @@ const ProductCardBuyerContext = React.memo(
                   color: 'text.secondary',
                 }}
               >
-                Compra Mín: {minimumPurchase.toLocaleString('es-CL')} uds.
+                Compra Mín: {formatNumber(minimumPurchase)} uds.
               </Typography>
             </Box>
             {/* PRICE DISPLAY */}
@@ -331,7 +332,7 @@ const ProductCardBuyerContext = React.memo(
                   display: 'none',
                 }}
               >
-                Compra Mín: {minimumPurchase.toLocaleString('es-CL')} uds.
+                Compra Mín: {formatNumber(minimumPurchase)} uds.
               </Typography>
               <Typography
                 variant="body2"
@@ -342,7 +343,7 @@ const ProductCardBuyerContext = React.memo(
                   display: 'block',
                 }}
               >
-                Compra Mín: {minimumPurchase.toLocaleString('es-CL')} unidades
+                Compra Mín: {formatNumber(minimumPurchase)} unidades
               </Typography>
             </Box>
             {/* PRICE DISPLAY */}
@@ -355,8 +356,8 @@ const ProductCardBuyerContext = React.memo(
                 sx={{ fontSize: 12, fontWeight: 600 }}
               >
                 {stock < 10
-                  ? `¡Solo ${stock.toLocaleString('es-CL')} disponibles!`
-                  : `Stock: ${stock.toLocaleString('es-CL')}`}
+                  ? `¡Solo ${formatNumber(stock)} disponibles!`
+                  : `Stock: ${formatNumber(stock)}`}
               </Typography>
             </Box>
           </Box>

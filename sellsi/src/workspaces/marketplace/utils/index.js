@@ -1,2 +1,3 @@
 // Marketplace Utils - Re-exports
-export * from './formatters';
+// Nota: formatters ahora viven en src/shared/utils/formatters
+// Mantener este archivo para posibles utils específicos de marketplace en el futuro

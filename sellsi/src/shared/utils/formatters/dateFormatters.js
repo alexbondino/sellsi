@@ -1,24 +1,44 @@
 /**
  * Formatters unificados para fechas
  * Migrado de features/marketplace/utils/formatters.js
+ * Optimizado con singletons Intl para mejor performance
  */
+
+// Singleton Intl.DateTimeFormat para fechas (elimina creaciones repetidas)
+const dateFormatter = new Intl.DateTimeFormat('es-CL', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+})
 
 /**
  * Formatea una fecha de forma legible
+ * @param {Date|string|null|undefined} date - La fecha a formatear
+ * @param {object} [options] - Opciones de formateo (sobrescribe defaults)
+ * @returns {string} Fecha formateada o fallback
+ * @example
+ * formatDate(new Date()) // '10 de enero de 2026'
+ * formatDate('2026-01-10') // '10 de enero de 2026'
+ * formatDate(null) // 'Fecha no disponible'
  */
 export const formatDate = (date, options = {}) => {
   if (!date) return 'Fecha no disponible'
 
-  const defaultOptions = {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  // Si hay opciones custom, crear formatter específico
+  if (Object.keys(options).length > 0) {
+    const defaultOptions = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }
+    return new Date(date).toLocaleDateString('es-CL', {
+      ...defaultOptions,
+      ...options,
+    })
   }
 
-  return new Date(date).toLocaleDateString('es-CL', {
-    ...defaultOptions,
-    ...options,
-  })
+  // Usar singleton para caso común (optimizado)
+  return dateFormatter.format(new Date(date))
 }
 
 /**
@@ -44,17 +64,23 @@ export const formatRelativeDate = (date) => {
   return `hace ${Math.floor(diffInSeconds / 31536000)} años`
 }
 
+// Singleton para fecha y hora completa
+const dateTimeFormatter = new Intl.DateTimeFormat('es-CL', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit'
+})
+
 /**
  * Formatea fecha y hora completa
+ * @param {Date|string|null|undefined} date - La fecha a formatear
+ * @returns {string} Fecha y hora formateada o fallback
+ * @example
+ * formatDateTime(new Date()) // '10 de enero de 2026, 14:30'
  */
 export const formatDateTime = (date) => {
   if (!date) return 'Fecha no disponible'
-  
-  return new Date(date).toLocaleDateString('es-CL', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  return dateTimeFormatter.format(new Date(date))
 }

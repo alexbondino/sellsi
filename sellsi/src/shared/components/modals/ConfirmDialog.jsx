@@ -23,6 +23,7 @@ const ConfirmDialog = ({
       fullWidth
       disableScrollLock={true}
       disableRestoreFocus={true}
+      sx={{ zIndex: 1500 }}
       BackdropProps={{
         style: { backgroundColor: 'rgba(0,0,0,0.5)' },
       }}

@@ -23,9 +23,10 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { AddToCart } from '../../../../shared/components';
+import ActionIconButton from '../../../../shared/components/buttons/ActionIconButton';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import DeleteIcon from '@mui/icons-material/Delete';
-import BlockIcon from '@mui/icons-material/Block';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   InfoOutlined as InfoOutlinedIcon,
   LocalOffer as LocalOfferIcon,
@@ -776,26 +777,14 @@ const OffersList = ({
 
                       {/* Cancel action for pending or approved offers (next to add-to-cart) */}
                       {(o.status === 'pending' || o.status === 'approved') && (
-                        <Tooltip title="Cancelar Oferta">
-                          <IconButton
-                            size="small"
-                            aria-label="Cancelar Oferta"
-                            onClick={() => handleCancelOffer(o.id)}
-                            sx={{
-                              bgcolor: 'transparent',
-                              p: 0.5,
-                              color: 'error.main',
-                              '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
-                              '&:focus': { boxShadow: 'none', outline: 'none' },
-                              '&.Mui-focusVisible': {
-                                boxShadow: 'none',
-                                outline: 'none',
-                              },
-                            }}
-                          >
-                            <BlockIcon />
-                          </IconButton>
-                        </Tooltip>
+                        <ActionIconButton
+                          tooltip="Cancelar Oferta"
+                          variant="error"
+                          onClick={() => handleCancelOffer(o.id)}
+                          ariaLabel="Cancelar Oferta"
+                        >
+                          <CloseIcon fontSize="small" />
+                        </ActionIconButton>
                       )}
 
                       {/* Cleanup (delete) action for rejected, cancelled, expired, or paid offers */}
@@ -803,24 +792,13 @@ const OffersList = ({
                         o.status === 'cancelled' ||
                         o.status === 'expired' ||
                         o.status === 'paid') && (
-                        <Tooltip title="Limpiar esta oferta">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteOffer(o.id)}
-                            sx={{
-                              bgcolor: 'transparent',
-                              p: 0.5,
-                              '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
-                              '&:focus': { boxShadow: 'none', outline: 'none' },
-                              '&.Mui-focusVisible': {
-                                boxShadow: 'none',
-                                outline: 'none',
-                              },
-                            }}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
+                        <ActionIconButton
+                          tooltip="Limpiar esta oferta"
+                          variant="default"
+                          onClick={() => handleDeleteOffer(o.id)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </ActionIconButton>
                       )}
                     </Box>
                   </TableCell>

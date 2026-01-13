@@ -44,13 +44,16 @@ import BankTransferConfirmModal from '../../../shared/components/modals/BankTran
 // COMPONENTE PRINCIPAL
 // ============================================================================
 
-const PaymentMethodSelector = () => {
+const PaymentMethodSelector = ({ variant = 'default' }) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { session } = useAuth();
 
   // ===== DETECCIÓN DE MOBILE =====
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
+  // ===== DETECCIÓN DE MODO FINANCIAMIENTO =====
+  const isFinancingMode = variant === 'financing';
 
   // Estados del checkout
   const {
@@ -194,8 +197,15 @@ const PaymentMethodSelector = () => {
   };
 
   const handleBack = () => {
-    previousStep();
-    navigate('/buyer/cart');
+    if (isFinancingMode) {
+      // En modo financiamiento, regresar a la página de financiamientos
+      // Usar state para abrir la pestaña correcta (tab 1 = Aprobados)
+      navigate('/buyer/my-financing', { state: { activeTab: 1 } });
+    } else {
+      // Modo normal: regresar al carrito
+      previousStep();
+      navigate('/buyer/cart');
+    }
   };
 
   const handleViewOrders = () => {
@@ -775,6 +785,7 @@ const PaymentMethodSelector = () => {
                 completedSteps={completedSteps}
                 orientation="horizontal"
                 showLabels={true}
+                isFinancingMode={isFinancingMode}
               />
             </Box>
           </Box>
@@ -895,7 +906,7 @@ const PaymentMethodSelector = () => {
                     isCompleted={isCompleted}
                     onViewOrders={handleViewOrders}
                     onContinueShopping={handleContinueShopping}
-                    variant="default"
+                    variant={isFinancingMode ? 'financing' : 'default'}
                   />
                 </motion.div>
               </Box>

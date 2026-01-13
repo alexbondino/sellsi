@@ -56,7 +56,7 @@ import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock';
 import useCartStore from '../../../shared/stores/cart/cartStore';
 import { filterActiveProducts } from '../../../utils/productActiveStatus';
 import { CATEGORIAS } from '../components/CategoryNavigation/CategoryNavigation';
-import { formatNumber } from '../utils/formatters';
+import { formatNumber } from '../../../shared/utils/formatters';
 
 /**
  * ProviderCatalog - Catálogo de productos de un proveedor específico

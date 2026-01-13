@@ -223,7 +223,7 @@ export const createBuyerStatsCards = data => {
     {
       id: 'spent',
       title: 'Total Gastado',
-      value: `$${totalSpent?.toLocaleString() || '0'}`,
+      value: formatCurrency(totalSpent || 0),
       interval: 'Históricamente',
       trend: 'up',
       color: 'success',

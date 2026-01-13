@@ -12,6 +12,7 @@ import {
   TextField,
   Button,
 } from '@mui/material';
+import ActionIconButton from '../../buttons/ActionIconButton';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import {
   WarningAmber as WarningAmberIcon,
@@ -397,93 +398,102 @@ const Rows = ({ order, onActionClick }) => {
     switch (status) {
       case 'Pendiente':
         actions.push(
-          <Tooltip key="accept" title="Aceptar">
-            <IconButton
-              color="success"
-              onClick={() => onActionClick(order, 'accept')}
-            >
-              <CheckIcon />
-            </IconButton>
-          </Tooltip>,
-          <Tooltip key="reject" title="Rechazar">
-            <IconButton
-              color="error"
-              onClick={() => onActionClick(order, 'reject')}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Tooltip>,
-          <Tooltip key="help" title="Ayuda">
-            <IconButton
-              color="primary"
-              onClick={openContact}
-            >
-              <HelpOutlineIcon />
-            </IconButton>
-          </Tooltip>
+          <ActionIconButton
+            key="accept"
+            tooltip="Aceptar"
+            variant="success"
+            onClick={() => onActionClick(order, 'accept')}
+          >
+            <CheckIcon fontSize="small" />
+          </ActionIconButton>,
+          <ActionIconButton
+            key="reject"
+            tooltip="Rechazar"
+            variant="error"
+            onClick={() => onActionClick(order, 'reject')}
+          >
+            <CloseIcon fontSize="small" />
+          </ActionIconButton>,
+          <ActionIconButton
+            key="help"
+            tooltip="Ayuda"
+            variant="primary"
+            onClick={openContact}
+          >
+            <HelpOutlineIcon fontSize="small" />
+          </ActionIconButton>
         );
         break;
 
       case 'Aceptado':
         actions.push(
-          <Tooltip key="dispatch" title="Despachar">
-            <IconButton
-              color="primary"
-              onClick={() => onActionClick(order, 'dispatch')}
-            >
-              <LocalShippingIcon />
-            </IconButton>
-          </Tooltip>,
-          <Tooltip key="cancel" title="Cancelar">
-            <IconButton
-              color="error"
-              onClick={() => onActionClick(order, 'cancel')}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Tooltip>,
-          <Tooltip key="help" title="Ayuda">
-            <IconButton color="primary" onClick={openContact}>
-              <HelpOutlineIcon />
-            </IconButton>
-          </Tooltip>
+          <ActionIconButton
+            key="dispatch"
+            tooltip="Despachar"
+            variant="primary"
+            onClick={() => onActionClick(order, 'dispatch')}
+          >
+            <LocalShippingIcon fontSize="small" />
+          </ActionIconButton>,
+          <ActionIconButton
+            key="cancel"
+            tooltip="Cancelar"
+            variant="error"
+            onClick={() => onActionClick(order, 'cancel')}
+          >
+            <CloseIcon fontSize="small" />
+          </ActionIconButton>,
+          <ActionIconButton
+            key="help"
+            tooltip="Ayuda"
+            variant="primary"
+            onClick={openContact}
+          >
+            <HelpOutlineIcon fontSize="small" />
+          </ActionIconButton>
         );
         break;
 
   case 'En Transito':
         actions.push(
-          <Tooltip key="deliver" title="Confirmar Entrega">
-            <IconButton
-              color="success"
-              onClick={() => onActionClick(order, 'deliver')}
-            >
-              <AssignmentTurnedInIcon />
-            </IconButton>
-          </Tooltip>,
-          <Tooltip key="cancel" title="Cancelar">
-            <IconButton
-              color="error"
-              onClick={() => onActionClick(order, 'cancel')}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Tooltip>,
-          <Tooltip key="help" title="Ayuda">
-            <IconButton color="primary" onClick={openContact}>
-              <HelpOutlineIcon />
-            </IconButton>
-          </Tooltip>
+          <ActionIconButton
+            key="deliver"
+            tooltip="Confirmar Entrega"
+            variant="success"
+            onClick={() => onActionClick(order, 'deliver')}
+          >
+            <AssignmentTurnedInIcon fontSize="small" />
+          </ActionIconButton>,
+          <ActionIconButton
+            key="cancel"
+            tooltip="Cancelar"
+            variant="error"
+            onClick={() => onActionClick(order, 'cancel')}
+          >
+            <CloseIcon fontSize="small" />
+          </ActionIconButton>,
+          <ActionIconButton
+            key="help"
+            tooltip="Ayuda"
+            variant="primary"
+            onClick={openContact}
+          >
+            <HelpOutlineIcon fontSize="small" />
+          </ActionIconButton>
         );
         break;
 
       case 'Entregado':
       case 'Pagado':
         actions.push(
-          <Tooltip key="help" title="Ayuda">
-            <IconButton color="primary" onClick={openContact}>
-              <HelpOutlineIcon />
-            </IconButton>
-          </Tooltip>
+          <ActionIconButton
+            key="help"
+            tooltip="Ayuda"
+            variant="primary"
+            onClick={openContact}
+          >
+            <HelpOutlineIcon fontSize="small" />
+          </ActionIconButton>
         );
         break;
 

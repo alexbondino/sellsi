@@ -10,16 +10,26 @@ import {
   Typography,
   IconButton,
   CircularProgress,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { supabase } from '../../../../services/supabase';
+import {
+  MODAL_DIALOG_ACTIONS_STYLES,
+  MODAL_DIALOG_CONTENT_STYLES,
+  MODAL_CANCEL_BUTTON_STYLES,
+  MODAL_SUBMIT_BUTTON_STYLES,
+} from '../../../feedback/Modal/Modal';
 
 /**
  * Modal para enviar feedback/sugerencias a Sellsi
  */
 const FeedbackModal = ({ open, onClose, userEmail, companyName, userName }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -80,31 +90,52 @@ const FeedbackModal = ({ open, onClose, userEmail, companyName, userName }) => {
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
+      fullScreen={isMobile}
       disableScrollLock={true}
+      sx={{ zIndex: 1500 }} // Por encima de BottomBar (1301) y MobileBar (1400)
       PaperProps={{
-        sx: { borderRadius: 2 },
+        sx: { borderRadius: isMobile ? 0 : 2 },
       }}
     >
       <DialogTitle
         sx={{
+          fontWeight: 700,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          pb: 1,
+          gap: 1,
+          justifyContent: 'center',
+          textAlign: 'center',
+          backgroundColor: '#2E52B2',
+          color: '#fff',
+          py: { xs: 2, sm: 2 },
+          px: { xs: 2, sm: 3 },
+          position: 'relative',
+          fontSize: { xs: '1.125rem', sm: '1.25rem' },
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FeedbackIcon color="primary" />
-          <Typography variant="h6" fontWeight={600}>
-            ¡Ayúdanos a mejorar!
-          </Typography>
-        </Box>
-        <IconButton onClick={handleClose} disabled={loading} size="small">
-          <CloseIcon />
+        <IconButton
+          onClick={handleClose}
+          disabled={loading}
+          sx={{
+            position: 'absolute',
+            right: { xs: 8, sm: 16 },
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#fff',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            p: { xs: 0.75, sm: 1 },
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            },
+          }}
+        >
+          <CloseIcon sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
         </IconButton>
+        <FeedbackIcon sx={{ color: '#fff' }} fontSize="small" />
+        ¡Ayúdanos a mejorar!
       </DialogTitle>
 
-      <DialogContent>
+      <DialogContent dividers sx={MODAL_DIALOG_CONTENT_STYLES}>
         {success ? (
           <Box
             sx={{
@@ -165,14 +196,23 @@ const FeedbackModal = ({ open, onClose, userEmail, companyName, userName }) => {
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 2 }}>
+      <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
         {success ? (
-          <Button onClick={handleClose} variant="contained">
+          <Button
+            onClick={handleClose}
+            variant="contained"
+            sx={MODAL_SUBMIT_BUTTON_STYLES}
+          >
             Cerrar
           </Button>
         ) : (
           <>
-            <Button onClick={handleClose} disabled={loading}>
+            <Button
+              onClick={handleClose}
+              disabled={loading}
+              variant="outlined"
+              sx={MODAL_CANCEL_BUTTON_STYLES}
+            >
               Cancelar
             </Button>
             <Button
@@ -182,6 +222,7 @@ const FeedbackModal = ({ open, onClose, userEmail, companyName, userName }) => {
               startIcon={
                 loading ? <CircularProgress size={16} color="inherit" /> : null
               }
+              sx={MODAL_SUBMIT_BUTTON_STYLES}
             >
               {loading ? 'Enviando...' : 'Enviar'}
             </Button>
