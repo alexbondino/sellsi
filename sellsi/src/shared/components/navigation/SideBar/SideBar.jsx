@@ -91,11 +91,12 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
 
   // ✅ Feature flag: controla si se muestra "Mis Financiamientos" (buyer)
   // OFF => ocultar "Mis Financiamientos" del menú buyer
+  // DEFAULT OFF: ocultamos mientras la bandera carga o si falla (UX actual requerido)
   const { enabled: financingEnabled, loading: financingFlagLoading } = useFeatureFlag(
     {
       workspace: 'my-financing',
       key: 'financing_enabled',
-      defaultValue: true, // default UX: mostrar mientras carga / si falla
+      defaultValue: false, // default UX: ocultar mientras carga / si falla
     }
   );
 

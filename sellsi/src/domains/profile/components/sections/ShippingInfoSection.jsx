@@ -158,7 +158,8 @@ const ShippingInfoSection = ({
           <TextField
             label="Número"
             value={formData.shippingNumber || ''}
-            onChange={e => onFieldChange('shippingNumber', e.target.value)}
+            onChange={e => onFieldChange('shippingNumber', e.target.value.replace(/\D/g, ''))}
+            inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
             fullWidth
             variant="outlined"
             size="small"

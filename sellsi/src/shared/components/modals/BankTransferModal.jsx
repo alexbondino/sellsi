@@ -269,7 +269,7 @@ const BankTransferModal = ({
             borderRadius: 2,
           }}
         >
-          Volver
+          Cerrar
         </Button>
         <Button
           onClick={onConfirm}

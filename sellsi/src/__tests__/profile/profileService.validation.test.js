@@ -64,4 +64,27 @@ describe('validateProfileUpdate (server-side parity)', () => {
     expect(res.ok).toBe(false);
     expect(res.errors.shipping).toBeTruthy();
   });
+
+  test('shipping number must contain only digits if provided (camelCase)', () => {
+    const res = validateProfileUpdate({ shippingNumber: '12A' });
+    expect(res.ok).toBe(false);
+    expect(res.errors).toHaveProperty('shippingNumber');
+  });
+
+  test('shipping_number must contain only digits if provided (snake_case)', () => {
+    const res = validateProfileUpdate({ shipping_number: '1b2' });
+    expect(res.ok).toBe(false);
+    expect(res.errors).toHaveProperty('shippingNumber');
+  });
+
+  test('account number must contain only digits (camelCase)', () => {
+    const res = validateProfileUpdate({ accountNumber: 'ABC123' });
+    expect(res.ok).toBe(false);
+    expect(res.errors).toHaveProperty('accountNumber');
+  });
+
+  test('account number numeric passes', () => {
+    const res = validateProfileUpdate({ accountNumber: '123456' });
+    expect(res.ok).toBe(true);
+  });
 });
