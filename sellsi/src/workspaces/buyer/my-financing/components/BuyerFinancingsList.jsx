@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   useMediaQuery,
@@ -27,6 +28,8 @@ import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
 import DrawIcon from '@mui/icons-material/Draw';
+import PaymentIcon from '@mui/icons-material/Payment';
+import DownloadablesModal from '../../../../shared/components/financing/DownloadablesModal';
 import { useBanner } from '../../../../shared/components/display/banners/BannerContext';
 import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
 import BuyerFinancingTable from './BuyerFinancingTable';
@@ -52,7 +55,7 @@ import { getFinancingDaysStatus } from '../../../../shared/utils/financingDaysLo
 /**
  * Componente de tarjeta mobile para financiamientos (Buyer)
  */
-const MobileFinancingCard = ({ financing, onViewReason, onCancel, onSign, onDownload }) => {
+const MobileFinancingCard = ({ financing, onViewReason, onCancel, onSign, onDownload, onPayOnline, isApproved }) => {
   const statusInfo = getStateConfig(financing.status, 'buyer');
   const availableActions = getAvailableActions(financing.status, 'buyer');
   const cardFields = getBuyerCardFields();
@@ -74,13 +77,25 @@ const MobileFinancingCard = ({ financing, onViewReason, onCancel, onSign, onDown
           <Typography variant="subtitle1" fontWeight={600}>
             {financing.supplier_name}
           </Typography>
-          <Typography
-            variant="body2"
-            fontWeight={600}
-            sx={{ color: colorMap[statusInfo.color] || 'text.secondary' }}
-          >
-            {statusInfo.label}
-          </Typography>
+          {isApproved ? (
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              sx={{
+                color: financing.payment_status === 'paid' ? 'success.main' : 'warning.main'
+              }}
+            >
+              {financing.payment_status === 'paid' ? 'Pagado' : 'Pendiente de Pago'}
+            </Typography>
+          ) : (
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              sx={{ color: colorMap[statusInfo.color] || 'text.secondary' }}
+            >
+              {statusInfo.label}
+            </Typography>
+          )}
         </Box>
 
         {/* Info Grid */}
@@ -108,41 +123,59 @@ const MobileFinancingCard = ({ financing, onViewReason, onCancel, onSign, onDown
           </Tooltip>
 
           <Box sx={{ display: 'flex', gap: 1 }}>
-            {availableActions.includes('sign') && (
-              <Tooltip title="Firmar">
-                <IconButton 
-                  size="small" 
-                  color="primary" 
-                  onClick={() => handleSignClick(financing)}
-                  sx={{ '&:hover': { backgroundColor: 'primary.light', color: 'white' } }}
-                >
-                  <DrawIcon fontSize="small" />
-                </IconButton>
+            {isApproved ? (
+              <Tooltip title="Pagar en línea">
+                <span>
+                  <IconButton 
+                    size="small" 
+                    color="primary" 
+                    onClick={() => onPayOnline?.(financing)}
+                    disabled={financing.payment_status === 'paid'}
+                    sx={{ '&:hover': { backgroundColor: 'primary.light', color: 'white' } }}
+                  >
+                    <PaymentIcon fontSize="small" />
+                  </IconButton>
+                </span>
               </Tooltip>
-            )}
-            {availableActions.includes('cancel') && (
-              <Tooltip title="Cancelar">
-                <IconButton 
-                  size="small" 
-                  color="error" 
-                  onClick={() => handleCancelClick(financing)}
-                  sx={{ '&:hover': { backgroundColor: 'error.light', color: 'white' } }}
-                >
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {availableActions.includes('view_reason') && (
-              <Tooltip title="Ver motivo">
-                <IconButton 
-                  size="small" 
-                  color="info" 
-                  onClick={() => handleViewReason(financing)}
-                  sx={{ '&:hover': { backgroundColor: 'info.light', color: 'white' } }}
-                >
-                  <VisibilityIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+            ) : (
+              <>
+                {availableActions.includes('sign') && (
+                  <Tooltip title="Firmar">
+                    <IconButton 
+                      size="small" 
+                      color="primary" 
+                      onClick={() => onSign?.(financing)}
+                      sx={{ '&:hover': { backgroundColor: 'primary.light', color: 'white' } }}
+                    >
+                      <DrawIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {availableActions.includes('cancel') && (
+                  <Tooltip title="Cancelar">
+                    <IconButton 
+                      size="small" 
+                      color="error" 
+                      onClick={() => onCancel?.(financing)}
+                      sx={{ '&:hover': { backgroundColor: 'error.light', color: 'white' } }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {availableActions.includes('view_reason') && (
+                  <Tooltip title="Ver motivo">
+                    <IconButton 
+                      size="small" 
+                      color="info" 
+                      onClick={() => onViewReason?.(financing)}
+                      sx={{ '&:hover': { backgroundColor: 'info.light', color: 'white' } }}
+                    >
+                      <VisibilityIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </>
             )}
           </Box>
         </Box>
@@ -161,13 +194,15 @@ const BuyerFinancingsList = ({
   onCancel,
   onSign,
   onPayOnline,
+  initialTab = 0, // Prop para controlar la pestaña inicial
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { showBanner } = useBanner();
+  const navigate = useNavigate();
 
-  // Estado de pestañas
-  const [activeTab, setActiveTab] = useState(0); // 0: Solicitudes, 1: Aprobados
+  // Estado de pestañas - usar initialTab como valor inicial
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   // Estado de filtros (independientes por pestaña)
   const [statusFilter, setStatusFilter] = useState('all');
@@ -182,7 +217,13 @@ const BuyerFinancingsList = ({
   // Estado de modales de acción
   const [actionModal, setActionModal] = useState({
     open: false,
-    mode: null, // 'sign' | 'cancel'
+    mode: null, // 'sign' | 'cancel' | 'payOnline'
+    financing: null,
+  });
+
+  // Estado de modal de descargables
+  const [downloadablesModal, setDownloadablesModal] = useState({
+    open: false,
     financing: null,
   });
 
@@ -323,6 +364,25 @@ const BuyerFinancingsList = ({
     }
   };
 
+  const handlePayOnlineConfirm = async (financing) => {
+    try {
+      setActionModal({ open: false, mode: null, financing: null });
+      // Navegar a paymentmethod con financing ID como query parameter
+      navigate(`/buyer/paymentmethod?financing=${financing.id}`);
+      showBanner({
+        message: '💳 Redirigiendo al checkout...',
+        severity: 'info',
+        duration: 3000,
+      });
+    } catch (error) {
+      showBanner({
+        message: 'Error al procesar el pago',
+        severity: 'error',
+        duration: 4000,
+      });
+    }
+  };
+
   const handleViewReason = useCallback((financing) => {
     setReasonModal({ open: true, financing });
   }, []);
@@ -336,18 +396,27 @@ const BuyerFinancingsList = ({
   };
 
   const handleDownload = useCallback((financing) => {
-    console.log('🔽 Descargando documentos de:', financing);
-    // TODO: Implementar descarga de documentos
+    console.log('🔽 Abriendo modal de descargables para:', financing);
+    setDownloadablesModal({ open: true, financing });
+  }, []);
+
+  const handleDownloadFile = useCallback((doc, financing) => {
+    console.log('🔽 Descargando archivo:', doc.name, 'de:', financing);
+    // TODO: Implementar descarga real desde Supabase Storage
     showBanner({
-      message: 'Funcionalidad de descarga próximamente',
+      message: `Descargando ${doc.name}...`,
       severity: 'info',
       duration: 3000,
     });
   }, [showBanner]);
 
+  const closeDownloadablesModal = useCallback(() => {
+    setDownloadablesModal({ open: false, financing: null });
+  }, []);
+
   const handlePayOnline = (financing) => {
-    console.log('💳 Pagar en línea:', financing);
-    onPayOnline?.(financing);
+    console.log('💳 Abrir modal de pago en línea:', financing);
+    setActionModal({ open: true, mode: 'payOnline', financing });
   };
 
   // Loading state
@@ -414,6 +483,8 @@ const BuyerFinancingsList = ({
                       onSign={handleSignClick}
                       onViewReason={handleViewReason}
                       onDownload={handleDownload}
+                      onPayOnline={handlePayOnline}
+                      isApproved={true}
                     />
                   ))
                 )}
@@ -506,6 +577,15 @@ const BuyerFinancingsList = ({
         onClose={closeActionModal}
         onSign={handleSignConfirm}
         onCancel={handleCancelConfirm}
+        onPayOnline={handlePayOnlineConfirm}
+      />
+
+      {/* Modal de descargables */}
+      <DownloadablesModal
+        open={downloadablesModal.open}
+        onClose={closeDownloadablesModal}
+        financing={downloadablesModal.financing}
+        onDownloadFile={handleDownloadFile}
       />
     </>
   );

@@ -6,6 +6,13 @@
  * Modal para solicitud express con proceso rápido.
  * Grid responsive con 5 inputs (sin documentación).
  * 
+ * Mapeo de Campos a BD:
+ * - formData.amount → financing_requests.amount
+ * - formData.term → financing_requests.term_days
+ * - formData.businessName → financing_requests.legal_name
+ * - formData.rut → financing_requests.legal_rut
+ * - formData.legalRepresentative → financing_requests.legal_representative_name
+ * 
  * Características:
  * - Grid 2x3 responsive (5 inputs)
  * - Validación de RUT con formateador reutilizable

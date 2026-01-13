@@ -197,6 +197,7 @@ const ChangePasswordModal = ({ open, onClose, onPasswordChanged, showBanner }) =
       maxWidth="sm"
       fullWidth
       disableScrollLock={true}
+      sx={{ zIndex: 1500 }}
       PaperProps={{
         sx: { 
           borderRadius: 2,
@@ -288,7 +289,7 @@ const ChangePasswordModal = ({ open, onClose, onPasswordChanged, showBanner }) =
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+      <DialogActions sx={{ justifyContent: 'center', gap: 2, p: 2 }}>
         <Button 
           onClick={handleClose}
           variant="outlined"

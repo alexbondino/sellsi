@@ -54,6 +54,8 @@ export const useSupplierFinancings = () => {
           documents: ['contrato.pdf', 'pagare.pdf'],
           status: 'pending_supplier_review',
           created_at: new Date().toISOString(),
+          request_type: 'express',
+          document_count: 3,
         },
         {
           id: '2',
@@ -64,6 +66,8 @@ export const useSupplierFinancings = () => {
           documents: ['contrato.pdf'],
           status: 'buyer_signature_pending',
           created_at: new Date(Date.now() - 86400000).toISOString(),
+          request_type: 'express',
+          document_count: 4,
         },
         {
           id: '3',
@@ -74,6 +78,8 @@ export const useSupplierFinancings = () => {
           documents: ['contrato.pdf', 'pagare.pdf', 'garantia.pdf'],
           status: 'supplier_signature_pending',
           created_at: new Date(Date.now() - 172800000).toISOString(),
+          request_type: 'extended',
+          document_count: 5,
         },
         {
           id: '4',
@@ -87,6 +93,8 @@ export const useSupplierFinancings = () => {
           status: 'approved_by_sellsi',
           created_at: new Date(Date.now() - 259200000).toISOString(),
           approved_at: new Date(Date.now() - 172800000).toISOString(), // Aprobado hace 2 días
+          request_type: 'extended',
+          document_count: 6,
         },
         {
           id: '5',
@@ -98,6 +106,8 @@ export const useSupplierFinancings = () => {
           status: 'rejected_by_supplier',
           rejection_reason: 'Monto excede límite de crédito disponible',
           created_at: new Date(Date.now() - 345600000).toISOString(),
+          request_type: 'extended',
+          document_count: 7,
         },
         {
           id: '6',

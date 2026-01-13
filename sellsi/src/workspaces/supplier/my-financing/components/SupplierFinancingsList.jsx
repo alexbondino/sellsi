@@ -37,6 +37,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import DrawIcon from '@mui/icons-material/Draw';
 import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import DownloadablesModal from '../../../../shared/components/financing/DownloadablesModal';
 import { useBanner } from '../../../../shared/components/display/banners/BannerContext';
 import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
 import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion';
@@ -45,6 +46,7 @@ import SupplierFinancingActionModals from './SupplierFinancingActionModals';
 import ViewReasonModal from '../../../../shared/components/financing/ViewReasonModal';
 import Modal from '../../../../shared/components/feedback/Modal/Modal';
 import { MODAL_TYPES } from '../../../../shared/components/feedback/Modal/modalConfig';
+import { LegalRepValidationModal, useLegalRepModal } from '../../../../shared/components/validation';
 import { STATUS_MAP } from '../hooks/useSupplierFinancings';
 import { 
   FILTER_CATEGORIES, 
@@ -197,6 +199,16 @@ const SupplierFinancingsList = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { showBanner } = useBanner();
 
+  // Hook de validación de representante legal
+  const {
+    isOpen: isLegalRepModalOpen,
+    loading: isLoadingLegalRep,
+    missingFieldLabels: legalRepMissingFields,
+    checkAndProceed: checkLegalRepAndProceed,
+    handleGoToBilling,
+    handleClose: closeLegalRepModal,
+  } = useLegalRepModal();
+
   // Estado de pestañas
   const [activeTab, setActiveTab] = useState(0); // 0: Solicitudes, 1: Aprobados
 
@@ -213,6 +225,12 @@ const SupplierFinancingsList = ({
 
   // Estado de modal de ver motivo
   const [reasonModal, setReasonModal] = useState({
+    open: false,
+    financing: null,
+  });
+
+  // Estado de modal de descargables
+  const [downloadablesModal, setDownloadablesModal] = useState({
     open: false,
     financing: null,
   });
@@ -264,6 +282,16 @@ const SupplierFinancingsList = ({
 
   // Handlers de modales
   const openModal = (mode, financing) => {
+    // Si es modo firma, validar representante legal primero
+    if (mode === 'sign') {
+      const canProceed = checkLegalRepAndProceed(() => {
+        setModalState({ open: true, mode, financing });
+      });
+      // Si no puede proceder, checkLegalRepAndProceed ya abrió el modal de validación
+      return;
+    }
+    
+    // Para otros modos, abrir directamente
     setModalState({ open: true, mode, financing });
   };
 
@@ -353,14 +381,23 @@ const SupplierFinancingsList = ({
   };
 
   const handleDownload = (financing) => {
-    // TODO: Implementar descarga de documentos
-    showBanner({
-      message: 'Descargando documentos...',
-      severity: 'info',
-      duration: 2000,
-    });
-    console.log('Downloading documents for:', financing.id);
+    console.log('🔽 Abriendo modal de descargables para:', financing);
+    setDownloadablesModal({ open: true, financing });
   };
+
+  const handleDownloadFile = useCallback((doc, financing) => {
+    console.log('🔽 Descargando archivo:', doc.name, 'de:', financing);
+    // TODO: Implementar descarga real desde Supabase Storage
+    showBanner({
+      message: `Descargando ${doc.name}...`,
+      severity: 'info',
+      duration: 3000,
+    });
+  }, [showBanner]);
+
+  const closeDownloadablesModal = useCallback(() => {
+    setDownloadablesModal({ open: false, financing: null });
+  }, []);
 
   // Estado vacío global
   const EmptyStateGlobal = () => (
@@ -632,6 +669,23 @@ const SupplierFinancingsList = ({
         open={reasonModal.open}
         financing={reasonModal.financing}
         onClose={closeReasonModal}
+      />
+
+      {/* Modal de Validación de Representante Legal */}
+      <LegalRepValidationModal
+        isOpen={isLegalRepModalOpen}
+        onClose={closeLegalRepModal}
+        onGoToBilling={handleGoToBilling}
+        loading={isLoadingLegalRep}
+        missingFieldLabels={legalRepMissingFields}
+      />
+
+      {/* Modal de descargables */}
+      <DownloadablesModal
+        open={downloadablesModal.open}
+        onClose={closeDownloadablesModal}
+        financing={downloadablesModal.financing}
+        onDownloadFile={handleDownloadFile}
       />
     </>
   );

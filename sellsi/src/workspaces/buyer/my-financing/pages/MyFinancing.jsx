@@ -10,6 +10,7 @@
  */
 
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { Box, Typography, Container, ThemeProvider } from '@mui/material';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -20,17 +21,18 @@ import BuyerFinancingsList from '../components/BuyerFinancingsList';
 
 // Mock data temporal hasta que se implemente el hook real
 const useMockBuyerFinancings = () => {
-  return {
-    financings: [
-      // PASO 1: Revisión del Proveedor
-      {
-        id: 1,
-        supplier_name: 'Proveedor ABC S.A.',
-        amount: 5000000,
-        term_days: 30,
-        status: 'pending_supplier_review', // Buyer esperando respuesta del supplier
-        created_at: '2024-01-10T10:00:00Z',
-      },
+  const financings = [
+    // PASO 1: Revisión del Proveedor
+    {
+      id: 1,
+      supplier_name: 'Proveedor ABC S.A.',
+      amount: 5000000,
+      term_days: 30,
+      status: 'pending_supplier_review', // Buyer esperando respuesta del supplier
+      created_at: '2024-01-10T10:00:00Z',
+      request_type: 'express', // express | extended
+      document_count: 3, // Mock: cantidad de documentos para testing
+    },
       {
         id: 2,
         supplier_name: 'Distribuidora XYZ',
@@ -38,6 +40,8 @@ const useMockBuyerFinancings = () => {
         term_days: 45,
         status: 'buyer_signature_pending', // Supplier aprobó, ahora buyer debe firmar
         created_at: '2024-01-09T15:30:00Z',
+        request_type: 'express',
+        document_count: 4,
       },
       {
         id: 3,
@@ -47,6 +51,8 @@ const useMockBuyerFinancings = () => {
         status: 'rejected_by_supplier', // Supplier rechazó
         rejection_reason: 'Monto solicitado excede el límite permitido para este cliente.',
         created_at: '2024-01-08T09:15:00Z',
+        request_type: 'extended',
+        document_count: 5,
       },
       {
         id: 4,
@@ -56,6 +62,8 @@ const useMockBuyerFinancings = () => {
         status: 'cancelled_by_buyer', // Buyer canceló antes de que supplier revisara
         cancellation_reason: 'Ya no necesito el financiamiento por cambio en proyecto.',
         created_at: '2024-01-07T14:20:00Z',
+        request_type: 'extended',
+        document_count: 6,
       },
 
       // PASO 2: Firmas de ambas partes
@@ -66,6 +74,8 @@ const useMockBuyerFinancings = () => {
         term_days: 30,
         status: 'supplier_signature_pending', // Buyer firmó, esperando firma del supplier
         created_at: '2024-01-11T11:00:00Z',
+        request_type: 'extended',
+        document_count: 7,
       },
       {
         id: 6,
@@ -75,6 +85,8 @@ const useMockBuyerFinancings = () => {
         status: 'cancelled_by_supplier', // Supplier canceló después de aprobar
         cancellation_reason: 'No podemos cumplir con los plazos acordados por problemas logísticos.',
         created_at: '2024-01-06T16:45:00Z',
+        request_type: 'express',
+        document_count: 3,
       },
 
       // PASO 3: Aprobación de Sellsi
@@ -85,6 +97,8 @@ const useMockBuyerFinancings = () => {
         term_days: 60,
         status: 'pending_sellsi_approval', // Ambos firmaron, esperando aprobación Sellsi
         created_at: '2024-01-12T08:30:00Z',
+        request_type: 'express',
+        document_count: 4,
       },
 
       // PASO 4: Resultado Final
@@ -299,7 +313,15 @@ const useMockBuyerFinancings = () => {
         created_at: '2025-12-18T10:00:00Z',
         approved_at: '2025-12-18T14:00:00Z', // Aprobado hace 25 días, quedan 5 días → NARANJA (5 <= 7)
       },
-    ],
+    ];
+
+  // Guardar financings en sessionStorage para que useFinancingCheckout pueda acceder
+  React.useEffect(() => {
+    sessionStorage.setItem('mock_financings', JSON.stringify(financings));
+  }, []);
+
+  return {
+    financings,
     loading: false,
     initializing: false,
     cancelFinancing: async (id, reason) => {
@@ -317,6 +339,11 @@ const useMockBuyerFinancings = () => {
 
 const MyFinancing = () => {
   const isMobile = useMediaQuery(dashboardThemeCore.breakpoints.down('md'));
+  const location = useLocation();
+  
+  // Determinar pestaña inicial desde el state de navegación
+  const initialTab = location.state?.activeTab ?? 0;
+  
   const {
     financings,
     loading,
@@ -366,6 +393,7 @@ const MyFinancing = () => {
             onCancel={cancelFinancing}
             onSign={signFinancing}
             onPayOnline={payOnline}
+            initialTab={initialTab}
           />
         </Container>
       </Box>

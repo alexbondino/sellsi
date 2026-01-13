@@ -6,6 +6,17 @@
  * Modal para solicitud extendida con documentación completa.
  * Grid 2x4 con inputs y adjuntar archivos.
  * 
+ * Mapeo de Campos a BD:
+ * - formData.amount → financing_requests.amount
+ * - formData.term → financing_requests.term_days
+ * - formData.businessName → financing_requests.legal_name
+ * - formData.rut → financing_requests.legal_rut
+ * - formData.legalRepresentative → financing_requests.legal_representative_name
+ * - formData.powersCertificate → financing_documents (type: garantia)
+ * - formData.powersValidityCertificate → financing_documents (type: garantia)
+ * - formData.simplifiedTaxFolder → financing_documents (type: garantia)
+ * - formData.others → financing_documents (type: garantia, opcional)
+ * 
  * Características:
  * - Grid 2x5 responsive
  * - Validación de RUT con formateador reutilizable

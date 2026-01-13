@@ -11,3 +11,4 @@ export { default as ViewReasonModal } from './ViewReasonModal';
 export { default as FinancingTabs } from './FinancingTabs';
 export { default as FinancingFilters } from './FinancingFilters';
 export { EmptyStateGlobal, EmptyStateFiltered, EmptyStateApproved } from './FinancingEmptyStates';
+export { default as DownloadablesModal } from './DownloadablesModal';

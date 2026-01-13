@@ -247,6 +247,7 @@ const ProfileImageModal = ({
       maxWidth="sm"
       fullWidth
       disableScrollLock={true}
+      sx={{ zIndex: 1500 }}
       PaperProps={{
         sx: {
           borderRadius: 2,

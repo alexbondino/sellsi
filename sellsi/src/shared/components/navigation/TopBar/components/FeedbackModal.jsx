@@ -92,6 +92,7 @@ const FeedbackModal = ({ open, onClose, userEmail, companyName, userName }) => {
       fullWidth
       fullScreen={isMobile}
       disableScrollLock={true}
+      sx={{ zIndex: 1500 }} // Por encima de BottomBar (1301) y MobileBar (1400)
       PaperProps={{
         sx: { borderRadius: isMobile ? 0 : 2 },
       }}

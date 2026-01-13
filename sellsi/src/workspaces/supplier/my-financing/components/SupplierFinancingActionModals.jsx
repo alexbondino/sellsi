@@ -24,10 +24,13 @@ import {
   useMediaQuery,
   TextField,
   Skeleton,
+  Alert,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import DrawIcon from '@mui/icons-material/Draw';
+import DownloadIcon from '@mui/icons-material/Download';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import CloseIcon from '@mui/icons-material/Close';
 import BlockIcon from '@mui/icons-material/Block';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -121,7 +124,7 @@ const ApproveModal = ({ open, financing, onConfirm, onClose }) => {
           variant="outlined"
           sx={MODAL_CANCEL_BUTTON_STYLES}
         >
-          Cancelar
+          Volver
         </Button>
         <Button
           onClick={() => onConfirm(financing)}
@@ -238,7 +241,7 @@ const RejectModal = ({ open, financing, onConfirm, onClose }) => {
           variant="outlined"
           sx={MODAL_CANCEL_BUTTON_STYLES}
         >
-          Cancelar
+          Volver
         </Button>
         <Button
           onClick={handleConfirm}
@@ -259,12 +262,63 @@ const RejectModal = ({ open, financing, onConfirm, onClose }) => {
 const SignModal = ({ open, financing, onConfirm, onClose }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [fileError, setFileError] = useState('');
   useBodyScrollLock(open);
+
+  const handleDownloadContract = () => {
+    // TODO: Implementar descarga real del contrato marco desde Supabase
+    console.log('Descargando contrato marco para financiamiento:', financing?.id);
+    alert('Función de descarga de contrato marco pendiente de implementación');
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    setFileError('');
+    
+    if (!file) {
+      setUploadedFile(null);
+      return;
+    }
+
+    // Validar tipo de archivo
+    if (file.type !== 'application/pdf') {
+      setFileError('El archivo debe ser un PDF');
+      setUploadedFile(null);
+      return;
+    }
+
+    // Validar tamaño (300KB = 300 * 1024 bytes)
+    const maxSize = 300 * 1024;
+    if (file.size > maxSize) {
+      setFileError(`El archivo excede el tamaño máximo de 300KB (actual: ${Math.round(file.size / 1024)}KB)`);
+      setUploadedFile(null);
+      return;
+    }
+
+    setUploadedFile(file);
+  };
+
+  const handleConfirm = () => {
+    if (!uploadedFile) return;
+    onConfirm(financing, uploadedFile);
+    // Limpiar estado al cerrar
+    setUploadedFile(null);
+    setFileError('');
+  };
+
+  const handleCloseModal = () => {
+    setUploadedFile(null);
+    setFileError('');
+    onClose();
+  };
+
+  const isSubmitEnabled = uploadedFile && !fileError;
 
   return (
     <Dialog 
       open={open} 
-      onClose={onClose} 
+      onClose={handleCloseModal} 
       maxWidth="sm" 
       fullWidth
       fullScreen={isMobile}
@@ -291,7 +345,7 @@ const SignModal = ({ open, financing, onConfirm, onClose }) => {
         }}
       >
         <IconButton
-          onClick={onClose}
+          onClick={handleCloseModal}
           sx={{
             position: 'absolute',
             right: { xs: 8, sm: 16 },
@@ -312,7 +366,7 @@ const SignModal = ({ open, financing, onConfirm, onClose }) => {
       </DialogTitle>
       <DialogContent dividers sx={MODAL_DIALOG_CONTENT_STYLES}>
         <DialogContentText>
-          Al firmar este documento, confirmas tu acuerdo con los términos del financiamiento.
+          Descarga el contrato marco, fírmalo y súbelo en formato PDF para completar el proceso.
         </DialogContentText>
         {financing && (
           <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
@@ -327,20 +381,114 @@ const SignModal = ({ open, financing, onConfirm, onClose }) => {
             </Typography>
           </Box>
         )}
+
+        {/* Contenedor de dos columnas */}
+        <Box 
+          sx={{ 
+            mt: 3, 
+            display: 'flex', 
+            gap: 2,
+            flexDirection: { xs: 'column', sm: 'row' },
+          }}
+        >
+          {/* Columna 1: Descargar Contrato Marco */}
+          <Box sx={{ flex: 1 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={handleDownloadContract}
+              sx={{
+                py: 1.5,
+                borderColor: '#2E52B2',
+                color: '#2E52B2',
+                '&:hover': {
+                  borderColor: '#1e3a8a',
+                  backgroundColor: 'rgba(46, 82, 178, 0.04)',
+                },
+              }}
+            >
+              Descargar Contrato Marco
+            </Button>
+          </Box>
+
+          {/* Columna 2: Adjuntar Contrato Firmado */}
+          <Box sx={{ flex: 1 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              component="label"
+              startIcon={<UploadFileIcon />}
+              sx={{
+                py: 1.5,
+                borderColor: uploadedFile ? '#10b981' : '#6b7280',
+                color: uploadedFile ? '#10b981' : '#6b7280',
+                '&:hover': {
+                  borderColor: uploadedFile ? '#059669' : '#4b5563',
+                  backgroundColor: uploadedFile ? 'rgba(16, 185, 129, 0.04)' : 'rgba(107, 114, 128, 0.04)',
+                },
+              }}
+            >
+              {uploadedFile ? 'PDF Adjuntado ✓' : 'Adjuntar Contrato Firmado'}
+              <input
+                type="file"
+                hidden
+                accept=".pdf,application/pdf"
+                onChange={handleFileUpload}
+              />
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Información del archivo adjuntado */}
+        {uploadedFile && (
+          <Box sx={{ mt: 2 }}>
+            <Alert severity="success" sx={{ fontSize: '0.875rem' }}>
+              <strong>{uploadedFile.name}</strong> ({Math.round(uploadedFile.size / 1024)}KB)
+            </Alert>
+          </Box>
+        )}
+
+        {/* Error de validación */}
+        {fileError && (
+          <Box sx={{ mt: 2 }}>
+            <Alert severity="error" sx={{ fontSize: '0.875rem' }}>
+              {fileError}
+            </Alert>
+          </Box>
+        )}
+
+        {/* Requisitos */}
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="caption" color="text.secondary" display="block">
+            Requisitos del archivo:
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block">
+            • Formato: PDF
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block">
+            • Tamaño máximo: 300KB
+          </Typography>
+        </Box>
       </DialogContent>
       <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
         <Button
-          onClick={onClose}
+          onClick={handleCloseModal}
           variant="outlined"
           sx={MODAL_CANCEL_BUTTON_STYLES}
         >
-          Cancelar
+          Volver
         </Button>
         <Button
-          onClick={() => onConfirm(financing)}
+          onClick={handleConfirm}
           variant="contained"
           color="primary"
-          sx={MODAL_SUBMIT_BUTTON_STYLES}
+          disabled={!isSubmitEnabled}
+          sx={{
+            ...MODAL_SUBMIT_BUTTON_STYLES,
+            opacity: isSubmitEnabled ? 1 : 0.5,
+            cursor: isSubmitEnabled ? 'pointer' : 'not-allowed',
+          }}
         >
           Firmar Documento
         </Button>
