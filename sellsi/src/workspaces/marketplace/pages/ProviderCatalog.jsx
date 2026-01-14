@@ -45,6 +45,7 @@ import {
   InfoOutlined,
   ShoppingCart as ShoppingCartIcon,
   Inventory2 as Inventory2Icon,
+  RequestQuote as RequestQuoteIcon,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
@@ -53,10 +54,12 @@ import { supabase } from '../../../services/supabase';
 
 import ProductCard from '../../../shared/components/display/product-card/ProductCard';
 import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock';
+import { useFeatureFlag } from '../../../shared/hooks/useFeatureFlag';
 import useCartStore from '../../../shared/stores/cart/cartStore';
 import { filterActiveProducts } from '../../../utils/productActiveStatus';
 import { CATEGORIAS } from '../components/CategoryNavigation/CategoryNavigation';
 import { formatNumber } from '../../../shared/utils/formatters';
+import FinancingModals from '../../buyer/my-financing/components/FinancingModals';
 
 /**
  * ProviderCatalog - Catálogo de productos de un proveedor específico
@@ -89,6 +92,17 @@ const ProviderCatalog = () => {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   useBodyScrollLock(shareModalOpen);
   const [catalogUrl, setCatalogUrl] = useState('');
+
+  // Feature flag para financiamiento
+  const { enabled: financingEnabled, loading: financingFlagLoading } = useFeatureFlag({
+    workspace: 'my-financing',
+    key: 'financing_enabled',
+    defaultValue: false,
+  });
+
+  // Estados para modal de financiamiento
+  const [financingModalOpen, setFinancingModalOpen] = useState(false);
+  useBodyScrollLock(financingModalOpen);
 
   // Extraer categorías dinámicamente de los productos del proveedor
   const availableCategories = useMemo(() => {
@@ -439,6 +453,35 @@ const ProviderCatalog = () => {
           duration: 2000,
         });
       });
+  };
+
+  // Handlers para modal de financiamiento
+  const handleOpenFinancingModal = () => {
+    setFinancingModalOpen(true);
+  };
+
+  const handleCloseFinancingModal = () => {
+    setFinancingModalOpen(false);
+  };
+
+  const handleFinancingSubmit = async (financingData) => {
+    try {
+      console.log('📋 Solicitud de financiamiento:', financingData);
+      
+      // TODO: Implementar lógica de envío a backend
+      // Aquí se enviará la solicitud de financiamiento a Supabase
+      
+      toast.success('Solicitud de financiamiento enviada exitosamente', {
+        icon: '✅',
+        duration: 3000,
+      });
+      setFinancingModalOpen(false);
+    } catch (error) {
+      console.error('❌ Error al enviar solicitud:', error);
+      toast.error('Error al enviar la solicitud de financiamiento', {
+        duration: 3000,
+      });
+    }
   };
 
   // Manejar navegación hacia atrás
@@ -854,52 +897,108 @@ const ProviderCatalog = () => {
                 </Typography>
 
                 {/* Compra mínima exigida del proveedor */}
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
+                <Box
                   sx={{
                     mt: 1,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 0.5,
-                    fontSize: { xs: '0.8rem', md: '0.95rem' },
+                    justifyContent: 'space-between',
+                    gap: 2,
+                    flexWrap: { xs: 'wrap', md: 'nowrap' },
                   }}
                 >
-                  <ShoppingCartIcon
-                    sx={{ fontSize: 18, color: 'action.active', mr: 0.25 }}
-                  />
-                  <b>Compra mínima exigida:</b>{' '}
-                  <Tooltip
-                    title="El proveedor no despacha productos si el monto total entre todos los productos que compres es inferior al indicado"
-                    arrow
-                    placement="bottom"
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      fontSize: { xs: '0.8rem', md: '0.95rem' },
+                    }}
                   >
-                    <Box
-                      component="span"
+                    <ShoppingCartIcon
+                      sx={{ fontSize: 18, color: 'action.active', mr: 0.25 }}
+                    />
+                    <b>Compra mínima exigida:</b>{' '}
+                    <Tooltip
+                      title="El proveedor no despacha productos si el monto total entre todos los productos que compres es inferior al indicado"
+                      arrow
+                      placement="bottom"
+                    >
+                      <Box
+                        component="span"
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                        }}
+                      >
+                        <Box component="span" sx={{ fontWeight: 700 }}>
+                          {'$' +
+                            formatNumber(
+                              provider?.minimum_purchase_amount ??
+                                provider?.minimumPurchaseAmount ??
+                                0
+                            )}
+                        </Box>
+                        <InfoOutlined
+                          sx={{
+                            fontSize: 16,
+                            color: 'action.active',
+                            cursor: 'help',
+                          }}
+                        />
+                      </Box>
+                    </Tooltip>
+                  </Typography>
+
+                  {/* Botón de solicitar financiamiento (solo desktop) */}
+                  {financingEnabled && !isMobile && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      onClick={handleOpenFinancingModal}
+                      disabled={financingFlagLoading}
+                      startIcon={<RequestQuoteIcon />}
                       sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 0.5,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        px: 2,
+                        py: 0.75,
+                        whiteSpace: 'nowrap',
+                        fontSize: '0.875rem',
                       }}
                     >
-                      <Box component="span" sx={{ fontWeight: 700 }}>
-                        {'$' +
-                          formatNumber(
-                            provider?.minimum_purchase_amount ??
-                              provider?.minimumPurchaseAmount ??
-                              0
-                          )}
-                      </Box>
-                      <InfoOutlined
-                        sx={{
-                          fontSize: 16,
-                          color: 'action.active',
-                          cursor: 'help',
-                        }}
-                      />
-                    </Box>
-                  </Tooltip>
-                </Typography>
+                      Solicitar Financiamiento
+                    </Button>
+                  )}
+                </Box>
+
+                {/* Botón de solicitar financiamiento (solo mobile) */}
+                {financingEnabled && isMobile && (
+                  <Box sx={{ mt: 1.5, width: '100%' }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      fullWidth
+                      onClick={handleOpenFinancingModal}
+                      disabled={financingFlagLoading}
+                      startIcon={<RequestQuoteIcon />}
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        py: 1,
+                        fontSize: '0.85rem',
+                      }}
+                    >
+                      Solicitar Financiamiento
+                    </Button>
+                  </Box>
+                )}
               </Box>
             </Box>
           </Paper>
@@ -1252,6 +1351,13 @@ const ProviderCatalog = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Modal de solicitud de financiamiento */}
+        <FinancingModals
+          open={financingModalOpen}
+          onClose={handleCloseFinancingModal}
+          onSubmit={handleFinancingSubmit}
+        />
       </Box>
     </ThemeProvider>
   );

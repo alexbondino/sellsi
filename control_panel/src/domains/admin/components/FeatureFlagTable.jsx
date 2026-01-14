@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Paper,
@@ -11,142 +11,182 @@ import {
   TableHead,
   TableRow,
   CircularProgress,
+  Chip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Alert,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { toast } from 'react-hot-toast';
 
 import {
-  listWorkspacesFromFeatureFlags,
-  getFeatureFlagsByKey,
-  upsertFeatureFlag,
+  getAllFeatureFlags,
+  updateFeatureFlag,
 } from '../services/featureFlagService';
 
-const FEATURE_KEY = 'my_offers_supplier';
-
 export default function FeatureFlagTable() {
-  const [rows, setRows] = useState([]);
+  const [flags, setFlags] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const meta = useMemo(
-    () => ({
-      label: 'My Offers supplier',
-      description: 'Habilita modo proveedor para el workspace My Offers',
-    }),
-    []
-  );
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     fetchFlags();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchFlags = async () => {
     try {
       setLoading(true);
-
-      // 1) Workspaces existentes en la tabla (distinct)
-      const workspaces = await listWorkspacesFromFeatureFlags();
-
-      // 2) Flags existentes SOLO para esta key
-      const flagsForKey = await getFeatureFlagsByKey(FEATURE_KEY);
-
-      // 3) Normalizar 1 fila por workspace
-      const normalized = workspaces.map(workspace => {
-        const found = flagsForKey.find(
-          f => f.workspace === workspace && f.key === FEATURE_KEY
-        );
-
-        if (found) return { ...found, missing: false };
-
-        return {
-          workspace,
-          key: FEATURE_KEY,
-          enabled: false,
-          missing: true,
-        };
-      });
-
-      setRows(normalized);
+      const data = await getAllFeatureFlags();
+      setFlags(data);
     } catch (e) {
       console.error('Error cargando feature flags', e);
-      setRows([]);
+      toast.error('Error al cargar feature flags');
+      setFlags([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleToggle = async (workspace, enabled) => {
+  const handleToggle = async (flag) => {
+    const newValue = !flag.enabled;
+    
     try {
-      await upsertFeatureFlag({
-        workspace,
-        key: FEATURE_KEY,
-        enabled,
-        label: meta.label,
-        description: meta.description,
-      });
-
+      setUpdating(true);
+      await updateFeatureFlag(flag.workspace, flag.key, newValue);
+      toast.success(`Feature flag ${newValue ? 'habilitado' : 'deshabilitado'}`);
       await fetchFlags();
     } catch (e) {
       console.error('Error actualizando feature flag', e);
+      toast.error('Error al actualizar feature flag');
+    } finally {
+      setUpdating(false);
     }
   };
 
+  // Agrupar flags por key
+  const groupedFlags = flags.reduce((acc, flag) => {
+    if (!acc[flag.key]) {
+      acc[flag.key] = [];
+    }
+    acc[flag.key].push(flag);
+    return acc;
+  }, {});
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (flags.length === 0) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="info">
+          No hay feature flags configurados en el sistema
+        </Alert>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        Feature Flag:{' '}
-        <Box component="span" sx={{ fontFamily: 'monospace' }}>
-          {FEATURE_KEY}
-        </Box>
+      <Typography variant="h5" sx={{ mb: 3 }}>
+        Feature Flags del Sistema
       </Typography>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Workspace</TableCell>
-              <TableCell align="center">Activo</TableCell>
-              <TableCell align="center">Estado</TableCell>
-            </TableRow>
-          </TableHead>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Administra las funcionalidades habilitadas/deshabilitadas por workspace
+      </Typography>
 
-          <TableBody>
-            {loading && (
-              <TableRow>
-                <TableCell colSpan={3} align="center">
-                  <CircularProgress size={22} />
-                </TableCell>
-              </TableRow>
-            )}
+      {Object.entries(groupedFlags).map(([key, flagsForKey]) => {
+        const firstFlag = flagsForKey[0];
+        const enabledCount = flagsForKey.filter(f => f.enabled).length;
+        const totalCount = flagsForKey.length;
 
-            {!loading &&
-              rows.map(row => (
-                <TableRow key={`${row.workspace}:${row.key}`}>
-                  <TableCell>{row.workspace}</TableCell>
+        return (
+          <Accordion key={key} defaultExpanded sx={{ mb: 2 }}>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              sx={{
+                backgroundColor: 'grey.50',
+                '&:hover': { backgroundColor: 'grey.100' },
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle1" sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
+                    {key}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {firstFlag.label || 'Sin descripción'}
+                  </Typography>
+                </Box>
+                <Chip
+                  label={`${enabledCount}/${totalCount} activos`}
+                  color={enabledCount > 0 ? 'success' : 'default'}
+                  size="small"
+                />
+              </Box>
+            </AccordionSummary>
 
-                  <TableCell align="center">
-                    <Switch
-                      checked={!!row.enabled}
-                      onChange={e =>
-                        handleToggle(row.workspace, e.target.checked)
-                      }
-                    />
-                  </TableCell>
+            <AccordionDetails>
+              {firstFlag.description && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  {firstFlag.description}
+                </Alert>
+              )}
 
-                  <TableCell align="center">
-                    {row.missing ? 'Se creará al activar' : 'OK'}
-                  </TableCell>
-                </TableRow>
-              ))}
+              <TableContainer component={Paper} variant="outlined">
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Workspace</TableCell>
+                      <TableCell>Label</TableCell>
+                      <TableCell align="center">Estado</TableCell>
+                      <TableCell align="center">Acciones</TableCell>
+                    </TableRow>
+                  </TableHead>
 
-            {!loading && rows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={3} align="center">
-                  No hay workspaces configurados
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                  <TableBody>
+                    {flagsForKey.map(flag => (
+                      <TableRow key={`${flag.workspace}:${flag.key}`}>
+                        <TableCell>
+                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                            {flag.workspace}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {flag.label || '-'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip
+                            label={flag.enabled ? 'Activo' : 'Inactivo'}
+                            color={flag.enabled ? 'success' : 'default'}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Switch
+                            checked={flag.enabled}
+                            onChange={() => handleToggle(flag)}
+                            disabled={updating}
+                            color="success"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </AccordionDetails>
+          </Accordion>
+        );
+      })}
     </Box>
   );
 }

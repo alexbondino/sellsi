@@ -41,8 +41,8 @@ import UserManagementTable from './UserManagementTable';
 import ProductMarketplaceTable from './ProductMarketplaceTable';
 import PaymentReleasesTable from './PaymentReleasesTable';
 import AdminBankTransferPayments from './AdminBankTransferPayments';
-import ToggleOnIcon from '@mui/icons-material/ToggleOn';
-import FeatureFlagTable from './FeatureFlagTable';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import FinanciamientosTable from './FinanciamientosTable';
 
 // ✅ CONSTANTS
 const TAB_ICONS = {
@@ -50,7 +50,7 @@ const TAB_ICONS = {
   usuarios: <PeopleIcon />,
   productos: <InventoryIcon />,
   solicitudes: <PaymentIcon />,
-  feature_flags: <ToggleOnIcon />,
+  financiamientos: <AccountBalanceIcon />,
 };
 
 const TAB_LABELS = {
@@ -58,7 +58,7 @@ const TAB_LABELS = {
   usuarios: 'Gestión de Usuarios',
   productos: 'Productos Marketplace',
   solicitudes: 'Transferencias Manuales',
-  feature_flags: 'Feature Flags',
+  financiamientos: 'Financiamientos',
 };
 
 // ✅ STYLES
@@ -268,13 +268,13 @@ const AdminDashboard = memo(() => {
           />
         </Tooltip>
         <Tooltip
-          title="Disponibilizar o deshabilitar funcionalidades en la plataforma"
+          title="Gestión de solicitudes de financiamiento: revisar, aprobar y descargar documentos"
           placement="bottom"
           arrow
         >
           <Tab
-            icon={TAB_ICONS.feature_flags}
-            label={TAB_LABELS.feature_flags}
+            icon={TAB_ICONS.financiamientos}
+            label={TAB_LABELS.financiamientos}
             sx={dashboardStyles.tab}
             {...getTabProps(4)}
           />
@@ -304,9 +304,9 @@ const AdminDashboard = memo(() => {
       <TabPanel value={currentTab} index={3}>
         <ProductMarketplaceTable />
       </TabPanel>
-      {/* Pestaña de Feature Flags */}
+      {/* Pestaña de Financiamientos */}
       <TabPanel value={currentTab} index={4}>
-        <FeatureFlagTable />
+        <FinanciamientosTable />
       </TabPanel>
     </>
   );

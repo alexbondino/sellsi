@@ -15,6 +15,7 @@ import {
   MenuItem,
   Divider,
   Checkbox,
+  Button,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -81,6 +82,10 @@ const CartItem = ({
   // Nuevas props para validación de despacho
   shippingValidation,
   isAdvancedShippingMode = false,
+  // Props de financiamiento
+  onOpenFinancingModal,
+  financingEnabled = false,
+  financingAmount = 0,
 }) => {
   // Hook de navegación debe ir dentro del cuerpo del componente
   const navigate = useNavigate();
@@ -463,6 +468,34 @@ const CartItem = ({
                     fontSize: { xs: '1rem', md: '0.9rem', lg: '1rem' },
                   }}
                 />
+
+                {/* Indicador de Financiamiento */}
+                {financingEnabled && financingAmount > 0 && (
+                  <Box sx={{ mt: 0.5, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.25 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: '#222',
+                        fontWeight: 500,
+                        fontSize: { xs: '0.9rem', md: '0.8rem', lg: '0.9rem' },
+                      }}
+                    >
+                      Financiado:
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: '#2E52B2',
+                        fontWeight: 700,
+                        fontSize: { xs: '1rem', md: '0.9rem', lg: '1rem' },
+                      }}
+                      style={{ color: '#2E52B2' }}
+                      data-testid={`financed-amount-${item.id}`}
+                    >
+                      {formatPrice(financingAmount)}
+                    </Typography>
+                  </Box>
+                )}
               </Box>
               {/* Feature badges */}
               {/* Stack de badges eliminado: Chip "Verificado" removido */}

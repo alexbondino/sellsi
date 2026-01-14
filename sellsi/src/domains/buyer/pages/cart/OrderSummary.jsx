@@ -20,6 +20,8 @@ const OrderSummary = ({
   discount,
   shippingCost,
   total,
+  financingAmount = 0,
+  financingEnabled = false,
   cartStats,
   deliveryDate,
   isCheckingOut,
@@ -138,6 +140,8 @@ const OrderSummary = ({
         discount={0}
         shippingCost={shippingCost}
         total={total}
+        financingAmount={financingAmount}
+        financingEnabled={financingEnabled}
         formatPrice={formatPrice}
         cartStats={cartStats}
         isCalculatingShipping={isCalculatingShipping}

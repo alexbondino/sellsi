@@ -58,6 +58,7 @@ const providerMenuItems = [
     icon: <ProductsIcon />,
   },
   { text: 'Mis Pedidos', path: '/supplier/my-orders', icon: <OrdersIcon /> },
+  { text: 'Mis Financiamientos', path: '/supplier/my-financing', icon: <FinancingIcon /> },
   // { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> }, // Eliminado
   // Marketplace oculto para supplier
 ];
@@ -89,9 +90,9 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
     }
   );
 
-  // ✅ Feature flag: controla si se muestra "Mis Financiamientos" (buyer)
-  // OFF => ocultar "Mis Financiamientos" del menú buyer
-  // DEFAULT OFF: ocultamos mientras la bandera carga o si falla (UX actual requerido)
+  // ✅ Feature flag: controla si se muestra "Mis Financiamientos" (buyer + supplier)
+  // OFF => ocultar "Mis Financiamientos" en ambos menús
+  // DEFAULT OFF: ocultamos mientras la bandera carga o si falla (UX segura)
   const { enabled: financingEnabled, loading: financingFlagLoading } = useFeatureFlag(
     {
       workspace: 'my-financing',
@@ -222,7 +223,7 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
     );
   }
 
-  // ✅ Feature flag aplicado: ocultar "Mis Financiamientos" en buyer si está OFF
+  // ✅ Feature flag aplicado: ocultar "Mis Financiamientos" en buyer + supplier si está OFF
   if (!financingFlagLoading && !financingEnabled) {
     menuItemsToDisplay = menuItemsToDisplay.filter(
       item => !(item.path && item.path.includes('/my-financing'))

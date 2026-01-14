@@ -14,6 +14,7 @@
  */
 import React, { useMemo, useCallback, useRef } from 'react';
 import { Box } from '@mui/material';
+import toast from 'react-hot-toast';
 
 // Subcomponentes
 import ProductName from './ProductName';
@@ -27,17 +28,21 @@ import ProductImageGallery from '../ProductImageGallery';
 import PurchaseActions from '../PurchaseActions';
 import { PurchaseActionsSkeleton } from '../skeletons/PurchaseActionsSkeleton';
 
+// Componentes de financiamiento
+import FinancingModals from '../../../../buyer/my-financing/components/FinancingModals';
+
 // Hooks
 import { useProductHeaderState } from '../../hooks/useProductHeaderState';
 import { useResponsiveThumbnail } from '../../../../../hooks/useResponsiveThumbnail';
 import { useOptimizedUserShippingRegion } from '../../../../../hooks/useOptimizedUserShippingRegion';
 import { useOptimizedProductOwnership } from '../../hooks/useOptimizedProductOwnership';
 import { useSupplierDocumentTypes } from '../../../../../shared/utils/supplierDocumentTypes';
+import { useFeatureFlag } from '../../../../../shared/hooks/useFeatureFlag';
 
 // Utils
 import { getProductImageUrl } from '../../../../../utils/getProductImageUrl';
 
-// Estilos
+// Estilos// Estilos
 import {
   HEADER_STYLES,
   INFO_STYLES,
@@ -86,6 +91,44 @@ const ProductHeader = React.memo(
       closeContactModal,
       getQuotationDefaults,
     } = useProductHeaderState();
+
+    // Feature flag para financiamiento
+    const { enabled: financingEnabled } = useFeatureFlag({
+      workspace: 'my-financing',
+      key: 'financing_enabled',
+      defaultValue: false,
+    });
+
+    console.log('[ProductHeader] Feature flag financing:', { financingEnabled });
+
+    // Estado para modal de financiamiento
+    const [isFinancingModalOpen, setIsFinancingModalOpen] = React.useState(false);
+
+    const openFinancingModal = useCallback(() => {
+      console.log('[ProductHeader] Opening financing modal');
+      setIsFinancingModalOpen(true);
+    }, []);
+
+    const closeFinancingModal = useCallback(() => {
+      console.log('[ProductHeader] Closing financing modal');
+      setIsFinancingModalOpen(false);
+    }, []);
+
+    const handleFinancingSubmit = useCallback(async (financingData) => {
+      try {
+        console.log('📋 Solicitud de financiamiento:', financingData);
+        toast.success('Solicitud de financiamiento enviada exitosamente', {
+          icon: '✅',
+          duration: 3000,
+        });
+        setIsFinancingModalOpen(false);
+      } catch (error) {
+        console.error('❌ Error al enviar solicitud:', error);
+        toast.error('Error al enviar la solicitud de financiamiento', {
+          duration: 3000,
+        });
+      }
+    }, []);
 
     // Thumbnail responsivo
     const { thumbnailUrl: mainImageThumbnail } =
@@ -295,6 +338,8 @@ const ProductHeader = React.memo(
               onCopyAllTiers={() => handleCopyAllTiers(tiers)}
               onOpenContactModal={openContactModal}
               onOpenQuotationModal={openQuotationModal}
+              onOpenFinancingModal={openFinancingModal}
+              financingEnabled={financingEnabled}
             />
 
             {/* Botones de Compra */}
@@ -326,6 +371,8 @@ const ProductHeader = React.memo(
                 isOwnProduct={isOwnProduct}
                 onOpenContactModal={openContactModal}
                 onOpenQuotationModal={openQuotationModal}
+                onOpenFinancingModal={openFinancingModal}
+                financingEnabled={financingEnabled}
                 sx={{ mt: 2, mb: 2 }}
               />
             )}
@@ -368,6 +415,13 @@ const ProductHeader = React.memo(
           onCloseQuotationModal={closeQuotationModal}
           onCloseContactModal={closeContactModal}
           quotationDefaults={quotationDefaults}
+        />
+
+        {/* Modal de Financiamiento */}
+        <FinancingModals
+          open={isFinancingModalOpen}
+          onClose={closeFinancingModal}
+          onSubmit={handleFinancingSubmit}
         />
       </Box>
     );
