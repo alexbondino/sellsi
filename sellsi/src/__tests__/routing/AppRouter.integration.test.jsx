@@ -42,6 +42,15 @@ jest.mock('../../shared/components/layout/SuspenseLoader', () => ({
   default: () => <div>LOADING</div>,
 }));
 
+// Some routes import from the workspace barrel '../../workspaces/marketplace' which
+// exposes named exports (Marketplace, ProviderCatalog). The AppRouter lazy-loads
+// the workspace module directly; ensure it is mocked so Suspense resolves quickly.
+jest.mock('../../workspaces/marketplace', () => ({
+  __esModule: true,
+  Marketplace: () => <div>MARKETPLACE</div>,
+  ProviderCatalog: () => <div>PROVIDER_CATALOG_MOCK</div>,
+}));
+
 // Mock many lazy-loaded route components used by AppRouter to simple placeholders
 function mockDefault(id) {
   return {

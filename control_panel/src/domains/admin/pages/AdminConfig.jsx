@@ -16,19 +16,24 @@ import {
   CircularProgress,
   IconButton,
   Tooltip,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   Settings as SettingsIcon,
   ArrowBack as ArrowBackIcon,
   Payment as PaymentIcon,
   Info as InfoIcon,
+  ToggleOn as ToggleOnIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../../services/supabase';
+import FeatureFlagTable from '../components/FeatureFlagTable';
 
 const AdminConfig = () => {
   const navigate = useNavigate();
+  const [currentTab, setCurrentTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState({
@@ -188,8 +193,31 @@ const AdminConfig = () => {
         </Stack>
       </Box>
 
-      {/* Payment Methods Section */}
-      <Paper elevation={3} sx={{ p: 4, mb: 3 }}>
+      {/* Tabs */}
+      <Paper sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs
+          value={currentTab}
+          onChange={(e, newValue) => setCurrentTab(newValue)}
+          variant="fullWidth"
+          textColor="primary"
+          indicatorColor="primary"
+        >
+          <Tab 
+            icon={<PaymentIcon />} 
+            label="Métodos de Pago" 
+            sx={{ textTransform: 'none' }}
+          />
+          <Tab 
+            icon={<ToggleOnIcon />} 
+            label="Feature Flags" 
+            sx={{ textTransform: 'none' }}
+          />
+        </Tabs>
+      </Paper>
+
+      {/* Payment Methods Tab */}
+      {currentTab === 0 && (
+        <Paper elevation={3} sx={{ p: 4, mb: 3 }}>
         <Stack spacing={3}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <PaymentIcon color="primary" />
@@ -302,6 +330,30 @@ const AdminConfig = () => {
           </Box>
         </Stack>
       </Paper>
+      )}
+
+      {/* Feature Flags Tab */}
+      {currentTab === 1 && (
+        <Paper elevation={3} sx={{ p: 4, mb: 3 }}>
+          <Stack spacing={3}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ToggleOnIcon color="primary" />
+              <Typography variant="h6" fontWeight="bold">
+                Feature Flags
+              </Typography>
+            </Box>
+
+            <Alert severity="info" icon={<InfoIcon />}>
+              Habilita o deshabilita funcionalidades específicas por workspace.
+              Los cambios se aplican inmediatamente.
+            </Alert>
+
+            <Divider />
+
+            <FeatureFlagTable />
+          </Stack>
+        </Paper>
+      )}
     </Container>
   );
 };

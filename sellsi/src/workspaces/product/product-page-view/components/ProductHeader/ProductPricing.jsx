@@ -37,6 +37,8 @@ export const QuotationButtons = ({
   isOwnProduct,
   onOpenContactModal,
   onOpenQuotationModal,
+  onOpenFinancingModal,
+  financingEnabled = false,
   sx = {},
 }) => {
   if (!isLoggedIn || isOwnProduct) return null;
@@ -110,6 +112,38 @@ export const QuotationButtons = ({
           Cotiza aquí
         </Button>
       </Box>
+
+      {/* Fila 3 - Financiamiento */}
+      {financingEnabled && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.75,
+            lineHeight: 1.2,
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ color: 'text.secondary', lineHeight: 1.2 }}
+          >
+            ¿Necesitas pagar a plazo?
+          </Typography>
+
+          <Button
+            variant="text"
+            size="small"
+            onClick={onOpenFinancingModal}
+            sx={{
+              fontWeight: 600,
+              minHeight: 'auto',
+              py: 0,
+            }}
+          >
+            Solicita Financiamiento
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 };
@@ -125,6 +159,8 @@ const ProductPricing = ({
   onCopyAllTiers,
   onOpenContactModal,
   onOpenQuotationModal,
+  onOpenFinancingModal,
+  financingEnabled = false,
 }) => {
   const showPriceSkeleton = useSmartSkeleton(loadingTiers);
   const theme = useTheme();
@@ -240,6 +276,8 @@ const ProductPricing = ({
             isOwnProduct={isOwnProduct}
             onOpenContactModal={onOpenContactModal}
             onOpenQuotationModal={onOpenQuotationModal}
+            onOpenFinancingModal={onOpenFinancingModal}
+            financingEnabled={financingEnabled}
           />
         )}
       </Box>
@@ -274,6 +312,8 @@ const ProductPricing = ({
           isOwnProduct={isOwnProduct}
           onOpenContactModal={onOpenContactModal}
           onOpenQuotationModal={onOpenQuotationModal}
+          onOpenFinancingModal={onOpenFinancingModal}
+          financingEnabled={financingEnabled}
         />
       )}
     </Box>

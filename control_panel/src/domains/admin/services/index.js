@@ -92,7 +92,22 @@ export {
 } from './adminPaymentReleaseService'
 
 // ========================================
-// 📎 SERVICIOS DE GESTIÓN DE ARCHIVOS
+// � SERVICIOS DE GESTIÓN DE FINANCIAMIENTOS
+// ========================================
+export {
+  getPendingFinancingRequests,
+  getApprovedFinancingRequests,
+  getAllFinancingRequests,
+  approveFinancingRequest,
+  rejectFinancingRequest,
+  getFinancingDocuments,
+  downloadDocument,
+  getDocumentUrl,
+  getFinancingStats
+} from './adminFinancingService'
+
+// ========================================
+// �📎 SERVICIOS DE GESTIÓN DE ARCHIVOS
 // ========================================
 export {
   subirComprobante,

@@ -8,6 +8,7 @@ import {
   Chip,
   Avatar,
   Tooltip,
+  Button,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -27,6 +28,9 @@ const MobileCartItem = ({
   onRemove,
   formatPrice,
   showShipping = true,
+  onOpenFinancingModal,
+  financingEnabled = false,
+  financingAmount = 0,
 }) => {
   const navigate = useNavigate();
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
@@ -201,14 +205,47 @@ const MobileCartItem = ({
               </Typography>
 
               {/* Precio total */}
-              <Typography
-                variant="h6"
-                color="primary.main"
-                fontWeight={700}
-                sx={{ fontSize: '1.1rem' }}
-              >
-                {formatPrice(itemTotal)}
-              </Typography>
+              <Box sx={{ mt: 0.25 }}>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                    Total:
+                  </Typography>
+                  <Typography variant="h6" color="primary.main" fontWeight={700} sx={{ fontSize: '1.1rem' }}>
+                    {formatPrice(itemTotal)}
+                  </Typography>
+                </Stack>
+              </Box>
+
+              {/* Indicador de Financiamiento - ahora en fila con label y valor pegado */}
+              {financingEnabled && financingAmount > 0 && (
+                <Box sx={{ mt: 0.5 }}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: '#222',
+                        fontWeight: 500,
+                        fontSize: '0.8rem',
+                      }}
+                    >
+                      Financiado:
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: '#2E52B2',
+                        fontWeight: 700,
+                        fontSize: { xs: '14px' },
+                        ml: 0.25,
+                      }}
+                      style={{ color: '#2E52B2' }}
+                      data-testid={`financed-amount-${item.id}`}
+                    >
+                      {formatPrice(financingAmount)}
+                    </Typography>
+                  </Stack>
+                </Box>
+              )}
               {/* El Chip visual para 'Ofertado' fue removido; se mantiene texto 'OFERTADO' arriba. */}
 
               {/* Info de envío */}

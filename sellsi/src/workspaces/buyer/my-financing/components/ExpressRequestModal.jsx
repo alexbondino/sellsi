@@ -34,6 +34,8 @@ import {
   useTheme,
   useMediaQuery,
   InputAdornment,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
@@ -56,6 +58,10 @@ const INITIAL_FORM_DATA = {
   term: '',
   businessName: '',
   rut: '',
+  legalAddress: '',
+  legalCommune: '',
+  legalRegion: '',
+  autoFillModal: true,
 };
 
 const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
@@ -144,6 +150,21 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
       newErrors.rut = 'Formato de RUT inválido';
     }
 
+    // Dirección legal
+    if (!formData.legalAddress?.trim()) {
+      newErrors.legalAddress = 'Campo requerido';
+    }
+
+    // Comuna
+    if (!formData.legalCommune?.trim()) {
+      newErrors.legalCommune = 'Campo requerido';
+    }
+
+    // Región
+    if (!formData.legalRegion?.trim()) {
+      newErrors.legalRegion = 'Campo requerido';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -165,6 +186,10 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
         term: '',
         businessName: '',
         rut: '',
+        legalAddress: '',
+        legalCommune: '',
+        legalRegion: '',
+        autoFillModal: true,
       });
       setErrors({});
     } catch (error) {
@@ -181,6 +206,10 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
       term: '',
       businessName: '',
       rut: '',
+      legalAddress: '',
+      legalCommune: '',
+      legalRegion: '',
+      autoFillModal: true,
     });
     setErrors({});
     onClose();
@@ -274,13 +303,13 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
       <DialogContent
         dividers
         sx={{
-          pt: { xs: 3, sm: 4 },
-          px: { xs: 2, sm: 3 },
-          pb: { xs: 3, sm: 4 },
+          pt: { xs: 3, md: 2 },
+          px: { xs: 2, md: 3 },
+          pb: 3,
         }}
       >
         {/* Sección: Información del Financiamiento */}
-        <Box sx={{ mb: 3, width: '100%' }}>
+        <Box sx={{ mb: { xs: 3, md: 2.5 }, width: '100%' }}>
           <Typography
             variant="subtitle1"
             sx={{
@@ -299,9 +328,9 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
               display: 'grid',
               gridTemplateColumns: {
                 xs: '1fr',
-                sm: 'minmax(0, 1fr) minmax(0, 1fr)',
+                md: 'minmax(0, 1fr) minmax(0, 1fr)',
               },
-              gap: { xs: 2, sm: 2.5 },
+              gap: 2,
               '& > *': {
                 minWidth: 0,
               },
@@ -351,9 +380,9 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
               display: 'grid',
               gridTemplateColumns: {
                 xs: '1fr',
-                sm: 'minmax(0, 1fr) minmax(0, 1fr)',
+                md: 'minmax(0, 1fr) minmax(0, 1fr)',
               },
-              gap: { xs: 2, sm: 2.5 },
+              gap: 2,
               '& > *': {
                 minWidth: 0,
               },
@@ -386,9 +415,58 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
               error={!!errors.legalRepresentative}
               helperText={errors.legalRepresentative || 'Nombre completo del representante'}
               required
-              sx={{ gridColumn: { xs: '1', sm: '1 / 2' } }}
+            />
+            <TextField
+              fullWidth
+              label="Dirección Legal"
+              value={formData.legalAddress}
+              onChange={(e) => handleChange('legalAddress', e.target.value)}
+              error={!!errors.legalAddress}
+              helperText={errors.legalAddress || 'Dirección de la empresa'}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Comuna"
+              value={formData.legalCommune}
+              onChange={(e) => handleChange('legalCommune', e.target.value)}
+              error={!!errors.legalCommune}
+              helperText={errors.legalCommune || 'Comuna de la empresa'}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Región"
+              value={formData.legalRegion}
+              onChange={(e) => handleChange('legalRegion', e.target.value)}
+              error={!!errors.legalRegion}
+              helperText={errors.legalRegion || 'Región de la empresa'}
+              required
             />
           </Box>
+        </Box>
+
+        {/* Checkbox para auto-rellenar */}
+        <Box sx={{ mt: { xs: 3, md: 2 }, display: 'flex', justifyContent: 'flex-start' }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={formData.autoFillModal}
+                onChange={(e) => handleChange('autoFillModal', e.target.checked)}
+                sx={{
+                  color: SELLSI_BLUE,
+                  '&.Mui-checked': {
+                    color: SELLSI_BLUE,
+                  },
+                }}
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Utilizar mi configuración anterior (pre-llenar automáticamente)
+              </Typography>
+            }
+          />
         </Box>
       </DialogContent>
 
