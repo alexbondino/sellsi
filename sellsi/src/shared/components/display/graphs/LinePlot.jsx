@@ -8,7 +8,7 @@ import {
   ToggleButton,
 } from '@mui/material';
 import { LineChart } from '@mui/x-charts/LineChart';
-import { formatCurrency } from '../../../utils/formatters';
+import { formatCurrency, formatNumber } from '../../../utils/formatters';
 
 // Valores mínimos para el eje Y
 const MIN_Y_MAX_CURRENCY = 10000; // $10K mínimo
@@ -79,14 +79,14 @@ const LinePlot = ({
 
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}MM`;
     if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-    return n.toLocaleString('es-CL');
+    return formatNumber(n);
   };
 
   // ✅ Formato completo para métricas / tooltip
   const formatValue = value => {
     const n = Number(value);
     if (!Number.isFinite(n)) return '-';
-    return isCurrency ? formatCurrency(n) : n.toLocaleString('es-CL');
+    return isCurrency ? formatCurrency(n) : formatNumber(n);
   };
 
   // ✅ Margen izquierdo final del chart (mueve el eje Y)

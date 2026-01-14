@@ -26,6 +26,44 @@ import {
 import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock';
 
 /**
+ * ============================================================================
+ * ESTILOS ESTANDARIZADOS PARA BOTONES DE MODALES
+ * ============================================================================
+ * 
+ * Estos estilos garantizan consistencia en todos los modales del sistema.
+ * Úsalos cuando construyas Dialog/DialogActions personalizados.
+ */
+
+export const MODAL_DIALOG_ACTIONS_STYLES = {
+  flexDirection: { xs: 'column', sm: 'row' },
+  gap: { xs: 1.5, sm: 2 },
+  p: { xs: 2, sm: 3 },
+  pt: { xs: 1.5, sm: 1 },
+  justifyContent: 'center',
+};
+
+export const MODAL_BUTTON_BASE_STYLES = {
+  textTransform: 'none',
+  borderRadius: 2,
+  fontSize: { xs: '0.875rem', sm: '0.875rem' },
+  px: 2,
+  py: { xs: 1, sm: 0.75 },
+  width: { xs: '100%', sm: '160px' },
+  boxSizing: 'border-box',
+};
+
+export const MODAL_CANCEL_BUTTON_STYLES = {
+  ...MODAL_BUTTON_BASE_STYLES,
+  fontWeight: 500,
+};
+
+export const MODAL_SUBMIT_BUTTON_STYLES = {
+  ...MODAL_BUTTON_BASE_STYLES,
+  fontWeight: 600,
+  order: { xs: -1, sm: 0 },
+};
+
+/**
  * Modal - Un componente de modal versátil y reutilizable.
  *
  * @param {boolean} isOpen - Si el modal está abierto.
@@ -95,6 +133,7 @@ const Modal = ({
       fullScreen={isMobile}
       disableScrollLock={true}
       disableRestoreFocus={true}
+      sx={{ zIndex: 1500 }}
       PaperProps={{
         component: isFormModal ? 'form' : 'div',
         onSubmit: isFormModal ? handleSubmitInternal : undefined,
@@ -102,9 +141,9 @@ const Modal = ({
         sx: {
           borderRadius: isMobile ? 0 : 3,
           overflow: 'hidden',
-          position: 'fixed',
-          maxWidth: isMobile ? '100%' : '400px',
-          ...(isFormModal && { maxWidth: 'sm' }),
+          ...(!isMobile && {
+            maxWidth: isFormModal ? '600px' : '400px',
+          }),
         },
       }}
     >
@@ -118,23 +157,34 @@ const Modal = ({
             MODAL_TYPES.DELETE,
           ].includes(type)
             ? 'center'
-            : 'left',
+            : 'center',
           pb: [
             MODAL_TYPES.INFO,
             MODAL_TYPES.SUCCESS,
             MODAL_TYPES.WARNING,
             MODAL_TYPES.DELETE,
           ].includes(type)
-            ? 1
-            : 3,
+            ? { xs: 1, sm: 1 }
+            : { xs: 1.5, sm: 2 },
           pt: [
             MODAL_TYPES.INFO,
             MODAL_TYPES.SUCCESS,
             MODAL_TYPES.WARNING,
             MODAL_TYPES.DELETE,
           ].includes(type)
-            ? 3
-            : 1,
+            ? { xs: 2, sm: 3 }
+            : { xs: 1.5, sm: 2 },
+          // Estilos Sellsi para modales ORDER_* y QUOTATION
+          ...([
+            MODAL_TYPES.ORDER_CHECK,
+            MODAL_TYPES.ORDER_TRUCK,
+            MODAL_TYPES.ORDER_BRIEFCASE,
+            MODAL_TYPES.ORDER_CANCEL,
+            MODAL_TYPES.QUOTATION,
+          ].includes(type) && {
+            backgroundColor: '#2E52B2',
+            color: '#fff',
+          }),
         }}
       >
         <Box
@@ -164,15 +214,15 @@ const Modal = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  width: 64,
-                  height: 64,
+                  width: { xs: 56, sm: 64 },
+                  height: { xs: 56, sm: 64 },
                   borderRadius: '50%',
                   bgcolor: config.iconBgColor,
                   mx: 'auto',
-                  mb: 2,
+                  mb: { xs: 1.5, sm: 2 },
                 }}
               >
-                <IconComponent sx={{ fontSize: 32, color: config.iconColor }} />
+                <IconComponent sx={{ fontSize: { xs: 28, sm: 32 }, color: config.iconColor }} />
               </Box>
             )}
 
@@ -182,8 +232,9 @@ const Modal = ({
               MODAL_TYPES.ORDER_TRUCK,
               MODAL_TYPES.ORDER_BRIEFCASE,
               MODAL_TYPES.ORDER_CANCEL,
+              MODAL_TYPES.QUOTATION,
             ].includes(type) && (
-              <IconComponent sx={{ fontSize: 24, color: config.iconColor }} />
+              <IconComponent sx={{ fontSize: { xs: 20, sm: 24 }, color: '#fff' }} />
             )}
 
           {showWarningIconHeader && <WarningAmberIcon color="warning" />}
@@ -197,14 +248,25 @@ const Modal = ({
                 MODAL_TYPES.SUCCESS,
                 MODAL_TYPES.WARNING,
                 MODAL_TYPES.DELETE,
+                MODAL_TYPES.ORDER_CHECK,
+                MODAL_TYPES.ORDER_TRUCK,
+                MODAL_TYPES.ORDER_BRIEFCASE,
+                MODAL_TYPES.ORDER_CANCEL,
+                MODAL_TYPES.QUOTATION,
               ].includes(type)
-                ? '600'
+                ? '700'
                 : 'normal'
             }
             sx={{
               flexGrow: 1,
               fontSize: { xs: '1.1rem', sm: '1.25rem' },
-              color: 'text.primary',
+              color: [
+                MODAL_TYPES.ORDER_CHECK,
+                MODAL_TYPES.ORDER_TRUCK,
+                MODAL_TYPES.ORDER_BRIEFCASE,
+                MODAL_TYPES.ORDER_CANCEL,
+                MODAL_TYPES.QUOTATION,
+              ].includes(type) ? '#fff' : 'text.primary',
             }}
           >
             {title}
@@ -215,12 +277,41 @@ const Modal = ({
               onClick={onClose}
               sx={{
                 position: 'absolute',
-                top: 8,
-                right: 8,
-                color: 'grey.500',
+                top: [
+                  MODAL_TYPES.ORDER_CHECK,
+                  MODAL_TYPES.ORDER_TRUCK,
+                  MODAL_TYPES.ORDER_BRIEFCASE,
+                  MODAL_TYPES.ORDER_CANCEL,
+                  MODAL_TYPES.QUOTATION,
+                ].includes(type) ? '50%' : { xs: 8, sm: 16 },
+                transform: [
+                  MODAL_TYPES.ORDER_CHECK,
+                  MODAL_TYPES.ORDER_TRUCK,
+                  MODAL_TYPES.ORDER_BRIEFCASE,
+                  MODAL_TYPES.ORDER_CANCEL,
+                  MODAL_TYPES.QUOTATION,
+                ].includes(type) ? 'translateY(-50%)' : 'none',
+                right: { xs: 8, sm: 16 },
+                p: { xs: 0.75, sm: 1 },
+                color: [
+                  MODAL_TYPES.ORDER_CHECK,
+                  MODAL_TYPES.ORDER_TRUCK,
+                  MODAL_TYPES.ORDER_BRIEFCASE,
+                  MODAL_TYPES.ORDER_CANCEL,
+                  MODAL_TYPES.QUOTATION,
+                ].includes(type) ? '#fff' : 'grey.500',
+                ...([MODAL_TYPES.ORDER_CHECK,
+                  MODAL_TYPES.ORDER_TRUCK,
+                  MODAL_TYPES.ORDER_BRIEFCASE,
+                  MODAL_TYPES.ORDER_CANCEL,
+                  MODAL_TYPES.QUOTATION,
+                ].includes(type) && {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                }),
               }}
             >
-              <CloseIcon />
+              <CloseIcon sx={{ fontSize: { xs: '1.5rem', sm: '1.5rem' } }} />
             </IconButton>
           )}
         </Box>
@@ -230,13 +321,14 @@ const Modal = ({
         dividers={isFormModal}
         sx={{
           textAlign: isFormModal ? 'left' : 'center',
-          pt: isFormModal ? 0 : 0,
-          pb: isFormModal ? 2 : 2,
+          pt: type === MODAL_TYPES.QUOTATION ? { xs: 1.5, sm: 2 } : (isFormModal ? { xs: 1.5, sm: 2 } : { xs: 1.5, sm: 2 }),
+          pb: isFormModal ? { xs: 1.5, sm: 2 } : { xs: 1.5, sm: 2 },
+          px: { xs: 2, sm: 3 },
         }}
       >
         {order && isFormModal && (
           <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle2" gutterBottom>
+            <Typography variant="subtitle1" fontWeight={700} gutterBottom>
               Información del Pedido
             </Typography>
             <Box sx={{ mb: 2 }}>
@@ -274,7 +366,7 @@ const Modal = ({
           component="div"
           color="text.secondary"
           sx={{
-            fontSize: { xs: '0.9rem', sm: '1rem' },
+            fontSize: { xs: '0.875rem', sm: '1rem' },
             lineHeight: 1.5,
           }}
         >
@@ -282,26 +374,13 @@ const Modal = ({
         </Typography>
       </DialogContent>
 
-      <DialogActions
-        sx={{
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: 1,
-          p: 3,
-          pt: 1,
-          justifyContent: 'center',
-        }}
-      >
+      <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
         {showCancelButton && (
           <Button
             onClick={onClose}
             disabled={loading}
             variant="outlined"
-            fullWidth={isMobile}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 500,
-              borderRadius: 2,
-            }}
+            sx={MODAL_CANCEL_BUTTON_STYLES}
           >
             {cancelButtonText}
           </Button>
@@ -313,13 +392,7 @@ const Modal = ({
           disabled={loading || submitDisabled}
           variant="contained"
           color={currentSubmitButtonColor}
-          fullWidth={isMobile}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: 2,
-            order: isMobile ? -1 : 0,
-          }}
+          sx={MODAL_SUBMIT_BUTTON_STYLES}
         >
           {loading ? 'Procesando...' : currentSubmitButtonText}
         </Button>

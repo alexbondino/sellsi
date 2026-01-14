@@ -107,7 +107,8 @@ export const getUserProfile = async (userId, options = {}) => {
         // Defaults (preservar campos de tabla users como minimum_purchase_amount, descripcion_proveedor)
         descripcion_proveedor: data?.descripcion_proveedor || '',
         document_types: data?.document_types || [],
-        minimum_purchase_amount: data?.minimum_purchase_amount ?? 0,
+        // minimum_purchase_amount: suppliers mínimo 1, buyers pueden 0
+        minimum_purchase_amount: data?.minimum_purchase_amount ?? (data?.main_supplier ? 1 : 0),
       };
 
       profileCache.set(userId, { data: completeProfile, ts: Date.now() });
@@ -151,7 +152,8 @@ export const getUserProfile = async (userId, options = {}) => {
             billing_commune: billingData?.billing_commune || '',
             descripcion_proveedor: userData?.descripcion_proveedor || '',
             document_types: userData?.document_types || [],
-            minimum_purchase_amount: userData?.minimum_purchase_amount ?? 0,
+            // minimum_purchase_amount: suppliers mínimo 1, buyers pueden 0
+            minimum_purchase_amount: userData?.minimum_purchase_amount ?? (userData?.main_supplier ? 1 : 0),
         };
         profileCache.set(userId, { data: completeProfile, ts: Date.now() });
         return completeProfile;
@@ -217,10 +219,19 @@ export const updateUserProfile = async (userId, profileData) => {
       document_types: profileData.document_types !== undefined
         ? profileData.document_types
         : (profileData.documentTypes || []),
-      // Compra mínima (para proveedores)
-      minimum_purchase_amount: profileData.minimum_purchase_amount !== undefined
-        ? profileData.minimum_purchase_amount
-        : (profileData.minimumPurchaseAmount || 0),
+      // Compra mínima: suppliers mínimo $1, buyers pueden $0
+      minimum_purchase_amount: (() => {
+        const isSupplier = profileData.main_supplier !== undefined 
+          ? profileData.main_supplier 
+          : (profileData.role === 'supplier');
+        const rawValue = profileData.minimum_purchase_amount !== undefined
+          ? profileData.minimum_purchase_amount
+          : profileData.minimumPurchaseAmount;
+        
+        return isSupplier 
+          ? (rawValue || 1)  // Suppliers: mínimo 1
+          : (rawValue || 0); // Buyers: puede ser 0
+      })(),
     };
 
     // Agregar logo_url solo si se proporciona
@@ -820,9 +831,17 @@ export const validateProfileUpdate = (payload = {}) => {
   const region = payload.shipping_region ?? payload.shippingRegion ?? payload.shipping_region;
   const commune = payload.shipping_commune ?? payload.shippingCommune;
   const address = payload.shipping_address ?? payload.shippingAddress;
+  const shippingNumber = payload.shipping_number ?? payload.shippingNumber;
   const regionProvided = region !== undefined && region !== null && String(region).trim() !== '';
   if (regionProvided && (!commune || String(commune).trim() === '' || !address || String(address).trim() === '')) {
     errors.shipping = 'When shipping region is provided, shipping commune and address are required';
+  }
+
+  // Shipping number, if provided, must contain only digits
+  if (shippingNumber !== undefined && shippingNumber !== null && String(shippingNumber).trim() !== '') {
+    if (!/^\d+$/.test(String(shippingNumber).trim())) {
+      errors.shippingNumber = 'Shipping number must contain only digits';
+    }
   }
 
   // Billing: if business_name provided (either camelCase or snake_case), require full billing fields
@@ -838,6 +857,14 @@ export const validateProfileUpdate = (payload = {}) => {
       .some(v => v === undefined || v === null || String(v).trim() === '');
     if (anyMissing) {
       errors.billing = 'All billing fields are required when business name is present';
+    }
+  }
+
+  // Account number must contain only digits if provided (supports snake_case and camelCase)
+  const accountNumber = payload.account_number ?? payload.accountNumber;
+  if (accountNumber !== undefined && accountNumber !== null && String(accountNumber).trim() !== '') {
+    if (!/^\d+$/.test(String(accountNumber).trim())) {
+      errors.accountNumber = 'Account number must contain only digits';
     }
   }
 

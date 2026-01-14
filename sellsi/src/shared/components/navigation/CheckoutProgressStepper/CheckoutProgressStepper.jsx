@@ -97,13 +97,31 @@ const CheckoutProgressStepper = ({
   currentStep,
   completedSteps = [],
   orientation = 'horizontal',
-  showLabels = true 
+  showLabels = true,
+  isFinancingMode = false // Nuevo prop para detectar modo financiamiento
 }) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   
-  // Convertir a array de pasos
-  const steps = Object.values(CHECKOUT_STEPS)
+  // Convertir a array de pasos y modificar el primer paso si es financiamiento
+  const steps = React.useMemo(() => {
+    const baseSteps = Object.values(CHECKOUT_STEPS);
+    
+    if (isFinancingMode) {
+      // Crear una copia del primer paso con nombre modificado
+      return baseSteps.map((step, index) => {
+        if (index === 0 && step.id === 'cart') {
+          return {
+            ...step,
+            name: 'Mis Financiamientos'
+          };
+        }
+        return step;
+      });
+    }
+    
+    return baseSteps;
+  }, [isFinancingMode]);
   
   // Determinar paso activo - manejar tanto objeto como string/ID
   const currentStepId = React.useMemo(() => {

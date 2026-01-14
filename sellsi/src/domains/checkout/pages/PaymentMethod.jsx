@@ -5,7 +5,7 @@
 import React, { useEffect } from 'react'
 import { ThemeProvider } from '@mui/material/styles'
 import { Box, Container, useMediaQuery, useTheme } from '@mui/material'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 // Layout y tema
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore'
@@ -19,7 +19,7 @@ import useShippingValidation from '../../buyer/pages/cart/hooks/useShippingValid
 
 // Componentes del checkout
 import PaymentMethodSelector from '../components/PaymentMethodSelector'
-import { useCheckout } from '../hooks'
+import { useCheckout, useFinancingCheckout } from '../hooks'
 
 // Utilidades de cálculo de envío
 import { calculateRealShippingCost } from '../../../utils/shippingCalculation'
@@ -37,15 +37,23 @@ import { getUserProfileData } from '../../../services/user/profileService'
 const PaymentMethod = () => {
   const navigate = useNavigate()
   const theme = useTheme()
+  const [searchParams] = useSearchParams()
+  
+  // Detectar modo de financiamiento
+  const financingId = searchParams.get('financing')
+  const isFinancingMode = !!financingId
   
   // ===== DETECCIÓN DE MOBILE =====
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   
-  // Estados del carrito
-  const { items, getSubtotal, getTotal } = useCartStore() // ✅ REMOVIDO: getShippingCost (no usar mock)
+  // Estados del carrito (solo para modo normal)
+  const { items, getSubtotal, getTotal } = useCartStore()
   
-  // ✅ NUEVO: Hook de validación de shipping para evitar race condition
-  const shippingValidation = useShippingValidation(items, true)
+  // ✅ Hook de validación de shipping para modo carrito
+  const shippingValidation = useShippingValidation(items, !isFinancingMode)
+  
+  // ✅ Hook de financiamiento (solo para modo financing)
+  const { financing, loading: loadingFinancing, error: financingError } = useFinancingCheckout(financingId)
   
   // Estados del checkout
   const { initializeCheckout, resetCheckout } = useCheckout()
@@ -53,6 +61,34 @@ const PaymentMethod = () => {
   // ===== EFECTOS =====
   
   useEffect(() => {
+    // ============================================================================
+    // MODO FINANCIAMIENTO
+    // ============================================================================
+    if (isFinancingMode) {
+      // Si hay error en el financiamiento, redirigir
+      if (financingError) {
+        console.error('[PaymentMethod] Error en financiamiento:', financingError);
+        navigate('/buyer/my-financing', { replace: true });
+        return;
+      }
+
+      // Esperar a que cargue el financiamiento
+      if (loadingFinancing) {
+        return;
+      }
+
+      // Inicializar checkout con datos del financiamiento
+      if (financing) {
+        initializeCheckout(financing);
+      }
+
+      return; // Salir del efecto para modo financiamiento
+    }
+
+    // ============================================================================
+    // MODO CARRITO (código existente)
+    // ============================================================================
+    
     // Verificar que haya productos en el carrito
     if (!items || items.length === 0) {
       // Silenciosamente redirigir al carrito sin mostrar toast
@@ -247,7 +283,21 @@ const PaymentMethod = () => {
     return () => {
       // No resetear automáticamente para permitir navegación back/forward
     }
-  }, [items, getSubtotal, getTotal, initializeCheckout, navigate, shippingValidation.isLoading, shippingValidation.isCartCompatible, shippingValidation.userRegion]) // ✅ NUEVO: incluir userRegion
+  }, [
+    isFinancingMode, 
+    financingId, 
+    financing, 
+    loadingFinancing, 
+    financingError,
+    items, 
+    getSubtotal, 
+    getTotal, 
+    initializeCheckout, 
+    navigate, 
+    shippingValidation.isLoading, 
+    shippingValidation.isCartCompatible, 
+    shippingValidation.userRegion
+  ])
 
   // ===== RENDERIZADO =====
 
@@ -279,7 +329,7 @@ const PaymentMethod = () => {
             maxWidth: '100%'
           }}
         >
-          <PaymentMethodSelector />
+          <PaymentMethodSelector variant={isFinancingMode ? 'financing' : 'default'} />
         </Container>
       </Box>
     </ThemeProvider>

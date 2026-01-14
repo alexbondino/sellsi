@@ -35,6 +35,9 @@ import { CheckoutSummaryImage } from '../../../components/UniversalProductImage'
 // Componentes UI
 import { SecurityBadge } from '../../../shared/components/feedback';
 
+// Componente especializado para financiamiento
+import FinancingSummaryView from './FinancingSummaryView';
+
 // ============================================================================
 // COMPONENTE PRINCIPAL
 // ============================================================================
@@ -49,9 +52,32 @@ const CheckoutSummary = ({
   isCompleted = false,
   onViewOrders,
   onContinueShopping,
-  variant = 'default', // 'default' | 'compact'
+  variant = 'default', // 'default' | 'compact' | 'financing'
   hideActions = false,
 }) => {
+  // ===== DETECCIÓN DE MODO FINANCIAMIENTO =====
+  const isFinancingMode = variant === 'financing' || orderData?.isFinancingPayment;
+  const financingData = orderData?.items?.[0]?.metadata?.isFinancing 
+    ? orderData.items[0].metadata 
+    : null;
+
+  // Si es modo financiamiento, renderizar vista especializada
+  if (isFinancingMode && financingData) {
+    return (
+      <FinancingSummaryView
+        data={financingData}
+        orderData={orderData}
+        selectedMethod={selectedMethod}
+        onContinue={onContinue}
+        onBack={onBack}
+        isProcessing={isProcessing}
+        canContinue={canContinue}
+      />
+    );
+  }
+
+  // ===== MODO NORMAL (CARRITO) =====
+  
   // Estado para navegación de productos
   const [currentPage, setCurrentPage] = useState(1);
   // Estado local para bloquear permanentemente el botón tras el click

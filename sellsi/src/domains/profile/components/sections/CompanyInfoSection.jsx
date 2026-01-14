@@ -164,10 +164,10 @@ const CompanyInfoSection = ({
           {formData.role === 'supplier' && (
             <Box>
               {(() => {
-                const raw = formData.minimumPurchaseAmount ?? '';
+                const raw = formData.minimumPurchaseAmount ?? '1';
                 const digits = String(raw).replace(/\D+/g, '');
                 const display =
-                  digits === '' ? '' : Number(digits).toLocaleString('es-CL');
+                  digits === '' ? '1' : Number(digits).toLocaleString('es-CL');
                 return (
                   <TextField
                     label="Compra Mínima (CLP)"
@@ -178,16 +178,20 @@ const CompanyInfoSection = ({
                         ''
                       );
                       const normalized = onlyDigits.replace(/^0+(?=\d)/, '');
+                      // Si el usuario borra todo, establecer 1 como mínimo
+                      // Si ingresa 0, cambiarlo a 1
+                      const finalValue = normalized === '' || normalized === '0' ? '1' : normalized;
                       onFieldChange(
                         'minimumPurchaseAmount',
-                        normalized === '' ? '' : normalized
+                        finalValue
                       );
                     }}
                     fullWidth
                     variant="outlined"
                     size="small"
                     type="text"
-                    placeholder="0"
+                    placeholder="1"
+                    helperText="Monto mínimo que deben comprar tus clientes (mínimo $1)"
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">$</InputAdornment>

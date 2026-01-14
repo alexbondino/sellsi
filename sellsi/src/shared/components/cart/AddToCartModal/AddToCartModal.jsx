@@ -132,9 +132,15 @@ const ProductSummary = React.memo(function ProductSummary({
   offer = null,
   shippingRegions = [], // Nueva prop para regiones de despacho
   effectiveUserRegion = null, // Nueva prop para región del usuario
+  isLoadingShippingRegions = false, // Nueva prop para indicar loading de regiones
 }) {
   // Calcular tiempo de despacho para la región del usuario
   const deliveryInfo = React.useMemo(() => {
+    // Si está cargando regiones, no mostrar nada (retornar null)
+    if (isLoadingShippingRegions) {
+      return null;
+    }
+
     if (
       !shippingRegions ||
       shippingRegions.length === 0 ||
@@ -172,7 +178,7 @@ const ProductSummary = React.memo(function ProductSummary({
       available: true,
       text: `Disponible ${days} ${daysText}`,
     };
-  }, [shippingRegions, effectiveUserRegion]);
+  }, [shippingRegions, effectiveUserRegion, isLoadingShippingRegions]);
 
   return (
     <Paper
@@ -889,6 +895,7 @@ const AddToCartModal = ({
                 []
               }
               effectiveUserRegion={effectiveUserRegion}
+              isLoadingShippingRegions={isLoadingRegions}
             />
 
             {/* Mensaje de compra mínima del proveedor */}

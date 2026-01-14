@@ -1,15 +1,24 @@
 /**
  * Formatters unificados para números
  * Migrado de features/marketplace/utils/formatters.js + landing_page
+ * Optimizado con singletons Intl para mejor performance
  */
+
+// Singleton Intl.NumberFormat para números (elimina creaciones repetidas)
+const numberFormatter = new Intl.NumberFormat('es-CL')
 
 /**
  * Formatea un número con separadores de miles
+ * @param {number|null|undefined} number - El número a formatear
+ * @returns {string} Número formateado o fallback
+ * @example
+ * formatNumber(150000) // '150.000'
+ * formatNumber(0) // '0'
+ * formatNumber(null) // '0'
  */
 export const formatNumber = (number) => {
   if (!number && number !== 0) return '0'
-
-  return new Intl.NumberFormat('es-CL').format(number)
+  return numberFormatter.format(number)
 }
 
 /**

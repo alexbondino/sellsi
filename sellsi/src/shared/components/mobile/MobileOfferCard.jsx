@@ -19,6 +19,7 @@ import {
   LocalShipping as ShippingIcon,
   Chat as ChatIcon,
 } from '@mui/icons-material'
+import { formatCurrency as formatPrice } from '../../utils/formatters'
 import AddToCart from '../cart/AddToCart'
 
 /**
@@ -59,6 +60,42 @@ const MobileOfferCard = ({ variant, data, fullOffer, onAction, isMobile }) => {
     product_id,
     product_image,
   } = data
+
+  // Procesar thumbnail con fallbacks (misma lógica que OffersList.jsx)
+  const processedThumbnail = React.useMemo(() => {
+    // Si ya viene procesado desde el padre, usarlo
+    if (thumbnail_url) {
+      return thumbnail_url;
+    }
+
+    // Intentar obtener desde fullOffer si existe
+    const product = fullOffer?.product || data?.product;
+    const productThumbnails = fullOffer?.product_thumbnails || product?.thumbnails;
+    const productThumbnailUrl = fullOffer?.product_thumbnail_url || product?.thumbnail_url;
+    const productImage = fullOffer?.product_image || product?.imagen || product?.image || product_image;
+
+    let avatarSrc = null;
+
+    // Prioridad 1: thumbnails.mobile
+    if (productThumbnails && typeof productThumbnails === 'object') {
+      avatarSrc = productThumbnails.mobile || null;
+    }
+
+    // Prioridad 2: thumbnail_url transformado a mobile
+    if (!avatarSrc && productThumbnailUrl) {
+      avatarSrc = productThumbnailUrl.replace(
+        '_desktop_320x260.jpg',
+        '_mobile_190x153.jpg'
+      );
+    }
+
+    // Prioridad 3: imagen principal (para WebP sin thumbnails)
+    if (!avatarSrc && productImage) {
+      avatarSrc = productImage;
+    }
+
+    return avatarSrc;
+  }, [thumbnail_url, fullOffer, data, product_image]);
 
   // Mapeo de estados a colores y etiquetas según variante
   const getStatusConfig = () => {
@@ -106,17 +143,6 @@ const MobileOfferCard = ({ variant, data, fullOffer, onAction, isMobile }) => {
   const statusInfo = STATUS_CONFIG[status] || {
     color: 'default',
     label: status,
-  }
-
-  // Formatear precio (DEBE COINCIDIR CON OffersList.jsx)
-  const formatPrice = (price) => {
-    if (price == null) return ''
-    const num =
-      typeof price === 'number'
-        ? price
-        : Number(String(price).replace(/[^0-9.-]+/g, ''))
-    if (Number.isNaN(num)) return String(price)
-    return '$' + new Intl.NumberFormat('es-CL').format(Math.round(num))
   }
 
   // Calcular tiempo RESTANTE hasta deadline (NO tiempo transcurrido)
@@ -442,7 +468,7 @@ const MobileOfferCard = ({ variant, data, fullOffer, onAction, isMobile }) => {
         {/* Header: Avatar + Producto */}
         <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
           <Avatar
-            src={thumbnail_url}
+            src={processedThumbnail}
             alt={product_name}
             variant="rounded"
             sx={{

@@ -287,6 +287,7 @@ export default function Login({ open, onClose, onOpenRegister }) {
         maxWidth={false}
         disableScrollLock={true}
         disableRestoreFocus={true}
+        sx={{ zIndex: 1500 }}
         PaperProps={{
           sx: {
             borderRadius: 2,
@@ -388,6 +389,7 @@ export default function Login({ open, onClose, onOpenRegister }) {
         maxWidth={false}
         disableScrollLock={true}
         disableRestoreFocus={true}
+        sx={{ zIndex: 1500 }}
         PaperProps={{
           sx: {
             borderRadius: 2,
@@ -412,6 +414,7 @@ export default function Login({ open, onClose, onOpenRegister }) {
           fullWidth
           disableScrollLock={true}
           disableRestoreFocus={true}
+          sx={{ zIndex: 1500 }}
           PaperProps={{
             sx: {
               position: 'fixed',

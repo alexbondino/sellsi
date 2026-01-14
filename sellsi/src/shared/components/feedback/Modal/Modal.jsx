@@ -21,6 +21,49 @@ import { MODAL_TYPES, getModalConfig, formatAddress, formatCurrency } from './mo
 import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 
 /**
+ * ============================================================================
+ * ESTILOS ESTANDARIZADOS PARA BOTONES DE MODALES
+ * ============================================================================
+ * 
+ * Estos estilos garantizan consistencia en todos los modales del sistema.
+ * Úsalos cuando construyas Dialog/DialogActions personalizados.
+ */
+
+export const MODAL_DIALOG_ACTIONS_STYLES = {
+  flexDirection: { xs: 'column', sm: 'row' },
+  gap: { xs: 1.5, sm: 2 },
+  p: { xs: 2, sm: 3 },
+  pt: { xs: 1.5, sm: 1 },
+  justifyContent: 'center',
+};
+
+export const MODAL_DIALOG_CONTENT_STYLES = {
+  px: { xs: 1.5, sm: 3 },
+  py: { xs: 1.5, sm: 2.5 },
+};
+
+export const MODAL_BUTTON_BASE_STYLES = {
+  textTransform: 'none',
+  borderRadius: 2,
+  fontSize: { xs: '0.875rem', sm: '0.875rem' },
+  px: 2,
+  py: { xs: 1, sm: 0.75 },
+  width: { xs: '100%', sm: '160px' },
+  boxSizing: 'border-box',
+};
+
+export const MODAL_CANCEL_BUTTON_STYLES = {
+  ...MODAL_BUTTON_BASE_STYLES,
+  fontWeight: 500,
+};
+
+export const MODAL_SUBMIT_BUTTON_STYLES = {
+  ...MODAL_BUTTON_BASE_STYLES,
+  fontWeight: 600,
+  order: { xs: -1, sm: 0 },
+};
+
+/**
  * Modal - Un componente de modal versátil y reutilizable.
  *
  * @param {boolean} isOpen - Si el modal está abierto.
@@ -331,30 +374,13 @@ const Modal = ({
         </Typography>
       </DialogContent>
 
-      <DialogActions
-        sx={{
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: { xs: 1.5, sm: 2 },
-          p: { xs: 2, sm: 3 },
-          pt: { xs: 1.5, sm: 1 },
-          justifyContent: 'center',
-        }}
-      >
+      <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
         {showCancelButton && (
           <Button
             onClick={onClose}
             disabled={loading}
             variant="outlined"
-            sx={{
-              textTransform: 'none',
-              fontWeight: 500,
-              borderRadius: 2,
-              fontSize: { xs: '0.875rem', sm: '0.875rem' },
-              px: 2,
-              py: { xs: 1, sm: 0.75 },
-              width: { xs: '100%', sm: '160px' },
-              boxSizing: 'border-box',
-            }}
+            sx={MODAL_CANCEL_BUTTON_STYLES}
           >
             {cancelButtonText}
           </Button>
@@ -366,17 +392,7 @@ const Modal = ({
           disabled={loading || submitDisabled}
           variant="contained"
           color={currentSubmitButtonColor}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: 2,
-            order: { xs: -1, sm: 0 },
-            fontSize: { xs: '0.875rem', sm: '0.875rem' },
-            px: 2,
-            py: { xs: 1, sm: 0.75 },
-            width: { xs: '100%', sm: '160px' },
-            boxSizing: 'border-box',
-          }}
+          sx={MODAL_SUBMIT_BUTTON_STYLES}
         >
           {loading ? 'Procesando...' : currentSubmitButtonText}
         </Button>

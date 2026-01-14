@@ -30,6 +30,12 @@ const CompactCheckoutSummary = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
   
+  // Detectar modo financiamiento
+  const isFinancingMode = orderData?.isFinancingPayment;
+  const financingData = isFinancingMode && orderData?.items?.[0]?.metadata?.isFinancing
+    ? orderData.items[0].metadata
+    : null;
+  
   const itemCount = orderData.items?.length || 0;
   const shipping = orderData.shipping || 0;
   const subtotal = orderData.subtotal || 0;
@@ -83,7 +89,10 @@ const CompactCheckoutSummary = ({
               <Stack direction="row" alignItems="center" spacing={1}>
                 <CartIcon sx={{ color: 'primary.main', fontSize: 20 }} />
                 <Typography variant="subtitle2" fontWeight={600}>
-                  {itemCount} {itemCount === 1 ? 'producto' : 'productos'}
+                  {isFinancingMode 
+                    ? `Pago de Crédito - ${financingData?.supplierName || 'Proveedor'}`
+                    : `${itemCount} ${itemCount === 1 ? 'producto' : 'productos'}`
+                  }
                 </Typography>
               </Stack>
               

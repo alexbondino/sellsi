@@ -9,6 +9,7 @@
 
 import React from 'react'
 import { Box, Typography } from '@mui/material'
+import { formatCurrency } from '../../../shared/utils/formatters'
 
 const PriceDisplay = ({
   price,
@@ -20,11 +21,6 @@ const PriceDisplay = ({
   color = '#000000',
   sx = {},
 }) => {
-  // Formato de precio chileno
-  const formatPrice = (amount) => {
-    return `$${Math.round(amount).toLocaleString('es-CL')}`
-  }
-
   // Calcular precio mínimo si no se proporciona
   const calculatedMinPrice =
     minPrice || (showRange ? Math.round(price * 0.6) : null)
@@ -45,7 +41,7 @@ const PriceDisplay = ({
             fontSize: sx.fontSize || undefined,
           }}
         >
-          {formatPrice(calculatedMinPrice)} - {formatPrice(price)}
+          {formatCurrency(calculatedMinPrice)} - {formatCurrency(price)}
         </Typography>
       ) : (
         // Mostrar precio único
@@ -65,7 +61,7 @@ const PriceDisplay = ({
               fontSize: sx.fontSize || undefined,
             }}
           >
-            {formatPrice(price)}
+            {formatCurrency(price)}
           </Typography>
 
           {hasDiscount && (
@@ -77,7 +73,7 @@ const PriceDisplay = ({
                 fontWeight: 500,
               }}
             >
-              {formatPrice(originalPrice)}
+              {formatCurrency(originalPrice)}
             </Typography>
           )}
         </Box>

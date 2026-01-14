@@ -169,7 +169,8 @@ const TransferInfoSection = ({
           <TextField
             label="Número de Cuenta"
             value={formData.accountNumber || ''}
-            onChange={e => onFieldChange('accountNumber', e.target.value)}
+            onChange={e => onFieldChange('accountNumber', e.target.value.replace(/\D/g, ''))}
+            inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
             fullWidth
             variant="outlined"
             size="small"

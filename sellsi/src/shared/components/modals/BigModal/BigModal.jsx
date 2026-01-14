@@ -76,6 +76,7 @@ const BigModal = ({
       fullScreen={isMobile}
       disableScrollLock={true}
       disableRestoreFocus={true}
+      sx={{ zIndex: 1500 }}
       PaperProps={{
         component: isFormModal ? 'form' : 'div',
         onSubmit: isFormModal ? handleSubmitInternal : undefined,

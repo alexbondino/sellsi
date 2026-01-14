@@ -13,3 +13,8 @@ export {
   VerifiedValidationModal,
   useVerifiedModal
 } from './VerifiedValidationModal/VerifiedValidationModal';
+
+export {
+  LegalRepValidationModal,
+  useLegalRepModal
+} from './LegalRepValidationModal/LegalRepValidationModal';
