@@ -90,7 +90,7 @@ export const STATE_CONFIG = {
     hasReason: true,
   },
   [FINANCING_STATES.PENDING_SELLSI_APPROVAL]: {
-    label: 'Firmado por ambas partes, esperando aprobación Sellsi',
+    label: 'Firmado por ambas partes, esperando\naprobación Sellsi',
     color: 'info',
     step: 3,
     requiresAction: false,

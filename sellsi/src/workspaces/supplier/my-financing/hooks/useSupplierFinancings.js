@@ -208,7 +208,23 @@ export const useSupplierFinancings = () => {
         },
       ];
 
-      setFinancings(mockData);
+      // Calcular expires_at para financiamientos aprobados (approved_at + term_days)
+      const processedData = mockData.map(f => {
+        if (f.status === 'approved_by_sellsi' && f.approved_at) {
+          const approvedDate = new Date(f.approved_at);
+          const expiresDate = new Date(approvedDate);
+          expiresDate.setDate(expiresDate.getDate() + f.term_days);
+          
+          return {
+            ...f,
+            expires_at: expiresDate.toISOString().split('T')[0], // YYYY-MM-DD format
+            amount_paid: 0, // Mock: no ha pagado nada aún
+          };
+        }
+        return f;
+      });
+
+      setFinancings(processedData);
     } catch (err) {
       console.error('[useSupplierFinancings] Error fetching:', err);
       setError(err.message);

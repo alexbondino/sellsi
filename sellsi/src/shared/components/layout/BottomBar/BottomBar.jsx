@@ -59,17 +59,18 @@ const BottomBar = () => {
                 <Box sx={columnStyle}>
                   <Typography variant="body2" sx={navItemStyle} onClick={handleNavigateToTerms}>Términos y Condiciones</Typography>
                   <Typography variant="body2" sx={navItemStyle} onClick={handleNavigateToPrivacy}>Política de Privacidad</Typography>
+                  <Typography variant="body2" sx={navItemStyle} onClick={() => navigate('/faq')}>Preguntas Frecuentes</Typography>
                 </Box>
+
               </Box>
 
-              <Box sx={{ minWidth: 150, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Typography variant="h6" sx={{ ...sectionTitleStyle, textAlign: 'center', width: '100%' }}>Síguenos</Typography>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+              <Box sx={{ minWidth: 180, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', }}>
+                <Typography variant="h6" sx={{ ...sectionTitleStyle, textAlign: 'left', width: '100%', ml: { md: 1 }, mt: '20px' }}>Síguenos</Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-start', width: '100%' }}>
                   <SocialIcon href="https://www.linkedin.com/company/sellsi/" icon={<LinkedInIcon />} hoverColor="#0077b5" label="LinkedIn" />
                   <SocialIcon href="https://www.instagram.com/sellsi.cl/" icon={<InstagramIcon />} hoverColor="#e4405f" label="Instagram" />
                   <SocialIcon href="https://wa.me/56963109664" icon={<WhatsAppIcon />} hoverColor="#25d366" label="WhatsApp" />
                 </Box>
-
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, justifyContent: 'flex-start' }}>
                   <IconButton href="tel:+56963109664" sx={{ color: '#b0b0b0', mr: 1, p: 0.5, width: 40, minWidth: 40, display: 'flex', justifyContent: 'center', '&:hover': { color: '#0772D2', backgroundColor: 'rgba(255,255,255,0.1)' } }} aria-label="Llamar">
                     <PhoneIcon sx={{ fontSize: 20 }} />
@@ -96,16 +97,13 @@ const BottomBar = () => {
             </Box>
 
             <Box sx={{ width: '100%', maxWidth: 420, mx: 'auto' }}>
-              <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', ml: { xs: 10.5, md: 0 } }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Soporte</Typography>
-                <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%' }} onClick={handleNavigateToTerms}>Términos & Condiciones</Typography>
-                <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%' }} onClick={handleNavigateToPrivacy}>Política de Privacidad</Typography>
+              <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', ml: { xs: 0, md: 0 } }}>
+                <Typography variant="h6" sx={{ ...sectionTitleStyle, textAlign: 'center', width: '100%' }}>Soporte</Typography>
+                <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%', textAlign: 'center' }} onClick={handleNavigateToTerms}>Términos & Condiciones</Typography>
+                <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%', textAlign: 'center' }} onClick={handleNavigateToPrivacy}>Política de Privacidad</Typography>
+                <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%', textAlign: 'center' }} onClick={() => navigate('/faq')}>Preguntas Frecuentes</Typography>
               </Box>
-            </Box>
-            
-            {/* Redes sociales + teléfono - Mobile */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%' }}>
-              <Typography variant="h6" sx={{ ...sectionTitleStyle, textAlign: 'center', width: '100%' }}>Síguenos</Typography>
+              <Typography variant="h6" sx={{ ...sectionTitleStyle, textAlign: 'center', width: '100%', mt: '20px' }}>Síguenos</Typography>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', width: '100%' }}>
                 <SocialIcon href="https://www.linkedin.com/company/sellsi/" icon={<LinkedInIcon />} hoverColor="#0077b5" label="LinkedIn" />
                 <SocialIcon href="https://www.instagram.com/sellsi.cl/" icon={<InstagramIcon />} hoverColor="#e4405f" label="Instagram" />
@@ -147,8 +145,8 @@ const navItemStyle = {
 };
 
 const sectionTitleStyle = {
-  fontWeight: 600,
-  mb: 1,
+  fontWeight: 700,
+  mb: '20px',
   fontSize: '1rem',
   color: '#fff',
 };

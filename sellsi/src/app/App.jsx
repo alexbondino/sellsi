@@ -24,7 +24,8 @@ function AppContent() {
     location.pathname.startsWith('/catalog') ||
     location.pathname === '/login' ||
     location.pathname === '/crear-cuenta' ||
-    location.pathname === '/tailwind';
+    location.pathname === '/tailwind' ||
+    location.pathname === '/faq';
 
   if (loadingUserStatus && !isPublicRoute) {
     return (

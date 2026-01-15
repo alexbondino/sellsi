@@ -130,27 +130,34 @@ export const AppShell = ({ children }) => {
                 !!session || fullBleedRoutes.includes(location.pathname)
               const isMarketplaceRoute =
                 location.pathname.startsWith('/marketplace')
+              const isFaqRoute = location.pathname === '/faq'
+              const isLegalRoute = location.pathname === '/terms-and-conditions' || location.pathname === '/privacy-policy'
+              const isFullWidthRoute = isFaqRoute || isLegalRoute
               return (theme) => ({
                 flexGrow: 1,
-                pl: isMarketplaceRoute
+                pl: isFullWidthRoute
+                  ? 0
+                  : isMarketplaceRoute
                   ? { xs: 0, sm: 0, md: isDashboardLayout ? 3 : 0 }
                   : isFullBleed
                   ? { xs: 0.75, sm: 1, md: isDashboardLayout ? 3 : 0 }
                   : isDashboardLayout
                   ? 3
                   : 0,
-                pr: isMarketplaceRoute
+                pr: isFullWidthRoute
+                  ? 0
+                  : isMarketplaceRoute
                   ? { xs: 0, sm: 0, md: isDashboardLayout ? 3 : 0 }
                   : isFullBleed
                   ? { xs: 0.25, sm: 0.25, md: isDashboardLayout ? 3 : 0 }
                   : isDashboardLayout
                   ? 3
                   : 0,
-                pt: isDashboardLayout ? 3 : 0,
+                pt: isDashboardLayout && !isFullWidthRoute ? 3 : 0,
                 pb: isDashboardLayout
                   ? { xs: session ? 10 : 3, md: 3 }
                   : { xs: session ? 10 : 0, md: 0 },
-                width: isDashboardLayout
+                width: isDashboardLayout && !isFullWidthRoute
                   ? {
                       xs: '100%',
                       md: `calc(100% - ${safeSidebar.md})`,
@@ -159,7 +166,7 @@ export const AppShell = ({ children }) => {
                     }
                   : '100%',
                 overflowX: 'hidden',
-                ml: isDashboardLayout ? { md: 14, lg: 14, xl: 0 } : 0,
+                ml: isDashboardLayout && !isFullWidthRoute ? { md: 14, lg: 14, xl: 0 } : 0,
                 ...(isFullBleed && { '& > *': { maxWidth: '100%' } }),
                 transition: [
                   theme.breakpoints.up('md') && theme.breakpoints.down('lg')
@@ -206,6 +213,7 @@ export const AppShell = ({ children }) => {
           session={session}
           isBuyer={isBuyer}
           logoUrl={logoUrl}
+          userProfile={userProfile}
         />
 
         {/* WhatsApp Widget - Con acceso al contexto del Router */}
