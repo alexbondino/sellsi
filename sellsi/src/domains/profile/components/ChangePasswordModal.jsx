@@ -13,6 +13,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { MODAL_DIALOG_ACTIONS_STYLES, MODAL_DIALOG_CONTENT_STYLES, MODAL_DIALOG_HEADER_STYLES, MODAL_CANCEL_BUTTON_STYLES, MODAL_SUBMIT_BUTTON_STYLES } from '../../../shared/components/feedback/Modal/Modal';
 import { PasswordRequirements } from '../../../shared/components/feedback';
 import { supabase } from '../../../services/supabase';
 import { trackUserAction } from '../../../services/security';
@@ -205,26 +206,39 @@ const ChangePasswordModal = ({ open, onClose, onPasswordChanged, showBanner }) =
         }
       }}
     >
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        pb: 2,
-        overflow: 'visible'
-      }}>
-        <Typography variant="h6" component="div">
-          Cambiar Contraseña
-        </Typography>
-        <IconButton 
-          onClick={handleClose} 
-          size="small"
-          disabled={loading}
-        >
-          <CloseIcon />
-        </IconButton>
+      <DialogTitle sx={{ ...MODAL_DIALOG_HEADER_STYLES, position: 'relative', backgroundColor: '#2E52B2', color: '#fff' }}>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexDirection: 'column' }}>
+          <Typography
+            variant="h6"
+            component="div"
+            fontWeight={700}
+            sx={{ flexGrow: 1, fontSize: { xs: '1.1rem', sm: '1.25rem' }, color: '#fff' }}
+          >
+            Cambiar Contraseña
+          </Typography>
+        </Box>
+
+        {!loading && (
+          <IconButton
+            onClick={handleClose}
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              right: { xs: 8, sm: 16 },
+              p: { xs: 0.75, sm: 1 },
+              color: '#fff',
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' },
+            }}
+          >
+            <CloseIcon sx={{ fontSize: { xs: '1.5rem', sm: '1.5rem' } }} />
+          </IconButton>
+        )}
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 4, px: 3, overflow: 'visible' }}>
+      <DialogContent dividers sx={{ ...MODAL_DIALOG_CONTENT_STYLES, overflow: 'visible' }}>
         {success ? (
           <Alert severity="success" sx={{ mb: 2 }}>
             ¡Contraseña cambiada exitosamente!
@@ -289,36 +303,29 @@ const ChangePasswordModal = ({ open, onClose, onPasswordChanged, showBanner }) =
         )}
       </DialogContent>
 
-      <DialogActions sx={{ justifyContent: 'center', gap: 2, p: 2 }}>
-        <Button 
+      <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
+        <Button
           onClick={handleClose}
           variant="outlined"
-          color="inherit"
           disabled={loading}
-          sx={{ 
-            color: 'text.secondary',
-            borderColor: 'text.secondary',
-            '&:hover': {
-              borderColor: 'text.primary',
-              backgroundColor: 'rgba(0,0,0,0.04)'
-            }
-          }}
+          sx={MODAL_CANCEL_BUTTON_STYLES}
         >
           Cancelar
         </Button>
-        
-        <Button 
+
+        <Button
           onClick={handleSubmit}
           variant="contained"
           disabled={!isFormValid() || loading}
           title={!isFormValid() ? getValidationMessage() : ''}
           sx={{
+            ...MODAL_SUBMIT_BUTTON_STYLES,
             bgcolor: 'success.main',
             '&:hover': { bgcolor: 'success.dark' },
-            '&:disabled': { 
+            '&:disabled': {
               bgcolor: 'grey.300',
-              color: 'grey.500'
-            }
+              color: 'grey.500',
+            },
           }}
           startIcon={loading ? <CircularProgress size={16} color="inherit" /> : null}
         >

@@ -32,6 +32,19 @@ export const AppShell = ({ children }) => {
     topBarHeight,
   } = useLayout()
 
+  // Safe normalized sidebar width object (ensure md/lg/xl present)
+  const safeSidebar = React.useMemo(() => {
+    const fallback = { md: '210px', lg: '210px', xl: '240px' };
+    if (!currentSideBarWidth) return fallback;
+    if (typeof currentSideBarWidth === 'string') return { md: currentSideBarWidth, lg: currentSideBarWidth, xl: currentSideBarWidth };
+    return {
+      md: currentSideBarWidth.md || currentSideBarWidth.lg || currentSideBarWidth.xl || fallback.md,
+      lg: currentSideBarWidth.lg || currentSideBarWidth.md || currentSideBarWidth.xl || fallback.lg,
+      xl: currentSideBarWidth.xl || currentSideBarWidth.lg || currentSideBarWidth.md || fallback.xl,
+    };
+  }, [currentSideBarWidth]);
+
+
   // ✅ MOVER AQUÍ: Inicialización de la app donde todos los contextos están disponibles
   const { isInitialized } = useAppInitialization()
 
@@ -103,7 +116,7 @@ export const AppShell = ({ children }) => {
             // Pasamos el currentAppRole a la SideBar para que sepa qué menú mostrar
             <SideBar
               role={currentAppRole}
-              width={{ md: '13%', lg: '13%', xl: '9%' }}
+              width={safeSidebar}
               onWidthChange={handleSideBarWidthChange}
             />
           )}{' '}
@@ -138,14 +151,12 @@ export const AppShell = ({ children }) => {
                   ? { xs: session ? 10 : 3, md: 3 }
                   : { xs: session ? 10 : 0, md: 0 },
                 width: isDashboardLayout
-                  ? typeof currentSideBarWidth === 'object'
-                    ? {
-                        xs: '100%',
-                        md: `calc(100% - ${currentSideBarWidth.md || '13%'})`,
-                        lg: `calc(100% - ${currentSideBarWidth.lg || '13%'})`,
-                        xl: `calc(100% - ${currentSideBarWidth.xl || '10%'})`,
-                      }
-                    : { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
+                  ? {
+                      xs: '100%',
+                      md: `calc(100% - ${safeSidebar.md})`,
+                      lg: `calc(100% - ${safeSidebar.lg})`,
+                      xl: `calc(100% - ${safeSidebar.xl})`,
+                    }
                   : '100%',
                 overflowX: 'hidden',
                 ml: isDashboardLayout ? { md: 14, lg: 14, xl: 0 } : 0,

@@ -39,6 +39,7 @@ import { formatPrice } from '../../../../shared/utils/formatters/priceFormatters
 import {
   MODAL_DIALOG_ACTIONS_STYLES,
   MODAL_DIALOG_CONTENT_STYLES,
+  MODAL_DIALOG_HEADER_STYLES,
   MODAL_CANCEL_BUTTON_STYLES,
   MODAL_SUBMIT_BUTTON_STYLES,
 } from '../../../../shared/components/feedback/Modal/Modal';

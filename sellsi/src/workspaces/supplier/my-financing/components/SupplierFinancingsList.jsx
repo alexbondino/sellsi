@@ -41,6 +41,7 @@ import DownloadablesModal from '../../../../shared/components/financing/Download
 import { useBanner } from '../../../../shared/components/display/banners/BannerContext';
 import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
 import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion';
+import InfoPopover from '../../../../shared/components/display/InfoPopover';
 import SupplierFinancingTable, { SupplierApprovedTable } from './SupplierFinancingTable';
 import SupplierFinancingActionModals from './SupplierFinancingActionModals';
 import ViewReasonModal from '../../../../shared/components/financing/ViewReasonModal';
@@ -72,14 +73,31 @@ const MobileFinancingCard = ({ financing, onApprove, onReject, onSign, onCancel,
     default: 'text.secondary',
   };
 
+  // Preparar campos para InfoPopover
+  const buyerInfoFields = [
+    { label: 'Razón Social', value: financing.buyer_legal_name },
+    { label: 'RUT Empresa', value: financing.buyer_legal_rut },
+    { label: 'Representante Legal', value: financing.buyer_legal_representative_name },
+    { label: 'RUT Representante', value: financing.buyer_legal_representative_rut },
+    { label: 'Dirección', value: financing.buyer_legal_address },
+    { label: 'Comuna', value: financing.buyer_legal_commune },
+    { label: 'Región', value: financing.buyer_legal_region },
+  ];
+
   return (
     <Card sx={{ mb: 2 }}>
       <CardContent>
         {/* Header: Solicitante y Estado */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Typography variant="subtitle1" fontWeight={600}>
-            {financing.requested_by}
-          </Typography>
+          <Box>
+            <InfoPopover
+              label={financing.buyer_user_nm || financing.buyer_legal_name || 'Comprador'}
+              linkText="Ver detalle"
+              title="Información de la Empresa"
+              fields={buyerInfoFields}
+              popoverWidth={360}
+            />
+          </Box>
           <Typography
             variant="body2"
             fontWeight={600}
@@ -100,10 +118,6 @@ const MobileFinancingCard = ({ financing, onApprove, onReject, onSign, onCancel,
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <Typography variant="body2" color="text.secondary">Plazo:</Typography>
             <Typography variant="body2">{financing.term_days} días</Typography>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Typography variant="body2" color="text.secondary">Empresa:</Typography>
-            <Typography variant="body2">{financing.business_data}</Typography>
           </Box>
         </Stack>
 
@@ -601,13 +615,13 @@ const SupplierFinancingsList = ({
         <>
           {/* Filtro Desktop - Solicitudes */}
           <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
-            <Typography fontWeight={600}>Filtrar por categoría:</Typography>
+            <Typography fontWeight={600}>Filtrar por estado:</Typography>
             <FormControl size="small" sx={{ minWidth: 280 }}>
-              <InputLabel id="supplier-financing-filter-label">Categoría</InputLabel>
+              <InputLabel id="supplier-financing-filter-label">Estado</InputLabel>
               <Select
                 labelId="supplier-financing-filter-label"
                 value={statusFilter}
-                label="Categoría"
+                label="Estado"
                 onChange={(e) => setStatusFilter(e.target.value)}
                 MenuProps={{ disableScrollLock: true }}
               >

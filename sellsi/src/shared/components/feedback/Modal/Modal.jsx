@@ -63,6 +63,15 @@ export const MODAL_SUBMIT_BUTTON_STYLES = {
   order: { xs: -1, sm: 0 },
 };
 
+export const MODAL_DIALOG_HEADER_STYLES = {
+  // Default header layout used across Sellsi modals
+  m: 0,
+  p: { xs: 1, sm: 2 },
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
 /**
  * Modal - Un componente de modal versátil y reutilizable.
  *
@@ -97,6 +106,10 @@ const Modal = ({
   showWarningIconHeader = false,
   isFormModal = false,
   submitDisabled = false, // nuevo: permite deshabilitar el botón de submit por validaciones externas
+  // New optional props for consistent spacing and override
+  contentDividers = true, // default to true for standardized gap under header
+  contentSx = {}, // allow overriding DialogContent sx
+  headerSx = {}, // allow overriding DialogTitle sx
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -149,32 +162,14 @@ const Modal = ({
     >
       <DialogTitle
         sx={{
+          // Standardized header padding and layout (matches OfferModal)
+          m: 0,
+          p: headerSx.p || { xs: 1, sm: 2 },
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           position: 'relative',
-          textAlign: [
-            MODAL_TYPES.INFO,
-            MODAL_TYPES.SUCCESS,
-            MODAL_TYPES.WARNING,
-            MODAL_TYPES.DELETE,
-          ].includes(type)
-            ? 'center'
-            : 'center',
-          pb: [
-            MODAL_TYPES.INFO,
-            MODAL_TYPES.SUCCESS,
-            MODAL_TYPES.WARNING,
-            MODAL_TYPES.DELETE,
-          ].includes(type)
-            ? { xs: 1, sm: 1 }
-            : { xs: 1.5, sm: 2 },
-          pt: [
-            MODAL_TYPES.INFO,
-            MODAL_TYPES.SUCCESS,
-            MODAL_TYPES.WARNING,
-            MODAL_TYPES.DELETE,
-          ].includes(type)
-            ? { xs: 2, sm: 3 }
-            : { xs: 1.5, sm: 2 },
-          // Estilos Sellsi para modales ORDER_* y QUOTATION
+          // Keep the Sellsi order-specific background color when applicable
           ...([
             MODAL_TYPES.ORDER_CHECK,
             MODAL_TYPES.ORDER_TRUCK,
@@ -185,6 +180,8 @@ const Modal = ({
             backgroundColor: '#2E52B2',
             color: '#fff',
           }),
+          // Allow consumers to override header styles
+          ...headerSx,
         }}
       >
         <Box
@@ -318,12 +315,13 @@ const Modal = ({
       </DialogTitle>
 
       <DialogContent
-        dividers={isFormModal}
+        dividers={contentDividers}
         sx={{
           textAlign: isFormModal ? 'left' : 'center',
-          pt: type === MODAL_TYPES.QUOTATION ? { xs: 1.5, sm: 2 } : (isFormModal ? { xs: 1.5, sm: 2 } : { xs: 1.5, sm: 2 }),
-          pb: isFormModal ? { xs: 1.5, sm: 2 } : { xs: 1.5, sm: 2 },
-          px: { xs: 2, sm: 3 },
+          px: { xs: 1.5, sm: 3 },
+          py: { xs: 1.5, sm: 2.5 },
+          // Allow consumers to override content styles
+          ...contentSx,
         }}
       >
         {order && isFormModal && (

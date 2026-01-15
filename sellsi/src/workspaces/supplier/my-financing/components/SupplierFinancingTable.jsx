@@ -37,6 +37,7 @@ import DrawIcon from '@mui/icons-material/Draw';
 import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ActionIconButton from '../../../../shared/components/buttons/ActionIconButton';
+import InfoPopover from '../../../../shared/components/display/InfoPopover';
 import { formatPrice } from '../../../../shared/utils/formatters/priceFormatters';
 import { getStateConfig, getAvailableActions } from '../../../../shared/utils/financing/financingStates';
 
@@ -163,27 +164,42 @@ const SupplierFinancingTable = ({
             <TableCell sx={headerCellSx}>Solicitado Por</TableCell>
             <TableCell sx={headerCellSx} align="right">Monto</TableCell>
             <TableCell sx={headerCellSx} align="center">Plazo (días)</TableCell>
-            <TableCell sx={headerCellSx}>Datos Empresa</TableCell>
             <TableCell sx={headerCellSx} align="center">Descargables</TableCell>
             <TableCell sx={headerCellSx} align="center">Estado</TableCell>
             <TableCell sx={headerCellSx} align="center">Acciones</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {financings.map((financing) => (
-            <TableRow
-              key={financing.id}
-              sx={{
-                '&:hover': { backgroundColor: 'action.hover' },
-                '&:last-child td, &:last-child th': { border: 0 },
-              }}
-            >
-              {/* Solicitado Por */}
-              <TableCell>
-                <Typography variant="body2" fontWeight={500}>
-                  {financing.requested_by}
-                </Typography>
-              </TableCell>
+          {financings.map((financing) => {
+            // Preparar campos para InfoPopover
+            const buyerInfoFields = [
+              { label: 'Razón Social', value: financing.buyer_legal_name },
+              { label: 'RUT Empresa', value: financing.buyer_legal_rut },
+              { label: 'Representante Legal', value: financing.buyer_legal_representative_name },
+              { label: 'RUT Representante', value: financing.buyer_legal_representative_rut },
+              { label: 'Dirección', value: financing.buyer_legal_address },
+              { label: 'Comuna', value: financing.buyer_legal_commune },
+              { label: 'Región', value: financing.buyer_legal_region },
+            ];
+
+            return (
+              <TableRow
+                key={financing.id}
+                sx={{
+                  '&:hover': { backgroundColor: 'action.hover' },
+                  '&:last-child td, &:last-child th': { border: 0 },
+                }}
+              >
+                {/* Solicitado Por */}
+                <TableCell>
+                  <InfoPopover
+                    label={financing.buyer_user_nm || financing.buyer_legal_name || 'Comprador'}
+                    linkText="Ver detalle"
+                    title="Información de la Empresa"
+                    fields={buyerInfoFields}
+                    popoverWidth={460}
+                  />
+                </TableCell>
 
               {/* Monto */}
               <TableCell align="right">
@@ -196,13 +212,6 @@ const SupplierFinancingTable = ({
               <TableCell align="center">
                 <Typography variant="body2">
                   {financing.term_days}
-                </Typography>
-              </TableCell>
-
-              {/* Datos Empresa */}
-              <TableCell>
-                <Typography variant="body2" color="text.secondary">
-                  {financing.business_data}
                 </Typography>
               </TableCell>
 
@@ -228,7 +237,8 @@ const SupplierFinancingTable = ({
                 {renderActions(financing)}
               </TableCell>
             </TableRow>
-          ))}
+          );
+          })}
         </TableBody>
       </Table>
     </TableContainer>

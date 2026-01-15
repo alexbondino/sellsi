@@ -29,6 +29,7 @@ import { formatDate, formatCurrency } from '../../../utils/formatters';
 import { getRegionDisplay } from '../../../../utils/regionNames';
 import { getCommuneDisplay } from '../../../../utils/communeNames';
 import ContactModal from '../../modals/ContactModal';
+import InfoPopover from '../InfoPopover';
 
 const Rows = ({ order, onActionClick }) => {
   const [expandedProducts, setExpandedProducts] = useState(false);
@@ -41,9 +42,6 @@ const Rows = ({ order, onActionClick }) => {
   const [addrAnchor, setAddrAnchor] = useState(null);
   const [addrCopied, setAddrCopied] = useState(false);
   const addrCopyTimerRef = useRef(null);
-  const [billingAnchor, setBillingAnchor] = useState(null);
-  const [billingCopied, setBillingCopied] = useState(false);
-  const billingCopyTimerRef = useRef(null);
   const [isContactOpen, setIsContactOpen] = useState(false);
 
   const openContact = () => setIsContactOpen(true);
@@ -92,17 +90,6 @@ const Rows = ({ order, onActionClick }) => {
     setAddrCopied(false);
   };
   const openAddr = Boolean(addrAnchor);
-
-  const handleOpenBilling = event => setBillingAnchor(event.currentTarget);
-  const handleCloseBilling = () => {
-    setBillingAnchor(null);
-    if (billingCopyTimerRef.current) {
-      clearTimeout(billingCopyTimerRef.current);
-      billingCopyTimerRef.current = null;
-    }
-    setBillingCopied(false);
-  };
-  const openBilling = Boolean(billingAnchor);
 
   const handleCopyId = async () => {
     try {
@@ -278,17 +265,6 @@ const Rows = ({ order, onActionClick }) => {
       setAddrCopied(true);
       if (addrCopyTimerRef.current) clearTimeout(addrCopyTimerRef.current);
       addrCopyTimerRef.current = setTimeout(() => setAddrCopied(false), 3000);
-    } catch (_) {}
-  };
-
-  const handleCopyBilling = async () => {
-    try {
-  const billing = getBillingObject() || {};
-  const text = buildBillingCopy(billing);
-      await navigator.clipboard.writeText(text);
-      setBillingCopied(true);
-      if (billingCopyTimerRef.current) clearTimeout(billingCopyTimerRef.current);
-      billingCopyTimerRef.current = setTimeout(() => setBillingCopied(false), 3000);
     } catch (_) {}
   };
 
@@ -757,79 +733,36 @@ const Rows = ({ order, onActionClick }) => {
           if (!doc || doc === 'ninguno') return (<Typography variant="body2">—</Typography>);
           if (doc === 'boleta') return (<Typography variant="body2">Boleta</Typography>);
           if (doc === 'factura') {
+            const billingObj = getBillingObject();
+            const billingFields = [
+              { label: 'Razón Social', value: billingObj?.business_name },
+              { label: 'RUT', value: billingObj?.billing_rut },
+              { label: 'Giro', value: billingObj?.business_line },
+              {
+                label: 'Dirección',
+                value: [billingObj?.address, billingObj?.number, billingObj?.department]
+                  .filter(Boolean)
+                  .join(' ') || '—'
+              },
+              {
+                label: 'Región',
+                value: billingObj?.region ? getRegionDisplay(billingObj.region, { withPrefix: true }) : '—'
+              },
+              {
+                label: 'Comuna',
+                value: billingObj?.commune ? getCommuneDisplay(billingObj.commune) : '—'
+              },
+            ];
+
             return (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-                <Typography variant="body2">Factura</Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
-                  onClick={handleOpenBilling}
-                >
-                  Ver detalle
-                </Typography>
-                <Popover
-                  open={openBilling}
-                  anchorEl={billingAnchor}
-                  onClose={handleCloseBilling}
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                  PaperProps={{ sx: { p: 2, width: 460, maxWidth: '95vw' } }}
-                  disableScrollLock
-                >
-                  <Typography variant="subtitle2" gutterBottom>
-                    Información de Facturación
-                  </Typography>
-                          {(() => {
-                            const billingObj = getBillingObject();
-                            // Mostrar campos de factura si existen (empresa, RUT)
-                            return (
-                              <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', rowGap: 1, columnGap: 1 }}>
-                                {billingObj?.business_name ? (
-                                  <>
-                                    <Typography variant="body2" color="text.secondary">Razón Social:</Typography>
-                                    <Typography variant="body2">{billingObj.business_name}</Typography>
-                                  </>
-                                ) : null}
-                                {billingObj?.billing_rut ? (
-                                  <>
-                                    <Typography variant="body2" color="text.secondary">RUT:</Typography>
-                                    <Typography variant="body2">{billingObj.billing_rut}</Typography>
-                                  </>
-                                ) : null}
-                                {billingObj?.business_line ? (
-                                  <>
-                                    <Typography variant="body2" color="text.secondary">Giro:</Typography>
-                                    <Typography variant="body2">{billingObj.business_line}</Typography>
-                                  </>
-                                ) : null}
-                                <Typography variant="body2" color="text.secondary">Dirección:</Typography>
-                                <Typography variant="body2">
-                                  {[billingObj?.address, billingObj?.number, billingObj?.department]
-                                    .filter(Boolean)
-                                    .join(' ') || '—'}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">Región:</Typography>
-                                <Typography variant="body2">{billingObj?.region ? getRegionDisplay(billingObj.region, { withPrefix: true }) : '—'}</Typography>
-                                <Typography variant="body2" color="text.secondary">Comuna:</Typography>
-                                <Typography variant="body2">{billingObj?.commune ? getCommuneDisplay(billingObj.commune) : '—'}</Typography>
-                              </Box>
-                            )
-                          })()}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Selecciona o usa el botón para copiar
-                    </Typography>
-                    {billingCopied ? (
-                      <Button size="small" color="success" variant="contained" startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 18 }} />} disableElevation>
-                        Copiado
-                      </Button>
-                    ) : (
-                      <Button onClick={handleCopyBilling} size="small">Copiar</Button>
-                    )}
-                  </Box>
-                </Popover>
-              </Box>
-            )
+              <InfoPopover
+                label="Factura"
+                linkText="Ver detalle"
+                title="Información de Facturación"
+                fields={billingFields}
+                popoverWidth={460}
+              />
+            );
           }
           return (<Typography variant="body2">—</Typography>);
         })()}
