@@ -1,5 +1,5 @@
-// 📁 shared/components/navigation/MobileBar/MobileBar.jsx
-import React from 'react';
+ // 📁 shared/components/navigation/MobileBar/MobileBar.jsx
+import React, { useState } from 'react';
 import {
   Box,
   IconButton,
@@ -21,6 +21,7 @@ import {
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useCartStore from '../../../stores/cart/cartStore';
+import ProfileDrawer from './ProfileDrawer';
 
 // Define los ítems de menú para cada rol
 const buyerMenuItems = [
@@ -46,13 +47,18 @@ const providerMenuItems = [
  * @param {'buyer' | 'supplier' | null} props.role - El rol actual del usuario ('buyer' o 'supplier').
  * @param {boolean} props.session - Si hay sesión activa
  * @param {boolean} props.isBuyer - Si el usuario es comprador
+ * @param {string} props.logoUrl - URL del logo del usuario
+ * @param {object} props.userProfile - Perfil del usuario con datos completos
  */
-const MobileBar = ({ role, session, isBuyer, logoUrl }) => {
+const MobileBar = ({ role, session, isBuyer, logoUrl, userProfile }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const itemsInCart = useCartStore(state => state.items).length;
+  
+  // Estado para controlar el drawer de perfil
+  const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
 
   // Solo mostrar en móviles y si hay sesión
   if (!isMobile || !session || !role) {
@@ -104,7 +110,13 @@ const MobileBar = ({ role, session, isBuyer, logoUrl }) => {
 
   const allItems = [...menuItemsToDisplay, ...extraItems];
 
-  const handleItemClick = (path) => {
+  const handleItemClick = (path, text) => {
+    // Si es "Mi Perfil", abrir el drawer en lugar de navegar
+    if (text === 'Mi Perfil') {
+      setIsProfileDrawerOpen(true);
+      return;
+    }
+    
     navigate(path);
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -112,23 +124,24 @@ const MobileBar = ({ role, session, isBuyer, logoUrl }) => {
   };
 
   return (
-    <Box
-      sx={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: '#2C2C2C',
-        color: '#FFFFFF',
-        display: { xs: 'flex', md: 'none' },
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        padding: '8px 4px',
-        zIndex: 1400, // Asegura que MobileBar esté por encima de BottomBar
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
-      }}
-    >
+    <>
+      <Box
+        sx={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#2C2C2C',
+          color: '#FFFFFF',
+          display: { xs: 'flex', md: 'none' },
+          justifyContent: 'space-around',
+          alignItems: 'center',
+          padding: '8px 4px',
+          zIndex: 1400, // Asegura que MobileBar esté por encima de BottomBar
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
+        }}
+      >
       {allItems.map((item, index) => {
         const isActive = location.pathname === item.path;
         
@@ -157,7 +170,7 @@ const MobileBar = ({ role, session, isBuyer, logoUrl }) => {
                 },
               },
             }}
-            onClick={() => handleItemClick(item.path)}
+            onClick={() => handleItemClick(item.path, item.text)}
           >
             <IconButton
               sx={{
@@ -201,7 +214,19 @@ const MobileBar = ({ role, session, isBuyer, logoUrl }) => {
           </Box>
         );
       })}
-    </Box>
+      </Box>
+    
+      {/* ProfileDrawer - Se abre al hacer clic en "Mi Perfil" */}
+      <ProfileDrawer
+        open={isProfileDrawerOpen}
+        onClose={() => setIsProfileDrawerOpen(false)}
+        userName={userProfile?.user_nm || 'Usuario'}
+        logoUrl={logoUrl}
+        isBuyer={role === 'buyer'}
+        isSupplier={role === 'supplier'}
+        mainSupplier={userProfile?.main_supplier || false}
+      />
+    </>
   );
 };
 

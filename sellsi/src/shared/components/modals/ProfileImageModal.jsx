@@ -13,6 +13,7 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
+import { MODAL_DIALOG_ACTIONS_STYLES, MODAL_DIALOG_CONTENT_STYLES, MODAL_DIALOG_HEADER_STYLES, MODAL_CANCEL_BUTTON_STYLES, MODAL_SUBMIT_BUTTON_STYLES } from '../feedback/Modal/Modal';
 import {
   CloudUpload as CloudUploadIcon,
   Delete as DeleteIcon,
@@ -254,19 +255,29 @@ const ProfileImageModal = ({
         },
       }}
     >
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        overflow: 'visible'
-      }}>
-        Cambiar imagen de perfil
-        <IconButton onClick={handleCancel} size="small">
-          <CloseIcon />
+      <DialogTitle sx={{ ...MODAL_DIALOG_HEADER_STYLES, position: 'relative', backgroundColor: '#2E52B2', color: '#fff' }}>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexDirection: 'column' }}>
+          <Typography variant="h6" component="div" fontWeight={700} sx={{ flexGrow: 1, fontSize: { xs: '1.1rem', sm: '1.25rem' }, color: '#fff' }}>
+            Cambiar imagen de perfil
+          </Typography>
+        </Box>
+
+        <IconButton onClick={handleCancel} sx={{
+          position: 'absolute',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          right: { xs: 8, sm: 16 },
+          p: { xs: 0.75, sm: 1 },
+          color: '#fff',
+          backgroundColor: 'rgba(255,255,255,0.1)',
+          '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' },
+        }}>
+          <CloseIcon sx={{ fontSize: { xs: '1.5rem', sm: '1.5rem' } }} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 2, overflow: 'visible' }}>
+      <DialogContent dividers sx={{ ...MODAL_DIALOG_CONTENT_STYLES, overflow: 'visible' }}>
 
         {/* Preview de imagen actual + botón eliminar */}
         <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 3 }}>
@@ -403,14 +414,15 @@ const ProfileImageModal = ({
         />
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button onClick={handleCancel} color="inherit">
+      <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
+        <Button onClick={handleCancel} variant="outlined" disabled={loading} sx={MODAL_CANCEL_BUTTON_STYLES}>
           Cancelar
         </Button>
         <Button
           onClick={handleSave}
           variant="contained"
           disabled={!isSaveEnabled || loading}
+          sx={MODAL_SUBMIT_BUTTON_STYLES}
         >
           {loading ? 'Guardando...' : 'Guardar'}
         </Button>

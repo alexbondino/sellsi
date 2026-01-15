@@ -2,9 +2,8 @@
 // Migrado de features/terms_policies/TextFormatter.jsx
 
 import React from 'react';
-import { Typography, Box } from '@mui/material';
 
-const TextFormatter = ({ text, sx = {} }) => {
+const TextFormatter = ({ text }) => {
   const renderFormattedText = (text) => {
     const lines = text.trim().split('\n');
     
@@ -12,100 +11,62 @@ const TextFormatter = ({ text, sx = {} }) => {
       const trimmedLine = line.trim();
       
       if (!trimmedLine) {
-        return <Box key={index} sx={{ height: '8px' }} />;
+        return <div key={index} className="h-2" />;
       }
       
-      // Títulos principales (con **)
+      // Títulos principales con ** (ej: **Título Principal**)
       if (trimmedLine.startsWith('**') && trimmedLine.endsWith('**')) {
         const title = trimmedLine.slice(2, -2);
         return (
-          <Typography
-            key={index}
-            variant="h6"
-            sx={{
-              fontWeight: 700,
-              color: '#2E52B2',
-              mb: 1.5,
-              mt: index === 0 ? 0 : 2,
-              fontSize: { xs: '1.1rem', md: '1.25rem' },
-              ...sx.title,
-            }}
-          >
+          <h2 key={index} className="text-2xl font-bold text-gray-900 mt-8 mb-4 first:mt-0">
             {title}
-          </Typography>
+          </h2>
         );
       }
       
-      // Definiciones y campos con formato (con **término:**)
-      if (trimmedLine.startsWith('**') && trimmedLine.includes(':**')) {
-        const parts = trimmedLine.split(':**');
-        const term = parts[0].slice(2); // Remove **
-        const definition = parts[1].trim();
-        return (
-          <Box key={index} sx={{ display: 'flex', mb: 1.5, alignItems: 'flex-start' }}>
-            <Typography
-              sx={{
-                color: '#000',
-                fontWeight: 700,
-                mr: 2,
-                fontSize: { xs: '0.95rem', md: '1rem' },
-                minWidth: '200px',
-                flexShrink: 0,
-                ...sx.term,
-              }}
-            >
-              {term}:
-            </Typography>
-            <Typography
-              sx={{
-                color: '#424242',
-                fontSize: { xs: '0.95rem', md: '1rem' },
-                lineHeight: 1.6,
-                ...sx.definition,
-              }}
-            >
-              {definition}
-            </Typography>
-          </Box>
-        );
-      }
-      
-      // Números de sección (ej: 1.1.1., 2.2.3.)
-      if (/^\d+\.\d+\.\d+\./.test(trimmedLine)) {
-        return (
-          <Typography
-            key={index}
-            sx={{
-              color: '#2E52B2',
-              fontWeight: 600,
-              mb: 0.8,
-              fontSize: { xs: '0.95rem', md: '1rem' },
-              ...sx.subsection,
-            }}
-          >
-            {trimmedLine}
-          </Typography>
-        );
-      }
-      
-      // Subtítulos numerados (ej: **1.1. Registro**)
-      if (/^\*\*\d+\.\d+\./.test(trimmedLine) && trimmedLine.endsWith('**')) {
+      // Subtítulos numerados con ** (ej: **1.1. Título**)
+      if (trimmedLine.startsWith('**') && /^\*\*\d+\.\d+\./.test(trimmedLine)) {
         const subtitle = trimmedLine.slice(2, -2);
         return (
-          <Typography
-            key={index}
-            variant="subtitle1"
-            sx={{
-              fontWeight: 700,
-              color: '#2E52B2',
-              mb: 1.2,
-              mt: 1.5,
-              fontSize: { xs: '1rem', md: '1.1rem' },
-              ...sx.subtitle,
-            }}
-          >
+          <h3 key={index} className="text-xl font-bold text-gray-900 mt-6 mb-3">
             {subtitle}
-          </Typography>
+          </h3>
+        );
+      }
+      
+      // Sub-secciones con numeración triple y dos puntos (ej: 1.1.1. Término: descripción)
+      // Solo el número y término van en negrita, la descripción en texto normal
+      if (/^\d+\.\d+\.\d+\./.test(trimmedLine) && trimmedLine.includes(':')) {
+        const colonIndex = trimmedLine.indexOf(':');
+        const term = trimmedLine.substring(0, colonIndex); // "1.1.1. Término"
+        const description = trimmedLine.substring(colonIndex + 1).trim(); // "descripción"
+        return (
+          <p key={index} className="text-gray-900 mb-3 mt-3 leading-relaxed">
+            <span className="font-semibold">{term}:</span> {description}
+          </p>
+        );
+      }
+      
+      // Sub-secciones con numeración doble y dos puntos (ej: 2.1. Término: descripción)
+      // Solo el número y término van en negrita, la descripción en texto normal
+      if (/^\d+\.\d+\./.test(trimmedLine) && trimmedLine.includes(':') && !trimmedLine.startsWith('**')) {
+        const colonIndex = trimmedLine.indexOf(':');
+        const term = trimmedLine.substring(0, colonIndex);
+        const description = trimmedLine.substring(colonIndex + 1).trim();
+        return (
+          <p key={index} className="text-gray-900 mb-3 mt-4 leading-relaxed">
+            <span className="font-semibold">{term}:</span> {description}
+          </p>
+        );
+      }
+      
+      // Secciones principales sin ** (ej: 1. Título sin más texto)
+      // Estas SÍ deben estar en negrita porque son encabezados de sección
+      if (/^\d+\.\s+[A-Z]/.test(trimmedLine) && trimmedLine.split(' ').length <= 6 && !trimmedLine.includes(':')) {
+        return (
+          <h2 key={index} className="text-2xl font-bold text-gray-900 mt-8 mb-4 first:mt-0">
+            {trimmedLine}
+          </h2>
         );
       }
       
@@ -113,45 +74,17 @@ const TextFormatter = ({ text, sx = {} }) => {
       if (trimmedLine.startsWith('- ')) {
         const listItem = trimmedLine.slice(2);
         return (
-          <Typography
-            key={index}
-            sx={{
-              color: '#424242',
-              mb: 0.5,
-              ml: 2,
-              fontSize: { xs: '0.95rem', md: '1rem' },
-              lineHeight: 1.6,
-              position: 'relative',
-              '&::before': {
-                content: '"•"',
-                position: 'absolute',
-                left: '-16px',
-                color: '#2E52B2',
-                fontWeight: 'bold',
-              },
-              ...sx.listItem,
-            }}
-          >
+          <p key={index} className="text-gray-900 mb-2 ml-6 relative before:content-['•'] before:absolute before:-left-4 before:font-bold leading-relaxed">
             {listItem}
-          </Typography>
+          </p>
         );
       }
       
       // Texto normal
       return (
-        <Typography
-          key={index}
-          sx={{
-            color: '#424242',
-            mb: 1.2,
-            fontSize: { xs: '0.95rem', md: '1rem' },
-            lineHeight: 1.6,
-            textAlign: 'justify',
-            ...sx.paragraph,
-          }}
-        >
+        <p key={index} className="text-gray-900 mb-4 leading-relaxed">
           {trimmedLine}
-        </Typography>
+        </p>
       );
     });
   };
@@ -161,14 +94,11 @@ const TextFormatter = ({ text, sx = {} }) => {
   }
 
   return (
-    <Box sx={{ 
-      maxWidth: '100%',
-      '& > *:last-child': { mb: 0 },
-      ...sx.container 
-    }}>
+    <div className="w-full">
       {renderFormattedText(text)}
-    </Box>
+    </div>
   );
 };
 
 export default TextFormatter;
+

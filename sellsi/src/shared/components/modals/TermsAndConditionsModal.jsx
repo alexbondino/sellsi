@@ -42,22 +42,23 @@ const TermsAndConditionsModal = ({ open, onClose }) => {
     >
       <DialogTitle
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          bgcolor: '#f8f9fa',
-          borderBottom: '2px solid #41B6E6',
-          p: 3,
+          position: 'relative',
+          backgroundColor: '#2E52B2',
+          color: '#fff',
+          p: { xs: 2, sm: 3 },
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <GavelIcon sx={{ color: '#41B6E6', fontSize: '2rem' }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 0.75, sm: 1 }, width: '100%' }}>
+          <GavelIcon sx={{ color: '#fff', fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
           <Typography
-            variant="h5"
+            variant="h6"
             sx={{
+              color: '#fff',
               fontWeight: 700,
-              color: '#2E52B2',
-              fontSize: { xs: '1.3rem', md: '1.5rem' },
+              fontSize: { xs: '1.1rem', sm: '1.25rem' },
+              textAlign: 'center',
+              display: 'inline-flex',
+              alignItems: 'center',
             }}
           >
             Términos y Condiciones
@@ -65,21 +66,29 @@ const TermsAndConditionsModal = ({ open, onClose }) => {
         </Box>
         <IconButton
           onClick={onClose}
+          size="small"
           sx={{
-            color: '#666',
-            '&:hover': {
-              bgcolor: 'rgba(0, 0, 0, 0.04)',
-            },
+            position: 'absolute',
+            right: { xs: 8, sm: 16 },
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#fff',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            p: { xs: 0.5, sm: 1 },
+            '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
           }}
         >
-          <CloseIcon />
+          <CloseIcon sx={{ fontSize: { xs: '1.5rem', sm: '1.5rem' } }} />
         </IconButton>
       </DialogTitle>
 
       <DialogContent
+        dividers={true}
         sx={{
-          p: { xs: 2, md: 4 },
           bgcolor: '#fff',
+          // Use standardized modal content padding
+          px: { xs: 1.5, sm: 3 },
+          py: { xs: 1.5, sm: 2.5 },
         }}
       >
         <TextFormatter text={termsContent} />

@@ -104,7 +104,7 @@ const ProductPageView = memo(
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     // Hook para estado del sidebar
-    const { sideBarCollapsed } = useLayout();
+    const { sideBarCollapsed, currentSideBarWidth } = useLayout();
 
     // Mover useCallback ANTES de cualquier return condicional para seguir las reglas de los Hooks
     const handleAddToCart = useCallback(
@@ -278,15 +278,35 @@ const ProductPageView = memo(
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'flex-start',
-            // ✅ Ancho total disponible descontando el sidebar
+            // ✅ Ancho total disponible descontando el sidebar (consumir currentSideBarWidth)
             width: {
               xs: '100%',
-              md: sideBarCollapsed ? 'calc(100% - 80px)' : 'calc(100% - 240px)',
+              md: (() => {
+                try {
+                  const base = (currentSideBarWidth && currentSideBarWidth.md) || '240px';
+                  const basePx = parseInt(base.replace('px', ''), 10);
+                  const collapsedPx = Math.round(basePx * 0.4);
+                  return sideBarCollapsed
+                    ? `calc(100% - ${collapsedPx}px)`
+                    : `calc(100% - ${base})`;
+                } catch (e) {
+                  return sideBarCollapsed ? 'calc(100% - 80px)' : 'calc(100% - 240px)';
+                }
+              })(),
             },
-            // ✅ Margen izquierdo = ancho del sidebar
+            // ✅ Margen izquierdo = ancho actual del sidebar (mejor precisión que hardcode)
             ml: {
               xs: 0,
-              md: sideBarCollapsed ? '110px' : '180px',
+              md: (() => {
+                try {
+                  const base = (currentSideBarWidth && currentSideBarWidth.md) || '240px';
+                  const basePx = parseInt(base.replace('px', ''), 10);
+                  const collapsedPx = Math.round(basePx * 0.4);
+                  return sideBarCollapsed ? `${collapsedPx}px` : base;
+                } catch (e) {
+                  return sideBarCollapsed ? '110px' : '180px';
+                }
+              })(),
             },
             transition: 'all 0.3s ease',
           }}

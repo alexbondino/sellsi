@@ -45,7 +45,7 @@ const buyerMenuItems = [
   },
   { text: 'Mis Ofertas', path: '/buyer/offers', icon: <OffersIcon /> },
   { text: 'Mis Pedidos', path: '/buyer/orders', icon: <OrdersIcon /> },
-  { text: 'Mis Financiamientos', path: '/buyer/my-financing', icon: <FinancingIcon /> },
+  { text: 'Financiamientos', path: '/buyer/my-financing', icon: <FinancingIcon /> },
   // { text: 'Mi Performance', path: '/buyer/performance', icon: <PerformanceIcon /> }, // Eliminado
 ];
 
@@ -58,7 +58,7 @@ const providerMenuItems = [
     icon: <ProductsIcon />,
   },
   { text: 'Mis Pedidos', path: '/supplier/my-orders', icon: <OrdersIcon /> },
-  { text: 'Mis Financiamientos', path: '/supplier/my-financing', icon: <FinancingIcon /> },
+  { text: 'Financiamientos', path: '/supplier/my-financing', icon: <FinancingIcon /> },
   // { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> }, // Eliminado
   // Marketplace oculto para supplier
 ];
@@ -144,11 +144,22 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
 
   const effectiveRole = determineEffectiveRole();
 
+  // Ensure width prop is normalized to responsive object { md, lg, xl }
+  const ensureResponsive = w => {
+    const fallback = { md: '210px', lg: '210px', xl: '210px' };
+    if (typeof w === 'string') return { md: w, lg: w, xl: w };
+    if (!w || typeof w !== 'object') return fallback;
+    return {
+      md: w.md || w.lg || w.xl || fallback.md,
+      lg: w.lg || w.md || w.xl || fallback.lg,
+      xl: w.xl || w.lg || w.md || fallback.xl,
+    };
+  };
+
   // Calcular el ancho colapsado (40% del ancho original)
-  // ✅ MEJORA: Soporte para anchos responsive (objetos con breakpoints)
   const calculateWidth = (w, collapse = false) => {
+    // Work with an object having md/lg/xl keys
     if (typeof w === 'object') {
-      // Si es un objeto responsive, calcular para cada breakpoint
       const result = {};
       Object.keys(w).forEach(bp => {
         const bpWidth = w[bp];
@@ -162,7 +173,7 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
       });
       return result;
     }
-    // Si es un string simple
+    // Fallback for strings
     if (collapse) {
       return w.includes('%')
         ? `${parseFloat(w) * 0.4}%`
@@ -171,13 +182,16 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
     return w;
   };
 
+  // Normalize incoming width prop to ensure md/lg/xl are present
+  const normalizedPropWidth = React.useMemo(() => ensureResponsive(width), [width]);
+
   const expandedWidth = React.useMemo(
-    () => calculateWidth(width, false),
-    [width]
+    () => calculateWidth(normalizedPropWidth, false),
+    [normalizedPropWidth]
   );
   const collapsedWidth = React.useMemo(
-    () => calculateWidth(width, true),
-    [width]
+    () => calculateWidth(normalizedPropWidth, true),
+    [normalizedPropWidth]
   );
   const currentWidth = React.useMemo(
     () => (isCollapsed ? collapsedWidth : expandedWidth),
@@ -185,12 +199,24 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
   );
 
   // Notificar cambios de ancho al componente padre si el callback está disponible
+  const lastNotifiedRef = React.useRef(null);
   React.useEffect(() => {
-    if (onWidthChange) {
-      onWidthChange(currentWidth, isCollapsed);
+    if (!onWidthChange) return;
+
+    const notifyWidth = normalizedPropWidth;
+    const last = lastNotifiedRef.current;
+    const same =
+      last &&
+      last.md === notifyWidth.md &&
+      last.lg === notifyWidth.lg &&
+      last.xl === notifyWidth.xl &&
+      last.isCollapsed === isCollapsed;
+
+    if (!same) {
+      onWidthChange(notifyWidth, isCollapsed);
+      lastNotifiedRef.current = { ...notifyWidth, isCollapsed };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCollapsed, JSON.stringify(currentWidth)]);
+  }, [isCollapsed, normalizedPropWidth, onWidthChange]);
 
   // Handler para toggle del colapso
   const handleToggleCollapse = () => {
@@ -243,6 +269,17 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
           item => !(item.path && item.path.includes('/offers'))
         );
         menuItemsToDisplay = [...menuItemsToDisplay, ...offersItems];
+      }
+
+      // Asegurarse que en desktop el botón "Financiamientos" se muestre al final de la lista (después de ofertas)
+      const financingItems = menuItemsToDisplay.filter(
+        item => item.path && item.path.includes('/my-financing')
+      );
+      if (financingItems.length > 0) {
+        menuItemsToDisplay = menuItemsToDisplay.filter(
+          item => !(item.path && item.path.includes('/my-financing'))
+        );
+        menuItemsToDisplay = [...menuItemsToDisplay, ...financingItems];
       }
     }
   } catch (e) {

@@ -39,13 +39,13 @@ const FinancingFilters = ({
   // Desktop filters
   return (
     <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
-      <Typography fontWeight={600}>Filtrar por categoría:</Typography>
+      <Typography fontWeight={600}>Filtrar por estado:</Typography>
       <FormControl size="small" sx={{ minWidth: 280 }}>
-        <InputLabel id="financing-filter-label">Categoría</InputLabel>
+        <InputLabel id="financing-filter-label">Estado</InputLabel>
         <Select
           labelId="financing-filter-label"
           value={currentFilter}
-          label="Categoría"
+          label="Estado"
           onChange={(e) => onFilterChange(e.target.value)}
           MenuProps={{ disableScrollLock: true }}
         >

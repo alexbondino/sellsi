@@ -37,8 +37,13 @@ import DrawIcon from '@mui/icons-material/Draw';
 import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ActionIconButton from '../../../../shared/components/buttons/ActionIconButton';
+import InfoPopover from '../../../../shared/components/display/InfoPopover';
+import FinancingIdCell from '../../../../shared/components/financing/FinancingIdCell';
+import FinancingAmountsCell from '../../../../shared/components/financing/FinancingAmountsCell';
+import FinancingDatesCell from '../../../../shared/components/financing/FinancingDatesCell';
+import FinancingPlazosCell from '../../../../shared/components/financing/FinancingPlazosCell';
 import { formatPrice } from '../../../../shared/utils/formatters/priceFormatters';
-import { getStateConfig, getAvailableActions } from '../../../../shared/utils/financing/financingStates';
+import { getStateConfig, getAvailableActions, getStateFilterCategory, getApprovedFinancingChip } from '../../../../shared/utils/financing/financingStates';
 
 /**
  * Estilos de cabecera de tabla
@@ -64,9 +69,25 @@ const SupplierFinancingTable = ({
   onDownload,
 }) => {
   /**
-   * Renderiza el estado como texto simple con color
+   * Renderiza el estado como chip (basado en categoría de filtro)
    */
-  const renderStatus = (status) => {
+  const renderStateChip = (status) => {
+    const filterCategory = getStateFilterCategory(status);
+
+    return (
+      <Chip
+        label={filterCategory.label}
+        color={filterCategory.color}
+        size="small"
+        sx={{ fontWeight: 600 }}
+      />
+    );
+  };
+
+  /**
+   * Renderiza la descripción del estado (texto detallado según rol)
+   */
+  const renderStatusDescription = (status) => {
     const statusInfo = getStateConfig(status, 'supplier');
     
     // Mapeo de colores MUI a colores de texto
@@ -82,11 +103,18 @@ const SupplierFinancingTable = ({
       <Typography
         variant="body2"
         fontWeight={600}
-        sx={{ color: colorMap[statusInfo.color] || 'text.secondary' }}
+        sx={{ color: colorMap[statusInfo.color] || 'text.secondary', whiteSpace: 'pre-line' }}
       >
         {statusInfo.label}
       </Typography>
     );
+  };
+
+  /**
+   * Renderiza el estado como texto simple con color (DEPRECATED - usar renderStatusDescription)
+   */
+  const renderStatus = (status) => {
+    return renderStatusDescription(status);
   };
 
   /**
@@ -160,30 +188,66 @@ const SupplierFinancingTable = ({
       <Table sx={{ minWidth: 900 }}>
         <TableHead>
           <TableRow>
+            <TableCell sx={headerCellSx}>ID</TableCell>
             <TableCell sx={headerCellSx}>Solicitado Por</TableCell>
+            <TableCell sx={headerCellSx} align="center">Tipo de Solicitud</TableCell>
             <TableCell sx={headerCellSx} align="right">Monto</TableCell>
             <TableCell sx={headerCellSx} align="center">Plazo (días)</TableCell>
-            <TableCell sx={headerCellSx}>Datos Empresa</TableCell>
             <TableCell sx={headerCellSx} align="center">Descargables</TableCell>
             <TableCell sx={headerCellSx} align="center">Estado</TableCell>
+            <TableCell sx={headerCellSx} align="center">Descripción</TableCell>
             <TableCell sx={headerCellSx} align="center">Acciones</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {financings.map((financing) => (
-            <TableRow
-              key={financing.id}
-              sx={{
-                '&:hover': { backgroundColor: 'action.hover' },
-                '&:last-child td, &:last-child th': { border: 0 },
-              }}
-            >
-              {/* Solicitado Por */}
-              <TableCell>
-                <Typography variant="body2" fontWeight={500}>
-                  {financing.requested_by}
-                </Typography>
-              </TableCell>
+          {financings.map((financing) => {
+            // Preparar campos para InfoPopover
+            const buyerInfoFields = [
+              { label: 'Razón Social', value: financing.buyer_legal_name },
+              { label: 'RUT Empresa', value: financing.buyer_legal_rut },
+              { label: 'Representante Legal', value: financing.buyer_legal_representative_name },
+              { label: 'RUT Representante', value: financing.buyer_legal_representative_rut },
+              { label: 'Dirección', value: financing.buyer_legal_address },
+              { label: 'Comuna', value: financing.buyer_legal_commune },
+              { label: 'Región', value: financing.buyer_legal_region },
+            ];
+
+            return (
+              <TableRow
+                key={financing.id}
+                sx={{
+                  '&:hover': { backgroundColor: 'action.hover' },
+                  '&:last-child td, &:last-child th': { border: 0 },
+                }}
+              >
+                {/* ID */}
+                <TableCell>
+                  <FinancingIdCell financingId={financing.id} />
+                </TableCell>
+
+                {/* Solicitado Por */}
+                <TableCell>
+                  <InfoPopover
+                    label={financing.buyer_user_nm || financing.buyer_legal_name || 'Comprador'}
+                    linkText="Ver detalle"
+                    title="Información de la Empresa"
+                    fields={buyerInfoFields}
+                    popoverWidth={460}
+                  />
+                </TableCell>
+
+                {/* Tipo de Solicitud */}
+                <TableCell align="center">
+                  <Tooltip
+                    title="Tipo de solicitud generada por el comprador"
+                    arrow
+                    placement="top"
+                  >
+                    <Typography variant="body2" fontWeight={500}>
+                      {financing.request_type === 'express' ? 'Express' : 'Extendida'}
+                    </Typography>
+                  </Tooltip>
+                </TableCell>
 
               {/* Monto */}
               <TableCell align="right">
@@ -199,13 +263,6 @@ const SupplierFinancingTable = ({
                 </Typography>
               </TableCell>
 
-              {/* Datos Empresa */}
-              <TableCell>
-                <Typography variant="body2" color="text.secondary">
-                  {financing.business_data}
-                </Typography>
-              </TableCell>
-
               {/* Descargables */}
               <TableCell align="center">
                 <ActionIconButton
@@ -218,9 +275,14 @@ const SupplierFinancingTable = ({
                 </ActionIconButton>
               </TableCell>
 
-              {/* Estado */}
+              {/* Estado (Chip) */}
               <TableCell align="center">
-                {renderStatus(financing.status)}
+                {renderStateChip(financing.status)}
+              </TableCell>
+
+              {/* Descripción (Texto detallado) */}
+              <TableCell align="center">
+                {renderStatusDescription(financing.status)}
               </TableCell>
 
               {/* Acciones */}
@@ -228,7 +290,8 @@ const SupplierFinancingTable = ({
                 {renderActions(financing)}
               </TableCell>
             </TableRow>
-          ))}
+          );
+          })}
         </TableBody>
       </Table>
     </TableContainer>
@@ -242,103 +305,74 @@ const SupplierFinancingTable = ({
  */
 
 /**
- * Calcula días de vigencia restantes
- */
-const calculateDaysRemaining = (approvedDate, termDays) => {
-  if (!approvedDate) return termDays;
-  
-  const approved = new Date(approvedDate);
-  const expiryDate = new Date(approved);
-  expiryDate.setDate(expiryDate.getDate() + termDays);
-  
-  const today = new Date();
-  const diffTime = expiryDate - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  return Math.max(0, diffDays);
-};
-
-/**
- * Renderiza días de vigencia con color
- */
-const renderDaysRemaining = (financing) => {
-  const daysRemaining = calculateDaysRemaining(financing.approved_at, financing.term_days);
-  
-  let color = 'success.main';
-  if (daysRemaining <= 7) color = 'error.main';
-  else if (daysRemaining <= 15) color = 'warning.main';
-  
-  return (
-    <Typography
-      variant="body2"
-      fontWeight={600}
-      sx={{ color }}
-    >
-      {daysRemaining} días
-    </Typography>
-  );
-};
-
-/**
  * Tabla de financiamientos aprobados
  */
 const SupplierApprovedTable = ({ financings = [] }) => {
   return (
     <TableContainer component={Paper} elevation={1}>
-      <Table sx={{ minWidth: 800 }}>
+      <Table sx={{ minWidth: 900 }}>
         <TableHead>
           <TableRow>
+            <TableCell sx={headerCellSx}>ID</TableCell>
             <TableCell sx={headerCellSx}>Comprador</TableCell>
-            <TableCell sx={headerCellSx} align="right">Monto Otorgado</TableCell>
-            <TableCell sx={headerCellSx} align="right">Monto Utilizado</TableCell>
-            <TableCell sx={headerCellSx} align="center">Plazo Otorgado</TableCell>
-            <TableCell sx={headerCellSx} align="center">Días de Vigencia</TableCell>
+            <TableCell sx={headerCellSx} align="center">Montos</TableCell>
+            <TableCell sx={headerCellSx} align="center">Fecha</TableCell>
+            <TableCell sx={headerCellSx} align="center">Plazos</TableCell>
+            <TableCell sx={headerCellSx} align="center">Estado</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {financings.map((financing) => (
-            <TableRow
-              key={financing.id}
-              hover
-              sx={{
-                '&:hover': { backgroundColor: 'action.hover' },
-                cursor: 'default',
-              }}
-            >
-              {/* Comprador */}
-              <TableCell>
-                <Typography variant="body2" fontWeight={500}>
-                  {financing.buyer_name || financing.requested_by}
-                </Typography>
-              </TableCell>
+          {financings.map((financing) => {
+            const chipInfo = getApprovedFinancingChip(financing);
+            
+            return (
+              <TableRow
+                key={financing.id}
+                hover
+                sx={{
+                  '&:hover': { backgroundColor: 'action.hover' },
+                  cursor: 'default',
+                }}
+              >
+                {/* ID */}
+                <TableCell>
+                  <FinancingIdCell financingId={financing.id} />
+                </TableCell>
 
-              {/* Monto Otorgado */}
-              <TableCell align="right">
-                <Typography variant="body2" fontWeight={600} color="text.primary">
-                  {formatPrice(financing.amount)}
-                </Typography>
-              </TableCell>
+                {/* Comprador */}
+                <TableCell>
+                  <Typography variant="body2" fontWeight={500}>
+                    {financing.buyer_name || financing.requested_by}
+                  </Typography>
+                </TableCell>
 
-              {/* Monto Utilizado */}
-              <TableCell align="right">
-                <Typography variant="body2" fontWeight={500}>
-                  {formatPrice(financing.amount_used || 0)}
-                </Typography>
-              </TableCell>
+                {/* Montos */}
+                <TableCell align="center">
+                  <FinancingAmountsCell financing={financing} />
+                </TableCell>
 
-              {/* Plazo Otorgado */}
-              <TableCell align="center">
-                <Typography variant="body2">
-                  {financing.term_days} días
-                </Typography>
-              </TableCell>
+                {/* Fecha */}
+                <TableCell align="center">
+                  <FinancingDatesCell financing={financing} />
+                </TableCell>
 
-              {/* Días de Vigencia */}
-              <TableCell align="center">
-                {renderDaysRemaining(financing)}
-              </TableCell>
-            </TableRow>
-          ))}
+                {/* Plazos */}
+                <TableCell align="center">
+                  <FinancingPlazosCell financing={financing} />
+                </TableCell>
+
+                {/* Estado (Chip) */}
+                <TableCell align="center">
+                  <Chip
+                    label={chipInfo.label}
+                    color={chipInfo.color}
+                    size="small"
+                    sx={{ fontWeight: 600 }}
+                  />
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </TableContainer>

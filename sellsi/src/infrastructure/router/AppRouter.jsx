@@ -13,6 +13,9 @@ import { useAuth } from '../providers';
 
 // Landing Page (carga inmediata para primera impresión)
 import { Home } from '../../workspaces/landing';
+const FAQPage = React.lazy(() =>
+  import('../../workspaces/landing/components/FAQPage')
+);
 
 // 📦 RUTAS PRINCIPALES - LAZY LOADING
 // ✅ UNIFICADO: Marketplace ahora maneja tanto vista pública como buyer con prop hasSideBar
@@ -175,6 +178,7 @@ export const AppRouter = ({ scrollTargets }) => {
         />
         {/* Rutas Públicas / Generales */}
         <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
+        <Route path="/faq" element={<FAQPage />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route
           path="/marketplace/product/:id"

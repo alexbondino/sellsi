@@ -1,5 +1,6 @@
 import React from 'react'
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material'
+import { MODAL_DIALOG_HEADER_STYLES } from '../../shared/components/feedback/Modal/Modal'
 
 const ConfirmDialog = ({
   open,
@@ -27,7 +28,7 @@ const ConfirmDialog = ({
       }}
     >
       {title && (
-        <DialogTitle sx={{ textAlign: 'center', m: 0, p: 2 }}>{title}</DialogTitle>
+        <DialogTitle sx={{ ...MODAL_DIALOG_HEADER_STYLES, textAlign: 'center' }}>{title}</DialogTitle>
       )}
       {description && (
         <DialogContent>
