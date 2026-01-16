@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Stack, Box } from '@mui/material';
+import { Stack, Box, Button, Grid } from '@mui/material';
 import { AnimatePresence } from 'framer-motion';
+import { RequestQuote as RequestQuoteIcon, AccountBalance as AccountBalanceIcon } from '@mui/icons-material';
 
 // Componentes móviles
 import MobileCartHeader from './MobileCartHeader';
@@ -8,6 +9,7 @@ import CollapsibleSummary from './CollapsibleSummary';
 import MobileCartItem from './MobileCartItem';
 import MobileCheckoutBar from './MobileCheckoutBar';
 import MinimumPurchaseWarning from './MinimumPurchaseWarning';
+import MobileFinancingsModal from './MobileFinancingsModal';
 
 const MobileCartLayout = ({ 
   items = [],
@@ -19,9 +21,14 @@ const MobileCartLayout = ({
   onRemoveItem,
   formatPrice,
   isCheckingOut = false,
-  supplierMinimumValidation = null
+  supplierMinimumValidation = null,
+  onOpenFinancingModal,
+  financingEnabled = false,
+  productFinancing = {},
+  ageVerificationDenied = false, // Nueva prop para verificación de edad
 }) => {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [financingsModalOpen, setFinancingsModalOpen] = useState(false);
 
   return (
     <>
@@ -41,6 +48,81 @@ const MobileCartLayout = ({
           itemCount={items.length}
         />
         
+        {/* Botones de Financiamiento - 2 botones exactamente 50% width */}
+        {financingEnabled && (
+          <Box sx={{ px: 0 }}>
+            <Box sx={{ display: 'flex', width: '100%' }}>
+              {/* Botón 1 wrapper - 50% fixed */}
+              <Box data-testid="FinButtonWrapper" sx={{ width: '50%', px: 0.5, boxSizing: 'border-box' }}>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  size="medium"
+                  onClick={onOpenFinancingModal}
+                  startIcon={<RequestQuoteIcon />}
+                  aria-label="Pagar con Financiamiento"
+                  data-testid="PayWithFinancingBtn"
+                  sx={{
+                    py: { xs: 1, sm: 1.2 },
+                    borderRadius: 2,
+                    fontWeight: 'bold',
+                    textTransform: 'none',
+                    backgroundColor: '#2E52B2',
+                    fontSize: { xs: '0.8rem', sm: '0.85rem' },
+                    '&:hover': {
+                      backgroundColor: '#1e3a7a',
+                    },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1 }}>
+                    <span>Pagar con</span>
+                    <span style={{ fontWeight: 700 }}>Financiamiento</span>
+                  </Box>
+                </Button>
+              </Box>
+
+              {/* Botón 2 wrapper - 50% fixed */}
+              <Box data-testid="ViewButtonWrapper" sx={{ width: '50%', px: 0.5, boxSizing: 'border-box' }}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  size="medium"
+                  onClick={() => setFinancingsModalOpen(true)}
+                  startIcon={<AccountBalanceIcon />}
+                  aria-label="Financiamientos Disponibles"
+                  data-testid="ViewFinancingsBtn"
+                  sx={{
+                    py: { xs: 1, sm: 1.2 },
+                    borderRadius: 2,
+                    fontWeight: 'bold',
+                    textTransform: 'none',
+                    borderColor: '#2E52B2',
+                    color: '#2E52B2',
+                    fontSize: { xs: '0.8rem', sm: '0.85rem' },
+                    '&:hover': {
+                      borderColor: '#1e3a7a',
+                      backgroundColor: 'rgba(46, 82, 178, 0.08)',
+                    },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1 }}>
+                    <span>Financiamientos</span>
+                    <span style={{ fontWeight: 700 }}>Disponibles</span>
+                  </Box>
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+        )}
+        
         {/* Validación de compra mínima por proveedor */}
         <MinimumPurchaseWarning
           validation={supplierMinimumValidation}
@@ -59,6 +141,10 @@ const MobileCartLayout = ({
                 onRemove={onRemoveItem}
                 formatPrice={formatPrice}
                 showShipping={true}
+                onOpenFinancingModal={onOpenFinancingModal}
+                financingEnabled={financingEnabled}
+                financingAmount={productFinancing[item.id]?.amount || 0}
+                ageVerificationDenied={ageVerificationDenied}
               />
             ))}
           </AnimatePresence>
@@ -76,6 +162,13 @@ const MobileCartLayout = ({
         isLoading={isCheckingOut}
         formatPrice={formatPrice}
         variant="cart"
+      />
+      
+      {/* Modal fullscreen de financiamientos disponibles */}
+      <MobileFinancingsModal
+        open={financingsModalOpen}
+        onClose={() => setFinancingsModalOpen(false)}
+        cartItems={items}
       />
     </>
   );

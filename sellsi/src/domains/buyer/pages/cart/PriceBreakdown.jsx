@@ -7,6 +7,8 @@ const PriceBreakdown = ({
   discount,
   shippingCost,
   total,
+  financingAmount = 0,
+  financingEnabled = false,
   formatPrice,
   cartStats,
   isCalculatingShipping = false,
@@ -192,6 +194,22 @@ const PriceBreakdown = ({
           )}
         </Box>
 
+        {/* Financiamiento (si está habilitado y hay monto) - ahora debajo de Envío para desktop */}
+        {financingEnabled && financingAmount > 0 && (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              mb: 1,
+            }}
+          >
+            <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' } }}>Financiamiento:</Typography>
+            <Typography variant="body2" fontWeight="medium" sx={{ color: 'primary.main', fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' } }}>
+              -{formatPrice(financingAmount)}
+            </Typography>
+          </Box>
+        )}
+
         {/* ✅ NUEVO: Mensaje de advertencia más visible cuando no hay región configurada */}
         {shippingDisplayData.status === 'no_region_configured' && (
           <Alert
@@ -242,7 +260,7 @@ const PriceBreakdown = ({
             fontSize: { xs: '1.15rem', sm: '1.25rem', md: 'inherit' }
           }}
         >
-          {formatPrice(subtotal - discount + shippingDisplayData.cost)}
+          {formatPrice(subtotal - discount + shippingDisplayData.cost - (financingEnabled ? financingAmount : 0))}
         </Typography>
       </Box>
     </>

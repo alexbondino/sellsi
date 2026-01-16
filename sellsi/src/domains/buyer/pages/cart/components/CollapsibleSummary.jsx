@@ -8,6 +8,7 @@ import {
   Collapse,
   Divider
 } from '@mui/material';
+import { RequestQuote as RequestQuoteIcon } from '@mui/icons-material';
 import {
   ExpandMore as ExpandMoreIcon,
   LocalShipping as ShippingIcon,
@@ -125,6 +126,16 @@ const CollapsibleSummary = ({
                 label="Descuentos"
                 value={-Math.abs(calculations.discount)}
                 formatPrice={formatPrice}
+              />
+            )}
+
+            {/* Financiamiento si existe y es positivo */}
+            {calculations.financing > 0 && (
+              <PriceRow
+                label="Financiamiento:"
+                value={-Math.abs(calculations.financing)}
+                formatPrice={formatPrice}
+                icon={<RequestQuoteIcon data-testid="FinancingIcon" sx={{ fontSize: 16, color: 'text.secondary' }} />}
               />
             )}
             

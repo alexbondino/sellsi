@@ -315,13 +315,29 @@ const useMockBuyerFinancings = () => {
       },
     ];
 
+  // Calcular expires_at para financiamientos aprobados (approved_at + term_days)
+  const processedFinancings = financings.map(f => {
+    if (f.status === 'approved_by_sellsi' && f.approved_at) {
+      const approvedDate = new Date(f.approved_at);
+      const expiresDate = new Date(approvedDate);
+      expiresDate.setDate(expiresDate.getDate() + f.term_days);
+      
+      return {
+        ...f,
+        expires_at: expiresDate.toISOString().split('T')[0], // YYYY-MM-DD format
+        amount_paid: f.payment_status === 'paid' ? (f.amount_used || 0) : 0,
+      };
+    }
+    return f;
+  });
+
   // Guardar financings en sessionStorage para que useFinancingCheckout pueda acceder
   React.useEffect(() => {
-    sessionStorage.setItem('mock_financings', JSON.stringify(financings));
+    sessionStorage.setItem('mock_financings', JSON.stringify(processedFinancings));
   }, []);
 
   return {
-    financings,
+    financings: processedFinancings,
     loading: false,
     initializing: false,
     cancelFinancing: async (id, reason) => {

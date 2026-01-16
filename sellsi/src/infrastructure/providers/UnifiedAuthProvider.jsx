@@ -621,13 +621,14 @@ export const UnifiedAuthProvider = ({ children }) => {
     const neutral = new Set([
       '/',
       '/marketplace',
+      '/faq',
       '/terms-and-conditions',
       '/privacy-policy',
     ]);
     if (!loadingUserStatus && session && !needsOnboarding && userProfile) {
       if (
         neutral.has(location.pathname) &&
-        !['/terms-and-conditions', '/privacy-policy'].includes(
+        !['/terms-and-conditions', '/privacy-policy', '/faq'].includes(
           location.pathname
         )
       ) {
@@ -658,6 +659,7 @@ export const UnifiedAuthProvider = ({ children }) => {
       const allowed = [
         '/',
         '/marketplace',
+        '/faq',
         '/login',
         '/crear-cuenta',
         '/onboarding',
@@ -688,8 +690,12 @@ export const UnifiedAuthProvider = ({ children }) => {
     if (p.startsWith('/marketplace/product')) return true;
     // Provider catalog should also show the sidebar for consistent navigation
     if (p.startsWith('/catalog/')) return true;
+    // FAQ should show sidebar when user is logged in
+    if (p === '/faq' && session) return true;
+    // Legal pages should show sidebar when user is logged in
+    if ((p === '/terms-and-conditions' || p === '/privacy-policy') && session) return true;
     return false;
-  }, [location.pathname]);
+  }, [location.pathname, session]);
 
   const value = useMemo(
     () => ({

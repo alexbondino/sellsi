@@ -34,7 +34,15 @@ import {
   useTheme,
   useMediaQuery,
   InputAdornment,
+  Checkbox,
+  FormControlLabel,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
 } from '@mui/material';
+import { regiones, getComunasByRegion } from '../../../../utils/chileData';
 import CloseIcon from '@mui/icons-material/Close';
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
@@ -56,6 +64,10 @@ const INITIAL_FORM_DATA = {
   term: '',
   businessName: '',
   rut: '',
+  legalAddress: '',
+  legalCommune: '',
+  legalRegion: '',
+  autoFillModal: true,
 };
 
 const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
@@ -102,6 +114,13 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
     }
   };
 
+  // Manejador de cambios en Región (limpia comuna al cambiar)
+  const handleRegionChange = (event) => {
+    const value = event.target.value;
+    handleChange('legalRegion', value);
+    handleChange('legalCommune', '');
+  }; 
+
   // Manejador de cambios en monto con formato de miles
   const handleAmountChange = (value) => {
     // Solo permitir números
@@ -132,16 +151,31 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
       newErrors.term = 'El plazo debe ser entre 1 y 60 días';
     }
 
-    // Razón social
-    if (!formData.businessName?.trim()) {
-      newErrors.businessName = 'Campo requerido';
-    }
-
     // RUT
     if (!formData.rut?.trim()) {
       newErrors.rut = 'Campo requerido';
     } else if (!validateRut(formData.rut)) {
       newErrors.rut = 'Formato de RUT inválido';
+    }
+
+    // Razón social
+    if (!formData.businessName?.trim()) {
+      newErrors.businessName = 'Campo requerido';
+    }
+
+    // Dirección legal
+    if (!formData.legalAddress?.trim()) {
+      newErrors.legalAddress = 'Campo requerido';
+    }
+
+    // Región
+    if (!formData.legalRegion?.trim()) {
+      newErrors.legalRegion = 'Campo requerido';
+    }
+
+    // Comuna
+    if (!formData.legalCommune?.trim()) {
+      newErrors.legalCommune = 'Campo requerido';
     }
 
     setErrors(newErrors);
@@ -165,6 +199,10 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
         term: '',
         businessName: '',
         rut: '',
+        legalAddress: '',
+        legalCommune: '',
+        legalRegion: '',
+        autoFillModal: true,
       });
       setErrors({});
     } catch (error) {
@@ -181,6 +219,10 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
       term: '',
       businessName: '',
       rut: '',
+      legalAddress: '',
+      legalCommune: '',
+      legalRegion: '',
+      autoFillModal: true,
     });
     setErrors({});
     onClose();
@@ -274,13 +316,13 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
       <DialogContent
         dividers
         sx={{
-          pt: { xs: 3, sm: 4 },
-          px: { xs: 2, sm: 3 },
-          pb: { xs: 3, sm: 4 },
+          pt: { xs: 3, md: 2 },
+          px: { xs: 2, md: 3 },
+          pb: 3,
         }}
       >
         {/* Sección: Información del Financiamiento */}
-        <Box sx={{ mb: 3, width: '100%' }}>
+        <Box sx={{ mb: { xs: 3, md: 2.5 }, width: '100%' }}>
           <Typography
             variant="subtitle1"
             sx={{
@@ -299,9 +341,9 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
               display: 'grid',
               gridTemplateColumns: {
                 xs: '1fr',
-                sm: 'minmax(0, 1fr) minmax(0, 1fr)',
+                md: 'minmax(0, 1fr) minmax(0, 1fr)',
               },
-              gap: { xs: 2, sm: 2.5 },
+              gap: 2,
               '& > *': {
                 minWidth: 0,
               },
@@ -351,23 +393,14 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
               display: 'grid',
               gridTemplateColumns: {
                 xs: '1fr',
-                sm: 'minmax(0, 1fr) minmax(0, 1fr)',
+                md: 'minmax(0, 1fr) minmax(0, 1fr)',
               },
-              gap: { xs: 2, sm: 2.5 },
+              gap: 2,
               '& > *': {
                 minWidth: 0,
               },
             }}
           >
-            <TextField
-              fullWidth
-              label="Razón Social"
-              value={formData.businessName}
-              onChange={(e) => handleChange('businessName', e.target.value)}
-              error={!!errors.businessName}
-              helperText={errors.businessName || 'Nombre legal de la empresa'}
-              required
-            />
             <TextField
               fullWidth
               label="RUT de la Empresa"
@@ -380,15 +413,102 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
             />
             <TextField
               fullWidth
+              label="Razón Social"
+              value={formData.businessName}
+              onChange={(e) => handleChange('businessName', e.target.value)}
+              error={!!errors.businessName}
+              helperText={errors.businessName || 'Nombre legal de la empresa'}
+              required
+            />
+            <TextField
+              fullWidth
               label="Representante Legal"
               value={formData.legalRepresentative}
               onChange={(e) => handleChange('legalRepresentative', e.target.value)}
               error={!!errors.legalRepresentative}
               helperText={errors.legalRepresentative || 'Nombre completo del representante'}
               required
-              sx={{ gridColumn: { xs: '1', sm: '1 / 2' } }}
             />
+            <TextField
+              fullWidth
+              label="Dirección Legal"
+              value={formData.legalAddress}
+              onChange={(e) => handleChange('legalAddress', e.target.value)}
+              error={!!errors.legalAddress}
+              helperText={errors.legalAddress || 'Dirección de la empresa'}
+              required
+            />
+            <FormControl fullWidth size={isMobile ? 'small' : 'medium'} error={!!errors.legalRegion}>
+              <InputLabel>Región *</InputLabel>
+              <Select
+                value={formData.legalRegion || ''}
+                onChange={handleRegionChange}
+                label="Región *"
+                MenuProps={{
+                  disableScrollLock: true,
+                  disablePortal: false,
+                  sx: { zIndex: 2000 },
+                  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+                  transformOrigin: { vertical: 'top', horizontal: 'left' },
+                  PaperProps: { sx: { maxHeight: { xl: 350, lg: 300, md: 250, xs: 250 } } },
+                }}
+              >
+                {regiones.map(region => (
+                  <MenuItem key={region.value} value={region.value}>
+                    {region.label}
+                  </MenuItem>
+                ))}
+              </Select>
+              {!!errors.legalRegion && <FormHelperText>{errors.legalRegion}</FormHelperText>}
+            </FormControl>
+
+            <FormControl fullWidth size={isMobile ? 'small' : 'medium'} disabled={!formData.legalRegion} error={!!errors.legalCommune}>
+              <InputLabel>Comuna *</InputLabel>
+              <Select
+                value={formData.legalCommune || ''}
+                onChange={(e) => handleChange('legalCommune', e.target.value)}
+                label="Comuna *"
+                MenuProps={{
+                  disableScrollLock: true,
+                  disablePortal: false,
+                  sx: { zIndex: 2000 },
+                  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+                  transformOrigin: { vertical: 'top', horizontal: 'left' },
+                  PaperProps: { sx: { maxHeight: { xl: 350, lg: 300, md: 250, xs: 250 } } },
+                }}
+              >
+                {(formData.legalRegion ? getComunasByRegion(formData.legalRegion) : []).map(comuna => (
+                  <MenuItem key={comuna.value} value={comuna.value}>
+                    {comuna.label}
+                  </MenuItem>
+                ))}
+              </Select>
+              {!!errors.legalCommune && <FormHelperText>{errors.legalCommune}</FormHelperText>}
+            </FormControl> 
           </Box>
+        </Box>
+
+        {/* Checkbox para auto-rellenar */}
+        <Box sx={{ mt: { xs: 3, md: 2 }, display: 'flex', justifyContent: 'flex-start' }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={formData.autoFillModal}
+                onChange={(e) => handleChange('autoFillModal', e.target.checked)}
+                sx={{
+                  color: SELLSI_BLUE,
+                  '&.Mui-checked': {
+                    color: SELLSI_BLUE,
+                  },
+                }}
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Utilizar mi configuración anterior (pre-llenar automáticamente)
+              </Typography>
+            }
+          />
         </Box>
       </DialogContent>
 

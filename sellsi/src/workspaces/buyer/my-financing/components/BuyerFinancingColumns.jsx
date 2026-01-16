@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Typography, Box } from '@mui/material';
+import { Typography, Box, Chip, Tooltip } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
@@ -16,7 +16,11 @@ import DrawIcon from '@mui/icons-material/Draw';
 import ActionIconButton from '../../../../shared/components/buttons/ActionIconButton';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { formatPrice } from '../../../../shared/utils/formatters/priceFormatters';
-import { getStateConfig, getAvailableActions } from '../../../../shared/utils/financing/financingStates';
+import { getStateConfig, getAvailableActions, getStateFilterCategory, getApprovedFinancingChip } from '../../../../shared/utils/financing/financingStates';
+import FinancingIdCell from '../../../../shared/components/financing/FinancingIdCell';
+import FinancingAmountsCell from '../../../../shared/components/financing/FinancingAmountsCell';
+import FinancingDatesCell from '../../../../shared/components/financing/FinancingDatesCell';
+import FinancingPlazosCell from '../../../../shared/components/financing/FinancingPlazosCell';
 import { getFinancingDaysStatus } from '../../../../shared/utils/financingDaysLogic';
 
 /**
@@ -31,20 +35,43 @@ const colorMap = {
 };
 
 /**
- * Renderiza el estado como texto con color
+ * Renderiza el estado como chip (basado en categoría de filtro)
  */
-export const renderStatus = (status) => {
+export const renderStateChip = (status) => {
+  const filterCategory = getStateFilterCategory(status);
+
+  return (
+    <Chip
+      label={filterCategory.label}
+      color={filterCategory.color}
+      size="small"
+      sx={{ fontWeight: 600 }}
+    />
+  );
+};
+
+/**
+ * Renderiza la descripción del estado (texto detallado según rol)
+ */
+export const renderStatusDescription = (status) => {
   const statusInfo = getStateConfig(status, 'buyer');
 
   return (
     <Typography
       variant="body2"
       fontWeight={600}
-      sx={{ color: colorMap[statusInfo.color] || 'text.secondary' }}
+      sx={{ color: { xs: colorMap[statusInfo.color] || 'text.secondary', md: 'text.primary' }, whiteSpace: 'pre-line' }}
     >
       {statusInfo.label}
     </Typography>
   );
+};
+
+/**
+ * Renderiza el estado como texto con color (DEPRECATED - usar renderStatusDescription)
+ */
+export const renderStatus = (status) => {
+  return renderStatusDescription(status);
 };
 
 /**
@@ -97,6 +124,12 @@ export const renderBuyerActions = (financing, handlers) => {
  */
 export const getBuyerTableColumns = () => [
   {
+    key: 'id',
+    label: 'ID',
+    align: 'left',
+    render: (financing) => <FinancingIdCell financingId={financing.id} />,
+  },
+  {
     key: 'supplier_name',
     label: 'Proveedor',
     align: 'left',
@@ -104,6 +137,22 @@ export const getBuyerTableColumns = () => [
       <Typography variant="body2" fontWeight={500}>
         {financing.supplier_name}
       </Typography>
+    ),
+  },
+  {
+    key: 'request_type',
+    label: 'Tipo de Solicitud',
+    align: 'center',
+    render: (financing) => (
+      <Tooltip
+        title="Tipo de solicitud que generaste"
+        arrow
+        placement="top"
+      >
+        <Typography variant="body2" fontWeight={500}>
+          {financing.request_type === 'express' ? 'Express' : 'Extendida'}
+        </Typography>
+      </Tooltip>
     ),
   },
   {
@@ -142,10 +191,16 @@ export const getBuyerTableColumns = () => [
     ),
   },
   {
-    key: 'status',
+    key: 'state_chip',
     label: 'Estado',
     align: 'center',
-    render: (financing) => renderStatus(financing.status),
+    render: (financing) => renderStateChip(financing.status),
+  },
+  {
+    key: 'status_description',
+    label: 'Descripción',
+    align: 'center',
+    render: (financing) => renderStatusDescription(financing.status),
   },
   {
     key: 'actions',
@@ -179,45 +234,15 @@ export const getBuyerCardFields = () => [
  */
 
 /**
- * Renderiza días de vigencia con color según lógica de negocio:
- * - Verde: lejos de expirar (días restantes > umbral de warning)
- * - Naranja: cercano a expirar (días restantes <= umbral según plazo)
- * - Rojo: expirado (0 días)
- * 
- * Los umbrales de warning varían según el plazo otorgado:
- * - 1-7 días: warning 1 día antes
- * - 8-15 días: warning 3 días antes
- * - 16-44 días: warning 7 días antes
- * - 45+ días: warning 10 días antes
- */
-const renderDaysRemaining = (financing) => {
-  const { daysRemaining, status } = getFinancingDaysStatus(
-    financing.approved_at,
-    financing.term_days
-  );
-  
-  // Mapeo de estado a color MUI
-  const colorMap = {
-    success: 'success.main', // Verde: lejos de expirar
-    warning: 'warning.main', // Naranja: cercano a expirar según umbral
-    error: 'error.main'      // Rojo: expirado (0 días)
-  };
-  
-  return (
-    <Typography
-      variant="body2"
-      fontWeight={600}
-      sx={{ color: colorMap[status] }}
-    >
-      {daysRemaining} días
-    </Typography>
-  );
-};
-
-/**
  * Columnas para tabla de financiamientos aprobados
  */
 export const buyerApprovedColumns = [
+  {
+    key: 'id',
+    label: 'ID',
+    align: 'left',
+    render: (financing) => <FinancingIdCell financingId={financing.id} />,
+  },
   {
     key: 'supplier_name',
     label: 'Proveedor',
@@ -229,56 +254,38 @@ export const buyerApprovedColumns = [
     ),
   },
   {
-    key: 'amount',
-    label: 'Monto Otorgado',
-    align: 'right',
-    render: (financing) => (
-      <Typography variant="body2" fontWeight={600} color="text.primary">
-        {formatPrice(financing.amount)}
-      </Typography>
-    ),
-  },
-  {
-    key: 'amount_used',
-    label: 'Monto Utilizado',
-    align: 'right',
-    render: (financing) => (
-      <Typography variant="body2" fontWeight={500}>
-        {formatPrice(financing.amount_used || 0)}
-      </Typography>
-    ),
-  },
-  {
-    key: 'term_days',
-    label: 'Plazo Otorgado',
+    key: 'amounts',
+    label: 'Montos',
     align: 'center',
-    render: (financing) => (
-      <Typography variant="body2">
-        {financing.term_days} días
-      </Typography>
-    ),
+    render: (financing) => <FinancingAmountsCell financing={financing} />,
   },
   {
-    key: 'days_remaining',
-    label: 'Días de Vigencia',
+    key: 'dates',
+    label: 'Fecha',
     align: 'center',
-    render: (financing) => renderDaysRemaining(financing),
+    render: (financing) => <FinancingDatesCell financing={financing} />,
+  },
+  {
+    key: 'plazos',
+    label: 'Plazos',
+    align: 'center',
+    render: (financing) => <FinancingPlazosCell financing={financing} />,
   },
   {
     key: 'payment_status',
     label: 'Estado',
     align: 'center',
-    render: (financing) => (
-      <Typography
-        variant="body2"
-        fontWeight={600}
-        sx={{
-          color: financing.payment_status === 'paid' ? 'success.main' : 'warning.main'
-        }}
-      >
-        {financing.payment_status === 'paid' ? 'Pagado' : 'Pendiente de Pago'}
-      </Typography>
-    ),
+    render: (financing) => {
+      const chipInfo = getApprovedFinancingChip(financing);
+      return (
+        <Chip
+          label={chipInfo.label}
+          color={chipInfo.color}
+          size="small"
+          sx={{ fontWeight: 600 }}
+        />
+      );
+    },
   },
   {
     key: 'actions',

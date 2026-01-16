@@ -32,12 +32,14 @@ import { useSensitiveFields } from '../hooks/useSensitiveFields';
 import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserShippingRegion';
 import { useRoleSync } from '../../../shared/hooks';
 import { useAuth } from '../../../infrastructure/providers';
+import { useFeatureFlag } from '../../../shared/hooks/useFeatureFlag';
 
 // Secciones modulares
 import TransferInfoSection from '../components/sections/TransferInfoSection';
 import ShippingInfoSection from '../components/sections/ShippingInfoSection';
 import BillingInfoSection from '../components/sections/BillingInfoSection';
 import CompanyInfoSection from '../components/sections/CompanyInfoSection';
+import SupplierLegalInfoSection from '../components/sections/SupplierLegalInfoSection';
 // Documento Tributario eliminado
 
 // Utilidades
@@ -79,6 +81,13 @@ const Profile = ({
   const { showBanner } = useBanner();
   const location = useLocation(); // Para obtener parámetros de URL
   const { refreshUserProfile } = useAuth(); // Para actualizar avatar en TopBar sin F5
+
+  // Feature flag para módulo de financiamiento
+  const { enabled: financingEnabled } = useFeatureFlag({
+    workspace: 'my-financing',
+    key: 'financing_enabled',
+    defaultValue: false,
+  });
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -975,6 +984,14 @@ const Profile = ({
                     iconPosition="start"
                     label="Facturación"
                   />
+                  {/* Tab de Información Legal solo para proveedores con financing habilitado */}
+                  {userProfile?.main_supplier && financingEnabled && (
+                    <Tab
+                      icon={<AccountBalanceIcon />}
+                      iconPosition="start"
+                      label="Info. Legal"
+                    />
+                  )}
                 </Tabs>
               </Box>
 
@@ -1032,6 +1049,18 @@ const Profile = ({
                     showUpdateButton={false}
                     showErrors={showBillingErrors}
                     shouldHighlight={shouldHighlightBillingFields}
+                  />
+                )}
+
+                {/* Tab 4: Información Legal (solo para proveedores con financing habilitado) */}
+                {activeTab === 4 && userProfile?.main_supplier && financingEnabled && (
+                  <SupplierLegalInfoSection
+                    id="supplier-legal-info-section"
+                    formData={formData}
+                    onFieldChange={updateField}
+                    onRegionChange={handleRegionChange}
+                    showErrors={false}
+                    shouldHighlight={false}
                   />
                 )}
               </Box>

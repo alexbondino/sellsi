@@ -23,6 +23,7 @@ import {
   Divider,
   IconButton,
 } from '@mui/material';
+import { MODAL_DIALOG_HEADER_STYLES, MODAL_DIALOG_CONTENT_STYLES, MODAL_DIALOG_ACTIONS_STYLES } from '../../../../../shared/components/feedback/Modal/Modal';
 import {
   Close as CloseIcon,
   Warning as WarningIcon,
@@ -70,7 +71,7 @@ const ShippingCompatibilityModal = ({
         },
       }}
     >
-      <DialogTitle sx={{ pb: { xs: 1.5, md: 2 }, px: { xs: 2, md: 3 } }}>
+      <DialogTitle sx={{ ...MODAL_DIALOG_HEADER_STYLES, pb: { xs: 1.5, md: 2 }, px: { xs: 2, md: 3 } }}>
         <Box
           sx={{
             display: 'flex',
@@ -111,9 +112,7 @@ const ShippingCompatibilityModal = ({
         </Box>
       </DialogTitle>
 
-      <Divider />
-
-      <DialogContent sx={{ py: { xs: 2, md: 3 }, px: { xs: 2, md: 3 } }}>
+      <DialogContent dividers sx={MODAL_DIALOG_CONTENT_STYLES}>
         <Typography
           variant="body1"
           sx={{ mb: { xs: 2, md: 3 }, fontSize: { xs: '0.85rem', md: '1rem' } }}
@@ -205,9 +204,7 @@ const ShippingCompatibilityModal = ({
         </Box>
       </DialogContent>
 
-      <Divider />
-
-      <DialogActions sx={{ p: { xs: 2, md: 3 }, justifyContent: 'center' }}>
+      <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
         <Button
           variant="contained"
           onClick={onClose}

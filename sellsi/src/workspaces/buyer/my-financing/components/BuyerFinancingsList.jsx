@@ -36,6 +36,8 @@ import BuyerFinancingTable from './BuyerFinancingTable';
 import ViewReasonModal from '../../../../shared/components/financing/ViewReasonModal';
 import BuyerFinancingActionModals from './BuyerFinancingActionModals';
 import FinancingTabs from '../../../../shared/components/financing/FinancingTabs';
+import HowItWorksModal from '../../../../shared/components/modals/HowItWorksModal';
+import { BUYER_FINANCING_STEPS } from '../../../../shared/components/modals/howItWorksSteps';
 import FinancingFilters from '../../../../shared/components/financing/FinancingFilters';
 import { 
   EmptyStateGlobal, 
@@ -44,13 +46,20 @@ import {
 } from '../../../../shared/components/financing/FinancingEmptyStates';
 import { 
   FILTER_CATEGORIES, 
+  APPROVED_FILTER_CATEGORIES,
   stateMatchesFilter, 
+  approvedFinancingMatchesFilter,
   getAvailableActions,
   getStateConfig,
+  getApprovedFinancingChip,
+  FINANCING_STATES,
 } from '../../../../shared/utils/financing/financingStates';
 import { formatPrice } from '../../../../shared/utils/formatters/priceFormatters';
 import { getBuyerCardFields } from './BuyerFinancingColumns';
 import { getFinancingDaysStatus } from '../../../../shared/utils/financingDaysLogic';
+import FinancingIdCell from '../../../../shared/components/financing/FinancingIdCell';
+import FinancingAmountsCell from '../../../../shared/components/financing/FinancingAmountsCell';
+import FinancingDatesCell from '../../../../shared/components/financing/FinancingDatesCell';
 
 /**
  * Componente de tarjeta mobile para financiamientos (Buyer)
@@ -72,46 +81,140 @@ const MobileFinancingCard = ({ financing, onViewReason, onCancel, onSign, onDown
   return (
     <Card sx={{ mb: 2 }}>
       <CardContent>
-        {/* Header: Proveedor y Estado */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Typography variant="subtitle1" fontWeight={600}>
-            {financing.supplier_name}
-          </Typography>
-          {isApproved ? (
+        {/* Header: ID */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="caption" color="text.secondary">ID Financiamiento</Typography>
+          <FinancingIdCell financingId={financing.id} />
+        </Box>
+
+        {/* Header: Proveedor y Estado (50/50) */}
+        <Box sx={{ display: 'flex', mb: 2 }}>
+          <Box sx={{ width: '50%', pr: 1, overflow: 'hidden' }}>
             <Typography
-              variant="body2"
+              variant="subtitle1"
               fontWeight={600}
               sx={{
-                color: financing.payment_status === 'paid' ? 'success.main' : 'warning.main'
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
               }}
             >
-              {financing.payment_status === 'paid' ? 'Pagado' : 'Pendiente de Pago'}
+              {financing.supplier_name}
             </Typography>
-          ) : (
-            <Typography
-              variant="body2"
-              fontWeight={600}
-              sx={{ color: colorMap[statusInfo.color] || 'text.secondary' }}
-            >
-              {statusInfo.label}
-            </Typography>
-          )}
+          </Box>
+
+          <Box sx={{ width: '50%', pl: 1, textAlign: 'right' }}>
+            {isApproved ? (
+              <Chip
+                label={getApprovedFinancingChip(financing).label}
+                color={getApprovedFinancingChip(financing).color}
+                size="small"
+                sx={{ fontWeight: 600 }}
+              />
+            ) : (
+              <Typography
+                variant="body2"
+                fontWeight={600}
+                sx={{
+                  color: colorMap[statusInfo.color] || 'text.secondary',
+                  whiteSpace: 'pre-line',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}
+              >
+                {financing.status === FINANCING_STATES.PENDING_SELLSI_APPROVAL ? 'Firmado, esperando aprobacion de Sellsi' : statusInfo.label}
+              </Typography>
+            )}
+          </Box>
         </Box>
 
         {/* Info Grid */}
         <Stack spacing={1} sx={{ mb: 2 }}>
-          {cardFields.map(field => (
-            <Box key={field.key} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="body2" color="text.secondary">{field.label}:</Typography>
-              <Typography 
-                variant="body2" 
-                fontWeight={field.fontWeight || 400}
-                color={field.fontWeight ? 'text.primary' : 'inherit'}
-              >
-                {field.render(financing)}
-              </Typography>
-            </Box>
-          ))}
+          {isApproved ? (
+            /* Para financiamientos aprobados: mostrar fechas + barra de montos + plazo + vigencia */
+            <>
+              {/* Fecha */}
+              <Box sx={{ pb: 1, borderBottom: 1, borderColor: 'divider' }}>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Fecha:</Typography>
+                <FinancingDatesCell financing={financing} />
+              </Box>
+              
+              {/* Montos */}
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Montos:</Typography>
+                <FinancingAmountsCell financing={financing} />
+              </Box>
+              
+              {/* Plazo y Días de Vigencia en una fila */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1, borderTop: 1, borderColor: 'divider' }}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>Plazo Otorgado</Typography>
+                  <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.875rem' }}>
+                    {financing.term_days} días
+                  </Typography>
+                </Box>
+                <Box sx={{ flex: 1, textAlign: 'right' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>Vigencia</Typography>
+                  {(() => {
+                    const amountUsed = Number(financing.amount_used || 0);
+                    const amountPaid = Number(financing.amount_paid || 0);
+                    
+                    if (amountPaid >= amountUsed && amountUsed > 0) {
+                      return (
+                        <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
+                          0 días
+                        </Typography>
+                      );
+                    }
+                    
+                    if (!financing.expires_at) {
+                      return <Typography variant="body2">-</Typography>;
+                    }
+                    
+                    const expiryDate = new Date(financing.expires_at);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    expiryDate.setHours(0, 0, 0, 0);
+                    
+                    const diffTime = expiryDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    let color = 'success.main';
+                    if (diffDays < 0) {
+                      color = 'error.main';
+                    } else if (diffDays <= 7) {
+                      color = 'error.main';
+                    } else if (diffDays <= 15) {
+                      color = 'warning.main';
+                    }
+                    
+                    return (
+                      <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.875rem', color }}>
+                        {diffDays} días
+                      </Typography>
+                    );
+                  })()}
+                </Box>
+              </Box>
+            </>
+          ) : (
+            /* Para solicitudes: mostrar campos simples */
+            cardFields.map(field => (
+              <Box key={field.key} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">{field.label}:</Typography>
+                <Typography 
+                  variant="body2" 
+                  fontWeight={field.fontWeight || 400}
+                  color={field.fontWeight ? 'text.primary' : 'inherit'}
+                >
+                  {field.render(financing)}
+                </Typography>
+              </Box>
+            ))
+          )}
         </Stack>
 
         {/* Actions */}
@@ -201,6 +304,20 @@ const BuyerFinancingsList = ({
   const { showBanner } = useBanner();
   const navigate = useNavigate();
 
+  // Estado para modal "Cómo Funciona"
+  const [howOpen, setHowOpen] = useState(false);
+  
+  console.log('🎨 BuyerFinancingsList RENDER - howOpen:', howOpen);
+  
+  const openHowModal = () => {
+    console.log('🔥 openHowModal called - Setting howOpen to true');
+    setHowOpen(true);
+  };
+  const closeHowModal = () => {
+    console.log('🔥 closeHowModal called - Setting howOpen to false');
+    setHowOpen(false);
+  };
+
   // Estado de pestañas - usar initialTab como valor inicial
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -229,33 +346,28 @@ const BuyerFinancingsList = ({
 
   // Filtrar financiamientos por categoría (Solicitudes)
   const filteredPending = useMemo(() => {
-    if (statusFilter === FILTER_CATEGORIES.ALL) return financings;
-    return financings.filter(f => stateMatchesFilter(f.status, statusFilter));
+    const pending = financings.filter(f => 
+      f.status !== 'approved_by_sellsi' && 
+      f.status !== 'expired' && 
+      f.status !== 'paid'
+    );
+    
+    if (statusFilter === FILTER_CATEGORIES.ALL) return pending;
+    return pending.filter(f => stateMatchesFilter(f.status, statusFilter));
   }, [financings, statusFilter]);
 
   // Filtrar financiamientos aprobados (solo para tab 2)
   const approvedFinancings = useMemo(() => {
-    const approved = financings.filter(f => f.status === 'approved_by_sellsi');
+    const approved = financings.filter(f => 
+      f.status === 'approved_by_sellsi' || 
+      f.status === 'expired' || 
+      f.status === 'paid'
+    );
     
     // Aplicar filtro específico de aprobados
-    if (approvedFilter === 'all') return approved;
+    if (approvedFilter === APPROVED_FILTER_CATEGORIES.ALL) return approved;
     
-    return approved.filter(f => {
-      const { daysRemaining, status } = getFinancingDaysStatus(f.approved_at, f.term_days);
-      
-      switch (approvedFilter) {
-        case 'pending':
-          return f.payment_status === 'pending';
-        case 'paid':
-          return f.payment_status === 'paid';
-        case 'expiring_soon':
-          return status === 'warning'; // Naranja - prontos a vencer
-        case 'expired':
-          return status === 'error'; // Rojo - expirados (0 días)
-        default:
-          return true;
-      }
-    });
+    return approved.filter(f => approvedFinancingMatchesFilter(f, approvedFilter));
   }, [financings, approvedFilter]);
 
   // Contadores para filtros de solicitudes
@@ -289,34 +401,39 @@ const BuyerFinancingsList = ({
 
   // Contadores para filtros de aprobados
   const approvedFilterCounts = useMemo(() => {
-    const allApproved = financings.filter(f => f.status === 'approved_by_sellsi');
+    const allApproved = financings.filter(f => 
+      f.status === 'approved_by_sellsi' || 
+      f.status === 'expired' || 
+      f.status === 'paid'
+    );
     
     const counts = {
-      all: allApproved.length,
-      pending: 0,
-      paid: 0,
-      expiring_soon: 0,
-      expired: 0,
+      [APPROVED_FILTER_CATEGORIES.ALL]: allApproved.length,
+      [APPROVED_FILTER_CATEGORIES.ACTIVE]: 0,
+      [APPROVED_FILTER_CATEGORIES.EXPIRED]: 0,
+      [APPROVED_FILTER_CATEGORIES.PAID]: 0,
     };
 
     allApproved.forEach(f => {
-      const { daysRemaining, status } = getFinancingDaysStatus(f.approved_at, f.term_days);
-      
-      if (f.payment_status === 'pending') counts.pending++;
-      if (f.payment_status === 'paid') counts.paid++;
-      if (status === 'warning') counts.expiring_soon++;
-      if (status === 'error') counts.expired++;
+      if (approvedFinancingMatchesFilter(f, APPROVED_FILTER_CATEGORIES.ACTIVE)) {
+        counts[APPROVED_FILTER_CATEGORIES.ACTIVE]++;
+      }
+      if (approvedFinancingMatchesFilter(f, APPROVED_FILTER_CATEGORIES.EXPIRED)) {
+        counts[APPROVED_FILTER_CATEGORIES.EXPIRED]++;
+      }
+      if (approvedFinancingMatchesFilter(f, APPROVED_FILTER_CATEGORIES.PAID)) {
+        counts[APPROVED_FILTER_CATEGORIES.PAID]++;
+      }
     });
 
     return counts;
   }, [financings]);
 
   const approvedFilterOptions = [
-    { value: 'all', label: 'Todos', count: approvedFilterCounts.all },
-    { value: 'pending', label: 'Pendiente de Pago', count: approvedFilterCounts.pending },
-    { value: 'paid', label: 'Pagado', count: approvedFilterCounts.paid },
-    { value: 'expiring_soon', label: 'Prontos a vencer', count: approvedFilterCounts.expiring_soon },
-    { value: 'expired', label: 'Expirados', count: approvedFilterCounts.expired },
+    { value: APPROVED_FILTER_CATEGORIES.ALL, label: 'Todos', count: approvedFilterCounts[APPROVED_FILTER_CATEGORIES.ALL] },
+    { value: APPROVED_FILTER_CATEGORIES.ACTIVE, label: 'Vigentes', count: approvedFilterCounts[APPROVED_FILTER_CATEGORIES.ACTIVE] },
+    { value: APPROVED_FILTER_CATEGORIES.EXPIRED, label: 'Vencidos', count: approvedFilterCounts[APPROVED_FILTER_CATEGORIES.EXPIRED] },
+    { value: APPROVED_FILTER_CATEGORIES.PAID, label: 'Pagados', count: approvedFilterCounts[APPROVED_FILTER_CATEGORIES.PAID] },
   ];
 
   // Handlers de acciones
@@ -428,7 +545,7 @@ const BuyerFinancingsList = ({
   if (isMobile) {
     return (
       <>
-        <FinancingTabs activeTab={activeTab} onTabChange={setActiveTab} isMobile={true} />
+        <FinancingTabs activeTab={activeTab} onTabChange={setActiveTab} isMobile={true} onHowItWorks={openHowModal} />
 
         {/* Contenido según tab activo */}
         {activeTab === 0 ? (
@@ -462,35 +579,32 @@ const BuyerFinancingsList = ({
             </Box>
           </>
         ) : (
-          <Box sx={{ px: { xs: 2, sm: 0 } }}>
-            {approvedFinancings.length === 0 && approvedFilter === 'all' ? (
-              <EmptyStateApproved />
-            ) : (
-              <>
-                <FinancingFilters
-                  currentFilter={approvedFilter}
-                  onFilterChange={setApprovedFilter}
-                  filterOptions={approvedFilterOptions}
-                  isMobile={true}
-                />
-                {approvedFinancings.length === 0 ? (
-                  <EmptyStateFiltered />
-                ) : (
-                  approvedFinancings.map(financing => (
-                    <MobileFinancingCard
-                      key={financing.id}
-                      financing={financing}
-                      onSign={handleSignClick}
-                      onViewReason={handleViewReason}
-                      onDownload={handleDownload}
-                      onPayOnline={handlePayOnline}
-                      isApproved={true}
-                    />
-                  ))
-                )}
-              </>
-            )}
-          </Box>
+          <>
+            <FinancingFilters
+              currentFilter={approvedFilter}
+              onFilterChange={setApprovedFilter}
+              filterOptions={approvedFilterOptions}
+              isMobile={true}
+            />
+
+            <Box sx={{ px: { xs: 2, sm: 0 } }}>
+              {approvedFinancings.length === 0 ? (
+                <EmptyStateFiltered />
+              ) : (
+                approvedFinancings.map(financing => (
+                  <MobileFinancingCard
+                    key={financing.id}
+                    financing={financing}
+                    onSign={handleSignClick}
+                    onViewReason={handleViewReason}
+                    onDownload={handleDownload}
+                    onPayOnline={handlePayOnline}
+                    isApproved={true}
+                  />
+                ))
+              )}
+            </Box>
+          </>
         )}
 
         {/* Modal de Ver Motivo */}
@@ -499,6 +613,33 @@ const BuyerFinancingsList = ({
           financing={reasonModal.financing}
           onClose={closeReasonModal}
         />
+
+        {/* Modal 'Cómo Funciona' */}
+        {console.log('🔍 About to render HowItWorksModal (MOBILE):', { howOpen, steps: BUYER_FINANCING_STEPS })}
+        <HowItWorksModal 
+          open={howOpen} 
+          onClose={closeHowModal} 
+          steps={BUYER_FINANCING_STEPS}
+        />
+
+        {/* Modales de Acción */}
+        <BuyerFinancingActionModals
+          open={actionModal.open}
+          mode={actionModal.mode}
+          financing={actionModal.financing}
+          onClose={closeActionModal}
+          onSign={handleSignConfirm}
+          onCancel={handleCancelConfirm}
+          onPayOnline={handlePayOnlineConfirm}
+        />
+
+        {/* Modal de descargables */}
+        <DownloadablesModal
+          open={downloadablesModal.open}
+          onClose={closeDownloadablesModal}
+          financing={downloadablesModal.financing}
+          onDownloadFile={handleDownloadFile}
+        />
       </>
     );
   }
@@ -506,7 +647,7 @@ const BuyerFinancingsList = ({
   // Desktop View
   return (
     <>
-      <FinancingTabs activeTab={activeTab} onTabChange={setActiveTab} isMobile={false} />
+      <FinancingTabs activeTab={activeTab} onTabChange={setActiveTab} isMobile={false} onHowItWorks={openHowModal} />
 
       {/* Contenido según tab activo */}
       {activeTab === 0 ? (
@@ -568,6 +709,16 @@ const BuyerFinancingsList = ({
         financing={reasonModal.financing}
         onClose={closeReasonModal}
       />
+
+      {/* Modal 'Cómo Funciona' */}
+      {console.log('🔍 About to render HowItWorksModal:', { howOpen, steps: BUYER_FINANCING_STEPS })}
+      <HowItWorksModal 
+        open={howOpen} 
+        onClose={closeHowModal} 
+        steps={BUYER_FINANCING_STEPS}
+      />
+      
+      {howOpen && console.log('🎯 HowItWorksModal should be visible - howOpen:', howOpen)}
 
       {/* Modales de Acción */}
       <BuyerFinancingActionModals

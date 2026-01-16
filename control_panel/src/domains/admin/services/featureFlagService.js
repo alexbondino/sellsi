@@ -105,3 +105,38 @@ export async function upsertFeatureFlag({
     description: description ?? '',
   });
 }
+
+/**
+ * Obtiene TODOS los feature flags del sistema
+ */
+export async function getAllFeatureFlags() {
+  const { data, error } = await supabase
+    .schema(SCHEMA)
+    .from(TABLE)
+    .select('*')
+    .order('key', { ascending: true })
+    .order('workspace', { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * Actualiza solo el estado enabled de un feature flag
+ */
+export async function updateFeatureFlag(workspace, key, enabled) {
+  const { data, error } = await supabase
+    .schema(SCHEMA)
+    .from(TABLE)
+    .update({ 
+      enabled, 
+      updated_at: new Date().toISOString() 
+    })
+    .eq('workspace', workspace)
+    .eq('key', key)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}

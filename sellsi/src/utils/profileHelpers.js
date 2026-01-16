@@ -92,6 +92,15 @@ export const mapUserProfileToFormData = (userProfile) => {
     billingAddress: userProfile.billing_address || '',
     billingRegion: userProfile.billing_region || '',
     billingCommune: userProfile.billing_commune || '', // 🔧 CORREGIDO: commune (no comuna)
+
+    // Información Legal del Proveedor (para financiamiento)
+    supplierLegalName: userProfile.supplier_legal_name || '',
+    supplierLegalRut: userProfile.supplier_legal_rut || '',
+    supplierLegalRepName: userProfile.supplier_legal_representative_name || '',
+    supplierLegalRepRut: userProfile.supplier_legal_representative_rut || '',
+    supplierLegalAddress: userProfile.supplier_legal_address || '',
+    supplierLegalRegion: userProfile.supplier_legal_region || '',
+    supplierLegalCommune: userProfile.supplier_legal_commune || '',
   };
 
   return mapped;
@@ -153,6 +162,15 @@ export const mapFormDataToUserProfile = (formData, userProfile) => {
     billing_address: formData.billingAddress,
     billing_region: formData.billingRegion,
     billing_commune: formData.billingCommune, // 🔧 CORREGIDO: billing_commune (no billing_comuna)
+
+    // Información Legal del Proveedor (para financiamiento - futura tabla supplier)
+    supplier_legal_name: formData.supplierLegalName,
+    supplier_legal_rut: formData.supplierLegalRut,
+    supplier_legal_representative_name: formData.supplierLegalRepName,
+    supplier_legal_representative_rut: formData.supplierLegalRepRut,
+    supplier_legal_address: formData.supplierLegalAddress,
+    supplier_legal_region: formData.supplierLegalRegion,
+    supplier_legal_commune: formData.supplierLegalCommune,
   };
 
   return result;

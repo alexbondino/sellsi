@@ -28,6 +28,8 @@ import { toast } from 'react-hot-toast';
 import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
 import {
   MODAL_DIALOG_ACTIONS_STYLES,
+  MODAL_DIALOG_CONTENT_STYLES,
+  MODAL_DIALOG_HEADER_STYLES,
   MODAL_CANCEL_BUTTON_STYLES,
   MODAL_SUBMIT_BUTTON_STYLES,
 } from '../../../../shared/components/feedback/Modal/Modal';
@@ -382,13 +384,8 @@ const OfferModal = ({
         },
       }}
     >
-      <DialogTitle
-        sx={{
-          m: 0,
-          p: { xs: 1, sm: 2 },
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+      <DialogTitle sx={{
+          ...MODAL_DIALOG_HEADER_STYLES,
           position: 'relative',
           backgroundColor: '#2E52B2',
           color: '#fff',
@@ -426,7 +423,7 @@ const OfferModal = ({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 1.5, sm: 2.5 } }}>
+      <DialogContent dividers sx={MODAL_DIALOG_CONTENT_STYLES}>
         {/* Información del producto */}
         <Box sx={{ mb: { xs: 1.5, sm: 3 } }}>
           <Typography 

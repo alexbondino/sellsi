@@ -39,6 +39,8 @@ import useCartStore from '../../../shared/stores/cart/cartStore';
 import { useAdvancedPriceCalculation, useCartStats } from '../../../shared/stores/cart';
 import { calculateRealShippingCost } from '../../../utils/shippingCalculation';
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
+import { useFeatureFlag } from '../../../shared/hooks/useFeatureFlag';
+import toast from 'react-hot-toast';
 import {
   CartHeader,
   ShippingProgressBar,
@@ -46,9 +48,12 @@ import {
   OrderSummary,
   EmptyCartState,
 } from './cart';
+import FinancingSection from './cart/FinancingSection';
+import FinancingConfigModal from './cart/components/FinancingConfigModal';
 import MobileCartLayout from './cart/components/MobileCartLayout';
 import useShippingValidation from './cart/hooks/useShippingValidation';
 import ShippingCompatibilityModal from './cart/components/ShippingCompatibilityModal';
+import AgeVerificationModal from '../../../shared/components/modals/AgeVerificationModal';
 
 // ============================================================================
 // ULTRA-PREMIUM BUYER CART COMPONENT - NIVEL 11/10
@@ -82,6 +87,55 @@ const BuyerCart = () => {
   const [lastAction, setLastAction] = useState(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState(null);
+
+  // Feature flag para financiamiento
+  const { enabled: financingEnabled, loading: financingFlagLoading } = useFeatureFlag({
+    workspace: 'my-financing',
+    key: 'financing_enabled',
+    defaultValue: false,
+  });
+
+  // Estados para modal de financiamiento
+  const [financingModalOpen, setFinancingModalOpen] = useState(false);
+  
+  // Estado para configuración de financiamiento por producto
+  // { productId: { amount: number, isFullAmount: boolean } }
+  const [productFinancing, setProductFinancing] = useState({});
+
+  const handleOpenFinancingModal = useCallback(() => {
+    setFinancingModalOpen(true);
+  }, []);
+
+  const handleCloseFinancingModal = useCallback(() => {
+    setFinancingModalOpen(false);
+  }, []);
+
+  const handleFinancingSubmit = useCallback(async (financingData) => {
+    try {
+      console.log('📋 Solicitud de financiamiento desde carrito:', financingData);
+      // financingData may come in two shapes:
+      // 1) { config: { productId: { amount, isFullAmount }}, financingAssignments: { productId: financingId } }
+      // 2) legacy: mapping productId -> { amount, isFullAmount }
+      const newFinancingState = financingData?.config ? financingData.config : financingData;
+
+      // Merge with previous state to avoid overwriting other products
+      setProductFinancing(prev => ({ ...prev, ...newFinancingState }));
+
+      toast.success('Configuración de financiamiento guardada', {
+        icon: '✅',
+        duration: 3000,
+      });
+      setFinancingModalOpen(false);
+    } catch (error) {
+      console.error('❌ Error al configurar financiamiento:', error);
+      toast.error('Error al configurar el financiamiento', {
+        duration: 3000,
+      });
+    }
+  }, []);
+
+
+
   // Estados para el sistema de selección múltiple (memoizados)
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -104,6 +158,10 @@ const BuyerCart = () => {
   // ✅ NUEVO: Modo avanzado por defecto, sin toggle
   const isAdvancedShippingMode = true;
   const shippingValidation = useShippingValidation(items, isAdvancedShippingMode);
+
+  // ===== AGE VERIFICATION STATES =====
+  const [ageVerificationModalOpen, setAgeVerificationModalOpen] = useState(false);
+  const [ageVerificationDenied, setAgeVerificationDenied] = useState(false); // Track si usuario negó verificación
 
   // ⚡ FIX CRÍTICO: Mantener último valor conocido de userRegion para evitar
   // pérdida de estado al minimizar/restaurar navegador
@@ -137,6 +195,33 @@ const BuyerCart = () => {
     isAdvancedShippingMode ? null : realShippingCost,
     stableUserRegion // ⚡ Usar valor estable en lugar de directamente de shippingValidation
   );
+
+  // ===== NUEVO: Calcular monto total financiado (sumando y acotando por product total) =====
+  const computeTotalFinancing = useCallback(() => {
+    try {
+      return items.reduce((sum, item) => {
+        const cfg = productFinancing[item.id];
+        if (!cfg || !cfg.amount) return sum;
+        // Calcular total del producto (incluye envío si aplica)
+        const quantity = Number(item.quantity || 1);
+        const price_tiers = item.price_tiers || item.priceTiers || item.price_tier || [];
+        const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio || item.price_at_addition || 0);
+        const unitPrice = calculatePriceForQuantity(quantity, Array.isArray(price_tiers) ? price_tiers : [], basePrice);
+        const productSubtotal = unitPrice * quantity;
+        const shippingCost = Number(priceCalculations.shippingByProduct?.[item.id] || item.shipping_cost || item.shippingCost || 0);
+        const productTotal = productSubtotal + shippingCost;
+        const financed = Number(cfg.amount) || 0;
+        // No permitir financiamiento negativo ni mayor al total del producto
+        const clamped = Math.max(0, Math.min(financed, productTotal));
+        return sum + clamped;
+      }, 0);
+    } catch (e) {
+      console.error('Error computing total financing', e);
+      return 0;
+    }
+  }, [items, productFinancing, priceCalculations.shippingByProduct]);
+
+  const totalFinancing = computeTotalFinancing();
 
   // Extraer valores para compatibilidad con código existente
   const cartCalculations = {
@@ -373,6 +458,16 @@ const BuyerCart = () => {
       // Actualizar inmediatamente para mejor UX
       updateQuantity(id, quantity);
       setLastAction({ type: 'quantity', id, quantity });
+      
+      // Resetear financiamiento del producto cuando cambia la cantidad
+      setProductFinancing(prev => {
+        if (prev[id]) {
+          const newFinancing = { ...prev };
+          delete newFinancing[id];
+          return newFinancing;
+        }
+        return prev;
+      });
     },
     [updateQuantity]
   );
@@ -490,6 +585,22 @@ const BuyerCart = () => {
       return;
     }
 
+    // ✅ VERIFICACIÓN DE EDAD: Validar productos restringidos (+18)
+    const hasAgeRestrictedProducts = items.some(item => {
+      const category = item?.category || item?.categoria || '';
+      return category === 'Alcoholes' || category === 'Tabaquería';
+    });
+
+    if (hasAgeRestrictedProducts) {
+      // Verificar si ya confirmó la edad en esta sesión
+      const ageVerified = sessionStorage.getItem('age_verified');
+      if (!ageVerified) {
+        // Mostrar modal de verificación
+        setAgeVerificationModalOpen(true);
+        return;
+      }
+    }
+
     setIsCheckingOut(true);
 
     try {
@@ -506,7 +617,7 @@ const BuyerCart = () => {
     } finally {
       setIsCheckingOut(false);
     }
-  }, [clearCart, isAdvancedShippingMode, shippingValidation.isCartCompatible]);
+  }, [items, clearCart, isAdvancedShippingMode, shippingValidation.isCartCompatible, navigate]);
 
   // ===== FUNCIONES DE SELECCIÓN MÚLTIPLE =====
   const handleToggleSelectionMode = useCallback(() => {
@@ -543,6 +654,23 @@ const BuyerCart = () => {
     setSelectedItems([]);
     setIsSelectionMode(false);
   }, [selectedItems, removeItemsBatch]);
+
+  // ===== HANDLERS DEL MODAL DE VERIFICACIÓN DE EDAD =====
+  const handleAgeVerificationConfirm = useCallback(() => {
+    // Usuario confirmó ser mayor de edad → cachear y continuar
+    sessionStorage.setItem('age_verified', 'true');
+    setAgeVerificationModalOpen(false);
+    setAgeVerificationDenied(false); // Limpiar flag de rechazo
+    // Reintentar checkout ahora que está verificado
+    handleCheckout();
+  }, [handleCheckout]);
+
+  const handleAgeVerificationDeny = useCallback(() => {
+    // Usuario negó ser mayor de edad → solo cerrar modal (NO cachear)
+    // Puede reintentar cuando quiera, se le volverá a preguntar
+    setAgeVerificationModalOpen(false);
+    setAgeVerificationDenied(true); // Marcar que usuario rechazó verificación
+  }, []);
 
   // Limpiar selecciones cuando cambie la lista de items
   useEffect(() => {
@@ -631,8 +759,9 @@ const BuyerCart = () => {
               calculations={{
                 subtotal: cartCalculations.subtotal,
                 shipping: productShippingCost,
-                total: finalTotal,
-                discount: 0
+                total: finalTotal - totalFinancing,
+                discount: 0,
+                financing: totalFinancing
               }}
               cartStats={cartStats}
               onCheckout={handleCheckout}
@@ -642,6 +771,10 @@ const BuyerCart = () => {
               formatPrice={formatPrice}
               isCheckingOut={isCheckingOut}
               supplierMinimumValidation={supplierMinimumValidation}
+              onOpenFinancingModal={handleOpenFinancingModal}
+              financingEnabled={financingEnabled}
+              productFinancing={productFinancing}
+              ageVerificationDenied={ageVerificationDenied}
             />
           </Box>
         ) : (
@@ -739,6 +872,12 @@ const BuyerCart = () => {
                         // Nuevas props para validación de envío
                         shippingValidation={shippingValidation}
                         isAdvancedShippingMode={isAdvancedShippingMode}
+                        // Props de financiamiento
+                        onOpenFinancingModal={handleOpenFinancingModal}
+                        financingEnabled={financingEnabled}
+                        financingAmount={productFinancing[item.id]?.amount || 0}
+                        // Prop de verificación de edad
+                        ageVerificationDenied={ageVerificationDenied}
                       />
                     ))}
                   </AnimatePresence>
@@ -793,6 +932,8 @@ const BuyerCart = () => {
                         discount={0}
                         shippingCost={productShippingCost}
                         total={finalTotal}
+                        financingAmount={totalFinancing}
+                        financingEnabled={financingEnabled}
                         cartStats={cartStats}
                         deliveryDate={deliveryDate}
                         isCheckingOut={isCheckingOut}
@@ -808,6 +949,17 @@ const BuyerCart = () => {
                         onCheckout={handleCheckout}
                       />
                     </motion.div>
+                    
+                    {/* Sección de Financiamiento */}
+                    {!financingFlagLoading && financingEnabled && (
+                      <Box>
+                        <FinancingSection
+                          onOpenFinancingModal={handleOpenFinancingModal}
+                          financingEnabled={financingEnabled}
+                          cartItems={items}
+                        />
+                      </Box>
+                    )}
                     {/* Calculadora de ahorros modularizada */}
                     {/*
                       <motion.div variants={itemVariants}>
@@ -832,6 +984,25 @@ const BuyerCart = () => {
           onClose={() => setCompatibilityModalOpen(false)}
           incompatibleProducts={shippingValidation.incompatibleProducts}
           userRegion={stableUserRegion}
+        />
+
+        {/* Modal de Configuración de Financiamiento */}
+        <FinancingConfigModal
+          open={financingModalOpen}
+          onClose={handleCloseFinancingModal}
+          cartItems={items}
+          formatPrice={formatPrice}
+          onSave={handleFinancingSubmit}
+          currentFinancing={productFinancing}
+          shippingByProduct={priceCalculations.shippingByProduct}
+          overallShipping={priceCalculations.shipping}
+        />
+
+        {/* Modal de Verificación de Edad */}
+        <AgeVerificationModal
+          open={ageVerificationModalOpen}
+          onConfirm={handleAgeVerificationConfirm}
+          onDeny={handleAgeVerificationDeny}
         />
       </Box>
     </ThemeProvider>

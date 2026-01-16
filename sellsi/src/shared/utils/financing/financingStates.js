@@ -29,6 +29,10 @@ export const FINANCING_STATES = {
   // Paso 4
   APPROVED_BY_SELLSI: 'approved_by_sellsi',
   REJECTED_BY_SELLSI: 'rejected_by_sellsi',
+  
+  // Estados de financiamientos activos
+  EXPIRED: 'expired',
+  PAID: 'paid',
 };
 
 /**
@@ -40,6 +44,21 @@ export const FILTER_CATEGORIES = {
   REJECTED: 'rejected',
   CANCELLED: 'cancelled',
   FINALIZED: 'finalized',
+};
+
+/**
+ * Categorías de filtro para financiamientos aprobados
+ * 
+ * LÓGICA:
+ * - ACTIVE (Vigente): Contrato NO vencido (expires_at >= hoy)
+ * - EXPIRED (Vencido): Contrato vencido + deuda pendiente (amount_paid < amount_used)
+ * - PAID (Pagado): Contrato vencido + deuda saldada (amount_paid >= amount_used)
+ */
+export const APPROVED_FILTER_CATEGORIES = {
+  ALL: 'all',
+  ACTIVE: 'active',       // Vigente: NO vencido
+  EXPIRED: 'expired',     // Vencido: vencido + con deuda
+  PAID: 'paid',           // Pagado: vencido + sin deuda
 };
 
 /**
@@ -128,7 +147,7 @@ export const STATE_CONFIG = {
     hasReason: true,
   },
   [FINANCING_STATES.PENDING_SELLSI_APPROVAL]: {
-    label: 'Firmado por ambas partes, esperando aprobación Sellsi',
+    label: 'Firmado por ambas partes, esperando\naprobación de Sellsi',
     color: 'info',
     step: 3,
     requiresAction: false,
@@ -157,6 +176,26 @@ export const STATE_CONFIG = {
       buyer: ['view_reason'],
     },
     hasReason: true,
+  },
+  [FINANCING_STATES.EXPIRED]: {
+    label: 'Vencido',
+    color: 'error',
+    step: 5,
+    requiresAction: false,
+    actions: {
+      supplier: [],
+      buyer: ['pay_online'],
+    },
+  },
+  [FINANCING_STATES.PAID]: {
+    label: 'Pagado',
+    color: 'success',
+    step: 5,
+    requiresAction: false,
+    actions: {
+      supplier: [],
+      buyer: [],
+    },
   },
 };
 
@@ -265,4 +304,144 @@ export const getStateStep = (state) => {
 export const requiresAction = (state) => {
   const config = getStateConfig(state);
   return config.requiresAction || false;
+};
+
+/**
+ * Calcula el estado de un financiamiento aprobado basándose en fechas y pagos
+ * @param {object} financing - Objeto de financiamiento con expires_at, status, amount_used, amount_paid
+ * @returns {string} Estado calculado: 'approved_by_sellsi', 'expired', o 'paid'
+ * 
+ * REGLAS:
+ * - Vigente: Contrato NO vencido (expires_at >= hoy)
+ * - Vencido: Contrato vencido + monto pagado < monto utilizado
+ * - Pagado: Contrato vencido + monto pagado >= monto utilizado
+ */
+export const getApprovedFinancingStatus = (financing) => {
+  // Si el status ya indica que está pagado, retornarlo
+  if (financing.status === FINANCING_STATES.PAID) {
+    return FINANCING_STATES.PAID;
+  }
+  
+  // Si no está aprobado o expirado, retornar el status actual
+  if (financing.status !== FINANCING_STATES.APPROVED_BY_SELLSI && 
+      financing.status !== FINANCING_STATES.EXPIRED) {
+    return financing.status;
+  }
+  
+  // Verificar si el contrato está vencido
+  let isExpired = false;
+  if (financing.expires_at) {
+    const expiryDate = new Date(financing.expires_at);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    isExpired = expiryDate < today;
+  }
+  
+  // Si NO está vencido, está VIGENTE
+  if (!isExpired) {
+    return FINANCING_STATES.APPROVED_BY_SELLSI;
+  }
+  
+  // Contrato vencido: verificar si está pagado
+  const amountUsed = Number(financing.amount_used || 0);
+  const amountPaid = Number(financing.amount_paid || 0);
+  
+  // Si monto pagado >= monto utilizado, está PAGADO
+  if (amountPaid >= amountUsed) {
+    return FINANCING_STATES.PAID;
+  }
+  
+  // Si monto pagado < monto utilizado, está VENCIDO
+  return FINANCING_STATES.EXPIRED;
+};
+
+/**
+ * Obtiene el chip de estado para financiamientos aprobados
+ * @param {object} financing - Objeto de financiamiento
+ * @returns {object} { label, color }
+ */
+export const getApprovedFinancingChip = (financing) => {
+  const status = getApprovedFinancingStatus(financing);
+  
+  switch (status) {
+    case FINANCING_STATES.APPROVED_BY_SELLSI:
+      return { label: 'Vigente', color: 'primary' };
+    case FINANCING_STATES.EXPIRED:
+      return { label: 'Vencido', color: 'error' };
+    case FINANCING_STATES.PAID:
+      return { label: 'Pagado', color: 'success' };
+    default:
+      return { label: 'Desconocido', color: 'default' };
+  }
+};
+
+/**
+ * Obtiene la categoría de filtro a la que pertenece un estado
+ * (para mostrar en chips de estado)
+ * @param {string} state - Estado del financiamiento
+ * @returns {object} { category, label, color }
+ */
+export const getStateFilterCategory = (state) => {
+  // Buscar en qué categoría está el estado
+  if (FILTER_TO_STATES[FILTER_CATEGORIES.IN_PROCESS]?.includes(state)) {
+    return {
+      category: FILTER_CATEGORIES.IN_PROCESS,
+      label: 'En Proceso',
+      color: 'warning',
+    };
+  }
+  
+  if (FILTER_TO_STATES[FILTER_CATEGORIES.REJECTED]?.includes(state)) {
+    return {
+      category: FILTER_CATEGORIES.REJECTED,
+      label: 'Rechazado',
+      color: 'error',
+    };
+  }
+  
+  if (FILTER_TO_STATES[FILTER_CATEGORIES.CANCELLED]?.includes(state)) {
+    return {
+      category: FILTER_CATEGORIES.CANCELLED,
+      label: 'Cancelado',
+      color: 'default',
+    };
+  }
+  
+  if (FILTER_TO_STATES[FILTER_CATEGORIES.FINALIZED]?.includes(state)) {
+    return {
+      category: FILTER_CATEGORIES.FINALIZED,
+      label: 'Aprobado',
+      color: 'success',
+    };
+  }
+  
+  // Fallback
+  return {
+    category: FILTER_CATEGORIES.ALL,
+    label: 'Desconocido',
+    color: 'default',
+  };
+};
+
+/**
+ * Verifica si un financiamiento aprobado coincide con un filtro
+ * @param {object} financing - Objeto de financiamiento
+ * @param {string} filter - Categoría de filtro ('all', 'active', 'expired', 'paid')
+ * @returns {boolean}
+ */
+export const approvedFinancingMatchesFilter = (financing, filter) => {
+  if (filter === APPROVED_FILTER_CATEGORIES.ALL) return true;
+  
+  const status = getApprovedFinancingStatus(financing);
+  
+  switch (filter) {
+    case APPROVED_FILTER_CATEGORIES.ACTIVE:
+      return status === FINANCING_STATES.APPROVED_BY_SELLSI;
+    case APPROVED_FILTER_CATEGORIES.EXPIRED:
+      return status === FINANCING_STATES.EXPIRED;
+    case APPROVED_FILTER_CATEGORIES.PAID:
+      return status === FINANCING_STATES.PAID;
+    default:
+      return true;
+  }
 };
