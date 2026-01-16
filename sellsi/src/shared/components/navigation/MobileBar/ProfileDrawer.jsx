@@ -96,7 +96,7 @@ const ProfileDrawer = ({
     { icon: <PersonIcon />, text: 'Mi Perfil', path: '/buyer/profile' },
     { icon: <OrdersIcon />, text: 'Mis Pedidos', path: '/buyer/orders' },
     { icon: <OffersIcon />, text: 'Mis Ofertas', path: '/buyer/offers' },
-    ...(financingEnabled ? [{ icon: <FinancingIcon />, text: 'Mis Financiamientos', path: '/buyer/financing' }] : []),
+    ...(financingEnabled ? [{ icon: <FinancingIcon />, text: 'Mis Financiamientos', path: '/buyer/my-financing' }] : []),
   ];
 
   const supplierMenuItems = [
@@ -104,7 +104,7 @@ const ProfileDrawer = ({
     { icon: <ProductsIcon />, text: 'Mis Productos', path: '/supplier/myproducts' },
     { icon: <OrdersIcon />, text: 'Mis Pedidos', path: '/supplier/my-orders' },
     { icon: <OffersIcon />, text: 'Mis Ofertas', path: '/supplier/offers' },
-    ...(financingEnabled ? [{ icon: <FinancingIcon />, text: 'Financiamientos', path: '/supplier/financing' }] : []),
+    ...(financingEnabled ? [{ icon: <FinancingIcon />, text: 'Financiamientos', path: '/supplier/my-financing' }] : []),
   ];
 
   // Determinar ruta de configuración según el rol
@@ -119,7 +119,7 @@ const ProfileDrawer = ({
 
   return (
     <Drawer
-      anchor="left"
+      anchor="right"
       open={open}
       onClose={onClose}
       sx={{
@@ -129,6 +129,8 @@ const ProfileDrawer = ({
           display: 'flex',
           flexDirection: 'column',
           height: '100vh',
+          right: 0,
+          left: 'auto',
         },
       }}
       slotProps={{
@@ -173,13 +175,14 @@ const ProfileDrawer = ({
           <CloseIcon />
         </IconButton>
 
-        {/* Perfil de usuario */}
+        {/* Perfil de usuario (left aligned content) */}
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             cursor: 'pointer',
             mt: { xs: 0.8, sm: 1 },
+            justifyContent: 'flex-start',
           }}
           onClick={() => handleNavigate(isBuyer ? '/buyer/profile' : '/supplier/profile')}
         >
@@ -198,7 +201,7 @@ const ProfileDrawer = ({
           >
             {!logoUrl && getInitials(userName)}
           </Avatar>
-          <Box ml={2} flex={1}>
+          <Box ml={2} flex={1} sx={{ textAlign: 'left' }}>
             <Typography
               variant="body1"
               sx={{
@@ -249,6 +252,7 @@ const ProfileDrawer = ({
                 sx={{
                   minWidth: 40,
                   color: (theme) => theme.palette.primary.main,
+                  mr: 2,
                 }}
               >
                 {item.icon}
@@ -284,6 +288,7 @@ const ProfileDrawer = ({
                 sx={{
                   minWidth: 40,
                   color: (theme) => theme.palette.primary.main,
+                  mr: 2,
                 }}
               >
                 {item.icon}
@@ -318,6 +323,7 @@ const ProfileDrawer = ({
               sx={{
                 minWidth: 40,
                 color: '#f44336',
+                mr: 2,
               }}
             >
               <LogoutIcon />

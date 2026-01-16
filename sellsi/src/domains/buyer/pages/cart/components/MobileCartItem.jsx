@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Card,
   Stack,
@@ -14,6 +14,7 @@ import {
   Delete as DeleteIcon,
   LocalShipping as ShippingIcon,
   Search as SearchIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -31,9 +32,16 @@ const MobileCartItem = ({
   onOpenFinancingModal,
   financingEnabled = false,
   financingAmount = 0,
+  ageVerificationDenied = false,
 }) => {
   const navigate = useNavigate();
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
+
+  // Detectar si el producto tiene restricción de edad
+  const isAgeRestricted = useMemo(() => {
+    const category = item?.categoria || item?.category || '';
+    return category === 'Alcoholes' || category === 'Tabaquería';
+  }, [item]);
 
   // Construir slug SEO a partir del nombre del producto
   const getProductSlug = name => {
@@ -112,8 +120,12 @@ const MobileCartItem = ({
               opacity: 1,
             },
           },
-          border: '1px solid',
-          borderColor: 'rgba(0,0,0,0.06)',
+          border: ageVerificationDenied && isAgeRestricted 
+            ? '3px solid #ff9800' 
+            : '1px solid',
+          borderColor: ageVerificationDenied && isAgeRestricted 
+            ? '#ff9800' 
+            : 'rgba(0,0,0,0.06)',
         }}
       >
         <Box sx={{ py: { xs: 0.55, sm: 0.9 }, px: { xs: 0.5, sm: 0.9 } }}>
@@ -343,6 +355,49 @@ const MobileCartItem = ({
               </Stack>
             </Stack>
           </Stack>
+
+          {/* Chip de documento tributario y mensaje de edad en la misma fila */}
+          {(() => {
+            const docType = (item?.document_type || item?.documentType || '').toLowerCase();
+            const hasDocChip = docType === 'boleta' || docType === 'factura';
+            const showAgeWarning = ageVerificationDenied && isAgeRestricted;
+            
+            if (hasDocChip || showAgeWarning) {
+              return (
+                <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  {hasDocChip && (
+                    <Chip
+                      label={docType === 'boleta' ? 'Boleta' : 'Factura'}
+                      size="small"
+                      sx={{
+                        backgroundColor: 'primary.main',
+                        color: 'white',
+                        fontSize: '0.7rem',
+                        height: 22,
+                        fontWeight: 600,
+                      }}
+                    />
+                  )}
+                  {showAgeWarning && (
+                    <>
+                      <WarningIcon sx={{ color: '#ff9800', fontSize: '1.2rem' }} />
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          color: '#ff9800',
+                          fontWeight: 500,
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        Solo mayores de 18 años
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+              );
+            }
+            return null;
+          })()}
 
           {/* Stock info */}
           {item.stock && item.stock < 10 && (

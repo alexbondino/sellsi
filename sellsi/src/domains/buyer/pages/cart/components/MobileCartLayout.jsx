@@ -25,6 +25,7 @@ const MobileCartLayout = ({
   onOpenFinancingModal,
   financingEnabled = false,
   productFinancing = {},
+  ageVerificationDenied = false, // Nueva prop para verificación de edad
 }) => {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [financingsModalOpen, setFinancingsModalOpen] = useState(false);
@@ -143,6 +144,7 @@ const MobileCartLayout = ({
                 onOpenFinancingModal={onOpenFinancingModal}
                 financingEnabled={financingEnabled}
                 financingAmount={productFinancing[item.id]?.amount || 0}
+                ageVerificationDenied={ageVerificationDenied}
               />
             ))}
           </AnimatePresence>

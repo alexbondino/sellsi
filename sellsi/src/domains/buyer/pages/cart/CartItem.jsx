@@ -86,9 +86,17 @@ const CartItem = ({
   onOpenFinancingModal,
   financingEnabled = false,
   financingAmount = 0,
+  // Prop de verificación de edad
+  ageVerificationDenied = false,
 }) => {
   // Hook de navegación debe ir dentro del cuerpo del componente
   const navigate = useNavigate();
+
+  // Determinar si el producto es restringido por edad
+  const isAgeRestricted = React.useMemo(() => {
+    const category = item?.category || item?.categoria || '';
+    return category === 'Alcoholes' || category === 'Tabaquería';
+  }, [item]);
 
   // Normaliza nombre de proveedor para slug de URL
   // Simple normalization: lowercase + alphanumeric only (matches SQL)
@@ -240,7 +248,9 @@ const CartItem = ({
           background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
           boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
           border:
-            isSelectionMode && isSelected
+            ageVerificationDenied && isAgeRestricted
+              ? '3px solid #ff9800' // Borde naranja para productos con restricción de edad
+              : isSelectionMode && isSelected
               ? '2px solid rgba(25, 118, 210, 0.6)'
               : '1px solid rgba(102, 126, 234, 0.1)',
           width: '100%',
@@ -254,7 +264,9 @@ const CartItem = ({
           overflow: 'hidden', // Prevenir overflow horizontal
           position: 'relative',
           '&:hover': {
-            border: '1px solid rgba(2, 3, 5, 0.55)', // Solo el borde oscuro al hacer hover
+            border: ageVerificationDenied && isAgeRestricted
+              ? '3px solid #ff9800' // Mantener borde naranja en hover
+              : '1px solid rgba(2, 3, 5, 0.55)', // Solo el borde oscuro al hacer hover
           },
         }}
       >
@@ -751,6 +763,23 @@ const CartItem = ({
                   formatPrice={formatPrice}
                 />
               </Box>
+              
+              {/* Mensaje de advertencia de edad (solo si usuario rechazó verificación) */}
+              {ageVerificationDenied && isAgeRestricted && (
+                <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <WarningIcon sx={{ color: '#ff9800', fontSize: '1.2rem' }} />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#ff9800',
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    Solo mayores de 18 años
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
         </Grid>

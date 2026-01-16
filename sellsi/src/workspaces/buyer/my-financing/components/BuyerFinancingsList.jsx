@@ -36,6 +36,8 @@ import BuyerFinancingTable from './BuyerFinancingTable';
 import ViewReasonModal from '../../../../shared/components/financing/ViewReasonModal';
 import BuyerFinancingActionModals from './BuyerFinancingActionModals';
 import FinancingTabs from '../../../../shared/components/financing/FinancingTabs';
+import HowItWorksModal from '../../../../shared/components/modals/HowItWorksModal';
+import { BUYER_FINANCING_STEPS } from '../../../../shared/components/modals/howItWorksSteps';
 import FinancingFilters from '../../../../shared/components/financing/FinancingFilters';
 import { 
   EmptyStateGlobal, 
@@ -302,6 +304,20 @@ const BuyerFinancingsList = ({
   const { showBanner } = useBanner();
   const navigate = useNavigate();
 
+  // Estado para modal "Cómo Funciona"
+  const [howOpen, setHowOpen] = useState(false);
+  
+  console.log('🎨 BuyerFinancingsList RENDER - howOpen:', howOpen);
+  
+  const openHowModal = () => {
+    console.log('🔥 openHowModal called - Setting howOpen to true');
+    setHowOpen(true);
+  };
+  const closeHowModal = () => {
+    console.log('🔥 closeHowModal called - Setting howOpen to false');
+    setHowOpen(false);
+  };
+
   // Estado de pestañas - usar initialTab como valor inicial
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -529,7 +545,7 @@ const BuyerFinancingsList = ({
   if (isMobile) {
     return (
       <>
-        <FinancingTabs activeTab={activeTab} onTabChange={setActiveTab} isMobile={true} />
+        <FinancingTabs activeTab={activeTab} onTabChange={setActiveTab} isMobile={true} onHowItWorks={openHowModal} />
 
         {/* Contenido según tab activo */}
         {activeTab === 0 ? (
@@ -597,6 +613,33 @@ const BuyerFinancingsList = ({
           financing={reasonModal.financing}
           onClose={closeReasonModal}
         />
+
+        {/* Modal 'Cómo Funciona' */}
+        {console.log('🔍 About to render HowItWorksModal (MOBILE):', { howOpen, steps: BUYER_FINANCING_STEPS })}
+        <HowItWorksModal 
+          open={howOpen} 
+          onClose={closeHowModal} 
+          steps={BUYER_FINANCING_STEPS}
+        />
+
+        {/* Modales de Acción */}
+        <BuyerFinancingActionModals
+          open={actionModal.open}
+          mode={actionModal.mode}
+          financing={actionModal.financing}
+          onClose={closeActionModal}
+          onSign={handleSignConfirm}
+          onCancel={handleCancelConfirm}
+          onPayOnline={handlePayOnlineConfirm}
+        />
+
+        {/* Modal de descargables */}
+        <DownloadablesModal
+          open={downloadablesModal.open}
+          onClose={closeDownloadablesModal}
+          financing={downloadablesModal.financing}
+          onDownloadFile={handleDownloadFile}
+        />
       </>
     );
   }
@@ -604,7 +647,7 @@ const BuyerFinancingsList = ({
   // Desktop View
   return (
     <>
-      <FinancingTabs activeTab={activeTab} onTabChange={setActiveTab} isMobile={false} />
+      <FinancingTabs activeTab={activeTab} onTabChange={setActiveTab} isMobile={false} onHowItWorks={openHowModal} />
 
       {/* Contenido según tab activo */}
       {activeTab === 0 ? (
@@ -666,6 +709,16 @@ const BuyerFinancingsList = ({
         financing={reasonModal.financing}
         onClose={closeReasonModal}
       />
+
+      {/* Modal 'Cómo Funciona' */}
+      {console.log('🔍 About to render HowItWorksModal:', { howOpen, steps: BUYER_FINANCING_STEPS })}
+      <HowItWorksModal 
+        open={howOpen} 
+        onClose={closeHowModal} 
+        steps={BUYER_FINANCING_STEPS}
+      />
+      
+      {howOpen && console.log('🎯 HowItWorksModal should be visible - howOpen:', howOpen)}
 
       {/* Modales de Acción */}
       <BuyerFinancingActionModals
