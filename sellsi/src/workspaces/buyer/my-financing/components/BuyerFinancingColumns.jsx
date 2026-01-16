@@ -60,7 +60,7 @@ export const renderStatusDescription = (status) => {
     <Typography
       variant="body2"
       fontWeight={600}
-      sx={{ color: colorMap[statusInfo.color] || 'text.secondary', whiteSpace: 'pre-line' }}
+      sx={{ color: { xs: colorMap[statusInfo.color] || 'text.secondary', md: 'text.primary' }, whiteSpace: 'pre-line' }}
     >
       {statusInfo.label}
     </Typography>

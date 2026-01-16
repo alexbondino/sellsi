@@ -53,6 +53,7 @@ import FinancingConfigModal from './cart/components/FinancingConfigModal';
 import MobileCartLayout from './cart/components/MobileCartLayout';
 import useShippingValidation from './cart/hooks/useShippingValidation';
 import ShippingCompatibilityModal from './cart/components/ShippingCompatibilityModal';
+import AgeVerificationModal from '../../../shared/components/modals/AgeVerificationModal';
 
 // ============================================================================
 // ULTRA-PREMIUM BUYER CART COMPONENT - NIVEL 11/10
@@ -157,6 +158,10 @@ const BuyerCart = () => {
   // ✅ NUEVO: Modo avanzado por defecto, sin toggle
   const isAdvancedShippingMode = true;
   const shippingValidation = useShippingValidation(items, isAdvancedShippingMode);
+
+  // ===== AGE VERIFICATION STATES =====
+  const [ageVerificationModalOpen, setAgeVerificationModalOpen] = useState(false);
+  const [ageVerificationDenied, setAgeVerificationDenied] = useState(false); // Track si usuario negó verificación
 
   // ⚡ FIX CRÍTICO: Mantener último valor conocido de userRegion para evitar
   // pérdida de estado al minimizar/restaurar navegador
@@ -580,6 +585,22 @@ const BuyerCart = () => {
       return;
     }
 
+    // ✅ VERIFICACIÓN DE EDAD: Validar productos restringidos (+18)
+    const hasAgeRestrictedProducts = items.some(item => {
+      const category = item?.category || item?.categoria || '';
+      return category === 'Alcoholes' || category === 'Tabaquería';
+    });
+
+    if (hasAgeRestrictedProducts) {
+      // Verificar si ya confirmó la edad en esta sesión
+      const ageVerified = sessionStorage.getItem('age_verified');
+      if (!ageVerified) {
+        // Mostrar modal de verificación
+        setAgeVerificationModalOpen(true);
+        return;
+      }
+    }
+
     setIsCheckingOut(true);
 
     try {
@@ -596,7 +617,7 @@ const BuyerCart = () => {
     } finally {
       setIsCheckingOut(false);
     }
-  }, [clearCart, isAdvancedShippingMode, shippingValidation.isCartCompatible]);
+  }, [items, clearCart, isAdvancedShippingMode, shippingValidation.isCartCompatible, navigate]);
 
   // ===== FUNCIONES DE SELECCIÓN MÚLTIPLE =====
   const handleToggleSelectionMode = useCallback(() => {
@@ -633,6 +654,23 @@ const BuyerCart = () => {
     setSelectedItems([]);
     setIsSelectionMode(false);
   }, [selectedItems, removeItemsBatch]);
+
+  // ===== HANDLERS DEL MODAL DE VERIFICACIÓN DE EDAD =====
+  const handleAgeVerificationConfirm = useCallback(() => {
+    // Usuario confirmó ser mayor de edad → cachear y continuar
+    sessionStorage.setItem('age_verified', 'true');
+    setAgeVerificationModalOpen(false);
+    setAgeVerificationDenied(false); // Limpiar flag de rechazo
+    // Reintentar checkout ahora que está verificado
+    handleCheckout();
+  }, [handleCheckout]);
+
+  const handleAgeVerificationDeny = useCallback(() => {
+    // Usuario negó ser mayor de edad → solo cerrar modal (NO cachear)
+    // Puede reintentar cuando quiera, se le volverá a preguntar
+    setAgeVerificationModalOpen(false);
+    setAgeVerificationDenied(true); // Marcar que usuario rechazó verificación
+  }, []);
 
   // Limpiar selecciones cuando cambie la lista de items
   useEffect(() => {
@@ -736,6 +774,7 @@ const BuyerCart = () => {
               onOpenFinancingModal={handleOpenFinancingModal}
               financingEnabled={financingEnabled}
               productFinancing={productFinancing}
+              ageVerificationDenied={ageVerificationDenied}
             />
           </Box>
         ) : (
@@ -837,6 +876,8 @@ const BuyerCart = () => {
                         onOpenFinancingModal={handleOpenFinancingModal}
                         financingEnabled={financingEnabled}
                         financingAmount={productFinancing[item.id]?.amount || 0}
+                        // Prop de verificación de edad
+                        ageVerificationDenied={ageVerificationDenied}
                       />
                     ))}
                   </AnimatePresence>
@@ -955,6 +996,13 @@ const BuyerCart = () => {
           currentFinancing={productFinancing}
           shippingByProduct={priceCalculations.shippingByProduct}
           overallShipping={priceCalculations.shipping}
+        />
+
+        {/* Modal de Verificación de Edad */}
+        <AgeVerificationModal
+          open={ageVerificationModalOpen}
+          onConfirm={handleAgeVerificationConfirm}
+          onDeny={handleAgeVerificationDeny}
         />
       </Box>
     </ThemeProvider>

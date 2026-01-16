@@ -38,6 +38,9 @@ import DrawIcon from '@mui/icons-material/Draw';
 import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DownloadablesModal from '../../../../shared/components/financing/DownloadablesModal';
+import FinancingTabs from '../../../../shared/components/financing/FinancingTabs';
+import HowItWorksModal from '../../../../shared/components/modals/HowItWorksModal';
+import { SUPPLIER_FINANCING_STEPS } from '../../../../shared/components/modals/howItWorksSteps';
 import { useBanner } from '../../../../shared/components/display/banners/BannerContext';
 import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
 import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion';
@@ -126,22 +129,21 @@ const MobileFinancingCard = ({ financing, onApprove, onReject, onSign, onCancel,
           </Box>
 
           <Box sx={{ width: '50%', pl: 1, textAlign: 'right' }}>
-            {/* Usamos un contenedor que puede mostrar hasta 2 líneas para estados largos */}
-            <Box sx={{ display: 'inline-block', maxWidth: '100%' }}>
-              <Typography
-                variant="body2"
-                fontWeight={600}
-                sx={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  textAlign: 'right',
-                }}
-              >
-                {getStateFilterCategory(financing.status).label}
-              </Typography>
-            </Box>
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              sx={{
+                color: colorMap[statusInfo.color] || 'text.secondary',
+                whiteSpace: 'pre-line',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textAlign: 'right',
+              }}
+            >
+              {statusInfo.label}
+            </Typography>
           </Box>
         </Box>
 
@@ -322,6 +324,11 @@ const SupplierFinancingsList = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { showBanner } = useBanner();
+
+  // Estado para modal "Cómo Funciona"
+  const [howOpen, setHowOpen] = useState(false);
+  const openHowModal = () => setHowOpen(true);
+  const closeHowModal = () => setHowOpen(false);
 
   // Hook de validación de representante legal
   const {
@@ -733,30 +740,7 @@ const SupplierFinancingsList = ({
   return (
     <>
       {/* Tabs Desktop */}
-      <Paper sx={{ mb: 3, width: 'fit-content' }}>
-        <Tabs
-          value={activeTab}
-          onChange={(e, newValue) => setActiveTab(newValue)}
-          sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
-            '& .MuiTab-root': {
-              fontSize: '1rem',
-              fontWeight: 600,
-              textTransform: 'none',
-              minHeight: 56,
-              color: 'text.primary',
-              '&.Mui-selected': {
-                backgroundColor: '#2E52B2',
-                color: 'white',
-              },
-            },
-          }}
-        >
-          <Tab label="Solicitudes de financiamiento" />
-          <Tab label="Financiamientos aprobados" />
-        </Tabs>
-      </Paper>
+      <FinancingTabs activeTab={activeTab} onTabChange={setActiveTab} isMobile={false} onHowItWorks={openHowModal} />
 
       {/* Contenido según tab activo */}
       {activeTab === 0 ? (
@@ -856,6 +840,13 @@ const SupplierFinancingsList = ({
         open={reasonModal.open}
         financing={reasonModal.financing}
         onClose={closeReasonModal}
+      />
+
+      {/* Modal 'Cómo Funciona' */}
+      <HowItWorksModal 
+        open={howOpen} 
+        onClose={closeHowModal}
+        steps={SUPPLIER_FINANCING_STEPS}
       />
 
       {/* Modal de Validación de Representante Legal */}
