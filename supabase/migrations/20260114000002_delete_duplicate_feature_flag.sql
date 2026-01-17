@@ -7,8 +7,10 @@
 
 begin;
 
--- Eliminar el registro duplicado específico por ID
+-- Eliminar el registro duplicado de my_offers_supplier en my-financing
+-- (Corregido para usar workspace y key en lugar de UUID)
 DELETE FROM control_panel.feature_flags
-WHERE id = '86b0989f-4a73-4fd0-85f2-2302ab0391e8';
+WHERE workspace = 'my-financing' 
+  AND key = 'my_offers_supplier';
 
 commit;
