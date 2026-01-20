@@ -1,0 +1,146 @@
+{
+  "input": "profiling-data.ultimo3.json",
+  "top_n": 20,
+  "summary": [
+    {
+      "name": "Anonymous",
+      "renders": 180,
+      "total_ms": 1036.6,
+      "avg_ms": 5.759,
+      "impact": 186588.0
+    },
+    {
+      "name": "div",
+      "renders": 55,
+      "total_ms": 477.2,
+      "avg_ms": 8.676,
+      "impact": 26246.0
+    },
+    {
+      "name": "FormControlContext.Provider",
+      "renders": 20,
+      "total_ms": 62.0,
+      "avg_ms": 3.1,
+      "impact": 1240.0
+    },
+    {
+      "name": "ao",
+      "renders": 180,
+      "total_ms": 6.2,
+      "avg_ms": 0.034,
+      "impact": 1116.0
+    },
+    {
+      "name": "mu",
+      "renders": 5,
+      "total_ms": 200.9,
+      "avg_ms": 40.18,
+      "impact": 1004.5
+    },
+    {
+      "name": "Context.Provider",
+      "renders": 5,
+      "total_ms": 198.7,
+      "avg_ms": 39.74,
+      "impact": 993.5
+    },
+    {
+      "name": "dm",
+      "renders": 5,
+      "total_ms": 187.4,
+      "avg_ms": 37.48,
+      "impact": 937.0
+    },
+    {
+      "name": "MuiIconButtonRoot",
+      "renders": 15,
+      "total_ms": 39.0,
+      "avg_ms": 2.6,
+      "impact": 585.0
+    },
+    {
+      "name": "MuiButtonBaseRoot",
+      "renders": 15,
+      "total_ms": 24.3,
+      "avg_ms": 1.62,
+      "impact": 364.5
+    },
+    {
+      "name": "MuiTextFieldRoot",
+      "renders": 5,
+      "total_ms": 50.7,
+      "avg_ms": 10.14,
+      "impact": 253.5
+    },
+    {
+      "name": "MuiFormControlRoot",
+      "renders": 5,
+      "total_ms": 44.3,
+      "avg_ms": 8.86,
+      "impact": 221.5
+    },
+    {
+      "name": "MuiOutlinedInputRoot",
+      "renders": 5,
+      "total_ms": 34.3,
+      "avg_ms": 6.86,
+      "impact": 171.5
+    },
+    {
+      "name": "MuiMenuRoot",
+      "renders": 10,
+      "total_ms": 16.1,
+      "avg_ms": 1.61,
+      "impact": 161.0
+    },
+    {
+      "name": "MuiInputAdornmentRoot",
+      "renders": 10,
+      "total_ms": 14.3,
+      "avg_ms": 1.43,
+      "impact": 143.0
+    },
+    {
+      "name": "jd",
+      "renders": 5,
+      "total_ms": 26.5,
+      "avg_ms": 5.3,
+      "impact": 132.5
+    },
+    {
+      "name": "NotificationsIcon",
+      "renders": 10,
+      "total_ms": 9.0,
+      "avg_ms": 0.9,
+      "impact": 90.0
+    },
+    {
+      "name": "MenuIcon",
+      "renders": 10,
+      "total_ms": 8.2,
+      "avg_ms": 0.82,
+      "impact": 82.0
+    },
+    {
+      "name": "im",
+      "renders": 5,
+      "total_ms": 11.7,
+      "avg_ms": 2.34,
+      "impact": 58.5
+    },
+    {
+      "name": "MuiPopoverRoot",
+      "renders": 10,
+      "total_ms": 5.8,
+      "avg_ms": 0.58,
+      "impact": 58.0
+    },
+    {
+      "name": "Marketplace",
+      "renders": 5,
+      "total_ms": 11.2,
+      "avg_ms": 2.24,
+      "impact": 56.0
+    }
+  ]
+}

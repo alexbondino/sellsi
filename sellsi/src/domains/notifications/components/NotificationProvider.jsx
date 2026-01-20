@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useAuth } from '../../../infrastructure/providers';
 import { supabase } from '../../../services/supabase';
 import { useNotifications } from '../hooks/useNotifications';
@@ -19,7 +19,11 @@ export const NotificationsProvider = ({ children }) => {
       })();
     }
   }, [userId, needsOnboarding]);
-  return <NotificationsContext.Provider value={notif}>{children}</NotificationsContext.Provider>;
+  
+  // Memoize the context value to prevent unnecessary re-renders
+  const value = useMemo(() => notif, [notif]);
+  
+  return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 };
 
 export const useNotificationsContext = () => useContext(NotificationsContext);

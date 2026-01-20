@@ -1,0 +1,146 @@
+{
+  "input": "profiling-data.ultimo2.json",
+  "top_n": 20,
+  "summary": [
+    {
+      "name": "Anonymous",
+      "renders": 444,
+      "total_ms": 2550.7,
+      "avg_ms": 5.745,
+      "impact": 1132510.8
+    },
+    {
+      "name": "div",
+      "renders": 66,
+      "total_ms": 1154.9,
+      "avg_ms": 17.498,
+      "impact": 76223.4
+    },
+    {
+      "name": "ao",
+      "renders": 414,
+      "total_ms": 15.2,
+      "avg_ms": 0.037,
+      "impact": 6292.8
+    },
+    {
+      "name": "MuiButtonBaseRoot",
+      "renders": 54,
+      "total_ms": 76.2,
+      "avg_ms": 1.411,
+      "impact": 4114.8
+    },
+    {
+      "name": "MuiIconButtonRoot",
+      "renders": 36,
+      "total_ms": 91.1,
+      "avg_ms": 2.531,
+      "impact": 3279.6
+    },
+    {
+      "name": "mu",
+      "renders": 6,
+      "total_ms": 448.0,
+      "avg_ms": 74.667,
+      "impact": 2688.0
+    },
+    {
+      "name": "Context.Provider",
+      "renders": 6,
+      "total_ms": 445.6,
+      "avg_ms": 74.267,
+      "impact": 2673.6
+    },
+    {
+      "name": "dm",
+      "renders": 6,
+      "total_ms": 436.4,
+      "avg_ms": 72.733,
+      "impact": 2618.4
+    },
+    {
+      "name": "FormControlContext.Provider",
+      "renders": 24,
+      "total_ms": 95.1,
+      "avg_ms": 3.963,
+      "impact": 2282.4
+    },
+    {
+      "name": "MuiTooltipPopper",
+      "renders": 36,
+      "total_ms": 41.7,
+      "avg_ms": 1.158,
+      "impact": 1501.2
+    },
+    {
+      "name": "MuiPopperRoot",
+      "renders": 36,
+      "total_ms": 20.2,
+      "avg_ms": 0.561,
+      "impact": 727.2
+    },
+    {
+      "name": "jd",
+      "renders": 12,
+      "total_ms": 45.9,
+      "avg_ms": 3.825,
+      "impact": 550.8
+    },
+    {
+      "name": "ToggleButtonGroupButtonContext.Provider",
+      "renders": 12,
+      "total_ms": 43.7,
+      "avg_ms": 3.642,
+      "impact": 524.4
+    },
+    {
+      "name": "MuiBadgeRoot",
+      "renders": 18,
+      "total_ms": 26.3,
+      "avg_ms": 1.461,
+      "impact": 473.4
+    },
+    {
+      "name": "MuiTextFieldRoot",
+      "renders": 6,
+      "total_ms": 75.1,
+      "avg_ms": 12.517,
+      "impact": 450.6
+    },
+    {
+      "name": "NotificationsIcon",
+      "renders": 24,
+      "total_ms": 18.4,
+      "avg_ms": 0.767,
+      "impact": 441.6
+    },
+    {
+      "name": "MuiFormControlRoot",
+      "renders": 6,
+      "total_ms": 67.1,
+      "avg_ms": 11.183,
+      "impact": 402.6
+    },
+    {
+      "name": "MuiSvgIconRoot",
+      "renders": 30,
+      "total_ms": 13.1,
+      "avg_ms": 0.437,
+      "impact": 393.0
+    },
+    {
+      "name": "Id",
+      "renders": 6,
+      "total_ms": 59.9,
+      "avg_ms": 9.983,
+      "impact": 359.4
+    },
+    {
+      "name": "MuiOutlinedInputRoot",
+      "renders": 6,
+      "total_ms": 53.5,
+      "avg_ms": 8.917,
+      "impact": 321.0
+    }
+  ]
+}

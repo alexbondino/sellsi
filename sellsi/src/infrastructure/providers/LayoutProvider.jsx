@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from './UnifiedAuthProvider';
 
@@ -37,7 +37,7 @@ export const LayoutProvider = ({ children }) => {
   const [sideBarCollapsed, setSideBarCollapsed] = useState(false);
 
   // Handler para cuando cambia el ancho de la sidebar
-  const handleSideBarWidthChange = (newWidth, isCollapsed) => {
+  const handleSideBarWidthChange = useCallback((newWidth, isCollapsed) => {
     const normalized = normalizeWidth(newWidth);
     // Compare semantic values (md/lg/xl) to avoid triggering updates when nothing changed
     const equal = (a, b) => {
@@ -53,7 +53,7 @@ export const LayoutProvider = ({ children }) => {
       const next = Boolean(isCollapsed);
       return prev === next ? prev : next;
     });
-  };
+  }, [currentSideBarWidth]);
 
   // FIX: Usar useRef para evitar re-renders que causan doble petición HTTP
   // El cache buster debe cambiar cuando logoUrl REALMENTE cambia de valor
@@ -77,11 +77,11 @@ export const LayoutProvider = ({ children }) => {
 
   const showBottomBar = !isAdminRoute && location.pathname !== '/onboarding';
   const showTopBar = !isAdminRoute;
-  // ✅ CORREGIDO: topBarHeight debe coincidir con las alturas responsive del TopBar
-  // TopBar usa: height: { xs: 45, md: 64 }
-  const topBarHeight = { xs: '45px', md: '64px' };
+  
+  // Memoize topBarHeight to prevent new object on every render
+  const topBarHeight = useMemo(() => ({ xs: '45px', md: '64px' }), []);
 
-  const value = {
+  const value = useMemo(() => ({
     // SideBar state
     currentSideBarWidth,
     sideBarCollapsed,
@@ -98,7 +98,17 @@ export const LayoutProvider = ({ children }) => {
     showTopBar,
     topBarHeight,
     isAdminRoute,
-  };
+  }), [
+    currentSideBarWidth,
+    sideBarCollapsed,
+    handleSideBarWidthChange,
+    logoUrl,
+    logoCacheBuster,
+    showBottomBar,
+    showTopBar,
+    topBarHeight,
+    isAdminRoute,
+  ]);
 
   return (
     <LayoutContext.Provider value={value}>{children}</LayoutContext.Provider>
