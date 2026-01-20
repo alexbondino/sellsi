@@ -34,11 +34,11 @@ export default function TrustBar({ className = '' }) {
   return (
     <div className={`w-full bg-white py-3 md:py-4 border border-gray-100 shadow-sm ${className}`}>
       <div className="max-w-6xl mx-auto px-4">
-        <div className="flex items-center justify-center gap-6 md:gap-12">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4 md:gap-12">
           {items.map((item, idx) => (
             <div
               key={item.key}
-              className="flex items-center gap-3 group cursor-default"
+              className="flex items-center gap-3 group cursor-default w-full md:w-auto"
             >
               <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-600 group-hover:from-blue-600 group-hover:to-blue-700 group-hover:text-white transition-all duration-300 group-hover:scale-110 shadow-sm group-hover:shadow-md">
                 {item.icon}
