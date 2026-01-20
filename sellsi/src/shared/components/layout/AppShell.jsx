@@ -1,4 +1,5 @@
 import React from 'react'
+import { useCallback } from 'react'
 import { Box } from '@mui/material'
 import { useLocation } from 'react-router-dom'
 
@@ -51,7 +52,7 @@ export const AppShell = ({ children }) => {
   // Sidebar and dashboard layout must never appear without an active session
   const isDashboardLayout = !!session && isDashboardRoute
 
-  const handleScrollTo = (refName, scrollTargets) => {
+  const handleScrollTo = useCallback((refName, scrollTargets) => {
     const element = scrollTargets.current[refName]?.current
     if (element) {
       const topBarHeight = 64 // Altura de tu TopBar
@@ -60,7 +61,7 @@ export const AppShell = ({ children }) => {
       const offsetPosition = elementPosition - topBarHeight
       window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
     }
-  }
+  }, [])
 
   return (
     <>

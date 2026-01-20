@@ -1,5 +1,5 @@
 // Fase 3: Presentational View de la TopBar (sin lógica de negocio)
-import React from 'react';
+import React, { memo } from 'react';
 import {
   Box,
   Button,
@@ -22,7 +22,7 @@ import { NotificationBell } from '../../../../domains/notifications';
 import { MobileMenu } from './components/MobileMenu';
 import { AuthModals } from './components/AuthModals';
 
-export function TopBarView({
+export const TopBarView = memo(function TopBarView({
   isLoggedIn,
   isBuyerRole,
   desktopNavLinks,
@@ -313,4 +313,4 @@ export function TopBarView({
       />
     </>
   );
-}
+});

@@ -257,9 +257,8 @@ CREATE TABLE public.financing_requests (
 -- Índices
 CREATE INDEX idx_financing_buyer ON public.financing_requests (buyer_id, status, created_at DESC);
 CREATE INDEX idx_financing_supplier ON public.financing_requests (supplier_id, status);
-CREATE INDEX idx_financing_active ON public.financing_requests (buyer_id, supplier_id) 
-  WHERE status = 'approved_by_sellsi';
-CREATE INDEX idx_financing_expired ON public.financing_requests (expires_at) 
+-- Índice optimizado para checkout (incluye expires_at para ordenamiento eficiente)
+CREATE INDEX idx_financing_checkout_lookup ON public.financing_requests (buyer_id, supplier_id, expires_at)
   WHERE status = 'approved_by_sellsi';
 -- Índice vital para el trigger de actualización de mora (performance)
 CREATE INDEX idx_financing_buyer_overdue_check ON public.financing_requests (buyer_id) 
@@ -583,7 +582,8 @@ CREATE TRIGGER trg_update_buyer_overdue_flag
 
 ### Expiración de Financiamientos
 ```sql
--- Ejecutar diariamente a las 00:01 (Chile time)
+-- Ejecutar diariamente a las 00:01 Chile (03:01 UTC)
+-- Configuración en Supabase: cron '1 3 * * *'
 UPDATE financing_requests
 SET status = 'expired', updated_at = now()
 WHERE status = 'approved_by_sellsi'

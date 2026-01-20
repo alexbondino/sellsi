@@ -1,7 +1,7 @@
 // 📁 workspaces/landing/index.js
 
 // Main component
-export { default as Home } from './components/LandingPage.jsx';
+export { default as Home } from './components/Home.jsx';
 
 // Components
 export { default as HeroSection } from './components/HeroSection.jsx';

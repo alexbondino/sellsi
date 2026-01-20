@@ -21,7 +21,7 @@ import { Button } from '@mui/material';
  * ✅ OPTIMIZADO: Solo maneja su propia visibilidad sin afectar otros componentes
  */
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente con comparación personalizada
-const SearchSection = ({
+const SearchSection = React.memo(({
   shouldShowSearchBar, // Solo afecta a este componente
   searchBarProps,
   categoryNavigationProps,
@@ -106,7 +106,7 @@ const SearchSection = ({
       </Box>,
       typeof window !== 'undefined' ? document.body : null
     );
-};
+});
 
 // ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
 SearchSection.displayName = 'SearchSection';

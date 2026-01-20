@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import TrustBar from './TrustBar'
 
 const HeroSection = ({ onExploreClick, onDemoClick }) => {
   const navigate = useNavigate()
@@ -17,7 +18,10 @@ const HeroSection = ({ onExploreClick, onDemoClick }) => {
   }
 
   return (
-    <section className="relative w-full bg-gradient-to-br from-gray-900 via-black to-gray-900 py-24 md:py-32 lg:py-28 xl:py-36 overflow-hidden">
+    <section
+       className="relative w-full min-h-[85vh] md:min-h-[80vh] lg:min-h-[75vh] pt-24 pb-12 md:pt-20 md:pb-8 lg:pt-36 lg:pb-12 xl:pt-48 xl:pb-16 overflow-visible flex items-center"
+      style={{ backgroundImage: 'linear-gradient(to bottom, #000000 0%, #000000 65%, #2E52B2 100%)', fontFamily: "'Poppins', Arial, sans-serif" }}
+    >
       {/* Grid background with depth */}
       <div className="absolute inset-0 opacity-[0.15]">
         <div
@@ -45,32 +49,22 @@ const HeroSection = ({ onExploreClick, onDemoClick }) => {
         ></div>
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+      <div className="relative max-w-[1800px] mx-auto px-6 sm:px-8 md:px-12 lg:px-8 xl:px-10 grid grid-cols-1 gap-12 lg:gap-20 items-center">
         {/* Left Column - Text */}
-        <div className="text-left space-y-8 animate-fade-in-up">
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.1] tracking-tight">
-            Conectamos{' '}
-            <span className="bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 bg-clip-text text-transparent">
-              Compradores
-            </span>{' '}
-            con{' '}
-            <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">
-              Proveedores
-            </span>
+        <div className="text-center space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12 animate-fade-in-up">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl text-white leading-[1.15] sm:leading-[1.1] tracking-tight">
+            Centraliza y optimiza tus procesos de <span className="font-bold">compras</span> y <span className="font-bold">ventas</span> en una sola plataforma.
           </h1>
 
-          <p className="text-xl text-gray-400 leading-relaxed max-w-2xl">
-            <span className="font-bold text-white">Sellsi</span> es la
-            plataforma que revoluciona el comercio B2B en Chile. Conecta
-            directamente, negocia sin fricciones y cierra negocios a cualquier
-            escala.
+          <p className="text-base sm:text-lg md:text-[2rem] lg:text-[2rem] xl:text-[2rem] text-gray-400 leading-relaxed md:leading-8 max-w-6xl mx-auto text-center">
+            <span className="text-white">Cotiza, negocia por volumen y accede a plazos de pago en un solo lugar.</span>
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 pt-8">
+          <div className="flex flex-col md:flex-row gap-4 pt-8 items-center justify-center">
             <button
               onClick={handleExplore}
-              className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl text-base transition-all duration-300 shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_40px_rgba(59,130,246,0.5)] hover:scale-105 overflow-hidden"
-            >
+              className="w-full md:w-auto md:min-w-[280px] group relative px-8 py-4 md:px-10 md:py-5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl text-base transition-all duration-300 shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_40px_rgba(59,130,246,0.5)] hover:scale-105 overflow-hidden"
+            > 
               <span className="relative z-10 flex items-center justify-center gap-2">
                 Explorar Marketplace
                 <svg
@@ -91,7 +85,7 @@ const HeroSection = ({ onExploreClick, onDemoClick }) => {
             </button>
             <button
               onClick={handleDemo}
-              className="group px-8 py-4 bg-white/5 backdrop-blur-sm border-2 border-orange-500/50 text-orange-400 hover:bg-orange-500 hover:text-white hover:border-orange-500 font-bold rounded-xl text-base transition-all duration-300 hover:scale-105"
+              className="w-full md:w-auto md:min-w-[280px] group px-8 py-4 md:px-10 md:py-5 bg-transparent border border-white text-white hover:bg-[rgba(255,255,255,0.15)] hover:border-white hover:text-white font-semibold rounded-xl text-base transition-all duration-300"
             >
               <span className="flex items-center justify-center gap-2">
                 <svg
@@ -106,21 +100,12 @@ const HeroSection = ({ onExploreClick, onDemoClick }) => {
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Right Column - Image with floating elements */}
-        <div
-          className="relative flex items-center justify-center lg:justify-end animate-fade-in-up"
-          style={{ animationDelay: '0.2s' }}
-        >
-          <div className="relative max-w-md lg:max-w-lg w-full group">
-            <div className="relative">
-              <img
-                src="/assets/hero-illustration.webp"
-                alt="Presentación de Sellsi"
-                className="w-full h-auto object-contain drop-shadow-2xl transform group-hover:scale-[1.02] transition-transform duration-700 ease-out"
-              />
-            </div>
-          </div>
+      {/* TrustBar overlap: half inside Hero, half overlapping Services */}
+      <div className="absolute left-0 right-0 bottom-0 flex justify-center pointer-events-none z-30">
+        <div className="pointer-events-auto transform translate-y-1/2 md:translate-y-1/2 w-full px-4">
+          <TrustBar className="mx-auto max-w-6xl rounded-2xl shadow-lg" />
         </div>
       </div>
 
