@@ -1,0 +1,76 @@
+{
+  "input": "profiling-data.ultimo5 marketplace.json",
+  "top_n": 10,
+  "summary": [
+    {
+      "name": "Anonymous",
+      "renders": 72,
+      "total_ms": 359.1,
+      "avg_ms": 4.987,
+      "impact": 25855.2
+    },
+    {
+      "name": "div",
+      "renders": 22,
+      "total_ms": 163.0,
+      "avg_ms": 7.409,
+      "impact": 3586.0
+    },
+    {
+      "name": "FormControlContext.Provider",
+      "renders": 8,
+      "total_ms": 21.6,
+      "avg_ms": 2.7,
+      "impact": 172.8
+    },
+    {
+      "name": "ao",
+      "renders": 72,
+      "total_ms": 2.1,
+      "avg_ms": 0.029,
+      "impact": 151.2
+    },
+    {
+      "name": "mu",
+      "renders": 2,
+      "total_ms": 69.9,
+      "avg_ms": 34.95,
+      "impact": 139.8
+    },
+    {
+      "name": "Context.Provider",
+      "renders": 2,
+      "total_ms": 69.3,
+      "avg_ms": 34.65,
+      "impact": 138.6
+    },
+    {
+      "name": "dm",
+      "renders": 2,
+      "total_ms": 65.6,
+      "avg_ms": 32.8,
+      "impact": 131.2
+    },
+    {
+      "name": "MuiIconButtonRoot",
+      "renders": 6,
+      "total_ms": 13.0,
+      "avg_ms": 2.167,
+      "impact": 78.0
+    },
+    {
+      "name": "MuiButtonBaseRoot",
+      "renders": 6,
+      "total_ms": 8.0,
+      "avg_ms": 1.333,
+      "impact": 48.0
+    },
+    {
+      "name": "MuiTextFieldRoot",
+      "renders": 2,
+      "total_ms": 17.4,
+      "avg_ms": 8.7,
+      "impact": 34.8
+    }
+  ]
+}
