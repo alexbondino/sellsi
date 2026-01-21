@@ -115,37 +115,12 @@ const Home = ({ scrollTargets }) => {
         statistics={statistics}
         formatNumber={formatNumber}
       />
-      {/* Fondo global para el resto de la landing excepto Hero y Services */}
-      <Box
-        sx={{
-          width: '100%',
-          background: `url('/Landing Page/BackgroundHome.svg') center top / cover no-repeat, linear-gradient(135deg, #f7f8fa 0%, #e3e6ec 100%)`,
-          position: 'relative',
-          zIndex: 0,
-          overflow: 'hidden',
-          px: {
-            xs: 'max(25px, env(safe-area-inset-left))', // Telefonos Chicos
-            sm: 'max(30px, env(safe-area-inset-left))', // Telefonos grandes
-            mac: '180px', //  Mac M1
-            lg: '250px', // 1080p
-            xl: '250px', // 2K
-          },
-          py: '50px', // Padding lateral global para todas las secciones
-        }}
-      >
-        {/* Sección Conoce a nuestros proveedores */}
-        {/*
-        <Box>
-          <ProvidersSection statistics={statistics} />
-        </Box>
-        */}
-        {/* Banner Component */}
-        <Box>
-          <Banner />
-          {/* Sección Nuestros Servicios */}
-          <ServicesSection serviciosRef={serviciosRef} services={services} />
-        </Box>
-      </Box>
+
+      {/* Sección Nuestros Servicios - full width */}
+      <ServicesSection serviciosRef={serviciosRef} services={services} />
+
+      {/* Banner Component */}
+      <Banner />
 
       <Box>
         {/* Sección ¿Quiénes somos? */}

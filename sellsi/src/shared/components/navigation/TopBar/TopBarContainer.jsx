@@ -1,5 +1,5 @@
 // Fase 3: Container que orquesta hooks y pasa datos a TopBarView
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
@@ -95,14 +95,14 @@ export default function TopBarContainer({
   const isLoggedIn = !!session;
 
   // Handler de logout (usado tanto en onboarding como en TopBar normal)
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     setProfileAnchor(null);
     setMobileMenuAnchor(null);
     try {
       await supabase.auth.signOut();
     } catch (_) {}
     navigate('/');
-  };
+  }, [navigate]);
 
   // ====== TopBar simplificado para Onboarding ======
   if (isOnboarding) {
@@ -181,12 +181,12 @@ export default function TopBarContainer({
   }
 
   // ====== TopBar normal (no onboarding) ======
-  const handleOpenMobileMenu = e => setMobileMenuAnchor(e.currentTarget);
-  const handleCloseMobileMenu = () => setMobileMenuAnchor(null);
-  const handleOpenProfileMenu = e => setProfileAnchor(e.currentTarget);
-  const handleCloseProfileMenu = () => setProfileAnchor(null);
+  const handleOpenMobileMenu = useCallback(e => setMobileMenuAnchor(e.currentTarget), []);
+  const handleCloseMobileMenu = useCallback(() => setMobileMenuAnchor(null), []);
+  const handleOpenProfileMenu = useCallback(e => setProfileAnchor(e.currentTarget), []);
+  const handleCloseProfileMenu = useCallback(() => setProfileAnchor(null), []);
 
-  const handleNavigate = ref => {
+  const handleNavigate = useCallback(ref => {
     handleCloseMobileMenu();
     setTimeout(() => {
       if (ref === 'contactModal') {
@@ -209,37 +209,26 @@ export default function TopBarContainer({
       }
       onNavigate?.(ref);
     }, 0);
-  };
+  }, [handleCloseMobileMenu, navigate, onNavigate]);
 
-  const handleRoleToggleChange = (event, newRole) => {
+  const handleRoleToggleChange = useCallback((event, newRole) => {
     if (newRole && onRoleChange)
       onRoleChange(newRole, { skipNavigation: false });
-  };
+  }, [onRoleChange]);
 
-  const CustomShoppingCartIcon = ({ sx, ...props }) => (
+  const CustomShoppingCartIcon = useCallback(({ sx, ...props }) => (
     <ShoppingCartIcon
       {...props}
       sx={{ fontSize: '1.5rem', color: '#fff !important', ...sx }}
     />
-  );
-
-  let desktopNavLinks = null;
-  let desktopRightContent = null;
-  let mobileMenuItems = [];
-  let paddingX = {
-    xs: 'max(25px, env(safe-area-inset-left))',
-    sm: 'max(30px, env(safe-area-inset-left))',
-    md: '250px',
-    mac: '180px',
-    lg: '250px',
-  };
+  ), []);
 
   const getProfileRoute = flag =>
     flag ? '/buyer/profile' : '/supplier/profile';
-  const goToProfile = () => navigate(getProfileRoute(isBuyer));
+  const goToProfile = useCallback(() => navigate(getProfileRoute(isBuyer)), [navigate, isBuyer]);
 
   // Handler logo (home / marketplace according a role / or landing)
-  const handleLogoClick = () => {
+  const handleLogoClick = useCallback(() => {
     // Siempre hacer scroll to top al hacer clic en el logo
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -248,24 +237,25 @@ export default function TopBarContainer({
       else if (currentRole === 'buyer') navigate('/buyer/marketplace');
       else navigate('/?scrollTo=top');
     } else navigate('/?scrollTo=top');
-  };
+  }, [isLoggedIn, currentRole, navigate]);
 
-  const profileMenuButton = (
+  const profileMenuButton = useMemo(() => (
     <ProfileAvatarButton
       id="topbar-profile-button"
       logoUrl={logoUrl}
       onClick={handleOpenProfileMenu}
       expanded={Boolean(profileAnchor)}
     />
-  );
-  const handleOpenNotif = e => setNotifAnchor(e.currentTarget);
-  const handleCloseNotif = () => setNotifAnchor(null);
-  const handleViewAllNotif = () => {
+  ), [logoUrl, handleOpenProfileMenu, profileAnchor]);
+  
+  const handleOpenNotif = useCallback(e => setNotifAnchor(e.currentTarget), []);
+  const handleCloseNotif = useCallback(() => setNotifAnchor(null), []);
+  const handleViewAllNotif = useCallback(() => {
     setNotifModalOpen(true);
     handleCloseNotif();
-  };
-  const handleCloseNotifModal = () => setNotifModalOpen(false);
-  const handleNotifItemClick = n => {
+  }, [handleCloseNotif]);
+  const handleCloseNotifModal = useCallback(() => setNotifModalOpen(false), []);
+  const handleNotifItemClick = useCallback(n => {
     if (n.context_section === 'supplier_orders')
       navigate('/supplier/my-orders');
     else if (n.context_section === 'buyer_orders') navigate('/buyer/orders');
@@ -280,15 +270,33 @@ export default function TopBarContainer({
       notifCtx?.markAsRead?.([n.id]);
     } catch (_) {}
     handleCloseNotif();
-  };
+  }, [navigate, currentRole, notifCtx, handleCloseNotif]);
 
-  if (!isLoggedIn) {
+  // Memoize paddingX to prevent TopBarView re-renders
+  const paddingX = useMemo(() => {
+    if (!isLoggedIn) {
+      return {
+        xs: 'max(25px, env(safe-area-inset-left))',
+        sm: 'max(30px, env(safe-area-inset-left))',
+        md: '250px',
+        mac: '180px',
+        lg: '250px',
+      };
+    }
+    return { xs: 2, md: 4, mac: 4, lg: 4 };
+  }, [isLoggedIn]);
+
+  // Memoize desktop nav links to prevent re-creation
+  const desktopNavLinks = useMemo(() => {
+    if (isLoggedIn) return null;
+    
     const publicNavButtons = [
       { label: 'Servicios', ref: 'serviciosRef' },
       { label: 'Quiénes Somos', ref: 'quienesSomosRef' },
       { label: 'Contáctanos', ref: 'contactModal' },
     ];
-    desktopNavLinks = publicNavButtons.map(({ label, ref }) => (
+    
+    return publicNavButtons.map(({ label, ref }) => (
       <Button
         key={label}
         onClick={() => handleNavigate(ref)}
@@ -299,60 +307,33 @@ export default function TopBarContainer({
         {label}
       </Button>
     ));
-    desktopRightContent = (
-      <>
-        <Button
-          onClick={openLoginModalOpen}
-          variant="contained"
-          color="primary"
-          sx={{ ...navButtonBase, mr: 1 }}
-        >
-          Iniciar sesión
-        </Button>
-        <Button
-          onClick={openRegisterModalOpen}
-          variant="outlined"
-          sx={{ color: 'white', border: 'none', ...navButtonBase }}
-        >
-          Registrarse
-        </Button>
-      </>
-    );
-    mobileMenuItems = [
-      ...publicNavButtons.map(({ label, ref }) => (
-        <MenuItem
-          key={label}
-          onClick={() => {
-            handleNavigate(ref);
-            handleCloseMobileMenu();
-          }}
-        >
-          {label}
-        </MenuItem>
-      )),
-      <Divider key="d1" />,
-      <MenuItem
-        key="login"
-        onClick={() => {
-          openLoginModalOpen();
-          handleCloseMobileMenu();
-        }}
-      >
-        Iniciar sesión
-      </MenuItem>,
-      <MenuItem
-        key="register"
-        onClick={() => {
-          openRegisterModalOpen();
-          handleCloseMobileMenu();
-        }}
-      >
-        Registrarse
-      </MenuItem>,
-    ];
-  } else {
-    paddingX = { xs: 2, md: 4, mac: 4, lg: 4 };
-    desktopRightContent = (
+  }, [isLoggedIn, handleNavigate]);
+
+  // Memoize desktop right content to prevent re-creation
+  const desktopRightContent = useMemo(() => {
+    if (!isLoggedIn) {
+      return (
+        <>
+          <Button
+            onClick={openLoginModalOpen}
+            variant="contained"
+            color="primary"
+            sx={{ ...navButtonBase, mr: 1 }}
+          >
+            Iniciar sesión
+          </Button>
+          <Button
+            onClick={openRegisterModalOpen}
+            variant="outlined"
+            sx={{ color: 'white', border: 'none', ...navButtonBase }}
+          >
+            Registrarse
+          </Button>
+        </>
+      );
+    }
+    
+    return (
       <>
         <RoleSwitchControl
           role={currentRole}
@@ -417,7 +398,72 @@ export default function TopBarContainer({
         />
       </>
     );
-    mobileMenuItems = [
+  }, [
+    isLoggedIn,
+    openLoginModalOpen,
+    openRegisterModalOpen,
+    currentRole,
+    isRoleLoading,
+    handleRoleToggleChange,
+    notifCtx,
+    handleNotifItemClick,
+    handleViewAllNotif,
+    handleCloseNotifModal,
+    notifAnchor,
+    handleOpenNotif,
+    handleCloseNotif,
+    notifModalOpen,
+    navigate,
+    itemsInCart,
+    profileMenuButton,
+    feedbackModalOpen,
+    session,
+  ]);
+
+  // Memoize mobile menu items to prevent re-creation
+  const mobileMenuItems = useMemo(() => {
+    if (!isLoggedIn) {
+      const publicNavButtons = [
+        { label: 'Servicios', ref: 'serviciosRef' },
+        { label: 'Quiénes Somos', ref: 'quienesSomosRef' },
+        { label: 'Contáctanos', ref: 'contactModal' },
+      ];
+      
+      return [
+        ...publicNavButtons.map(({ label, ref }) => (
+          <MenuItem
+            key={label}
+            onClick={() => {
+              handleNavigate(ref);
+              handleCloseMobileMenu();
+            }}
+          >
+            {label}
+          </MenuItem>
+        )),
+        <Divider key="d1" />,
+        <MenuItem
+          key="login"
+          onClick={() => {
+            openLoginModalOpen();
+            handleCloseMobileMenu();
+          }}
+        >
+          Iniciar sesión
+        </MenuItem>,
+        <MenuItem
+          key="register"
+          onClick={() => {
+            openRegisterModalOpen();
+            handleCloseMobileMenu();
+          }}
+        >
+          Registrarse
+        </MenuItem>,
+      ];
+    }
+
+    return [
       <MenuItem
         key="roleToggleMobile"
         sx={{ display: 'flex', justifyContent: 'center', py: 1 }}
@@ -453,9 +499,20 @@ export default function TopBarContainer({
         Cerrar sesión
       </MenuItem>,
     ];
-  }
+  }, [
+    isLoggedIn,
+    handleNavigate,
+    handleCloseMobileMenu,
+    openLoginModalOpen,
+    openRegisterModalOpen,
+    currentRole,
+    isRoleLoading,
+    handleRoleToggleChange,
+    goToProfile,
+    handleLogout,
+  ]);
 
-  const handleMobileSearchButton = () => submitMobileSearch();
+  const handleMobileSearchButton = useCallback(() => submitMobileSearch(), [submitMobileSearch]);
 
   return (
     <TopBarView

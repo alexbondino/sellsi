@@ -1,6 +1,7 @@
 import React from 'react';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import { useScrollReveal } from './hooks/useScrollReveal';
+import TrustBar from './TrustBar';
 
 const Bullet = ({ children, color, icon }) => (
   <div className="group flex items-start gap-4 p-4 rounded-xl bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 hover:scale-[1.02] border border-transparent hover:border-gray-200/50">
@@ -33,7 +34,7 @@ const ServicesSection = ({ serviciosRef, onExploreClick, onBecomeSupplierClick }
   };
 
   return (
-    <section ref={serviciosRef} className="relative py-20 md:py-28 lg:py-36 bg-gradient-to-b from-slate-100 via-gray-100 to-slate-100 overflow-hidden border-b border-gray-300/50">
+    <section ref={serviciosRef} className="relative pt-8 pb-20 md:pt-12 md:pb-28 lg:pt-16 lg:pb-36 bg-gradient-to-b from-slate-100 via-gray-100 to-slate-100 overflow-hidden border-b border-gray-300/50">
       {/* Decorative background elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 -left-20 w-[500px] h-[500px] bg-gradient-to-br from-blue-500/15 via-blue-400/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s' }}></div>
@@ -46,6 +47,11 @@ const ServicesSection = ({ serviciosRef, onExploreClick, onBecomeSupplierClick }
       </div>
 
       <div className="relative max-w-7xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16">
+        {/* TrustBar moved to HeroSection - spacing kept to avoid overlap issues */}
+        <div className="mb-20" aria-hidden>
+          {/* placeholder for TrustBar overlap */}
+        </div>
+
         {/* Header */}
         <div 
           ref={headerRef}

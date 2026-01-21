@@ -1,5 +1,5 @@
 // 📁 shared/components/navigation/TopBar/TopBar.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
@@ -150,12 +150,12 @@ export default function TopBar({
     );
   }
 
-  const handleOpenMobileMenu = e => setMobileMenuAnchor(e.currentTarget);
-  const handleCloseMobileMenu = () => setMobileMenuAnchor(null);
-  const handleOpenProfileMenu = e => setProfileAnchor(e.currentTarget);
-  const handleCloseProfileMenu = () => setProfileAnchor(null);
+  const handleOpenMobileMenu = useCallback(e => setMobileMenuAnchor(e.currentTarget), []);
+  const handleCloseMobileMenu = useCallback(() => setMobileMenuAnchor(null), []);
+  const handleOpenProfileMenu = useCallback(e => setProfileAnchor(e.currentTarget), []);
+  const handleCloseProfileMenu = useCallback(() => setProfileAnchor(null), []);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     // Verificar si el usuario está realmente logueado desde el prop session
     if (!session) {
       handleCloseProfileMenu();
@@ -189,9 +189,9 @@ export default function TopBar({
     handleCloseProfileMenu();
     handleCloseMobileMenu();
     navigate('/');
-  };
+  }, [session, handleCloseProfileMenu, handleCloseMobileMenu, navigate]);
 
-  const handleNavigate = ref => {
+  const handleNavigate = useCallback(ref => {
     handleCloseMobileMenu();
     setTimeout(() => {
       if (ref === 'contactModal') {
@@ -218,17 +218,17 @@ export default function TopBar({
         onNavigate(ref);
       }
     }, 0);
-  };
+  }, [handleCloseMobileMenu, navigate, onNavigate]);
 
   // ✅ CAMBIO: Handler que usa RoleProvider para cambio completo de rol
-  const handleRoleToggleChange = (event, newRole) => {
+  const handleRoleToggleChange = useCallback((event, newRole) => {
     if (newRole !== null && onRoleChange) {
       // Usar la función del RoleProvider que SÍ navega cuando es cambio manual
       onRoleChange(newRole, { skipNavigation: false });
     }
-  };
+  }, [onRoleChange]);
 
-  const CustomShoppingCartIcon = ({ sx, ...props }) => (
+  const CustomShoppingCartIcon = useMemo(() => ({ sx, ...props }) => (
     <ShoppingCartIcon
       {...props}
       sx={{
@@ -237,7 +237,7 @@ export default function TopBar({
         ...sx,
       }}
     />
-  );
+  ), []);
 
   let desktopNavLinks = null;
   let desktopRightContent = null;
@@ -250,26 +250,27 @@ export default function TopBar({
     lg: '250px',
   }; // Default padding for logged out
   // Helpers centralizados
-  const getProfileRoute = flag =>
-    flag ? '/buyer/profile' : '/supplier/profile';
-  const goToProfile = () => navigate(getProfileRoute(isBuyer));
+  const getProfileRoute = useCallback(flag =>
+    flag ? '/buyer/profile' : '/supplier/profile', []);
+  const goToProfile = useCallback(() => navigate(getProfileRoute(isBuyer)), [navigate, getProfileRoute, isBuyer]);
 
   // Avatar state handled inside ProfileAvatarButton now; removed local avatarLoaded.
-  const profileMenuButton = (
+  const profileMenuButton = useMemo(() => (
     <ProfileAvatarButton logoUrl={logoUrl} onClick={handleOpenProfileMenu} />
-  );
+  ), [logoUrl, handleOpenProfileMenu]);
+  
   // Notifications
   const notifCtx = useNotificationsContext?.() || null;
   const [notifAnchor, setNotifAnchor] = useState(null);
   const [notifModalOpen, setNotifModalOpen] = useState(false);
-  const handleOpenNotif = e => setNotifAnchor(e.currentTarget);
-  const handleCloseNotif = () => setNotifAnchor(null);
-  const handleViewAllNotif = () => {
+  const handleOpenNotif = useCallback(e => setNotifAnchor(e.currentTarget), []);
+  const handleCloseNotif = useCallback(() => setNotifAnchor(null), []);
+  const handleViewAllNotif = useCallback(() => {
     setNotifModalOpen(true);
-    handleCloseNotif();
-  };
-  const handleCloseNotifModal = () => setNotifModalOpen(false);
-  const handleNotifItemClick = n => {
+  }, [handleCloseNotif]);
+  const handleCloseNotifModal = useCallback(() => setNotifModalOpen(false), []);
+  const handleNotifItemClick = useCallback((n) => {
+    setNotifModalOpen(false);
     // Navigate based on context_section
     if (n.context_section === 'supplier_orders')
       navigate('/supplier/my-orders');
@@ -285,19 +286,18 @@ export default function TopBar({
     try {
       notifCtx?.markAsRead?.([n.id]);
     } catch (_) {}
-    handleCloseNotif();
-  };
+  }, [currentRole, navigate, notifCtx]);
+
+  const publicNavButtons = useMemo(() => [
+    { label: 'Servicios', ref: 'serviciosRef' },
+    { label: 'Quiénes Somos', ref: 'quienesSomosRef' },
+    { label: 'Contáctanos', ref: 'contactModal' },
+  ], []);
 
   if (!isLoggedIn) {
     // Botones públicos, pero el de "Trabaja con Nosotros" ahora abre modal
     // Ocultar totalmente el botón "Trabaja con Nosotros" según requerimiento
-    const publicNavButtons = [
-      { label: 'Servicios', ref: 'serviciosRef' },
-      { label: 'Quiénes Somos', ref: 'quienesSomosRef' },
-      { label: 'Contáctanos', ref: 'contactModal' },
-    ];
-
-    desktopNavLinks = publicNavButtons.map(({ label, ref }) => (
+    desktopNavLinks = useMemo(() => publicNavButtons.map(({ label, ref }) => (
       <Button
         key={label}
         onClick={() => handleNavigate(ref)}
@@ -307,9 +307,11 @@ export default function TopBar({
       >
         {label}
       </Button>
-    ));
+    )), [publicNavButtons, handleNavigate]);
 
-    desktopRightContent = (
+    /* Removido array inline - ahora usa useMemo arriba */
+
+    desktopRightContent = useMemo(() => (
       <>
         <Button
           onClick={openLoginModalOpen}
@@ -350,9 +352,9 @@ export default function TopBar({
           Registrarse
         </Button>
       </>
-    );
+    ), [openLoginModalOpen, openRegisterModalOpen]);
 
-    mobileMenuItems = [
+    mobileMenuItems = useMemo(() => [
       ...publicNavButtons.map(({ label, ref }) => (
         <MenuItem
           key={label}
@@ -384,11 +386,11 @@ export default function TopBar({
       >
         Registrarse
       </MenuItem>,
-    ];
+    ], [publicNavButtons, handleNavigate, handleCloseMobileMenu, openLoginModalOpen, openRegisterModalOpen]);
   } else {
     // Si el usuario está logueado
     paddingX = { xs: 2, md: 4, mac: 4, lg: 4 }; // Updated padding for logged in
-    desktopRightContent = (
+    desktopRightContent = useMemo(() => (
       <>
         {/* Usamos el componente Switch - Solo mostrar cuando el rol esté determinado y NO estamos en onboarding */}
         {!isOnboarding && (
@@ -435,9 +437,12 @@ export default function TopBar({
         )}
         {profileMenuButton}
       </>
-    );
+    ), [isOnboarding, currentRole, isRoleLoading, handleRoleToggleChange, notifCtx, 
+        handleNotifItemClick, handleViewAllNotif, handleCloseNotifModal, notifAnchor, 
+        handleOpenNotif, handleCloseNotif, notifModalOpen, navigate, itemsInCart, 
+        CustomShoppingCartIcon, profileMenuButton]);
 
-    mobileMenuItems = [
+    mobileMenuItems = useMemo(() => [
       // Solo mostrar switch de rol si NO estamos en onboarding
       ...(!isOnboarding
         ? [
@@ -468,7 +473,7 @@ export default function TopBar({
       <MenuItem key="logout" onClick={handleLogout}>
         Cerrar sesión
       </MenuItem>,
-    ];
+    ], [isOnboarding, currentRole, isRoleLoading, handleRoleToggleChange, goToProfile, handleCloseMobileMenu, handleLogout]);
   }
 
   // ================== 🔍 MOBILE MARKETPLACE SEARCH (Buyer only) ==================
@@ -495,7 +500,25 @@ export default function TopBar({
     },
   });
   const mobileSearchInputRef = useRef(null);
-  const handleMobileSearchButton = () => submitMobileSearch();
+  const handleMobileSearchButton = useCallback(() => submitMobileSearch(), [submitMobileSearch]);
+
+  const mobileSearchAdornments = useMemo(() => ({
+    startAdornment: (
+      <InputAdornment position="start">
+        <SearchIcon fontSize="small" />
+      </InputAdornment>
+    ),
+    endAdornment: (
+      <InputAdornment position="end">
+        <IconButton
+          size="small"
+          onClick={handleMobileSearchButton}
+        >
+          <ArrowForwardIcon fontSize="small" />
+        </IconButton>
+      </InputAdornment>
+    ),
+  }), [handleMobileSearchButton]);
 
   return (
     <>
@@ -604,23 +627,7 @@ export default function TopBar({
                       fontSize: '0.75rem',
                     },
                   }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon fontSize="small" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={handleMobileSearchButton}
-                        >
-                          <ArrowForwardIcon fontSize="small" />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
+                  InputProps={mobileSearchAdornments}
                 />
               </Box>
             )}

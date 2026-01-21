@@ -2,7 +2,7 @@
 // Reemplaza lógica inline y eventos window ad-hoc.
 // Expone estado, handlers y dispara callback onReactive(term) con debounce.
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 export function useMarketplaceSearch({
   enabled,
@@ -42,19 +42,25 @@ export function useMarketplaceSearch({
     }
   }, [term, isOnBuyerMarketplace, onNavigateOutside, onReactive]);
 
-  const handleKeyDown = (e) => {
+  const handleChange = useCallback((e) => {
+    setTerm(e.target.value);
+  }, []);
+
+  const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') submit();
-  };
+  }, [submit]);
+
+  const inputProps = useMemo(() => ({
+    value: term,
+    onChange: handleChange,
+    onKeyDown: handleKeyDown,
+  }), [term, handleChange, handleKeyDown]);
 
   return {
     term,
     setTerm,
     isOnBuyerMarketplace,
-    inputProps: {
-      value: term,
-      onChange: e => setTerm(e.target.value),
-      onKeyDown: handleKeyDown,
-    },
+    inputProps,
     submit,
   };
 }
