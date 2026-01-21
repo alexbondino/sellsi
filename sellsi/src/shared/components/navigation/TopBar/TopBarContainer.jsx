@@ -104,81 +104,9 @@ export default function TopBarContainer({
     navigate('/');
   }, [navigate]);
 
-  // ====== TopBar simplificado para Onboarding ======
-  if (isOnboarding) {
-    return (
-      <Box
-        sx={{
-          backgroundColor: '#000000',
-          width: '100%',
-          left: 0,
-          right: 0,
-          px: 0,
-          py: { xs: 0, sm: 0, md: 1 },
-          display: 'flex',
-          justifyContent: 'center',
-          position: 'fixed',
-          top: 0,
-          zIndex: 1100,
-          height: { xs: 45, md: '64px' },
-          borderBottom: '1px solid white',
-        }}
-      >
-        <Box
-          sx={{
-            width: '100%',
-            maxWidth: '100%',
-            px: { xs: 2, md: 4 },
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          {/* Logo */}
-          <Box
-            sx={{
-              height: { xs: 38, sm: 38, md: 50 },
-              width: { xs: 90, sm: 90, md: 140 },
-              display: 'flex',
-              alignItems: 'center',
-              p: 0,
-              m: 0,
-              lineHeight: 0,
-              overflow: 'hidden',
-            }}
-          >
-            <Box
-              component="img"
-              src="/Logos/sellsiwhite_logo_transparent.webp"
-              alt="Sellsi Logo"
-              sx={{
-                height: { xs: 25, sm: 25, md: 38 },
-                width: 'auto',
-                objectFit: 'contain',
-              }}
-            />
-          </Box>
-          {/* Perfil con opción de cerrar sesión */}
-          <Box>
-            <ProfileAvatarButton
-              logoUrl={logoUrl}
-              onClick={e => setProfileAnchor(e.currentTarget)}
-              expanded={Boolean(profileAnchor)}
-            />
-            <Menu
-              anchorEl={profileAnchor}
-              open={Boolean(profileAnchor)}
-              onClose={() => setProfileAnchor(null)}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-              <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
-            </Menu>
-          </Box>
-        </Box>
-      </Box>
-    );
-  }
+  // Onboarding simplified view moved to the end to preserve hooks order and avoid changing the number of hooks between renders
+  // (see React error #310: Rendered more hooks than during the previous render)
+
 
   // ====== TopBar normal (no onboarding) ======
   const handleOpenMobileMenu = useCallback(e => setMobileMenuAnchor(e.currentTarget), []);
@@ -513,6 +441,82 @@ export default function TopBarContainer({
   ]);
 
   const handleMobileSearchButton = useCallback(() => submitMobileSearch(), [submitMobileSearch]);
+
+  // ====== TopBar simplificado para Onboarding ======
+  if (isOnboarding) {
+    return (
+      <Box
+        sx={{
+          backgroundColor: '#000000',
+          width: '100%',
+          left: 0,
+          right: 0,
+          px: 0,
+          py: { xs: 0, sm: 0, md: 1 },
+          display: 'flex',
+          justifyContent: 'center',
+          position: 'fixed',
+          top: 0,
+          zIndex: 1100,
+          height: { xs: 45, md: '64px' },
+          borderBottom: '1px solid white',
+        }}
+      >
+        <Box
+          sx={{
+            width: '100%',
+            maxWidth: '100%',
+            px: { xs: 2, md: 4 },
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          {/* Logo */}
+          <Box
+            sx={{
+              height: { xs: 38, sm: 38, md: 50 },
+              width: { xs: 90, sm: 90, md: 140 },
+              display: 'flex',
+              alignItems: 'center',
+              p: 0,
+              m: 0,
+              lineHeight: 0,
+              overflow: 'hidden',
+            }}
+          >
+            <Box
+              component="img"
+              src="/Logos/sellsiwhite_logo_transparent.webp"
+              alt="Sellsi Logo"
+              sx={{
+                height: { xs: 25, sm: 25, md: 38 },
+                width: 'auto',
+                objectFit: 'contain',
+              }}
+            />
+          </Box>
+          {/* Perfil con opción de cerrar sesión */}
+          <Box>
+            <ProfileAvatarButton
+              logoUrl={logoUrl}
+              onClick={e => setProfileAnchor(e.currentTarget)}
+              expanded={Boolean(profileAnchor)}
+            />
+            <Menu
+              anchorEl={profileAnchor}
+              open={Boolean(profileAnchor)}
+              onClose={() => setProfileAnchor(null)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
+            </Menu>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <TopBarView

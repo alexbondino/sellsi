@@ -11,6 +11,7 @@
  * - formData.term → financing_requests.term_days
  * - formData.businessName → financing_requests.legal_name
  * - formData.rut → financing_requests.legal_rut
+ * - formData.legalRepresentativeRut → financing_requests.buyer_legal_representative_rut
  * - formData.legalRepresentative → financing_requests.legal_representative_name
  * 
  * Características:
@@ -61,6 +62,7 @@ const SELLSI_BLUE = '#2E52B2';
 const INITIAL_FORM_DATA = {
   amount: '',
   legalRepresentative: '',
+  legalRepresentativeRut: '',
   term: '',
   businessName: '',
   rut: '',
@@ -114,6 +116,15 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
     }
   };
 
+  // RUT del representante legal (formateo + limpieza de errores)
+  const handleRepRutChange = (value) => {
+    const formatted = formatRut(value);
+    setFormData((prev) => ({ ...prev, legalRepresentativeRut: formatted }));
+    if (errors.legalRepresentativeRut) {
+      setErrors((prev) => ({ ...prev, legalRepresentativeRut: '' }));
+    }
+  }; 
+
   // Manejador de cambios en Región (limpia comuna al cambiar)
   const handleRegionChange = (event) => {
     const value = event.target.value;
@@ -151,11 +162,18 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
       newErrors.term = 'El plazo debe ser entre 1 y 60 días';
     }
 
-    // RUT
+    // RUT empresa
     if (!formData.rut?.trim()) {
       newErrors.rut = 'Campo requerido';
     } else if (!validateRut(formData.rut)) {
       newErrors.rut = 'Formato de RUT inválido';
+    }
+
+    // RUT representante legal
+    if (!formData.legalRepresentativeRut?.trim()) {
+      newErrors.legalRepresentativeRut = 'Campo requerido';
+    } else if (!validateRut(formData.legalRepresentativeRut)) {
+      newErrors.legalRepresentativeRut = 'Formato de RUT inválido';
     }
 
     // Razón social
@@ -196,6 +214,7 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
       setFormData({
         amount: '',
         legalRepresentative: '',
+        legalRepresentativeRut: '',
         term: '',
         businessName: '',
         rut: '',
@@ -216,6 +235,7 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
     setFormData({
       amount: '',
       legalRepresentative: '',
+      legalRepresentativeRut: '',
       term: '',
       businessName: '',
       rut: '',
@@ -298,7 +318,6 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
             justifyContent: 'center',
           }}
         >
-          <FlashOnIcon sx={{ fontSize: '1rem', color: '#fbbf24' }} />
           <Typography
             variant="subtitle2"
             sx={{
@@ -420,6 +439,19 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
               helperText={errors.businessName || 'Nombre legal de la empresa'}
               required
             />
+
+            {/* Row: RUT Representante (izquierda) + Representante (derecha) */}
+            <TextField
+              fullWidth
+              label="RUT Representante Legal"
+              value={formData.legalRepresentativeRut}
+              onChange={(e) => handleRepRutChange(e.target.value)}
+              error={!!errors.legalRepresentativeRut}
+              helperText={errors.legalRepresentativeRut || 'Ej: 12.345.678-9'}
+              placeholder="12.345.678-9"
+              required
+            />
+
             <TextField
               fullWidth
               label="Representante Legal"
@@ -429,6 +461,8 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
               helperText={errors.legalRepresentative || 'Nombre completo del representante'}
               required
             />
+
+            {/* Row: Dirección Legal (left) + Region & Comuna side-by-side (right) */}
             <TextField
               fullWidth
               label="Dirección Legal"
@@ -438,53 +472,56 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
               helperText={errors.legalAddress || 'Dirección de la empresa'}
               required
             />
-            <FormControl fullWidth size={isMobile ? 'small' : 'medium'} error={!!errors.legalRegion}>
-              <InputLabel>Región *</InputLabel>
-              <Select
-                value={formData.legalRegion || ''}
-                onChange={handleRegionChange}
-                label="Región *"
-                MenuProps={{
-                  disableScrollLock: true,
-                  disablePortal: false,
-                  sx: { zIndex: 2000 },
-                  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
-                  transformOrigin: { vertical: 'top', horizontal: 'left' },
-                  PaperProps: { sx: { maxHeight: { xl: 350, lg: 300, md: 250, xs: 250 } } },
-                }}
-              >
-                {regiones.map(region => (
-                  <MenuItem key={region.value} value={region.value}>
-                    {region.label}
-                  </MenuItem>
-                ))}
-              </Select>
-              {!!errors.legalRegion && <FormHelperText>{errors.legalRegion}</FormHelperText>}
-            </FormControl>
 
-            <FormControl fullWidth size={isMobile ? 'small' : 'medium'} disabled={!formData.legalRegion} error={!!errors.legalCommune}>
-              <InputLabel>Comuna *</InputLabel>
-              <Select
-                value={formData.legalCommune || ''}
-                onChange={(e) => handleChange('legalCommune', e.target.value)}
-                label="Comuna *"
-                MenuProps={{
-                  disableScrollLock: true,
-                  disablePortal: false,
-                  sx: { zIndex: 2000 },
-                  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
-                  transformOrigin: { vertical: 'top', horizontal: 'left' },
-                  PaperProps: { sx: { maxHeight: { xl: 350, lg: 300, md: 250, xs: 250 } } },
-                }}
-              >
-                {(formData.legalRegion ? getComunasByRegion(formData.legalRegion) : []).map(comuna => (
-                  <MenuItem key={comuna.value} value={comuna.value}>
-                    {comuna.label}
-                  </MenuItem>
-                ))}
-              </Select>
-              {!!errors.legalCommune && <FormHelperText>{errors.legalCommune}</FormHelperText>}
-            </FormControl> 
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControl sx={{ flex: '1 1 50%', minWidth: 0 }} size={isMobile ? 'small' : 'medium'} error={!!errors.legalRegion}>
+                <InputLabel>Región *</InputLabel>
+                <Select
+                  value={formData.legalRegion || ''}
+                  onChange={handleRegionChange}
+                  label="Región *"
+                  MenuProps={{
+                    disableScrollLock: true,
+                    disablePortal: false,
+                    sx: { zIndex: 2000 },
+                    anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+                    transformOrigin: { vertical: 'top', horizontal: 'left' },
+                    PaperProps: { sx: { maxHeight: { xl: 350, lg: 300, md: 250, xs: 250 } } },
+                  }}
+                >
+                  {regiones.map(region => (
+                    <MenuItem key={region.value} value={region.value}>
+                      {region.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {!!errors.legalRegion && <FormHelperText>{errors.legalRegion}</FormHelperText>}
+              </FormControl>
+
+              <FormControl sx={{ flex: '1 1 50%', minWidth: 0 }} size={isMobile ? 'small' : 'medium'} disabled={!formData.legalRegion} error={!!errors.legalCommune}>
+                <InputLabel>Comuna *</InputLabel>
+                <Select
+                  value={formData.legalCommune || ''}
+                  onChange={(e) => handleChange('legalCommune', e.target.value)}
+                  label="Comuna *"
+                  MenuProps={{
+                    disableScrollLock: true,
+                    disablePortal: false,
+                    sx: { zIndex: 2000 },
+                    anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+                    transformOrigin: { vertical: 'top', horizontal: 'left' },
+                    PaperProps: { sx: { maxHeight: { xl: 350, lg: 300, md: 250, xs: 250 } } },
+                  }}
+                >
+                  {(formData.legalRegion ? getComunasByRegion(formData.legalRegion) : []).map(comuna => (
+                    <MenuItem key={comuna.value} value={comuna.value}>
+                      {comuna.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {!!errors.legalCommune && <FormHelperText>{errors.legalCommune}</FormHelperText>}
+              </FormControl>
+            </Box> 
           </Box>
         </Box>
 

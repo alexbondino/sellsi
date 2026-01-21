@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Box } from '@mui/material'; // Importación de componentes y estilos de Material UI
-import { Banner } from '../../../shared/components/display/banners'; // Componente de banner reutilizable
+// Global Banner is provided by AppShell (do not render per-page to avoid duplicate banners)
 // Importación de la lógica de la página de inicio
 import useHomeLogic from '../hooks/useHomeLogic.jsx'; // Lógica de la página de inicio
 import HeroSection from '../components/HeroSection.jsx'; //Carrusel supererio (Somos Sellsi...)
@@ -119,8 +119,7 @@ const Home = ({ scrollTargets }) => {
       {/* Sección Nuestros Servicios - full width */}
       <ServicesSection serviciosRef={serviciosRef} services={services} />
 
-      {/* Banner Component */}
-      <Banner />
+
 
       <Box>
         {/* Sección ¿Quiénes somos? */}

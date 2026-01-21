@@ -67,13 +67,13 @@ const ServicesSection = ({ serviciosRef, onExploreClick, onBecomeSupplierClick }
           </div>
 
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-6">
-            Soluciones para cada{' '}
+            Un ecosistema, dos {' '}
             <span className="bg-gradient-to-r from-[#2E52B2] to-purple-600 bg-clip-text text-transparent">
-              necesidad
+              protagonistas
             </span>
           </h2>
           <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Conectamos compradores y proveedores en un ecosistema diseñado para potenciar el comercio B2B
+            El punto de encuentro digital donde empresas y proveedores verificados concretan negocios
           </p>
         </div>
 
