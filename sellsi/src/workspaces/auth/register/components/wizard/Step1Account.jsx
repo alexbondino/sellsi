@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Box,
   TextField,
@@ -55,6 +55,8 @@ const Step1Account = ({
   const [emailEnUso, setEmailEnUso] = useState(false);
   // Eliminamos checkingEmail y usamos 'loading' para abarcar ambos estados de espera.
   const [loading, setLoading] = useState(false);
+  // Synchronous guard to prevent double submit re-entry before state updates propagate
+  const isSubmittingRef = useRef(false);
 
   const correoValido = /^[^@]+@[^@]+\.[^@]+$/.test(correo);
   const contrasenasCoinciden =
@@ -73,9 +75,11 @@ const Step1Account = ({
 
   const handleSubmit = async e => {
     e.preventDefault();
-    // Bloquear si no es válido o ya está cargando
-    if (!canSubmit || loading) return;
+    // Bloquear si no es válido, ya está cargando o ya está en envío (sync guard)
+    if (!canSubmit || loading || isSubmittingRef.current) return;
 
+    console.trace('Register handleSubmit start', correo);
+    isSubmittingRef.current = true;
     setLoading(true); // Iniciar estado de carga
     setEmailEnUso(false); // Reiniciar el mensaje de error de correo en uso
 
@@ -183,6 +187,9 @@ const Step1Account = ({
         severity: 'error',
         duration: 6000,
       });
+    } finally {
+      // Reset submitting guard and loading in all cases
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };

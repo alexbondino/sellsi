@@ -30,21 +30,43 @@ export const BannerProvider = ({ children }) => {
    *  - showBanner({ message, severity?, duration? })
    *  - showBanner(messageString, severity?, duration?)  (LEGACY)
    */
+  // Global deduper so duplicates are blocked even across multiple BannerProvider instances
+  const globalDedupeMap =
+    (typeof window !== 'undefined' && (window.__globalBannerDeduper = window.__globalBannerDeduper || new Map())) || new Map();
+
   const showBanner = (cfg, legacySeverity, legacyDuration) => {
+    let message = '';
+    let severity = 'success';
+    let duration = 6000;
+
     if (typeof cfg === 'string') {
       // Firma legacy: (message, severity?, duration?)
-      const message = cfg;
-      const severity = legacySeverity || 'success';
-      const duration = typeof legacyDuration === 'number' ? legacyDuration : 6000;
-      setBannerState({ show: true, message, severity, duration });
+      message = cfg;
+      severity = legacySeverity || 'success';
+      duration = typeof legacyDuration === 'number' ? legacyDuration : 6000;
+    } else if (cfg && typeof cfg === 'object') {
+      const parsed = cfg || {};
+      message = parsed.message || '';
+      severity = parsed.severity || 'success';
+      duration = parsed.duration || 6000;
+    } else {
+      // Entrada inválida: ignorar
       return;
     }
-    if (cfg && typeof cfg === 'object') {
-      const { message = '', severity = 'success', duration = 6000 } = cfg;
-      setBannerState({ show: true, message, severity, duration });
+
+    // Deduplicate identical messages in a short window (4s) using global map
+    const key = `${message}::${severity}`;
+    const now = Date.now();
+    const last = globalDedupeMap.get(key);
+    if (last && now - last < 4000) {
+      console.debug('Banner deduped (ignored by global map):', { message, severity });
       return;
     }
-    // Entrada inválida: no cambia estado, opcionalmente podríamos loggear
+    globalDedupeMap.set(key, now);
+    setTimeout(() => globalDedupeMap.delete(key), 4000);
+
+    console.trace('Banner shown:', { message, severity, duration });
+    setBannerState({ show: true, message, severity, duration });
   };
 
   const hideBanner = () => {

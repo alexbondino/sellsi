@@ -34,26 +34,24 @@ export default function TrustBar({ className = '' }) {
   return (
     <div className={`w-full bg-white py-3 md:py-4 border border-gray-100 shadow-sm ${className}`}>
       <div className="max-w-6xl mx-auto px-4">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4 md:gap-12">
+        <div className="relative flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4 md:gap-12">
+          {/* Divider lines exactly at 1/3 and 2/3 of the container on desktop */}
+          <div className="hidden md:block absolute top-1/2 transform -translate-y-1/2 w-px bg-gray-200" style={{ left: '33.333%', height: '100%' }} />
+          <div className="hidden md:block absolute top-1/2 transform -translate-y-1/2 w-px bg-gray-200" style={{ left: '66.666%', height: '100%' }} />
           {items.map((item, idx) => (
             <div
               key={item.key}
-              className="flex items-center gap-3 group cursor-default w-full md:w-auto"
+              className="flex items-center gap-3 group cursor-default w-full md:w-1/3 md:justify-center"
             >
               <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-600 group-hover:from-blue-600 group-hover:to-blue-700 group-hover:text-white transition-all duration-300 group-hover:scale-110 shadow-sm group-hover:shadow-md">
                 {item.icon}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm md:text-base font-semibold text-gray-800 whitespace-nowrap">
+                <span className="text-sm md:text-base font-semibold text-gray-800">
                   {item.text}
                 </span>
-                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
               </div>
-              {idx < items.length - 1 && (
-                <div className="hidden md:block w-px h-8 bg-gray-200 ml-8" />
-              )}
+
             </div>
           ))}
         </div>
