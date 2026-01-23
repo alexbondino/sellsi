@@ -103,6 +103,10 @@ export {
   getFinancingDocuments,
   downloadDocument,
   getDocumentUrl,
+  getFinancingTransactions,
+  restoreFinancingAmount,
+  processRefund,
+  generateFinancingContract,
   getFinancingStats
 } from './adminFinancingService'
 

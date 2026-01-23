@@ -8,6 +8,8 @@ export default {
     extend: {
       colors: {
         primary: '#2E52B2',
+        'primary-dark': '#1E40AF',
+        'primary-darker': '#071633',
         secondary: '#F59E0B',
       },
       // Custom screens aligned with src/styles/theme.js

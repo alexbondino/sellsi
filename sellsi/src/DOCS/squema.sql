@@ -13,6 +13,16 @@ CREATE TABLE public.admin_audit_log (
   CONSTRAINT admin_audit_log_pkey PRIMARY KEY (id),
   CONSTRAINT admin_audit_log_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.control_panel_users(id)
 );
+CREATE TABLE public.admin_auth_attempts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  admin_id uuid NOT NULL,
+  attempted_at timestamp with time zone DEFAULT now(),
+  success boolean NOT NULL,
+  ip_address text,
+  action text DEFAULT '2fa_verify'::text,
+  CONSTRAINT admin_auth_attempts_pkey PRIMARY KEY (id),
+  CONSTRAINT admin_auth_attempts_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.control_panel_users(id)
+);
 CREATE TABLE public.admin_sessions (
   session_id uuid NOT NULL DEFAULT gen_random_uuid(),
   admin_id uuid NOT NULL,
@@ -64,6 +74,16 @@ CREATE TABLE public.billing_info (
   billing_region text,
   billing_commune text,
   CONSTRAINT billing_info_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
+CREATE TABLE public.buyer (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  name text NOT NULL,
+  email text UNIQUE,
+  has_overdue_financing boolean NOT NULL DEFAULT false,
+  balance numeric NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT buyer_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.cart_items (
   cart_id uuid NOT NULL,
@@ -173,6 +193,49 @@ CREATE TABLE public.ejemplo_prueba (
   id bigint NOT NULL DEFAULT nextval('ejemplo_prueba_id_seq'::regclass),
   nombre text,
   CONSTRAINT ejemplo_prueba_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.financing_documents (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  financing_request_id uuid NOT NULL,
+  file_path text NOT NULL,
+  uploaded_by uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  financing_id uuid,
+  document_type text,
+  document_name text,
+  storage_path text,
+  file_size integer,
+  mime_type text,
+  uploaded_by_admin_id uuid,
+  CONSTRAINT financing_documents_pkey PRIMARY KEY (id),
+  CONSTRAINT financing_documents_financing_request_id_fkey FOREIGN KEY (financing_request_id) REFERENCES public.financing_requests(id),
+  CONSTRAINT fk_financing_documents_financing FOREIGN KEY (financing_id) REFERENCES public.financing_requests(id)
+);
+CREATE TABLE public.financing_requests (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  buyer_id uuid NOT NULL,
+  supplier_id uuid NOT NULL,
+  amount numeric NOT NULL,
+  available_amount numeric NOT NULL,
+  status text NOT NULL DEFAULT 'pending'::text,
+  due_date date,
+  has_overdue boolean NOT NULL DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT financing_requests_pkey PRIMARY KEY (id),
+  CONSTRAINT financing_requests_buyer_id_fkey FOREIGN KEY (buyer_id) REFERENCES public.buyer(id),
+  CONSTRAINT financing_requests_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.supplier(id)
+);
+CREATE TABLE public.financing_transactions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  financing_request_id uuid NOT NULL,
+  type text NOT NULL,
+  amount numeric NOT NULL,
+  metadata jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  supplier_order_id uuid,
+  CONSTRAINT financing_transactions_pkey PRIMARY KEY (id),
+  CONSTRAINT financing_transactions_financing_request_id_fkey FOREIGN KEY (financing_request_id) REFERENCES public.financing_requests(id)
 );
 CREATE TABLE public.flow_webhook_logs (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -352,7 +415,7 @@ CREATE TABLE public.orders (
   currency character varying NOT NULL DEFAULT 'CLP'::character varying,
   status character varying NOT NULL DEFAULT 'pending'::character varying CHECK (status::text = ANY (ARRAY['pending'::character varying, 'accepted'::character varying, 'in_transit'::character varying, 'delivered'::character varying, 'completed'::character varying, 'cancelled'::character varying, 'rejected'::character varying]::text[])),
   payment_method character varying,
-  payment_status character varying NOT NULL DEFAULT 'pending'::character varying,
+  payment_status character varying NOT NULL DEFAULT 'pending'::character varying CHECK (payment_status::text = ANY (ARRAY['pending'::character varying, 'paid'::character varying, 'rejected'::character varying, 'expired'::character varying, 'refunded'::character varying]::text[])),
   shipping_address jsonb,
   billing_address jsonb,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -383,9 +446,23 @@ CREATE TABLE public.orders (
   flow_order bigint,
   flow_token character varying,
   flow_payment_url text,
-  flow_expires_at timestamp with time zone,
+  flow_expires_at timestamp with time zone DEFAULT (now() + '00:30:00'::interval),
+  metadata jsonb DEFAULT '{}'::jsonb,
+  payment_reviewed_at timestamp with time zone,
+  payment_reviewed_by uuid,
+  payment_rejection_reason text,
   CONSTRAINT orders_pkey PRIMARY KEY (id),
-  CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+  CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id),
+  CONSTRAINT orders_payment_reviewed_by_fkey FOREIGN KEY (payment_reviewed_by) REFERENCES public.control_panel_users(id)
+);
+CREATE TABLE public.payment_methods_config (
+  id integer NOT NULL DEFAULT 1 CHECK (id = 1),
+  khipu_enabled boolean NOT NULL DEFAULT false,
+  flow_enabled boolean NOT NULL DEFAULT true,
+  bank_transfer_enabled boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT payment_methods_config_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.payment_releases (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -504,6 +581,7 @@ CREATE TABLE public.products (
   tiny_thumbnail_url text,
   free_shipping_enabled boolean DEFAULT false,
   free_shipping_min_quantity integer,
+  is_age_restricted boolean NOT NULL DEFAULT false,
   CONSTRAINT products_pkey PRIMARY KEY (productid),
   CONSTRAINT products_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id)
 );
@@ -561,6 +639,15 @@ CREATE TABLE public.storage_cleanup_logs (
   trigger_type text DEFAULT 'scheduled'::text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT storage_cleanup_logs_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.supplier (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  name text NOT NULL,
+  legal_rut text,
+  balance numeric NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT supplier_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.supplier_billing_config (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -677,6 +764,18 @@ CREATE TABLE public.supplier_order_items (
   CONSTRAINT supplier_order_items_supplier_order_id_fkey FOREIGN KEY (supplier_order_id) REFERENCES public.supplier_orders(id),
   CONSTRAINT supplier_order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
+CREATE TABLE public.supplier_order_notifications (
+  id bigint NOT NULL DEFAULT nextval('supplier_order_notifications_id_seq'::regclass),
+  order_id bigint NOT NULL,
+  supplier_id bigint NOT NULL,
+  supplier_email text NOT NULL,
+  total numeric,
+  created_at timestamp with time zone DEFAULT now(),
+  sent_at timestamp with time zone,
+  status text DEFAULT 'pending'::text,
+  error_message text,
+  CONSTRAINT supplier_order_notifications_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.supplier_orders (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   parent_order_id uuid NOT NULL,
@@ -742,6 +841,7 @@ CREATE TABLE public.users (
   verified_by uuid,
   last_ip text,
   document_types ARRAY DEFAULT '{}'::text[] CHECK (document_types <@ ARRAY['ninguno'::text, 'boleta'::text, 'factura'::text]),
+  minimum_purchase_amount numeric NOT NULL DEFAULT 1,
   CONSTRAINT users_pkey PRIMARY KEY (user_id),
   CONSTRAINT users_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );

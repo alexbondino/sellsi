@@ -248,7 +248,7 @@ const DownloadablesModal = ({ open, onClose, financing, onDownloadFile }) => {
             Solicitud de Financiamiento
           </Typography>
           <Typography variant="h6" fontWeight={600}>
-            {financing?.supplier_name || financing?.requested_by || 'N/A'}
+            {financing?.buyer_user_nm || financing?.buyer?.user_nm || financing?.requested_by || 'N/A'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {documents.length} {documents.length === 1 ? 'documento disponible' : 'documentos disponibles'}
