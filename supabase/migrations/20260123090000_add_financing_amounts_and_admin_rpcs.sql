@@ -84,6 +84,8 @@ UPDATE public.financing_transactions SET type = 'reposicion' WHERE type = 'refun
 
 -- 5) Crear índices (no concurrentes aquí; en tablas grandes preferir CONCURRENTLY fuera de transacción)
 CREATE INDEX IF NOT EXISTS idx_ftx_financing ON public.financing_transactions (financing_id, type, created_at);
+-- Asegura la columna expires_at existe antes de crear índices que la usan
+ALTER TABLE public.financing_requests ADD COLUMN IF NOT EXISTS expires_at timestamptz;
 -- Índice de checkout según DISEÑO_BACKEND (usa expires_at)
 CREATE INDEX IF NOT EXISTS idx_financing_checkout_lookup ON public.financing_requests (buyer_id, supplier_id, expires_at) WHERE status = 'approved_by_sellsi';
 -- Índice para chequeo de mora según DISEÑO (status expired y amount_used > amount_paid)
@@ -98,13 +100,14 @@ CREATE OR REPLACE FUNCTION public.admin_restore_financing_amount(
 ) RETURNS json AS $$
 DECLARE
   v_new_amount_used numeric;
+  v_invoking_admin uuid;
 BEGIN
   IF p_amount <= 0 THEN
     RETURN json_build_object('success', false, 'error', 'El monto debe ser mayor a 0');
   END IF;
 
   -- Determinar admin que ejecuta la función
-  DECLARE v_invoking_admin uuid := auth.uid()::uuid; BEGIN
+  v_invoking_admin := auth.uid()::uuid;
   IF v_invoking_admin IS NULL THEN
     RETURN json_build_object('success', false, 'error', 'No se detectó admin (auth.uid() es NULL)');
   END IF;
@@ -155,13 +158,14 @@ CREATE OR REPLACE FUNCTION public.admin_process_refund(
 ) RETURNS json AS $$
 DECLARE
   v_updated_rows int;
+  v_invoking_admin uuid;
 BEGIN
   IF p_amount <= 0 THEN
     RETURN json_build_object('success', false, 'error', 'El monto debe ser mayor a 0');
   END IF;
 
   -- Determinar admin que ejecuta la función
-  DECLARE v_invoking_admin uuid := auth.uid()::uuid; BEGIN
+  v_invoking_admin := auth.uid()::uuid;
   IF v_invoking_admin IS NULL THEN
     RETURN json_build_object('success', false, 'error', 'No se detectó admin (auth.uid() es NULL)');
   END IF;
