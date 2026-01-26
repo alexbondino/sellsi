@@ -1,6 +1,6 @@
 -- 20260123090000_add_financing_amounts_and_admin_rpcs.sql aa
 -- Añade columnas amount_used/amount_paid/amount_refunded, asegura finance_id en transactions,
--- y crea RPCs administradores: admin_restore_financing_amount, admin_process_refund.
+-- y crea RPCs administradores: admin_restore_financing_amount, admin_process_refund.aa
 -- Idempotente y segura para ejecutar en entornos de staging; revisar notas para producción.
 
 BEGIN;
