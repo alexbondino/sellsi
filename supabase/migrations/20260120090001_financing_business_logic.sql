@@ -1,6 +1,6 @@
--- 002_business_logic.sql
--- Plan: funciones y triggers para lógica de negocio (reposición, flags de mora)
--- Fecha: 2026-01-20
+-- 20260120090001_financing_business_logic.sql
+-- Módulo: Financiamiento - Business Logic
+-- Fecha/Version: 2026-01-20 09:00:01
 -- Autor: GitHub Copilot (generado)
 
 BEGIN;
@@ -55,17 +55,22 @@ RETURNS trigger AS $$
 DECLARE
   buyer_has_overdue boolean;
 BEGIN
-  IF TG_OP IN ('INSERT', 'UPDATE') THEN
-    -- recalcular si el buyer tiene financiamientos expirados
-    SELECT EXISTS (
-      SELECT 1 FROM public.financing_requests fr
-      WHERE fr.buyer_id = NEW.buyer_id AND fr.status = 'expired'
-    ) INTO buyer_has_overdue;
-
-    UPDATE public.buyer
-    SET has_overdue_financing = buyer_has_overdue
-    WHERE id = NEW.buyer_id;
+  -- Evitar ejecutar innecesariamente en UPDATE si el status no cambió
+  IF TG_OP = 'UPDATE' AND (NEW.status IS NOT DISTINCT FROM OLD.status) THEN
+    RETURN NEW;
   END IF;
+
+  -- recalcular si el buyer tiene financiamientos expirados
+  SELECT EXISTS (
+    SELECT 1 FROM public.financing_requests fr
+    WHERE fr.buyer_id = NEW.buyer_id AND fr.status = 'expired'
+  ) INTO buyer_has_overdue;
+
+  UPDATE public.buyer
+  SET has_overdue_financing = buyer_has_overdue,
+      updated_at = now()
+  WHERE id = NEW.buyer_id;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -74,7 +79,6 @@ DROP TRIGGER IF EXISTS trg_update_buyer_overdue_flag ON public.financing_request
 CREATE TRIGGER trg_update_buyer_overdue_flag
 AFTER INSERT OR UPDATE ON public.financing_requests
 FOR EACH ROW
-WHEN (NEW.status IS DISTINCT FROM OLD.status)
 EXECUTE FUNCTION public.update_buyer_overdue_flag();
 
 COMMIT;

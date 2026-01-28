@@ -251,5 +251,9 @@ export const AUDIT_ACTIONS = {
   // Solicitudes
   CONFIRM_REQUEST: 'confirm_request',
   REJECT_REQUEST: 'reject_request',
-  REFUND_REQUEST: 'refund_request'
+  REFUND_REQUEST: 'refund_request',
+
+  // Financiamiento (admin manual actions)
+  FINANCING_RESTORE: 'financing_restore',
+  FINANCING_REFUND: 'financing_refund'
 }

@@ -1,6 +1,6 @@
--- 003_security_automation.sql
--- Plan: Policies RLS y funciones auxiliares para crons
--- Fecha: 2026-01-20
+-- 20260120090002_financing_security_automation.sql
+-- Módulo: Financiamiento - Security & Automation
+-- Fecha/Version: 2026-01-20 09:00:02
 -- Autor: GitHub Copilot (generado)
 
 -- NOTA: Supabase usa funciones como auth.uid() y auth.role() en policies.
@@ -16,36 +16,41 @@ ALTER TABLE IF EXISTS public.supplier ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.buyer ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Buyers pueden acceder solo a sus financiamientos
-CREATE POLICY IF NOT EXISTS "buyer_access_financing" ON public.financing_requests
+DROP POLICY IF EXISTS "buyer_access_financing" ON public.financing_requests;
+CREATE POLICY "buyer_access_financing" ON public.financing_requests
   FOR ALL
-  USING (buyer_id::text = auth.uid() OR auth.role() = 'service_role' OR auth.role() = 'admin');
+  USING (buyer_id = auth.uid()::uuid OR auth.role() = 'service_role' OR auth.role() = 'admin');
 
 -- Policy: Suppliers pueden ver financiamientos donde son supplier
-CREATE POLICY IF NOT EXISTS "supplier_access_financing" ON public.financing_requests
-  FOR SELECT USING (supplier_id::text = auth.uid() OR auth.role() = 'service_role' OR auth.role() = 'admin');
+DROP POLICY IF EXISTS "supplier_access_financing" ON public.financing_requests;
+CREATE POLICY "supplier_access_financing" ON public.financing_requests
+  FOR SELECT USING (supplier_id = auth.uid()::uuid OR auth.role() = 'service_role' OR auth.role() = 'admin');
 
 -- Policy: Admin completo
-CREATE POLICY IF NOT EXISTS "admin_all" ON public.financing_requests
+DROP POLICY IF EXISTS "admin_all" ON public.financing_requests;
+CREATE POLICY "admin_all" ON public.financing_requests
   FOR ALL
   TO public
   USING (auth.role() = 'admin');
 
 -- Policies para financings_transactions y documents (lectura sólo si pertenecen al financing)
-CREATE POLICY IF NOT EXISTS "fin_tx_access" ON public.financing_transactions
+DROP POLICY IF EXISTS "fin_tx_access" ON public.financing_transactions;
+CREATE POLICY "fin_tx_access" ON public.financing_transactions
   FOR SELECT
   USING (
     EXISTS (
       SELECT 1 FROM public.financing_requests fr
-      WHERE fr.id = public.financing_transactions.financing_request_id AND (fr.buyer_id::text = auth.uid() OR fr.supplier_id::text = auth.uid() OR auth.role() = 'admin')
+      WHERE fr.id = public.financing_transactions.financing_request_id AND (fr.buyer_id = auth.uid()::uuid OR fr.supplier_id = auth.uid()::uuid OR auth.role() = 'admin')
     )
   );
 
-CREATE POLICY IF NOT EXISTS "fin_doc_access" ON public.financing_documents
+DROP POLICY IF EXISTS "fin_doc_access" ON public.financing_documents;
+CREATE POLICY "fin_doc_access" ON public.financing_documents
   FOR SELECT
   USING (
     EXISTS (
       SELECT 1 FROM public.financing_requests fr
-      WHERE fr.id = public.financing_documents.financing_request_id AND (fr.buyer_id::text = auth.uid() OR fr.supplier_id::text = auth.uid() OR auth.role() = 'admin')
+      WHERE fr.id = public.financing_documents.financing_request_id AND (fr.buyer_id = auth.uid()::uuid OR fr.supplier_id = auth.uid()::uuid OR auth.role() = 'admin')
     )
   );
 

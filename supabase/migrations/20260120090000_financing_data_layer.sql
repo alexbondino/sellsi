@@ -1,6 +1,6 @@
--- 001_data_layer.sql
--- Plan: Crear las tablas y los índices necesarios para el módulo de Financiamiento
--- Fecha: 2026-01-20
+-- 20260120090000_financing_data_layer.sql
+-- Módulo: Financiamiento - Data Layer
+-- Fecha/Version: 2026-01-20 09:00:00
 -- Autor: GitHub Copilot (generado)
 
 -- ===== Recomendación =====

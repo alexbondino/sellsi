@@ -126,14 +126,14 @@ const ServicesSection = ({ serviciosRef, onExploreClick, onBecomeSupplierClick }
               </div>
 
               <h2 className="text-4xl lg:text-5xl font-black text-gray-900 mb-8 leading-tight">
-                Centraliza y{' '}
+                Toma el{' '}
                 <span className="relative inline-block">
-                  <span className="bg-gradient-to-r from-[#2E52B2] to-blue-600 bg-clip-text text-transparent">agiliza</span>
+                  <span className="bg-gradient-to-r from-[#2E52B2] to-blue-600 bg-clip-text text-transparent">control</span>
                   <svg className="absolute -bottom-2 left-0 w-full" height="8" viewBox="0 0 200 8" preserveAspectRatio="none">
                     <path d="M0,5 Q50,0 100,5 T200,5" stroke="#2E52B2" strokeWidth="2" fill="none" opacity="0.5"/>
                   </svg>
                 </span>
-                {' '}tus compras B2B
+                {' '} de tus compras B2B
               </h2>
 
               <div className="space-y-4 mb-10">
