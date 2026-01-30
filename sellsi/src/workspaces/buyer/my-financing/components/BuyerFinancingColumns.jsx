@@ -275,15 +275,26 @@ export const buyerApprovedColumns = [
     key: 'payment_status',
     label: 'Estado',
     align: 'center',
-    render: (financing) => {
+    render: (financing, handlers) => {
       const chipInfo = getApprovedFinancingChip(financing);
       return (
-        <Chip
-          label={chipInfo.label}
-          color={chipInfo.color}
-          size="small"
-          sx={{ fontWeight: 600 }}
-        />
+        <div>
+          <Chip
+            label={chipInfo.label}
+            color={chipInfo.color}
+            size="small"
+            sx={{ fontWeight: 600 }}
+          />
+          {financing.paused && (
+            <Typography
+              variant="body2"
+              sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline', mt: 0.5 }}
+              onClick={() => handlers?.onViewReason?.(financing)}
+            >
+              Ver motivo
+            </Typography>
+          )}
+        </div>
       );
     },
   },
@@ -291,16 +302,20 @@ export const buyerApprovedColumns = [
     key: 'actions',
     label: 'Pagar en línea',
     align: 'center',
-    render: (financing, handlers) => (
-      <ActionIconButton
-        tooltip="Pagar en línea"
-        variant="primary"
-        onClick={() => handlers?.onPayOnline?.(financing)}
-        ariaLabel="Pagar en línea"
-        disabled={financing.payment_status === 'paid'}
-      >
-        <PaymentIcon fontSize="small" />
-      </ActionIconButton>
-    ),
+    render: (financing, handlers) => {
+      const isDisabled = financing.payment_status === 'paid' || financing.paused;
+      const tooltip = financing.paused ? 'Financiamiento pausado' : 'Pagar en línea';
+      return (
+        <ActionIconButton
+          tooltip={tooltip}
+          variant="primary"
+          onClick={() => handlers?.onPayOnline?.(financing)}
+          ariaLabel="Pagar en línea"
+          disabled={isDisabled}
+        >
+          <PaymentIcon fontSize="small" />
+        </ActionIconButton>
+      );
+    },
   },
 ];

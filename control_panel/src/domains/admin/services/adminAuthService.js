@@ -31,6 +31,14 @@ export const loginAdmin = async (usuario, password) => {
       throw new Error('Usuario y contraseña son requeridos')
     }
 
+    // Asegurar que la petición se realice como anon (evitar que una sesión previa afecte RLS)
+    try {
+      await supabase.auth.signOut()
+    } catch (signOutErr) {
+      // No bloquear el login por un fallo en signOut; solo intentar
+      console.warn('Warning: signOut antes de login falló:', signOutErr)
+    }
+
     const { data, error } = await supabase
       .from('control_panel_users')
       .select('*')

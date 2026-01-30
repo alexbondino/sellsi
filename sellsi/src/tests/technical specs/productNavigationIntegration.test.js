@@ -107,6 +107,7 @@ jest.mock('../../workspaces/product/product-page-view/ProductPageView.jsx', () =
   };
 });
 
+const React = require('react');
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material';
@@ -145,50 +146,26 @@ const createTestQueryClient = (overrides = {}) =>
 
 const TestApp = ({ initialEntries = ['/marketplace'] } = {}) => {
   const queryClient = createTestQueryClient();
-  return (
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={initialEntries}>
-        <ThemeProvider theme={theme}>
-          <Routes>
-            <Route
-              path="/marketplace"
-              element={
-                <div>
-                  <h1>Marketplace</h1>
-                  <ProductCard
-                    product={{
-                      id: '12345678-1234-1234-1234-123456789012',
-                      nombre: 'Laptop Gaming Test',
-                      imagen: '/test-image.jpg',
-                      precio: 150000,
-                      proveedor: 'Test Supplier',
-                    }}
-                    type="buyer"
-                  />
-                </div>
-              }
-            />
-            <Route
-              path="/technicalspecs/:productSlug"
-              element={<TechnicalSpecs isLoggedIn={true} />}
-            />
-            {/* Routes compatible with ProductCard.generateProductUrl (used in app) */}
-            <Route
-              path="/marketplace/product/:productSlug"
-              element={<TechnicalSpecs isLoggedIn={true} />}
-            />
-            <Route
-              path="/marketplace/product/:productId/:productName"
-              element={<TechnicalSpecs isLoggedIn={true} />}
-            />
-            <Route
-              path="/marketplace/product/:productId"
-              element={<TechnicalSpecs isLoggedIn={true} />}
-            />
-          </Routes>
-        </ThemeProvider>
-      </MemoryRouter>
-    </QueryClientProvider>
+  return React.createElement(
+    QueryClientProvider,
+    { client: queryClient },
+    React.createElement(
+      MemoryRouter,
+      { initialEntries },
+      React.createElement(
+        ThemeProvider,
+        { theme },
+        React.createElement(
+          Routes,
+          null,
+          React.createElement(Route, { path: '/marketplace', element: React.createElement('div', null, React.createElement('h1', null, 'Marketplace'), React.createElement(ProductCard, { product: { id: '12345678-1234-1234-1234-123456789012', nombre: 'Laptop Gaming Test', imagen: '/test-image.jpg', precio: 150000, proveedor: 'Test Supplier' }, type: 'buyer' }) ) }),
+          React.createElement(Route, { path: '/technicalspecs/:productSlug', element: React.createElement(TechnicalSpecs, { isLoggedIn: true }) }),
+          React.createElement(Route, { path: '/marketplace/product/:productSlug', element: React.createElement(TechnicalSpecs, { isLoggedIn: true }) }),
+          React.createElement(Route, { path: '/marketplace/product/:productId/:productName', element: React.createElement(TechnicalSpecs, { isLoggedIn: true }) }),
+          React.createElement(Route, { path: '/marketplace/product/:productId', element: React.createElement(TechnicalSpecs, { isLoggedIn: true }) })
+        )
+      )
+    )
   );
 };
 
@@ -206,7 +183,7 @@ describe('Product Navigation Integration Test', () => {
     // Inicializar en marketplace
     window.history.pushState({}, '', '/marketplace');
 
-    render(<TestApp />);
+    render(React.createElement(TestApp));
 
     // Verificar que estamos en marketplace
     expect(screen.getByText('Marketplace')).toBeInTheDocument();

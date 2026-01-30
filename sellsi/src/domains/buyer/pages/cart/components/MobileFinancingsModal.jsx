@@ -13,7 +13,7 @@ import {
   Paper,
   Slide,
 } from '@mui/material';
-import { Close as CloseIcon, Info as InfoIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Info as InfoIcon, RequestQuote as RequestQuoteIcon } from '@mui/icons-material';
 import { FixedSizeList } from 'react-window';
 import { 
   getFinancingDaysStatus,
@@ -199,85 +199,49 @@ const MobileFinancingItem = ({ financing, style }) => {
  * Modal fullscreen de financiamientos disponibles para mobile
  */
 const MobileFinancingsModal = ({ open, onClose, cartItems = [] }) => {
-  // Mock data - igual que desktop pero todos los financiamientos
-  const mockFinancings = useMemo(() => {
-    const supplierIdsInCart = new Set(
-      cartItems.map(item => item.supplier_id || item.supplierId).filter(Boolean)
-    );
-    
-    if (supplierIdsInCart.size === 0) return [];
-    
-    const firstSupplierId = Array.from(supplierIdsInCart)[0];
-    const firstSupplierName = cartItems.find(item => 
-      (item.supplier_id || item.supplierId) === firstSupplierId
-    )?.proveedor || 'Proveedor Principal';
-    
-    const allMockFinancings = [
-      {
-        id: 'mock-1',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 800000,
-        amount_used: 200000,
-        amount_paid: 50000,
-        term_days: 45,
-        activated_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'approved_by_sellsi',
-      },
-      {
-        id: 'mock-2',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 500000,
-        amount_used: 150000,
-        amount_paid: 50000,
-        term_days: 30,
-        activated_at: new Date(Date.now() - 23 * 24 * 60 * 60 * 1000).toISOString(),
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'approved_by_sellsi',
-      },
-      {
-        id: 'mock-3',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 300000,
-        amount_used: 280000,
-        amount_paid: 100000,
-        term_days: 15,
-        activated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        expires_at: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'approved_by_sellsi',
-      },
-      {
-        id: 'mock-4',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 200000,
-        amount_used: 80000,
-        amount_paid: 30000,
-        term_days: 7,
-        activated_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-        expires_at: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'approved_by_sellsi',
-      },
-      {
-        id: 'mock-5',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 1500000,
-        amount_used: 600000,
-        amount_paid: 200000,
-        term_days: 60,
-        activated_at: new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString(),
-        expires_at: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'approved_by_sellsi',
-      },
-    ];
-    
-    return allMockFinancings.filter(f => 
-      supplierIdsInCart.has(f.supplier_id)
-    );
+  // Financiamientos cargados desde el servicio (supabase)
+  const [financings, setFinancings] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const svc = await import('../../../../../workspaces/buyer/my-financing/services/financingService');
+        const getAvailable = svc.getAvailableFinancingsForSupplier || (svc.default && svc.default.getAvailableFinancingsForSupplier);
+
+        const supplierIdsInCart = Array.from(new Set(
+          cartItems.map(item => item.supplier_id || item.supplierId).filter(Boolean)
+        ));
+
+        if (supplierIdsInCart.length === 0) {
+          if (mounted) setFinancings([]);
+          return;
+        }
+
+        const results = [];
+        for (const sid of supplierIdsInCart) {
+          try {
+            if (!getAvailable) throw new Error('financingService.getAvailableFinancingsForSupplier not available');
+            const list = await getAvailable(sid);
+            if (Array.isArray(list)) results.push(...list.filter(f => !f.paused));
+          } catch (e) {
+            console.error('[MobileFinancingsModal] failed to load financings for supplier', sid, e);
+          }
+        }
+
+        if (mounted) setFinancings(results);
+      } catch (err) {
+        console.error('[MobileFinancingsModal] failed to import financingService', err);
+        if (mounted) setFinancings([]);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    load();
+    return () => { mounted = false; };
   }, [cartItems]);
   
   // Configuración de lista virtualizada para mobile
@@ -286,7 +250,7 @@ const MobileFinancingsModal = ({ open, onClose, cartItems = [] }) => {
   
   // Row renderer
   const Row = ({ index, style }) => {
-    const financing = mockFinancings[index];
+    const financing = financings[index];
     return <MobileFinancingItem financing={financing} style={style} />;
   };
   
@@ -360,7 +324,11 @@ const MobileFinancingsModal = ({ open, onClose, cartItems = [] }) => {
         </Box>
         
         {/* Lista virtualizada */}
-        {mockFinancings.length === 0 ? (
+        {isLoading ? (
+          <Box sx={{ mt: 2, px: 2 }}>
+            <LinearProgress />
+          </Box>
+        ) : financings.length === 0 ? (
           <Box
             sx={{
               display: 'flex',
@@ -369,19 +337,18 @@ const MobileFinancingsModal = ({ open, onClose, cartItems = [] }) => {
               justifyContent: 'center',
               height: '60vh',
               px: 4,
+              textAlign: 'center'
             }}
           >
-            <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-              No hay financiamientos disponibles
-            </Typography>
-            <Typography variant="body2" color="text.secondary" align="center">
-              No tienes financiamientos activos de los proveedores en tu carrito.
+            <RequestQuoteIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
+            <Typography variant="h6" color="text.secondary" align="center" sx={{ mb: 0.5 }}>
+              No tienes financiamientos activos para los proveedores en tu carrito.
             </Typography>
           </Box>
         ) : (
           <FixedSizeList
             height={LIST_HEIGHT}
-            itemCount={mockFinancings.length}
+            itemCount={financings.length}
             itemSize={ITEM_HEIGHT}
             width="100%"
             overscanCount={2}

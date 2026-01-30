@@ -51,6 +51,8 @@ const CategoryNavigation = React.memo(({
   }, // Valores por defecto para Marketplace normal
   isProviderView = false, // ✅ NUEVO: Prop para ocultar elementos en vista de proveedores
   resetFiltros, // ✅ NUEVO: Para resetear todos los filtros
+  // NUEVA PROP: Si true, renderiza solo el botón/selector de Categorías+Despacho (útil para colocarlo en la fila superior)
+  onlySelector = false,
 }) => {
   // Estado local para el menú de categorías
   const [anchorElCategorias, setAnchorElCategorias] = useState(null);
@@ -142,15 +144,17 @@ const CategoryNavigation = React.memo(({
       {/* ✅ Ocultar todo el contenido en vista de proveedores */}
       {!isProviderView && (
         <>
-          {/* Botón de categorías */}
+          {/* Si onlySelector=true renderizamos únicamente los botones de Categorías y Despacho (útil para la fila 1) */}
           <Button
             endIcon={<ArrowDropDownIcon />}
             onClick={handleOpenCategorias}
             sx={styles.categoriesButton}
+            aria-controls={anchorElCategorias ? 'categorias-menu' : undefined}
+            aria-haspopup="true"
           >
             Categorías
           </Button>
-          {/* Botón 'Despacho' (misma UI que 'Categorías') - visible en todas las pantallas */}
+
           <Box sx={{ display: 'inline-flex', ml: 1 }}>
             <Button
               endIcon={<ArrowDropDownIcon />}
@@ -166,50 +170,53 @@ const CategoryNavigation = React.memo(({
             >
               Despacho
             </Button>
-
-            <Menu
-              id="despacho-menu"
-              anchorEl={anchorElDespacho}
-              open={Boolean(anchorElDespacho)}
-              onClose={handleCloseDespacho}
-              disableScrollLock={true}
-              PaperProps={{ sx: styles.categoriesMenu }}
-            >
-              <MenuItem
-                key="todas"
-                onClick={() => {
-                  if (onOpenShippingFilter) onOpenShippingFilter(null);
-                  handleCloseDespacho();
-                }}
-                sx={styles.menuItem(!Array.isArray(selectedShippingRegions) || selectedShippingRegions.length === 0)}
-              >
-                Todas
-                {(!Array.isArray(selectedShippingRegions) || selectedShippingRegions.length === 0) && (
-                  <Box sx={styles.selectedIndicator} />
-                )}
-              </MenuItem>
-
-              {REGION_OPTIONS.map(r => {
-                const isSelected = Array.isArray(selectedShippingRegions) && selectedShippingRegions.includes(r.value);
-                return (
-                  <MenuItem
-                    key={r.value}
-                    onClick={() => {
-                      if (onOpenShippingFilter) onOpenShippingFilter(r.value);
-                      handleCloseDespacho();
-                    }}
-                    sx={styles.menuItem(isSelected)}
-                  >
-                    {r.label}
-                    {isSelected && (
-                      <Box sx={styles.selectedIndicator} />
-                    )}
-                  </MenuItem>
-                )
-              })}
-            </Menu>
           </Box>
-          {/* Menu de categorías */}      <Menu
+
+          {/* Menús compartidos (siempre los necesitamos aunque solo se muestre el selector) */}
+          <Menu
+            id="despacho-menu"
+            anchorEl={anchorElDespacho}
+            open={Boolean(anchorElDespacho)}
+            onClose={handleCloseDespacho}
+            disableScrollLock={true}
+            PaperProps={{ sx: styles.categoriesMenu }}
+          >
+            <MenuItem
+              key="todas"
+              onClick={() => {
+                if (onOpenShippingFilter) onOpenShippingFilter(null);
+                handleCloseDespacho();
+              }}
+              sx={styles.menuItem(!Array.isArray(selectedShippingRegions) || selectedShippingRegions.length === 0)}
+            >
+              Todas
+              {(!Array.isArray(selectedShippingRegions) || selectedShippingRegions.length === 0) && (
+                <Box sx={styles.selectedIndicator} />
+              )}
+            </MenuItem>
+
+            {REGION_OPTIONS.map(r => {
+              const isSelected = Array.isArray(selectedShippingRegions) && selectedShippingRegions.includes(r.value);
+              return (
+                <MenuItem
+                  key={r.value}
+                  onClick={() => {
+                    if (onOpenShippingFilter) onOpenShippingFilter(r.value);
+                    handleCloseDespacho();
+                  }}
+                  sx={styles.menuItem(isSelected)}
+                >
+                  {r.label}
+                  {isSelected && (
+                    <Box sx={styles.selectedIndicator} />
+                  )}
+                </MenuItem>
+              )
+            })}
+          </Menu>
+
+          <Menu
+            id="categorias-menu"
             anchorEl={anchorElCategorias}
             open={Boolean(anchorElCategorias)}
             onClose={handleCloseCategorias}
@@ -235,59 +242,31 @@ const CategoryNavigation = React.memo(({
                 </MenuItem>
               );
             })}
-          </Menu>{' '}
-          {/* Navegación de secciones */}
-          {/* En desktop: mostrar todos los botones */}
-          {!isMobile && (
+          </Menu>
+
+          {/* Si onlySelector es true, devolvemos solo los selectores y salimos */}
+          {onlySelector && (
             <>
-              {Object.entries(SECTIONS)
-                .filter(([key, value]) =>
-                  !['OFERTAS', 'TOP_VENTAS', 'NUEVOS'].includes(key)
-                )
-                .map(([key, value]) => (
-                  <Button
-                    key={value}
-                    onClick={() => handleSectionClick(value)}
-                    sx={styles.sectionButton(seccionActiva === value)}
-                    aria-pressed={seccionActiva === value}
-                    aria-current={seccionActiva === value ? 'true' : undefined}
-                  >
-                    {SECTION_LABELS[value]}
-                  </Button>
-                ))}
+              {/* También renderizamos el chip de categoría seleccionada si aplica */}
+              {categoriaSeleccionada && categoriaSeleccionada !== 'Todas' && (
+                <Chip
+                  label={`Categoría: ${categoriaSeleccionada}`}
+                  onDelete={() => onCategoriaToggle('Todas')}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  sx={styles.categoryChip}
+                />
+              )}
             </>
           )}
-          {/* En móvil: botón colapsible */}
-          {isMobile && (
-            <Box>
-              {/* Botón principal para expandir/colapsar */}
-              <Button
-                endIcon={sectionsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                onClick={toggleSectionsExpanded}
-                sx={styles.categoriesButton}
-              >
-                Secciones
-              </Button>
 
-              {/* Botones expandidos con animación */}
-              <Grow in={sectionsExpanded} timeout={300}>
-                <Box
-                  sx={{
-                    display: sectionsExpanded ? 'flex' : 'none',
-                    flexDirection: 'column',
-                    gap: 1,
-                    mt: 1,
-                    p: 1,
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    borderRadius: 2,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    position: 'absolute',
-                    zIndex: 1000,
-                    // Centrar en móvil con desplazamiento a la izquierda
-                    left: '45%',
-                    transform: 'translateX(-50%)',
-                  }}
-                >
+          {/* Si onlySelector es falso, renderizamos el resto de la navegación (secciones, mobile expand, etc.) */}
+          {!onlySelector && (
+            <>
+              {/* Navegación de secciones */}
+              {!isMobile && (
+                <>
                   {Object.entries(SECTIONS)
                     .filter(([key, value]) =>
                       !['OFERTAS', 'TOP_VENTAS', 'NUEVOS'].includes(key)
@@ -296,33 +275,81 @@ const CategoryNavigation = React.memo(({
                       <Button
                         key={value}
                         onClick={() => handleSectionClick(value)}
-                        sx={{
-                          ...styles.sectionButton(seccionActiva === value),
-                          justifyContent: 'flex-start',
-                          px: 2,
-                          py: 1.5,
-                          fontSize: '0.85rem',
-                        }}
+                        sx={styles.sectionButton(seccionActiva === value)}
                         aria-pressed={seccionActiva === value}
                         aria-current={seccionActiva === value ? 'true' : undefined}
                       >
                         {SECTION_LABELS[value]}
                       </Button>
                     ))}
+                </>
+              )}
+
+              {isMobile && (
+                <Box>
+                  <Button
+                    endIcon={sectionsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                    onClick={toggleSectionsExpanded}
+                    sx={styles.categoriesButton}
+                  >
+                    Secciones
+                  </Button>
+
+                  <Grow in={sectionsExpanded} timeout={300}>
+                    <Box
+                      sx={{
+                        display: sectionsExpanded ? 'flex' : 'none',
+                        flexDirection: 'column',
+                        gap: 1,
+                        mt: 1,
+                        p: 1,
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderRadius: 2,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        position: 'absolute',
+                        zIndex: 1000,
+                        left: '45%',
+                        transform: 'translateX(-50%)',
+                      }}
+                    >
+                      {Object.entries(SECTIONS)
+                        .filter(([key, value]) =>
+                          !['OFERTAS', 'TOP_VENTAS', 'NUEVOS'].includes(key)
+                        )
+                        .map(([key, value]) => (
+                          <Button
+                            key={value}
+                            onClick={() => handleSectionClick(value)}
+                            sx={{
+                              ...styles.sectionButton(seccionActiva === value),
+                              justifyContent: 'flex-start',
+                              px: 2,
+                              py: 1.5,
+                              fontSize: '0.85rem',
+                            }}
+                            aria-pressed={seccionActiva === value}
+                            aria-current={seccionActiva === value ? 'true' : undefined}
+                          >
+                            {SECTION_LABELS[value]}
+                          </Button>
+                        ))}
+                    </Box>
+                  </Grow>
                 </Box>
-              </Grow>
-            </Box>
-          )}
-          {/* Chip de categoría seleccionada */}
-          {categoriaSeleccionada && categoriaSeleccionada !== 'Todas' && (
-            <Chip
-              label={`Categoría: ${categoriaSeleccionada}`}
-              onDelete={() => onCategoriaToggle('Todas')}
-              size="small"
-              color="primary"
-              variant="outlined"
-              sx={styles.categoryChip}
-            />
+              )}
+
+              {/* Chip de categoría seleccionada */}
+              {categoriaSeleccionada && categoriaSeleccionada !== 'Todas' && (
+                <Chip
+                  label={`Categoría: ${categoriaSeleccionada}`}
+                  onDelete={() => onCategoriaToggle('Todas')}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  sx={styles.categoryChip}
+                />
+              )}
+            </>
           )}
         </>
       )}

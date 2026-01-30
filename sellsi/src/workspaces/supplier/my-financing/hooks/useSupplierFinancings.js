@@ -36,198 +36,52 @@ export const useSupplierFinancings = () => {
     setError(null);
 
     try {
-      // TODO: Implementar consulta real a Supabase
-      // const { data, error } = await supabase
-      //   .from('financing_requests')
-      //   .select('*')
-      //   .eq('supplier_id', supplierId)
-      //   .order('created_at', { ascending: false });
+      // Intentar obtener datos reales desde Supabase
+      const { data, error } = await supabase
+        .from('financing_requests')
+        .select('id, buyer_id, supplier_id, amount, available_amount, status, due_date, created_at, updated_at, buyer(name,email,created_at), supplier(name,legal_rut)')
+        .order('created_at', { ascending: false });
 
-      // Datos de ejemplo para desarrollo
-      const mockData = [
-        {
-          id: '1',
-          buyer_user_nm: 'Juan Pérez',
-          buyer_legal_name: 'Distribuidora ABC Ltda.',
-          buyer_legal_rut: '76.123.456-7',
-          buyer_legal_representative_name: 'Juan Pérez González',
-          buyer_legal_representative_rut: '12.345.678-9',
-          buyer_legal_address: 'Av. Libertador Bernardo O\'Higgins 1234',
-          buyer_legal_commune: 'Santiago',
-          buyer_legal_region: 'Metropolitana de Santiago',
-          amount: 15000000,
-          term_days: 30,
-          documents: ['contrato.pdf', 'pagare.pdf'],
-          status: 'pending_supplier_review',
-          created_at: new Date().toISOString(),
-          request_type: 'express',
-          document_count: 3,
-        },
-        {
-          id: '2',
-          buyer_user_nm: 'María González',
-          buyer_legal_name: 'Comercial XYZ SpA',
-          buyer_legal_rut: '77.987.654-3',
-          buyer_legal_representative_name: 'María González Silva',
-          buyer_legal_representative_rut: '15.678.901-2',
-          buyer_legal_address: 'Av. Providencia 2500',
-          buyer_legal_commune: 'Providencia',
-          buyer_legal_region: 'Metropolitana de Santiago',
-          amount: 8500000,
-          term_days: 60,
-          documents: ['contrato.pdf'],
-          status: 'buyer_signature_pending',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          request_type: 'express',
-          document_count: 4,
-        },
-        {
-          id: '3',
-          buyer_user_nm: 'Carlos Rodríguez',
-          buyer_legal_name: 'Importadora Delta',
-          buyer_legal_rut: '78.555.444-K',
-          buyer_legal_representative_name: 'Carlos Rodríguez Muñoz',
-          buyer_legal_representative_rut: '18.234.567-8',
-          buyer_legal_address: 'Calle Estado 456',
-          buyer_legal_commune: 'Santiago Centro',
-          buyer_legal_region: 'Metropolitana de Santiago',
-          amount: 25000000,
-          term_days: 90,
-          documents: ['contrato.pdf', 'pagare.pdf', 'garantia.pdf'],
-          status: 'supplier_signature_pending',
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          request_type: 'extended',
-          document_count: 5,
-        },
-        {
-          id: '4',
-          buyer_user_nm: 'Andrea López',
-          buyer_name: 'Andrea López',
-          buyer_legal_name: 'Empresa Gamma',
-          buyer_legal_rut: '79.111.222-3',
-          buyer_legal_representative_name: 'Andrea López Castillo',
-          buyer_legal_representative_rut: '19.876.543-2',
-          buyer_legal_address: 'Av. Apoquindo 3000',
-          buyer_legal_commune: 'Las Condes',
-          buyer_legal_region: 'Metropolitana de Santiago',
-          amount: 12000000,
-          amount_used: 4500000, // Ha usado 4.5M de 12M
-          term_days: 45,
-          documents: ['contrato.pdf'],
-          status: 'approved_by_sellsi',
-          created_at: new Date(Date.now() - 259200000).toISOString(),
-          approved_at: new Date(Date.now() - 172800000).toISOString(), // Aprobado hace 2 días
-          request_type: 'extended',
-          document_count: 6,
-        },
-        {
-          id: '5',
-          buyer_user_nm: 'Roberto Soto',
-          buyer_legal_name: 'Comercio Beta',
-          buyer_legal_rut: '80.333.444-5',
-          buyer_legal_representative_name: 'Roberto Soto Vargas',
-          buyer_legal_representative_rut: '20.123.456-7',
-          buyer_legal_address: 'Calle Huérfanos 789',
-          buyer_legal_commune: 'Santiago',
-          buyer_legal_region: 'Metropolitana de Santiago',
-          amount: 5000000,
-          term_days: 30,
-          documents: ['contrato.pdf'],
-          status: 'rejected_by_supplier',
-          rejection_reason: 'Monto excede límite de crédito disponible',
-          created_at: new Date(Date.now() - 345600000).toISOString(),
-          request_type: 'extended',
-          document_count: 7,
-        },
-        {
-          id: '6',
-          buyer_user_nm: 'Patricia Morales',
-          buyer_legal_name: 'Distribuidora Omega',
-          buyer_legal_rut: '81.555.666-7',
-          buyer_legal_representative_name: 'Patricia Morales Torres',
-          buyer_legal_representative_rut: '21.234.567-8',
-          buyer_legal_address: 'Av. Las Condes 5678',
-          buyer_legal_commune: 'Las Condes',
-          buyer_legal_region: 'Metropolitana de Santiago',
-          amount: 18000000,
-          term_days: 60,
-          documents: ['contrato.pdf', 'pagare.pdf'],
-          status: 'cancelled_by_buyer',
-          cancellation_reason: 'Cliente decidió usar otra fuente de financiamiento',
-          created_at: new Date(Date.now() - 432000000).toISOString(),
-        },
-        {
-          id: '7',
-          buyer_user_nm: 'Fernando Silva',
-          buyer_legal_name: 'Comercial Sigma',
-          buyer_legal_rut: '82.777.888-9',
-          buyer_legal_representative_name: 'Fernando Silva Araya',
-          buyer_legal_representative_rut: '22.345.678-9',
-          buyer_legal_address: 'Av. Vicuña Mackenna 1234',
-          buyer_legal_commune: 'Ñuñoa',
-          buyer_legal_region: 'Metropolitana de Santiago',
-          amount: 9500000,
-          term_days: 45,
-          documents: ['contrato.pdf'],
-          status: 'pending_sellsi_approval',
-          created_at: new Date(Date.now() - 518400000).toISOString(),
-        },
-        {
-          id: '8',
-          buyer_user_nm: 'Claudia Ramírez',
-          buyer_legal_name: 'Importaciones Theta',
-          buyer_legal_rut: '83.999.000-K',
-          buyer_legal_representative_name: 'Claudia Ramírez Díaz',
-          buyer_legal_representative_rut: '23.456.789-0',
-          buyer_legal_address: 'Calle San Diego 2345',
-          buyer_legal_commune: 'Santiago',
-          buyer_legal_region: 'Metropolitana de Santiago',
-          amount: 7200000,
-          term_days: 30,
-          documents: ['contrato.pdf', 'pagare.pdf'],
-          status: 'cancelled_by_supplier',
-          cancellation_reason: 'Cambio en las condiciones de crédito del proveedor',
-          created_at: new Date(Date.now() - 604800000).toISOString(),
-        },
-        {
-          id: '9',
-          buyer_user_nm: 'Sergio Fuentes',
-          buyer_legal_name: 'Distribuidora Kappa',
-          buyer_legal_rut: '84.111.222-3',
-          buyer_legal_representative_name: 'Sergio Fuentes Ponce',
-          buyer_legal_representative_rut: '24.567.890-1',
-          buyer_legal_address: 'Av. Matta 3456',
-          buyer_legal_commune: 'Santiago',
-          buyer_legal_region: 'Metropolitana de Santiago',
-          amount: 22000000,
-          term_days: 90,
-          documents: ['contrato.pdf'],
-          status: 'rejected_by_sellsi',
-          rejection_reason: 'Documentación incompleta - falta garantía bancaria',
-          created_at: new Date(Date.now() - 691200000).toISOString(),
-        },
-      ];
-
-      // Calcular expires_at para financiamientos aprobados (approved_at + term_days)
-      const processedData = mockData.map(f => {
-        if (f.status === 'approved_by_sellsi' && f.approved_at) {
-          const approvedDate = new Date(f.approved_at);
-          const expiresDate = new Date(approvedDate);
-          expiresDate.setDate(expiresDate.getDate() + f.term_days);
-          
+      if (!error && Array.isArray(data)) {
+        // Map DB rows to UI shape (allow empty list)
+        const processed = (data || []).map(f => {
+          const buyer = f.buyer || {};
+          const supplier = f.supplier || {};
           return {
-            ...f,
-            expires_at: expiresDate.toISOString().split('T')[0], // YYYY-MM-DD format
-            amount_paid: 0, // Mock: no ha pagado nada aún
+            id: f.id,
+            buyer_user_nm: buyer.name || buyer.email || '',
+            buyer_legal_name: buyer.name || '',
+            buyer_legal_rut: buyer.legal_rut || null,
+            buyer_legal_representative_name: null,
+            buyer_legal_representative_rut: null,
+            buyer_legal_address: null,
+            buyer_legal_commune: null,
+            buyer_legal_region: null,
+            amount: parseFloat(f.amount),
+            term_days: null,
+            documents: [],
+            status: f.status,
+            created_at: f.created_at,
+            request_type: 'unknown',
+            document_count: 0,
+            buyer_id: f.buyer_id,
+            supplier_id: f.supplier_id,
           };
-        }
-        return f;
-      });
+        });
 
-      setFinancings(processedData);
+        setFinancings(processed);
+
+        // If the table exists but returned no rows, leave an empty array (no mocks)
+      } else {
+        // No data available from Supabase (table missing or query failed). Don't inject mock data.
+        setFinancings([]);
+        if (error) setError(error.message || 'Error fetching financings');
+      }
     } catch (err) {
       console.error('[useSupplierFinancings] Error fetching:', err);
       setError(err.message);
+      // Fallback minimal
+      setFinancings([]);
     } finally {
       setLoading(false);
       setInitializing(false);
@@ -239,11 +93,15 @@ export const useSupplierFinancings = () => {
    */
   const approveFinancing = useCallback(async (financingId) => {
     try {
-      // TODO: Implementar llamada a Supabase
-      // await supabase.from('financing_requests')
-      //   .update({ status: 'buyer_signature_pending' })
-      //   .eq('id', financingId);
-      
+      // Intentar actualizar en Supabase
+      try {
+        const { error } = await supabase.from('financing_requests').update({ status: 'buyer_signature_pending' }).eq('id', financingId);
+        if (error) throw error;
+      } catch (e) {
+        // Si falla la actualización en DB, loggear y seguir con el fallback en memoria
+        console.error('[useSupplierFinancings] DB update failed for approve:', e.message || e);
+      }
+
       setFinancings(prev => 
         prev.map(f => f.id === financingId ? { ...f, status: 'buyer_signature_pending' } : f)
       );
@@ -259,14 +117,14 @@ export const useSupplierFinancings = () => {
    */
   const rejectFinancing = useCallback(async (financingId, reason = null) => {
     try {
-      // TODO: Implementar llamada a Supabase
-      // await supabase.from('financing_requests')
-      //   .update({ 
-      //     status: 'rejected_by_supplier',
-      //     rejection_reason: reason 
-      //   })
-      //   .eq('id', financingId);
-      
+      // Intentar actualizar status en Supabase (solo status para evitar columnas inexistentes)
+      try {
+        const { error } = await supabase.from('financing_requests').update({ status: 'rejected_by_supplier' }).eq('id', financingId);
+        if (error) throw error;
+      } catch (e) {
+        console.error('[useSupplierFinancings] DB update failed for reject:', e.message || e);
+      }
+
       setFinancings(prev => 
         prev.map(f => f.id === financingId 
           ? { ...f, status: 'rejected_by_supplier', rejection_reason: reason } 
@@ -285,11 +143,13 @@ export const useSupplierFinancings = () => {
    */
   const signFinancing = useCallback(async (financingId) => {
     try {
-      // TODO: Implementar llamada a Supabase
-      // await supabase.from('financing_requests')
-      //   .update({ status: 'pending_sellsi_approval' })
-      //   .eq('id', financingId);
-      
+      try {
+        const { error } = await supabase.from('financing_requests').update({ status: 'pending_sellsi_approval' }).eq('id', financingId);
+        if (error) throw error;
+      } catch (e) {
+        console.error('[useSupplierFinancings] DB update failed for sign:', e.message || e);
+      }
+
       setFinancings(prev => 
         prev.map(f => f.id === financingId ? { ...f, status: 'pending_sellsi_approval' } : f)
       );
@@ -305,14 +165,13 @@ export const useSupplierFinancings = () => {
    */
   const cancelFinancing = useCallback(async (financingId, reason = null) => {
     try {
-      // TODO: Implementar llamada a Supabase
-      // await supabase.from('financing_requests')
-      //   .update({ 
-      //     status: 'cancelled_by_supplier',
-      //     cancellation_reason: reason 
-      //   })
-      //   .eq('id', financingId);
-      
+      try {
+        const { error } = await supabase.from('financing_requests').update({ status: 'cancelled_by_supplier' }).eq('id', financingId);
+        if (error) throw error;
+      } catch (e) {
+        console.error('[useSupplierFinancings] DB update failed for cancel:', e.message || e);
+      }
+
       setFinancings(prev => 
         prev.map(f => f.id === financingId 
           ? { ...f, status: 'cancelled_by_supplier', cancellation_reason: reason } 

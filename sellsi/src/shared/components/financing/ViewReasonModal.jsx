@@ -42,13 +42,13 @@ const ViewReasonModal = ({ open, financing, onClose }) => {
   useEffect(() => {
     // Actualizar ref cuando financing tiene valor Y el modal está abierto
     if (open && financing) {
-      reasonRef.current = financing.rejection_reason || financing.cancellation_reason || 'No hay motivo registrado';
+      reasonRef.current = financing.paused_reason || financing.rejection_reason || financing.cancellation_reason || 'No hay motivo registrado';
     }
   }, [open, financing]);
 
   // Usar el valor actual de financing si existe, sino usar el ref preservado
-  const reason = (financing?.rejection_reason || financing?.cancellation_reason) 
-    ? (financing.rejection_reason || financing.cancellation_reason)
+  const reason = (financing?.paused_reason || financing?.rejection_reason || financing?.cancellation_reason)
+    ? (financing.paused_reason || financing.rejection_reason || financing.cancellation_reason)
     : (reasonRef.current || 'No hay motivo registrado');
 
   return (

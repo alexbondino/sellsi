@@ -115,8 +115,17 @@ const ProductHeader = React.memo(
     }, []);
 
     const handleFinancingSubmit = useCallback(async (financingData) => {
+      // Use dynamic import to avoid runtime `require` errors in the browser
+      const module = await import('../../../../buyer/my-financing/services/financingService');
+      const svc = module?.default || module;
+      const { createExpressRequest, createExtendedRequest } = svc;
+
       try {
-        console.log('📋 Solicitud de financiamiento:', financingData);
+        if (financingData.type === 'express') {
+          await createExpressRequest({ formData: financingData, supplierId: product.supplier_id });
+        } else if (financingData.type === 'extended') {
+          await createExtendedRequest({ formData: financingData, supplierId: product.supplier_id });
+        }
         toast.success('Solicitud de financiamiento enviada exitosamente', {
           icon: '✅',
           duration: 3000,
@@ -127,8 +136,9 @@ const ProductHeader = React.memo(
         toast.error('Error al enviar la solicitud de financiamiento', {
           duration: 3000,
         });
+        throw error;
       }
-    }, []);
+    }, [product]);
 
     // Thumbnail responsivo
     const { thumbnailUrl: mainImageThumbnail } =
