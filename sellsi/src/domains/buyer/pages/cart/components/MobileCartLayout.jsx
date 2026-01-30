@@ -29,6 +29,52 @@ const MobileCartLayout = ({
 }) => {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [financingsModalOpen, setFinancingsModalOpen] = useState(false);
+  const [hasFinancings, setHasFinancings] = useState(false);
+  const [isCheckingFinancings, setIsCheckingFinancings] = useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setIsCheckingFinancings(true);
+      try {
+        const svc = await import('../../../../../workspaces/buyer/my-financing/services/financingService');
+        const getAvailable = svc.getAvailableFinancingsForSupplier || (svc.default && svc.default.getAvailableFinancingsForSupplier);
+
+        const supplierIds = Array.from(new Set(items.map(i => i.supplier_id || i.supplierId).filter(Boolean)));
+        if (supplierIds.length === 0) {
+          if (mounted) setHasFinancings(false);
+          return;
+        }
+
+        for (const sid of supplierIds) {
+          try {
+            if (!getAvailable) continue;
+            const list = await getAvailable(sid);
+            if (Array.isArray(list)) {
+              // Check at least one qualifying financing: approved, not paused, available > 0
+              const any = list.some(f => f.status === 'approved_by_sellsi' && !f.paused && ((f.amount || 0) - (f.amount_used || 0)) > 0);
+              if (any) {
+                if (mounted) setHasFinancings(true);
+                return;
+              }
+            }
+          } catch (e) {
+            console.error('[MobileCartLayout] failed to load financings for supplier', sid, e);
+          }
+        }
+
+        if (mounted) setHasFinancings(false);
+      } catch (err) {
+        console.error('[MobileCartLayout] failed to import financingService', err);
+        if (mounted) setHasFinancings(false);
+      } finally {
+        if (mounted) setIsCheckingFinancings(false);
+      }
+    };
+
+    load();
+    return () => { mounted = false; };
+  }, [items]);
 
   return (
     <>
@@ -62,6 +108,7 @@ const MobileCartLayout = ({
                   startIcon={<RequestQuoteIcon />}
                   aria-label="Pagar con Financiamiento"
                   data-testid="PayWithFinancingBtn"
+                  disabled={isCheckingFinancings || !hasFinancings}
                   sx={{
                     py: { xs: 1, sm: 1.2 },
                     borderRadius: 2,

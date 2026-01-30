@@ -335,6 +335,13 @@ export const getPaymentReleaseStats = async (filters = {}) => {
  * @param {string} endDate - Fecha de fin (YYYY-MM-DD)
  * @returns {Promise<{success: boolean, data?: object, error?: string}>}
  */
+export const computePayout = (amount, commissionRate = 0.03) => {
+  const amt = parseFloat(amount) || 0
+  const commission = Math.round(amt * commissionRate)
+  const payout = Math.round(amt - commission)
+  return { amount: amt, commission, payout }
+}
+
 export const getPaymentReleasesReport = async (startDate, endDate) => {
   return AdminApiService.executeQuery(async () => {
     if (!startDate || !endDate) {

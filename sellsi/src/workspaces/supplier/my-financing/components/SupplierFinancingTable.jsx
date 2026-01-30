@@ -307,7 +307,7 @@ const SupplierFinancingTable = ({
 /**
  * Tabla de financiamientos aprobados
  */
-const SupplierApprovedTable = ({ financings = [] }) => {
+const SupplierApprovedTable = ({ financings = [], onViewReason }) => {
   return (
     <TableContainer component={Paper} elevation={1}>
       <Table sx={{ minWidth: 900 }}>
@@ -363,12 +363,23 @@ const SupplierApprovedTable = ({ financings = [] }) => {
 
                 {/* Estado (Chip) */}
                 <TableCell align="center">
-                  <Chip
-                    label={chipInfo.label}
-                    color={chipInfo.color}
-                    size="small"
-                    sx={{ fontWeight: 600 }}
-                  />
+                  <div>
+                    <Chip
+                      label={chipInfo.label}
+                      color={chipInfo.color}
+                      size="small"
+                      sx={{ fontWeight: 600 }}
+                    />
+                    {financing.paused && (
+                      <Typography
+                        variant="body2"
+                        sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline', mt: 0.5 }}
+                        onClick={() => onViewReason?.(financing)}
+                      >
+                        Ver motivo
+                      </Typography>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             );

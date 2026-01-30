@@ -17,14 +17,10 @@ import {
   Select,
   MenuItem,
   Badge,
-  Switch,
-  Tooltip,
-  FormControlLabel,
-  Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import FilterAltIcon from '@mui/icons-material/FilterAlt';
+
 import SortIcon from '@mui/icons-material/Sort';
 
 const SearchBar = ({
@@ -80,10 +76,13 @@ const SearchBar = ({
   const containerStyles = React.useMemo(
     () => ({
       display: 'flex',
-      gap: { xs: 0.5, sm: 0.5, md: 1 }, // ✅ Gap más pequeño en móviles
+      gap: { xs: 0.5, sm: 0.5, md: 1 },
       alignItems: 'center',
+      justifyContent: 'flex-start',
       width: '100%',
-      flexDirection: 'row', // ✅ SIEMPRE en fila para xs/sm/md
+      // Mantener en fila para que input + selector queden en la misma línea
+      flexDirection: { xs: 'row', md: 'row' },
+      flexWrap: 'nowrap',
       py: 0.5,
       // ✅ Usar prop searchBarMarginLeft para permitir diferentes valores
       marginLeft: searchBarMarginLeft,
@@ -94,32 +93,27 @@ const SearchBar = ({
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del TextField - Responsivos según vista
   const textFieldStyles = React.useMemo(
     () => ({
-      // ✅ NUEVO: Se agranda 50% cuando está en vista de proveedores
-      width: isProviderView
-        ? { xs: '100%', sm: '100%', md: '360px' } // 50% más ancho en vista proveedores
-        : { xs: '30%', sm: '30%', md: '240px' }, // Tamaño normal en vista productos
-      minWidth: isProviderView
-        ? { xs: 'auto', sm: 'auto', md: '750px' } // 50% más minWidth en vista proveedores
-        : { xs: 'auto', sm: 'auto', md: '500px' }, // minWidth normal en vista productos
+      // Forzar que el TextField ocupe el 100% del wrapper
+      width: '100%',
+      minWidth: 0,
       '& .MuiOutlinedInput-root': {
         borderRadius: 1.5,
         backgroundColor: 'white',
-        height: '36px', // ✅ Altura fija más pequeña
+        height: '36px',
       },
     }),
-    [isProviderView] // ✅ Dependencia de isProviderView para recalcular cuando cambie
+    [isProviderView]
   );
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del FormControl - Responsivos según vista
   const formControlStyles = React.useMemo(
     () => ({
-      // ✅ AJUSTE: Se adapta al espacio restante cuando SearchBar se agranda en vista proveedores
-      width: isProviderView
-        ? { xs: '32%', sm: '35%', md: 195 } // Más estrecho cuando SearchBar es más ancho
-        : { xs: '67%', sm: '61%', md: 245 }, // Tamaño normal cuando SearchBar es normal
-      minWidth: 'auto', // ✅ Sin minWidth en móviles
+      // ✅ AJUSTE: Forzar 40% en md+
+      width: { xs: '100%', md: '40%' },
+      flex: { xs: '0 0 auto', md: '0 0 40%' },
+      minWidth: 0,
     }),
-    [isProviderView] // ✅ Dependencia de isProviderView
+    [isProviderView]
   );
 
   // ✅ OPTIMIZACIÓN: Memoización de estilos del botón - Estáticos
@@ -137,13 +131,8 @@ const SearchBar = ({
     []
   );
 
-  // ✅ OPTIMIZACIÓN: Estilos del botón que dependen del estado
-  const buttonVariantStyles = React.useMemo(
-    () => ({
-      variant: filtroVisible || filtroModalOpen ? 'contained' : 'outlined',
-    }),
-    [filtroVisible, filtroModalOpen]
-  );
+  // Filtros removidos: eliminado buttonVariantStyles
+
 
   // ✅ OPTIMIZACIÓN: Memoización de InputProps para evitar re-creación
   const inputProps = React.useMemo(
@@ -203,9 +192,12 @@ const SearchBar = ({
       <Box
         sx={{
           display:
-            hideTextInputOnMobile && !isProviderView
-              ? { xs: 'none', sm: 'none', md: 'block' }
-              : 'block',
+                    hideTextInputOnMobile && !isProviderView
+                      ? { xs: 'none', sm: 'none', md: 'block' }
+                      : 'block',
+                  width: isProviderView ? { xs: '100%', md: '100%' } : { xs: '100%', md: '60%' },
+                  flex: isProviderView ? { xs: '1 1 auto', md: '0 0 100%' } : { xs: '1 1 auto', md: '0 0 60%' },
+                  minWidth: 0,
         }}
       >
         <TextField
@@ -245,94 +237,8 @@ const SearchBar = ({
           </Select>
         </FormControl>
       )}
-      {/* Switch de vista Productos/Proveedores - Visible cuando onToggleProviderView está disponible */}
-      {onToggleProviderView && (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            flexShrink: 0,
-            ml: { xs: 0.5, md: 1 },
-            mr: { xs: 0.5, md: 1 },
-          }}
-        >
-          <FormControlLabel
-            control={
-              <Tooltip
-                title="Alternar vista productos/proveedores"
-                placement="right"
-                arrow
-              >
-                <span>
-                  <Switch
-                    checked={isProviderView}
-                    onChange={onToggleProviderView}
-                    size="small"
-                    color="primary"
-                  />
-                </span>
-              </Tooltip>
-            }
-            label={
-              <Typography
-                variant="caption"
-                sx={{
-                  fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
-                  fontWeight: 500,
-                  color: 'text.secondary',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {isProviderView ? 'Proveedores' : 'Productos'}
-              </Typography>
-            }
-            labelPlacement="top"
-            sx={{
-              m: 0,
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 0.25,
-              '& .MuiFormControlLabel-label': {
-                fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
-              },
-            }}
-          />
-        </Box>
-      )}
-      {/* Botón de filtros - Optimizado para móviles */}
-      {showFiltersButton !== false && (
-        <Button
-          size="small"
-          variant={buttonVariantStyles.variant}
-          onClick={onToggleFilters}
-          sx={buttonBaseStyles}
-        >
-          {/* Solo icono en xs y sm, texto completo en md+ */}
-          <Box
-            sx={{
-              display: { xs: 'none', sm: 'none', md: 'flex' },
-              alignItems: 'center',
-              gap: 1,
-            }}
-          >
-            <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
-              <FilterAltIcon fontSize="small" />
-            </Badge>
-            Filtros
-          </Box>
-          {/* Solo icono en xs y sm */}
-          <Box
-            sx={{
-              display: { xs: 'flex', sm: 'flex', md: 'none' },
-              justifyContent: 'center',
-            }}
-          >
-            <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
-              <FilterAltIcon fontSize="small" />
-            </Badge>
-          </Box>
-        </Button>
-      )}
+      {/* Control de vista Productos/Proveedores movido al contenedor padre (SearchSection) */}
+      {/* Botón de filtros eliminado */}
     </Box>
   );
 };

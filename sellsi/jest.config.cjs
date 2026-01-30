@@ -1,6 +1,6 @@
 module.exports = {
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/src/tests/setup.js'],
   moduleNameMapper: {
     // Mock uuid package to avoid ESM/CommonJS issues
     '^uuid$': '<rootDir>/src/__mocks__/uuid.js',
@@ -8,12 +8,14 @@ module.exports = {
     '^@/utils/env$': '<rootDir>/src/__mocks__/utils/env.js',
     '^(\\.\\./)+utils/env$': '<rootDir>/src/__mocks__/utils/env.js',
     '^@/(.*)$': '<rootDir>/src/$1',
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^((?:\\.\\.\\/){3,})(shared/.*)$': '<rootDir>/src/$2',
+    '^((?:\\.\\.\\/){1,})(workspaces/.*)$': '<rootDir>/src/$2',
+    '\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': 'jest-transform-stub'
   },
   testMatch: [
-    '<rootDir>/src/__tests__/**/*.test.js',
-    '<rootDir>/src/__tests__/**/*.test.jsx'
+    '<rootDir>/src/tests/**/*.test.js',
+    '<rootDir>/src/tests/**/*.test.jsx'
   ],
   collectCoverageFrom: [
     'src/stores/offerStore.js',
@@ -34,5 +36,5 @@ module.exports = {
     'node_modules/(?!(.*\\.mjs$|@testing-library|@mui|uuid))'
   ],
   // Set environment variables for tests (replacing import.meta.env)
-  setupFiles: ['<rootDir>/src/__tests__/setEnvVars.js'],
+  setupFiles: ['<rootDir>/src/tests/setEnvVars.js'],
 }

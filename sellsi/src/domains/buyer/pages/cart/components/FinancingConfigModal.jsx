@@ -100,92 +100,53 @@ const FinancingConfigModal = ({
     }));
   };
 
-  // Mock de financiamientos disponibles (TODO: reemplazar con query real)
-  const mockFinancings = useMemo(() => {
-    const supplierIdsInCart = new Set(
-      cartItems.map(item => item.supplier_id || item.supplierId).filter(Boolean)
-    );
-    
-    if (supplierIdsInCart.size === 0) return [];
-    
-    const firstSupplierId = Array.from(supplierIdsInCart)[0];
-    const firstSupplierName = cartItems.find(item => 
-      (item.supplier_id || item.supplierId) === firstSupplierId
-    )?.proveedor || 'Proveedor Principal';
-    
-    return [
-      // 1. Financiamiento saludable - mucho disponible, lejos de vencer
-      {
-        id: 'mock-1',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 800000,
-        amount_used: 200000, // 25% usado
-        amount_paid: 50000,
-        term_days: 45,
-        activated_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // Hace 15 días
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // En 30 días
-        status: 'approved_by_sellsi',
-      },
-      // 2. Financiamiento en warning por tiempo (cercano a vencer)
-      {
-        id: 'mock-2',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 500000,
-        amount_used: 150000, // 30% usado
-        amount_paid: 50000,
-        term_days: 30,
-        activated_at: new Date(Date.now() - 23 * 24 * 60 * 60 * 1000).toISOString(), // Hace 23 días
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // En 7 días (warning)
-        status: 'approved_by_sellsi',
-      },
-      // 3. Financiamiento en warning por alto uso (>90%)
-      {
-        id: 'mock-3',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 300000,
-        amount_used: 280000, // 93% usado
-        amount_paid: 100000,
-        term_days: 15,
-        activated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // Hace 5 días
-        expires_at: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // En 10 días
-        status: 'approved_by_sellsi',
-      },
-      // 4. Financiamiento de plazo corto cercano a vencer
-      {
-        id: 'mock-4',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 200000,
-        amount_used: 80000, // 40% usado
-        amount_paid: 30000,
-        term_days: 7,
-        activated_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), // Hace 6 días
-        expires_at: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), // En 1 día (warning crítico)
-        status: 'approved_by_sellsi',
-      },
-      // 5. Financiamiento grande de plazo largo
-      {
-        id: 'mock-5',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 1500000,
-        amount_used: 600000, // 40% usado
-        amount_paid: 200000,
-        term_days: 60,
-        activated_at: new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString(), // Hace 42 días
-        expires_at: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(), // En 18 días
-        status: 'approved_by_sellsi',
-      },
-    ];
+  // Financiamientos reales: se cargan desde el servicio (supabase)
+  const [financingsBySupplier, setFinancingsBySupplier] = React.useState({});
+  const [isLoadingFinancings, setIsLoadingFinancings] = React.useState(false);
+
+  // Cargar el servicio dinámicamente en el efecto para evitar usar `require` en runtime (Vite/browser)
+  React.useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setIsLoadingFinancings(true);
+
+      // Import dinámico: soporta tanto ESM como CJS (jest mocks también aplican en tests)
+      let getAvailable = null;
+      try {
+        const svc = await import('../../../../../workspaces/buyer/my-financing/services/financingService');
+        // compatibilidad: si es CJS, la exportación puede estar en `default`
+        getAvailable = svc.getAvailableFinancingsForSupplier || (svc.default && svc.default.getAvailableFinancingsForSupplier);
+      } catch (err) {
+        console.error('[FinancingConfigModal] failed to import financingService', err);
+      }
+
+      const supplierIds = Array.from(new Set(cartItems.map(item => item.supplier_id || item.supplierId).filter(Boolean)));
+      const map = {};
+      for (const sid of supplierIds) {
+        try {
+          if (!getAvailable) throw new Error('financingService.getAvailableFinancingsForSupplier not available');
+          const list = await getAvailable(sid);
+          map[sid] = Array.isArray(list) ? list : [];
+        } catch (e) {
+          console.error('[FinancingConfigModal] failed to load financings for supplier', sid, e);
+          map[sid] = [];
+        }
+      }
+
+      if (mounted) {
+        setFinancingsBySupplier(map);
+        setIsLoadingFinancings(false);
+      }
+    };
+
+    load();
+    return () => { mounted = false; };
   }, [cartItems]);
 
   // Función helper para obtener financiamientos del supplier de un producto
   const getFinancingsForProduct = (item) => {
     const supplierId = item.supplier_id || item.supplierId;
-    return mockFinancings.filter(f => f.supplier_id === supplierId);
+    return (financingsBySupplier[supplierId] || []).filter(f => !f.paused);
   };
 
   // Función helper para formatear info del financiamiento

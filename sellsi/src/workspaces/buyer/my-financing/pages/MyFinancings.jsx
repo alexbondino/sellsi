@@ -19,9 +19,30 @@ const MyFinancings = () => {
   const [modalOpen, setModalOpen] = useState(false);
 
   const handleFinancingSubmit = async (data) => {
-    console.log('Solicitud de financiamiento:', data);
-    // TODO: Enviar a backend
-    setModalOpen(false);
+    // Use dynamic import to avoid runtime `require` errors in the browser
+    const module = await import('../services/financingService');
+    const svc = module?.default || module;
+    const { createExpressRequest, createExtendedRequest } = svc;
+
+    try {
+      if (data.type === 'express') {
+        await createExpressRequest({ formData: data });
+      } else if (data.type === 'extended') {
+        await createExtendedRequest({ formData: data });
+      } else {
+        throw new Error('Tipo de solicitud desconocido');
+      }
+      // Éxito
+      const toastModule = await import('react-hot-toast');
+      const toast = toastModule?.default || toastModule;
+      toast.success('Solicitud de financiamiento enviada exitosamente', { icon: '✅', duration: 3000 });
+    } catch (error) {
+      const toastModule = await import('react-hot-toast');
+      const toast = toastModule?.default || toastModule;
+      console.error('Error al enviar solicitud de financiamiento:', error);
+      toast.error('Error al enviar la solicitud. Intenta nuevamente o contacta soporte', { duration: 5000 });
+      throw error; // re-throw para que el modal permanezca abierto
+    }
   };
 
   return (

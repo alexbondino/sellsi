@@ -214,112 +214,90 @@ const FinancingItem = ({ financing, style }) => {
  * Muestra solo financiamientos de suppliers que tienen productos en el carrito
  */
 const ActiveFinancingsList = ({ cartItems = [] }) => {
-  // Mock data: Financiamientos activos
-  // TODO: Reemplazar con query real a financing_requests cuando exista el backend
-  const mockFinancings = useMemo(() => {
-    // Obtener IDs únicos de suppliers en el carrito
-    const supplierIdsInCart = new Set(
-      cartItems.map(item => item.supplier_id || item.supplierId).filter(Boolean)
-    );
-    
-    // Si no hay items en el carrito, no mostrar financiamientos
-    if (supplierIdsInCart.size === 0) return [];
-    
-    // Mock de 5 financiamientos aprobados con diferentes estados
-    // TODO: Reemplazar con query real a financing_requests cuando exista el backend
-    const firstSupplierId = Array.from(supplierIdsInCart)[0];
-    const firstSupplierName = cartItems.find(item => 
-      (item.supplier_id || item.supplierId) === firstSupplierId
-    )?.proveedor || 'Proveedor Principal';
-    
-    const allMockFinancings = [
-      // 1. Financiamiento saludable - mucho disponible, lejos de vencer
-      {
-        id: 'mock-1',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 800000,
-        amount_used: 200000, // 25% usado
-        amount_paid: 50000,
-        term_days: 45,
-        activated_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // Hace 15 días
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // En 30 días
-        status: 'approved_by_sellsi',
-      },
-      // 2. Financiamiento en warning por tiempo (cercano a vencer)
-      {
-        id: 'mock-2',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 500000,
-        amount_used: 150000, // 30% usado
-        amount_paid: 50000,
-        term_days: 30,
-        activated_at: new Date(Date.now() - 23 * 24 * 60 * 60 * 1000).toISOString(), // Hace 23 días
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // En 7 días (warning)
-        status: 'approved_by_sellsi',
-      },
-      // 3. Financiamiento en warning por alto uso (>90%)
-      {
-        id: 'mock-3',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 300000,
-        amount_used: 280000, // 93% usado
-        amount_paid: 100000,
-        term_days: 15,
-        activated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // Hace 5 días
-        expires_at: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // En 10 días
-        status: 'approved_by_sellsi',
-      },
-      // 4. Financiamiento de plazo corto cercano a vencer
-      {
-        id: 'mock-4',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 200000,
-        amount_used: 80000, // 40% usado
-        amount_paid: 30000,
-        term_days: 7,
-        activated_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), // Hace 6 días
-        expires_at: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), // En 1 día (warning crítico)
-        status: 'approved_by_sellsi',
-      },
-      // 5. Financiamiento grande de plazo largo
-      {
-        id: 'mock-5',
-        supplier_id: firstSupplierId,
-        supplier_name: firstSupplierName,
-        amount: 1500000,
-        amount_used: 600000, // 40% usado
-        amount_paid: 200000,
-        term_days: 60,
-        activated_at: new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString(), // Hace 42 días
-        expires_at: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(), // En 18 días
-        status: 'approved_by_sellsi',
-      },
-    ];
-    
-    // Filtrar solo financiamientos de suppliers en el carrito
-    return allMockFinancings.filter(f => 
-      supplierIdsInCart.has(f.supplier_id)
-    );
+  // Real financiamientos: cargados desde el servicio (supabase)
+  const [financings, setFinancings] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        // Import dinámico para soportar ESM/CJS y los mocks en tests
+        const svc = await import('../../../../../workspaces/buyer/my-financing/services/financingService');
+        const getAvailable = svc.getAvailableFinancingsForSupplier || (svc.default && svc.default.getAvailableFinancingsForSupplier);
+
+        const supplierIdsInCart = Array.from(new Set(
+          cartItems.map(item => item.supplier_id || item.supplierId).filter(Boolean)
+        ));
+
+        if (supplierIdsInCart.length === 0) {
+          if (mounted) setFinancings([]);
+          return;
+        }
+
+        const results = [];
+        for (const sid of supplierIdsInCart) {
+          try {
+            if (!getAvailable) throw new Error('financingService.getAvailableFinancingsForSupplier not available');
+            const list = await getAvailable(sid);
+            if (Array.isArray(list)) {
+              // Asegurarse de excluir pausados en UI
+              results.push(...list.filter(f => !f.paused));
+            }
+          } catch (e) {
+            console.error('[ActiveFinancingsList] failed to load financings for supplier', sid, e);
+          }
+        }
+
+        if (mounted) setFinancings(results);
+      } catch (err) {
+        console.error('[ActiveFinancingsList] failed to import financingService', err);
+        if (mounted) setFinancings([]);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    load();
+    return () => { mounted = false; };
   }, [cartItems]);
-  
-  // Si no hay financiamientos, no renderizar nada
-  if (mockFinancings.length === 0) return null;
-  
+
+  // Si está cargando, mostrar indicador de carga
+  if (isLoading) {
+    return (
+      <Box sx={{ mt: 2 }}>
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontWeight: 600,
+            fontSize: '0.85rem',
+            color: 'text.secondary',
+            mb: 1,
+            px: 1,
+          }}
+        >
+          Cargando financiamientos...
+        </Typography>
+        <LinearProgress />
+      </Box>
+    );
+  }
+
+  // Si no hay financiamientos y no está cargando, no renderizar nada
+  if (financings.length === 0) return null;
+
   // Configuración de la lista virtualizada
   const ITEM_HEIGHT = 95; // Altura calculada para que quepan 3 items sin scroll
   const MAX_VISIBLE_ITEMS = 3;
-  const LIST_HEIGHT = Math.min(mockFinancings.length, MAX_VISIBLE_ITEMS) * ITEM_HEIGHT;
-  
+  const LIST_HEIGHT = Math.min(financings.length, MAX_VISIBLE_ITEMS) * ITEM_HEIGHT;
+
   // Row renderer para react-window
   const Row = ({ index, style }) => {
-    const financing = mockFinancings[index];
+    const financing = financings[index];
     return <FinancingItem financing={financing} style={style} />;
   };
-  
+
   return (
     <Box sx={{ mt: 2 }}>
       <Typography
@@ -332,12 +310,12 @@ const ActiveFinancingsList = ({ cartItems = [] }) => {
           px: 1,
         }}
       >
-        Financiamientos Activos ({mockFinancings.length}) - Solo del carrito
+        Financiamientos Activos ({financings.length}) - Solo del carrito
       </Typography>
-      
+
       <FixedSizeList
         height={LIST_HEIGHT}
-        itemCount={mockFinancings.length}
+        itemCount={financings.length}
         itemSize={ITEM_HEIGHT}
         width="100%"
         overscanCount={1}

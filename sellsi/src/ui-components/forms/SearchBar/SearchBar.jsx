@@ -16,15 +16,10 @@ import {
   FormControl,
   Select,
   MenuItem,
-  Badge,
-  Switch,
-  Tooltip,
-  FormControlLabel,
-  Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import FilterAltIcon from '@mui/icons-material/FilterAlt';
+
 import SortIcon from '@mui/icons-material/Sort';
 
 const SearchBar = ({
@@ -134,13 +129,8 @@ const SearchBar = ({
     []
   );
 
-  // ✅ OPTIMIZACIÓN: Estilos del botón que dependen del estado
-  const buttonVariantStyles = React.useMemo(
-    () => ({
-      variant: filtroVisible || filtroModalOpen ? 'contained' : 'outlined',
-    }),
-    [filtroVisible, filtroModalOpen]
-  );
+  // Filtros removidos: eliminado buttonVariantStyles
+
 
   // ✅ OPTIMIZACIÓN: Memoización de InputProps para evitar re-creación
   const inputProps = React.useMemo(
@@ -237,90 +227,8 @@ const SearchBar = ({
           </Select>
         </FormControl>
       )}
-      {/* Switch de vista Productos/Proveedores - Solo para marketplace con sidebar */}
-      {hasSideBar && (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            flexShrink: 0,
-            ml: { xs: 0.5, md: 1 },
-            mr: { xs: 0.5, md: 1 },
-          }}
-        >
-          <FormControlLabel
-            control={
-              <Tooltip title="Alternar vista productos/proveedores" placement="right" arrow>
-                <span>
-                  <Switch
-                    checked={isProviderView}
-                    onChange={onToggleProviderView}
-                    size="small"
-                    color="primary"
-                  />
-                </span>
-              </Tooltip>
-            }
-            label={
-              <Typography
-                variant="caption"
-                sx={{
-                  fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
-                  fontWeight: 500,
-                  color: 'text.secondary',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {isProviderView ? 'Proveedores' : 'Productos'}
-              </Typography>
-            }
-            labelPlacement="top"
-            sx={{
-              m: 0,
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 0.25,
-              '& .MuiFormControlLabel-label': {
-                fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
-              },
-            }}
-          />
-        </Box>
-      )}
-      {/* Botón de filtros - Optimizado para móviles */}
-      {showFiltersButton !== false && (
-      <Button
-        size="small"
-        variant={buttonVariantStyles.variant}
-        onClick={onToggleFilters}
-        sx={buttonBaseStyles}
-      >
-        {/* Solo icono en xs y sm, texto completo en md+ */}
-        <Box
-          sx={{
-            display: { xs: 'none', sm: 'none', md: 'flex' },
-            alignItems: 'center',
-            gap: 1,
-          }}
-        >
-          <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
-            <FilterAltIcon fontSize="small" />
-          </Badge>
-          Filtros
-        </Box>
-        {/* Solo icono en xs y sm */}
-        <Box
-          sx={{
-            display: { xs: 'flex', sm: 'flex', md: 'none' },
-            justifyContent: 'center',
-          }}
-        >
-          <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
-            <FilterAltIcon fontSize="small" />
-          </Badge>
-        </Box>
-      </Button>
-      )}
+      {/* Control de vista Productos/Proveedores movido al contenedor padre (SearchSection) */}
+      {/* Botón de filtros eliminado */}
     </Box>
   );
 };
