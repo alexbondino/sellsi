@@ -18,7 +18,7 @@ import {
   Warning as WarningIcon,
   AttachMoney as AttachMoneyIcon
 } from '@mui/icons-material'
-import { formatCLP, formatDate, getSupplierBankInfo } from '../services/adminPaymentReleaseService'
+import { formatCLP, formatDate, getSupplierBankInfo, computePayout } from '../services/adminPaymentReleaseService'
 import { useCurrentAdmin } from '../hooks/useCurrentAdmin'
 
 const ReleasePaymentModal = ({ open, onClose, release, onConfirm }) => {
@@ -185,13 +185,27 @@ const ReleasePaymentModal = ({ open, onClose, release, onConfirm }) => {
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="body2" color="text.secondary">
-                Monto a liberar:
-              </Typography>
-              <Typography variant="h6" color="success.main" fontWeight={600}>
-                {formatCLP(release.amount)}
-              </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Monto bruto:
+                </Typography>
+                <Typography variant="body2">
+                  {formatCLP(release.amount)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Comisión Sellsi (3%): {formatCLP((typeof computePayout === 'function' ? computePayout(release.amount).commission : Math.round((parseFloat(release.amount)||0) * 0.03)))}
+                </Typography>
+              </Box>
+
+              <Box sx={{ textAlign: 'right' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Monto a liberar:
+                </Typography>
+                <Typography variant="h6" color="success.main" fontWeight={600}>
+                  {formatCLP((typeof computePayout === 'function' ? computePayout(release.amount).payout : Math.round((parseFloat(release.amount)||0) * 0.97)))}
+                </Typography>
+              </Box>
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>

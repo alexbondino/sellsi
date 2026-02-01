@@ -23,6 +23,7 @@ const MOCK_REQUESTS = [
     amount: 500000,
     amount_used: 0,
     amount_paid: 0,
+    amount_refunded: 0,
     term_days: 30,
     request_type: 'express',
     status: 'pending_sellsi_approval',
@@ -41,6 +42,7 @@ const MOCK_REQUESTS = [
     amount: 3000000,
     amount_used: 100000,
     amount_paid: 0,
+    amount_refunded: 0,
     term_days: 45,
     request_type: 'express',
     status: 'approved_by_sellsi',
@@ -62,6 +64,7 @@ const MOCK_REQUESTS = [
     amount: 200000,
     amount_used: 0,
     amount_paid: 50000,
+    amount_refunded: 0,
     term_days: 30,
     request_type: 'express',
     status: 'approved_by_sellsi',
@@ -80,7 +83,9 @@ const MOCK_REQUESTS = [
     supplier: { user_nm: 'Proveedor C', email: 'ventas@proveedorc.cl' },
     amount: 800000,
     amount_used: 800000,
-    amount_paid: 800000,
+    // amount_paid increased to create a refund pending for expired case
+    amount_paid: 900000,
+    amount_refunded: 0,
     term_days: 7,
     request_type: 'extended',
     status: 'expired',
@@ -96,6 +101,7 @@ const MOCK_REQUESTS = [
     amount: 1200000,
     amount_used: 200000,
     amount_paid: 0,
+    amount_refunded: 0,
     term_days: 15,
     request_type: 'extended',
     status: 'buyer_signature_pending',
@@ -109,6 +115,7 @@ const MOCK_REQUESTS = [
     amount: 2500000,
     amount_used: 0,
     amount_paid: 0,
+    amount_refunded: 0,
     term_days: 30,
     request_type: 'express',
     status: 'pending_sellsi_approval',
@@ -125,6 +132,7 @@ const MOCK_REQUESTS = [
     amount: 4200000,
     amount_used: 500000,
     amount_paid: 200000,
+    amount_refunded: 0,
     term_days: 60,
     request_type: 'extended',
     status: 'pending_sellsi_approval',
@@ -140,11 +148,122 @@ const MOCK_REQUESTS = [
     amount: 750000,
     amount_used: 750000,
     amount_paid: 750000,
+    amount_refunded: 0,
     term_days: 30,
     request_type: 'express',
     status: 'approved_by_sellsi',
     approved_at: '2025-12-22T10:00:00Z',
     document_count: 1,
+    // example: already paused (for dev testing unpause)
+    paused: true,
+    paused_at: '2025-12-23T10:00:00Z',
+    paused_by: 'dev-admin',
+    paused_reason: 'Testing pause',
+  },
+  // New test cases to cover combined scenarios
+  {
+    id: 'ftx-8',
+    created_at: '2026-01-20T09:00:00Z',
+    buyer_user_nm: 'Comercial Ocho',
+    buyer: { user_nm: 'Comercial Ocho', email: 'ocho@empresa.cl' },
+    supplier_user_nm: 'Proveedor H',
+    supplier: { user_nm: 'Proveedor H', email: 'ventas@proveedorh.cl' },
+    amount: 1000000,
+    amount_used: 200000,
+    amount_paid: 300000,
+    amount_refunded: 0,
+    term_days: 30,
+    request_type: 'express',
+    status: 'approved_by_sellsi',
+    approved_at: '2026-01-20T09:05:00Z',
+    document_count: 0,
+  },
+  {
+    id: 'ftx-expired-2',
+    created_at: '2025-12-25T10:00:00Z',
+    buyer_user_nm: 'Cliente Noveno',
+    buyer: { user_nm: 'Cliente Noveno', email: 'noveno@cliente.cl' },
+    supplier_user_nm: 'Proveedor J',
+    supplier: { user_nm: 'Proveedor J', email: 'j@proveedorj.cl' },
+    amount: 500000,
+    amount_used: 100000,
+    amount_paid: 200000,
+    amount_refunded: 0,
+    term_days: 15,
+    request_type: 'extended',
+    status: 'expired',
+    document_count: 0,
+  },
+  // Mora case: expired and balance > 0 (amount_used - amount_paid > 0)
+  {
+    id: 'ftx-mora-1',
+    created_at: '2025-11-15T09:00:00Z',
+    buyer_user_nm: 'Mora Cliente',
+    buyer: { user_nm: 'Mora Cliente', email: 'mora@cliente.cl' },
+    supplier_user_nm: 'Proveedor Mora',
+    supplier: { user_nm: 'Proveedor Mora', email: 'mora@proveedor.cl' },
+    amount: 600000,
+    amount_used: 500000,
+    amount_paid: 200000,
+    amount_refunded: 0,
+    term_days: 30,
+    request_type: 'express',
+    status: 'expired',
+    document_count: 0,
+  },
+
+  // Paused example for Buyer view
+  {
+    id: 'ftx-paused-buyer',
+    created_at: '2026-01-22T10:00:00Z',
+    buyer_user_nm: 'Buyer Pausado',
+    buyer_legal_name: 'Buyer Pausado Ltda',
+    buyer_legal_rut: '76.444.555-6',
+    buyer: { user_nm: 'Buyer Pausado', email: 'buyer.pausado@cliente.cl' },
+    supplier_user_nm: 'Proveedor Pausa',
+    supplier: { user_nm: 'Proveedor Pausa', email: 'pausa@proveedor.cl' },
+    amount: 750000,
+    amount_used: 250000,
+    amount_paid: 100000,
+    amount_refunded: 0,
+    term_days: 30,
+    request_type: 'express',
+    status: 'approved_by_sellsi',
+    approved_at: '2026-01-22T10:05:00Z',
+    document_count: 1,
+    payment_status: 'pending',
+    // Pause metadata (dev mock)
+    paused: true,
+    paused_at: '2026-01-23T09:00:00Z',
+    paused_by: 'dev-admin',
+    paused_reason: 'Revisión manual por actividad sospechosa',
+  },
+
+  // Paused example for Supplier view
+  {
+    id: 'ftx-paused-supplier',
+    created_at: '2026-01-20T08:30:00Z',
+    buyer_user_nm: 'Cliente Pausa',
+    buyer_legal_name: 'Cliente Pausa S.A.',
+    buyer_legal_rut: '77.333.222-1',
+    buyer: { user_nm: 'Cliente Pausa', email: 'cliente.pausa@cliente.cl' },
+    supplier_user_nm: 'Proveedor Pausado',
+    supplier: { user_nm: 'Proveedor Pausado', email: 'proveedor.pausado@proveedor.cl' },
+    amount: 1500000,
+    amount_used: 500000,
+    amount_paid: 200000,
+    amount_refunded: 0,
+    term_days: 45,
+    request_type: 'extended',
+    status: 'approved_by_sellsi',
+    approved_at: '2026-01-20T08:45:00Z',
+    document_count: 2,
+    payment_status: 'pending',
+    // Pause metadata (dev mock)
+    paused: true,
+    paused_at: '2026-01-24T11:15:00Z',
+    paused_by: 'dev-admin',
+    paused_reason: 'Monto en disputa — retención preventiva',
   }
 ];
 
@@ -298,6 +417,58 @@ export async function approveFinancingRequest(requestId, adminId) {
     })
     .eq('id', requestId)
     .eq('status', 'pending_sellsi_approval')
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Pausar o reanudar un financiamiento (dev/mock)
+ */
+export async function pauseFinancing(requestId, adminId, reason = null) {
+  if (IS_DEV) {
+    const req = findMockRequest(requestId);
+    if (!req) throw new Error('Solicitud no encontrada (mock)');
+    if (req.status !== 'approved_by_sellsi') throw new Error('Solo se puede pausar un financiamiento aprobado');
+    req.paused = true;
+    req.paused_at = new Date().toISOString();
+    req.paused_by = adminId || 'mock-admin';
+    req.paused_reason = reason;
+    req.updated_at = new Date().toISOString();
+    return req;
+  }
+
+  const { data, error } = await supabase
+    .from(TABLE)
+    .update({ paused: true, paused_at: new Date().toISOString(), paused_by: adminId, paused_reason: reason, updated_at: new Date().toISOString() })
+    .eq('id', requestId)
+    .eq('status', 'approved_by_sellsi')
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function unpauseFinancing(requestId, adminId, reason = null) {
+  if (IS_DEV) {
+    const req = findMockRequest(requestId);
+    if (!req) throw new Error('Solicitud no encontrada (mock)');
+    if (!req.paused) throw new Error('El financiamiento no está pausado');
+    req.paused = false;
+    req.paused_at = null;
+    req.paused_by = adminId || null;
+    req.paused_reason = reason || null;
+    req.updated_at = new Date().toISOString();
+    return req;
+  }
+
+  const { data, error } = await supabase
+    .from(TABLE)
+    .update({ paused: false, paused_at: null, paused_by: null, paused_reason: null, updated_at: new Date().toISOString() })
+    .eq('id', requestId)
     .select()
     .single();
 

@@ -129,21 +129,44 @@ const MobileFinancingCard = ({ financing, onApprove, onReject, onSign, onCancel,
           </Box>
 
           <Box sx={{ width: '50%', pl: 1, textAlign: 'right' }}>
-            <Typography
-              variant="body2"
-              fontWeight={600}
-              sx={{
-                color: colorMap[statusInfo.color] || 'text.secondary',
-                whiteSpace: 'pre-line',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                textAlign: 'right',
-              }}
-            >
-              {statusInfo.label}
-            </Typography>
+            {isApproved ? (
+              <>
+                <Chip
+                  label={getApprovedFinancingChip(financing).label}
+                  color={getApprovedFinancingChip(financing).color}
+                  size="small"
+                  sx={{ fontWeight: 600 }}
+                />
+                {financing.paused && (
+                  <Box sx={{ mt: 0.5 }}>
+                    <Typography
+                      variant="body2"
+                      color="primary"
+                      sx={{ fontSize: '0.8rem', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                      onClick={() => onViewReason?.(financing)}
+                    >
+                      Ver motivo
+                    </Typography>
+                  </Box>
+                )}
+              </>
+            ) : (
+              <Typography
+                variant="body2"
+                fontWeight={600}
+                sx={{
+                  color: colorMap[statusInfo.color] || 'text.secondary',
+                  whiteSpace: 'pre-line',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textAlign: 'right',
+                }}
+              >
+                {statusInfo.label}
+              </Typography>
+            )}
           </Box>
         </Box>
 
@@ -578,7 +601,7 @@ const SupplierFinancingsList = ({
   const EmptyStateFiltered = () => (
     <Paper sx={{ p: { xs: 3, md: 4 }, textAlign: 'center' }}>
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-        <AccountBalanceIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
+        <AccountBalanceIcon sx={{ fontSize: 40, color: 'primary.main' }} />
       </Box>
       <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
         No hay solicitudes con este estado
@@ -593,7 +616,7 @@ const SupplierFinancingsList = ({
   const EmptyStateApproved = () => (
     <Paper sx={{ p: { xs: 3, md: 4 }, textAlign: 'center' }}>
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-        <AccountBalanceIcon sx={{ fontSize: 48, color: 'success.main' }} />
+        <AccountBalanceIcon sx={{ fontSize: 48, color: 'primary.main' }} />
       </Box>
       <Typography variant="h6" color="text.secondary" sx={{ fontSize: { md: '1.5rem' } }}>
         No tienes financiamientos aprobados aún
@@ -608,7 +631,7 @@ const SupplierFinancingsList = ({
   const EmptyStateApprovedFiltered = () => (
     <Paper sx={{ p: { xs: 3, md: 4 }, textAlign: 'center' }}>
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-        <AccountBalanceIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
+        <AccountBalanceIcon sx={{ fontSize: 40, color: 'primary.main' }} />
       </Box>
       <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
         No hay financiamientos con este estado
@@ -818,6 +841,7 @@ const SupplierFinancingsList = ({
           ) : (
             <SupplierApprovedTable
               financings={filteredApproved}
+              onViewReason={handleViewReason}
             />
           )}
         </>

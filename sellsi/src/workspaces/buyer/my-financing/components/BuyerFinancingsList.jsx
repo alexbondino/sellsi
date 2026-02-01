@@ -106,12 +106,26 @@ const MobileFinancingCard = ({ financing, onViewReason, onCancel, onSign, onDown
 
           <Box sx={{ width: '50%', pl: 1, textAlign: 'right' }}>
             {isApproved ? (
-              <Chip
-                label={getApprovedFinancingChip(financing).label}
-                color={getApprovedFinancingChip(financing).color}
-                size="small"
-                sx={{ fontWeight: 600 }}
-              />
+              <>
+                <Chip
+                  label={getApprovedFinancingChip(financing).label}
+                  color={getApprovedFinancingChip(financing).color}
+                  size="small"
+                  sx={{ fontWeight: 600 }}
+                />
+                {financing.paused && (
+                  <Box sx={{ mt: 0.5 }}>
+                    <Typography
+                      variant="body2"
+                      color="primary"
+                      sx={{ fontSize: '0.8rem', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                      onClick={() => onViewReason?.(financing)}
+                    >
+                      Ver motivo
+                    </Typography>
+                  </Box>
+                )}
+              </>
             ) : (
               <Typography
                 variant="body2"
@@ -227,13 +241,13 @@ const MobileFinancingCard = ({ financing, onViewReason, onCancel, onSign, onDown
 
           <Box sx={{ display: 'flex', gap: 1 }}>
             {isApproved ? (
-              <Tooltip title="Pagar en línea">
+              <Tooltip title={financing.paused ? 'Financiamiento pausado' : 'Pagar en línea'}>
                 <span>
                   <IconButton 
                     size="small" 
                     color="primary" 
                     onClick={() => onPayOnline?.(financing)}
-                    disabled={financing.payment_status === 'paid'}
+                    disabled={financing.payment_status === 'paid' || financing.paused}
                     sx={{ '&:hover': { backgroundColor: 'primary.light', color: 'white' } }}
                   >
                     <PaymentIcon fontSize="small" />
@@ -679,26 +693,25 @@ const BuyerFinancingsList = ({
       ) : (
         <>
           {/* Contenido - Aprobados */}
-          {approvedFinancings.length === 0 && approvedFilter === 'all' ? (
-            <EmptyStateApproved />
+          <FinancingFilters
+            currentFilter={approvedFilter}
+            onFilterChange={setApprovedFilter}
+            filterOptions={approvedFilterOptions}
+            isMobile={false}
+          />
+          {approvedFinancings.length === 0 ? (
+            approvedFilter === 'all' ? (
+              <EmptyStateApproved />
+            ) : (
+              <EmptyStateFiltered />
+            )
           ) : (
-            <>
-              <FinancingFilters
-                currentFilter={approvedFilter}
-                onFilterChange={setApprovedFilter}
-                filterOptions={approvedFilterOptions}
-                isMobile={false}
-              />
-              {approvedFinancings.length === 0 ? (
-                <EmptyStateFiltered />
-              ) : (
-                <BuyerFinancingTable
-                  financings={approvedFinancings}
-                  onPayOnline={handlePayOnline}
-                  isApproved={true}
-                />
-              )}
-            </>
+            <BuyerFinancingTable
+              financings={approvedFinancings}
+              onPayOnline={handlePayOnline}
+              isApproved={true}
+              onViewReason={handleViewReason}
+            />
           )}
         </>
       )}

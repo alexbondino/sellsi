@@ -53,67 +53,7 @@ export const QuotationButtons = ({
         ...sx,
       }}
     >
-      {/* Fila 1 */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.75,
-          lineHeight: 1.2,
-        }}
-      >
-        <Typography
-          variant="body2"
-          sx={{ color: 'text.secondary', lineHeight: 1.2 }}
-        >
-          ¿Necesitas solicitar alguna condición especial?
-        </Typography>
-
-        <Button
-          variant="text"
-          size="small"
-          onClick={onOpenContactModal}
-          sx={{
-            fontWeight: 600,
-            minHeight: 'auto',
-            py: 0,
-          }}
-        >
-          Contáctanos
-        </Button>
-      </Box>
-
-      {/* Fila 2 */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.75,
-          lineHeight: 1.2,
-        }}
-      >
-        <Typography
-          variant="body2"
-          sx={{ color: 'text.secondary', lineHeight: 1.2 }}
-        >
-          Obtén el detalle de la operación
-        </Typography>
-
-        <Button
-          variant="text"
-          size="small"
-          onClick={onOpenQuotationModal}
-          sx={{
-            fontWeight: 600,
-            minHeight: 'auto',
-            py: 0,
-          }}
-        >
-          Cotiza aquí
-        </Button>
-      </Box>
-
-      {/* Fila 3 - Financiamiento */}
+      {/* Fila 1 - Financiamiento (si aplica) */}
       {financingEnabled && (
         <Box
           sx={{
@@ -144,6 +84,63 @@ export const QuotationButtons = ({
           </Button>
         </Box>
       )}
+
+      {/* Fila 2 - Cotización */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.75,
+          lineHeight: 1.2,
+        }}
+      >
+        <Typography
+          variant="body2"
+          sx={{ color: 'text.secondary', lineHeight: 1.2 }}
+        >
+          Obtén el detalle de la operación
+        </Typography>
+
+        <Button
+          variant="text"
+          size="small"
+          onClick={onOpenQuotationModal}
+          sx={{
+            fontWeight: 600,
+            minHeight: 'auto',
+            py: 0,
+          }}
+        >
+          Cotiza aquí
+        </Button>
+      </Box>
+
+      {/* Fila 3 - Contacto */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.75,
+          lineHeight: 1.2,
+        }}
+      >
+        <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.2 }}>
+          ¿Necesitas solicitar alguna condición especial?
+        </Typography>
+
+        <Button
+          variant="text"
+          size="small"
+          onClick={onOpenContactModal}
+          sx={{
+            fontWeight: 600,
+            minHeight: 'auto',
+            py: 0,
+          }}
+        >
+          Contáctanos
+        </Button>
+      </Box>
     </Box>
   );
 };

@@ -70,7 +70,7 @@ export const getUserProfile = async (userId, options = {}) => {
       // Embebido: una sola llamada
       const { data, error } = await supabase
         .from('users')
-        .select('*, bank_info(*), shipping_info(*), billing_info(*)')
+        .select('*, bank_info(*), shipping_info(*), billing_info(*), supplier(*)')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -82,6 +82,7 @@ export const getUserProfile = async (userId, options = {}) => {
       const shipRel = Array.isArray(data.shipping_info) ? data.shipping_info[0] : data.shipping_info;
       const billRel = Array.isArray(data.billing_info) ? data.billing_info[0] : data.billing_info;
 
+      const supplierRel = Array.isArray(data.supplier) ? data.supplier[0] : data.supplier;
       const completeProfile = {
         ...data,
         // Flatten bancario
@@ -104,6 +105,14 @@ export const getUserProfile = async (userId, options = {}) => {
         billing_address: billRel?.billing_address || '',
         billing_region: billRel?.billing_region || '',
         billing_commune: billRel?.billing_commune || '',
+        // Flatten supplier legal info (if exists)
+        supplier_legal_name: supplierRel?.supplier_legal_name || data?.supplier_legal_name || '',
+        supplier_legal_rut: supplierRel?.supplier_legal_rut || data?.supplier_legal_rut || '',
+        supplier_legal_representative_name: supplierRel?.supplier_legal_representative_name || data?.supplier_legal_representative_name || '',
+        supplier_legal_representative_rut: supplierRel?.supplier_legal_representative_rut || data?.supplier_legal_representative_rut || '',
+        supplier_legal_address: supplierRel?.supplier_legal_address || data?.supplier_legal_address || '',
+        supplier_legal_region: supplierRel?.supplier_legal_region || data?.supplier_legal_region || '',
+        supplier_legal_commune: supplierRel?.supplier_legal_commune || data?.supplier_legal_commune || '',
         // Defaults (preservar campos de tabla users como minimum_purchase_amount, descripcion_proveedor)
         descripcion_proveedor: data?.descripcion_proveedor || '',
         document_types: data?.document_types || [],
@@ -123,14 +132,16 @@ export const getUserProfile = async (userId, options = {}) => {
           .maybeSingle();
         if (userError) throw userError;
 
-        const [bankRes, shipRes, billRes] = await Promise.allSettled([
+        const [bankRes, shipRes, billRes, supplierRes] = await Promise.allSettled([
           supabase.from('bank_info').select('*').eq('user_id', userId).maybeSingle(),
           supabase.from('shipping_info').select('*').eq('user_id', userId).maybeSingle(),
           supabase.from('billing_info').select('*').eq('user_id', userId).maybeSingle(),
+          supabase.from('supplier').select('*').eq('user_id', userId).maybeSingle(),
         ]);
         const bankData = bankRes.status === 'fulfilled' && !bankRes.value.error ? bankRes.value.data : null;
         const shippingData = shipRes.status === 'fulfilled' && !shipRes.value.error ? shipRes.value.data : null;
         const billingData = billRes.status === 'fulfilled' && !billRes.value.error ? billRes.value.data : null;
+        const supplierData = supplierRes.status === 'fulfilled' && !supplierRes.value.error ? supplierRes.value.data : null;
         const completeProfile = {
           ...userData,
           account_holder: bankData?.account_holder || '',
@@ -150,6 +161,14 @@ export const getUserProfile = async (userId, options = {}) => {
             billing_address: billingData?.billing_address || '',
             billing_region: billingData?.billing_region || '',
             billing_commune: billingData?.billing_commune || '',
+            // Supplier legal fields
+            supplier_legal_name: supplierData?.supplier_legal_name || userData?.supplier_legal_name || '',
+            supplier_legal_rut: supplierData?.supplier_legal_rut || userData?.supplier_legal_rut || '',
+            supplier_legal_representative_name: supplierData?.supplier_legal_representative_name || userData?.supplier_legal_representative_name || '',
+            supplier_legal_representative_rut: supplierData?.supplier_legal_representative_rut || userData?.supplier_legal_representative_rut || '',
+            supplier_legal_address: supplierData?.supplier_legal_address || userData?.supplier_legal_address || '',
+            supplier_legal_region: supplierData?.supplier_legal_region || userData?.supplier_legal_region || '',
+            supplier_legal_commune: supplierData?.supplier_legal_commune || userData?.supplier_legal_commune || '',
             descripcion_proveedor: userData?.descripcion_proveedor || '',
             document_types: userData?.document_types || [],
             // minimum_purchase_amount: suppliers mínimo 1, buyers pueden 0
@@ -324,6 +343,39 @@ export const updateUserProfile = async (userId, profileData) => {
         }
       } catch (error) {
               }
+    }
+
+    // 5. Actualizar/Insertar Información Legal del Proveedor (tabla supplier)
+    if (hasSupplierData(profileData)) {
+      // Ensure the NOT NULL `name` column is provided when creating a supplier row.
+      // Prefer an explicit `user_nm` from the payload, else fall back to the legal name.
+      const supplierName = profileData.user_nm || profileData.userName || profileData.supplier_legal_name || 'Proveedor';
+
+      const supplierData = {
+        user_id: userId,
+        name: supplierName,
+        supplier_legal_name: profileData.supplier_legal_name,
+        supplier_legal_rut: profileData.supplier_legal_rut,
+        supplier_legal_representative_name: profileData.supplier_legal_representative_name,
+        supplier_legal_representative_rut: profileData.supplier_legal_representative_rut,
+        supplier_legal_address: profileData.supplier_legal_address,
+        supplier_legal_region: profileData.supplier_legal_region,
+        supplier_legal_commune: profileData.supplier_legal_commune,
+      };
+
+      try {
+        const { error: supplierError } = await supabase
+          .from('supplier')
+          .upsert(supplierData, { onConflict: ['user_id'] });
+
+        if (supplierError) {
+          partialErrors.supplier = supplierError?.message || String(supplierError);
+        } else {
+          console.log('✅ Información legal del proveedor actualizada correctamente');
+        }
+      } catch (error) {
+        console.error('❌ Excepción al actualizar información legal del proveedor:', error);
+      }
     }
 
   // Invalidar cache tras actualización completa
@@ -818,6 +870,11 @@ const hasShippingData = (data) => {
 const hasBillingData = (data) => {
   return data.business_name || data.billing_rut || data.business_line || 
          data.billing_address || data.billing_region || data.billing_commune;
+};
+
+const hasSupplierData = (data) => {
+  return data.supplier_legal_name || data.supplier_legal_rut || data.supplier_legal_representative_name ||
+         data.supplier_legal_representative_rut || data.supplier_legal_address || data.supplier_legal_region || data.supplier_legal_commune;
 };
 
 /**

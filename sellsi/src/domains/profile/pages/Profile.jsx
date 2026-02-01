@@ -989,7 +989,7 @@ const Profile = ({
                     <Tab
                       icon={<AccountBalanceIcon />}
                       iconPosition="start"
-                      label="Info. Legal"
+                      label="Legal"
                     />
                   )}
                 </Tabs>

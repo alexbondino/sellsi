@@ -96,8 +96,10 @@ describe('ReleasePaymentModal - Renderizado', () => {
     // Orden y chip
     expect(screen.getByText('Orden:')).toBeInTheDocument()
     expect(screen.getByText('#ORDER_TEST_001')).toBeInTheDocument()
-    // Monto y proveedor
+    // Monto bruto, comisión y proveedor
     expect(screen.getByText(/\$150\.000/)).toBeInTheDocument()
+    expect(screen.getByText(/\$4\.500/)).toBeInTheDocument() // Comisión 3%
+    expect(screen.getByText(/\$145\.500/)).toBeInTheDocument() // Monto a liberar
     expect(screen.getByText('Proveedor Test S.A.')).toBeInTheDocument()
   })
 

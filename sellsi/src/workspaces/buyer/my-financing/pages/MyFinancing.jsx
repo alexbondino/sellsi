@@ -17,10 +17,10 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import BuyerFinancingsList from '../components/BuyerFinancingsList';
-// import { useBuyerFinancings } from '../hooks/useBuyerFinancings'; // TODO: Crear hook
+import { useBuyerFinancings } from '../hooks/useBuyerFinancings';
 
-// Mock data temporal hasta que se implemente el hook real
-const useMockBuyerFinancings = () => {
+/* Mock eliminado: useBuyerFinancings es el hook real */
+
   const financings = [
     // PASO 1: Revisión del Proveedor
     {
@@ -221,6 +221,25 @@ const useMockBuyerFinancings = () => {
         created_at: '2026-01-05T08:00:00Z',
         approved_at: '2026-01-05T12:00:00Z', // Aprobado hace 7 días, quedan 33 días → VERDE (33 > 7)
       },
+
+      // Pausado (Buyer) - muestra chip "Pausado" y link "Ver motivo"
+      {
+        id: 118,
+        supplier_name: 'Proveedor Pausado (Buyer)',
+        amount: 950000,
+        amount_used: 300000,
+        term_days: 30,
+        status: 'approved_by_sellsi',
+        payment_status: 'pending',
+        created_at: '2026-01-20T10:00:00Z',
+        approved_at: '2026-01-21T10:00:00Z',
+        // Pause metadata to be displayed in UI
+        paused: true,
+        paused_at: '2026-01-24T08:00:00Z',
+        paused_by: 'dev-support',
+        paused_reason: 'Investigación por discrepancia en documentos',
+      },
+
       {
         id: 110,
         supplier_name: 'Mensual Pro',
@@ -331,28 +350,6 @@ const useMockBuyerFinancings = () => {
     return f;
   });
 
-  // Guardar financings en sessionStorage para que useFinancingCheckout pueda acceder
-  React.useEffect(() => {
-    sessionStorage.setItem('mock_financings', JSON.stringify(processedFinancings));
-  }, []);
-
-  return {
-    financings: processedFinancings,
-    loading: false,
-    initializing: false,
-    cancelFinancing: async (id, reason) => {
-      console.log('Cancelar financiamiento:', id, 'Motivo:', reason);
-    },
-    signFinancing: async (id) => {
-      console.log('Firmar financiamiento:', id);
-    },
-    payOnline: async (financing) => {
-      console.log('💳 Pagar en línea financiamiento:', financing.id);
-      // TODO: Abrir modal de pago o redirigir a página de pago
-    },
-  };
-};
-
 const MyFinancing = () => {
   const isMobile = useMediaQuery(dashboardThemeCore.breakpoints.down('md'));
   const location = useLocation();
@@ -367,7 +364,7 @@ const MyFinancing = () => {
     cancelFinancing,
     signFinancing,
     payOnline,
-  } = useMockBuyerFinancings(); // TODO: Reemplazar con useBuyerFinancings()
+  } = useBuyerFinancings();
 
   return (
     <ThemeProvider theme={dashboardThemeCore}>

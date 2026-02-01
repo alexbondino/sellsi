@@ -130,4 +130,47 @@ describe('updateUserProfile integration (validation early return)', () => {
     // Cache invalidation should have been attempted
     expect(mockInvalidateCache).toHaveBeenCalledWith('uid-123');
   });
+
+  test('upserts supplier info when supplier legal fields present and provides name fallback', async () => {
+    const updateSpy = jest.fn().mockReturnThis();
+    const eqSpy = jest.fn().mockResolvedValue({ error: null });
+
+    let capturedUpsertArg = null;
+
+    mockSupabaseFrom
+      .mockImplementationOnce((table) => (table === 'users' ? { update: updateSpy, eq: eqSpy } : {}))
+      .mockImplementationOnce((table) => (table === 'supplier'
+        ? { upsert: jest.fn((arg) => { capturedUpsertArg = arg; return Promise.resolve({ error: null }); }) }
+        : {}));
+
+    const payload = {
+      supplier_legal_name: 'My Supplier SA',
+      supplier_legal_rut: '12.345.678-9',
+      supplier_legal_address: 'Av 1',
+    };
+
+    const res = await updateUserProfile('uid-123', payload);
+    expect(res.success).toBe(true);
+    // Ensure supabase.from was called for supplier
+    expect(mockSupabaseFrom).toHaveBeenCalledWith('supplier');
+    // Ensure `name` fallback was provided (supplier_legal_name used as fallback)
+    expect(capturedUpsertArg).not.toBeNull();
+    expect(capturedUpsertArg).toMatchObject({ name: 'My Supplier SA', user_id: 'uid-123' });
+  });
+
+  test('returns partialErrors when supplier upsert fails but overall succeeds', async () => {
+    const updateSpy = jest.fn().mockReturnThis();
+    const eqSpy = jest.fn().mockResolvedValue({ error: null });
+
+    mockSupabaseFrom
+      .mockImplementationOnce((table) => (table === 'users' ? { update: updateSpy, eq: eqSpy } : {}))
+      .mockImplementationOnce((table) => (table === 'supplier' ? { upsert: jest.fn().mockResolvedValue({ error: { message: 'supplier upsert failed' } }) } : {}));
+
+    const payload = { supplier_legal_name: 'Name', supplier_legal_rut: '1-9' };
+
+    const res = await updateUserProfile('uid-123', payload);
+    expect(res.success).toBe(true);
+    expect(res.partialErrors).toBeDefined();
+    expect(res.partialErrors.supplier).toMatch(/supplier upsert failed/);
+  });
 });

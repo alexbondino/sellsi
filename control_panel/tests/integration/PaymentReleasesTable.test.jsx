@@ -297,13 +297,16 @@ describe('PaymentReleasesTable - DataGrid', () => {
   test('muestra las columnas correctas del DataGrid', async () => {
     render(<PaymentReleasesTable />)
     
-    await waitFor(() => {
-      // Buscar usando role columnheader
-      expect(screen.getByRole('columnheader', { name: /Orden/i })).toBeInTheDocument()
-      expect(screen.getByRole('columnheader', { name: /Proveedor/i })).toBeInTheDocument()
-      expect(screen.getByRole('columnheader', { name: /Monto/i })).toBeInTheDocument()
-      expect(screen.getByRole('columnheader', { name: /Acciones/i })).toBeInTheDocument()
-    })
+    // Obtener todos los headers y validar que contienen los textos esperados (más tolerante que buscar cada uno individualmente)
+    await screen.findByText(/Liberación de Pagos a Proveedores/i, { timeout: 10000 })
+    const headers = screen.getAllByRole('columnheader').map(h => h.textContent || '')
+    const headerStr = headers.join(' ')
+
+    expect(headerStr).toMatch(/Orden/i)
+    expect(headerStr).toMatch(/Proveedor/i)
+    expect(headerStr).toMatch(/Monto bruto/i)
+    expect(headerStr).toMatch(/Monto a liberar/i)
+    expect(headerStr).toMatch(/Acciones/i)
   })
 
   test('muestra las filas de datos correctamente', async () => {

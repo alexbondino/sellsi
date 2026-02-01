@@ -47,6 +47,9 @@ describe('PaymentReleaseDetailsModal', () => {
       expect(screen.getByText('Banco Test')).toBeInTheDocument()
       expect(screen.getByText('12345678')).toBeInTheDocument()
       expect(screen.getByText('12.345.678-9')).toBeInTheDocument()
+      // Comisión y monto a liberar visibles
+      expect(screen.getByText(/\$7\.500/)).toBeInTheDocument()
+      expect(screen.getByText(/\$242\.500/)).toBeInTheDocument()
     })
   })
 })

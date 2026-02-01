@@ -2,6 +2,15 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import FinancingConfigModal from '../FinancingConfigModal';
 
+// Mock the service that fetches financings so the component behaves deterministically in tests
+jest.mock('../../../../../workspaces/buyer/my-financing/services/financingService', () => ({
+  getAvailableFinancingsForSupplier: jest.fn(() => Promise.resolve([
+    { id: 'mock-1', supplier_id: 's1', amount: 800000, amount_used: 200000, amount_paid: 50000, term_days: 45, activated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 30*86400000).toISOString(), status: 'approved_by_sellsi', paused: false },
+    { id: 'mock-2', supplier_id: 's1', amount: 500000, amount_used: 150000, amount_paid: 50000, term_days: 30, activated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 7*86400000).toISOString(), status: 'approved_by_sellsi', paused: false },
+    { id: 'mock-3', supplier_id: 's1', amount: 300000, amount_used: 280000, amount_paid: 100000, term_days: 15, activated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 10*86400000).toISOString(), status: 'approved_by_sellsi', paused: true },
+  ]))
+}));
+
 const cartItems = [
   {
     id: 'p1',
@@ -29,7 +38,7 @@ describe('FinancingConfigModal', () => {
     );
 
     // Find select by label
-    const select = screen.getByLabelText(/Financiamiento a usar/i);
+    const select = await screen.findByLabelText(/Financiamiento a usar/i);
     expect(select).toBeInTheDocument();
 
     // Open select (MUI uses mouseDown on the button element)
@@ -38,12 +47,12 @@ describe('FinancingConfigModal', () => {
     const listbox = await screen.findByRole('listbox');
     expect(listbox).toBeInTheDocument();
 
-    // Should have mock items Fin #1 ... Fin #5
+    // Should have the dynamic items (Fin #1 ...)
     const fin1 = screen.getByText(/Fin #1/i);
     expect(fin1).toBeInTheDocument();
 
-    // Click Fin #3 for example
-    fireEvent.click(screen.getByText(/Fin #3/i));
+    // Click Fin #2 for example (should be available)
+    fireEvent.click(screen.getByText(/Fin #2/i));
 
     // Confirm button
     fireEvent.click(screen.getByText(/Confirmar/i));

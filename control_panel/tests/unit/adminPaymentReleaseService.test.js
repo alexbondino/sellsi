@@ -16,7 +16,8 @@ import {
   daysBetween,
   STATUS,
   STATUS_COLORS,
-  STATUS_LABELS
+  STATUS_LABELS,
+  computePayout
 } from '../../src/domains/admin/services/adminPaymentReleaseService'
 
 import {
@@ -48,6 +49,19 @@ AdminApiService.executeRPC = jest.fn()
 const { supabase } = require('../../src/services/supabase')
 
 describe('adminPaymentReleaseService - Formatters & Utilities', () => {
+  test('computePayout calcula comisión y payout correctamente', () => {
+    const res = computePayout(100000)
+    expect(res.commission).toBe(3000)
+    expect(res.payout).toBe(97000)
+
+    const res2 = computePayout('150000')
+    expect(res2.commission).toBe(4500)
+    expect(res2.payout).toBe(145500)
+
+    const res3 = computePayout(null)
+    expect(res3.commission).toBe(0)
+    expect(res3.payout).toBe(0)
+  })
   describe('formatCLP', () => {
     test('formatea números positivos correctamente', () => {
       expect(formatCLP(150000)).toBe('$150.000')

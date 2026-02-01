@@ -57,6 +57,12 @@ const defaultForm = {
   businessName: '',
 };
 
+// Mock feature flags helper (tests may override using ff.useFeatureFlag.mockImplementation)
+const ff = require('../../shared/hooks/useFeatureFlag');
+jest.mock('../../shared/hooks/useFeatureFlag', () => ({
+  useFeatureFlag: jest.fn(() => ({ enabled: false, loading: false })),
+}));
+
 // Use jest.fn() for hooks so tests can override with mockReturnValue()
 jest.mock('../../domains/profile/hooks/useProfileForm', () => ({
   useProfileForm: jest.fn(),
@@ -188,6 +194,11 @@ describe('Profile.jsx - deep and edge tests', () => {
       getDisplayImageUrl: jest.fn(() => null),
       clearPendingImage: jest.fn(),
     });
+
+    // Default feature flag: financing disabled (individual tests may override)
+    jest.mock('../../shared/hooks/useFeatureFlag', () => ({
+      useFeatureFlag: () => ({ enabled: false })
+    }));
   });
 
   test('renders loading then profile and shows name', async () => {

@@ -149,6 +149,7 @@ const createQueryMock = (result = { data: null, error: null }) => {
   return chain;
 };
 
+if (process.env.VITE_USE_MOCKS === 'true') {
 // Minimal inline mock for the supabase client chain used by the app.
 // Implemented entirely inside the factory to avoid referencing external variables (Jest rule).
 // Provide a richer supabase mock that stores an auth state change callback so tests can trigger SIGNED_IN/SIGNED_OUT.
@@ -249,6 +250,30 @@ jest.mock('../services/supabase', () => {
   // Allow tests to override the .from mock by spying on supabase.from directly
   return { supabase };
 });
+} else {
+  try {
+    const { supabase } = require('../services/supabase');
+    globalThis.__TEST_SUPABASE_REAL = supabase;
+    globalThis.__TEST_AUTH_LISTENERS = globalThis.__TEST_AUTH_LISTENERS || [];
+    try {
+      const origOnAuth = supabase.auth.onAuthStateChange.bind(supabase.auth);
+      supabase.auth.onAuthStateChange = (cb) => {
+        if (typeof cb === 'function') globalThis.__TEST_AUTH_LISTENERS.push(cb);
+        try { return origOnAuth(cb); } catch (e) { return { data: { subscription: { unsubscribe: () => {} } } }; }
+      };
+    } catch (e) {
+      // ignore
+    }
+    globalThis.__TEST_SUPABASE_TRIGGER_AUTH = (event, session) => {
+      if (Array.isArray(globalThis.__TEST_AUTH_LISTENERS)) {
+        globalThis.__TEST_AUTH_LISTENERS.forEach(l => { try { l(event, session); } catch (_) {} });
+      }
+    };
+  } catch (e) {
+    // If import fails, tests that need real supabase should set env vars explicitly.
+  }
+}
+
 
 // ===== MOCK: user services =====
 // Some user/service modules use `import.meta.env`. Provide a safe stub so imports in tests don't parse import.meta.

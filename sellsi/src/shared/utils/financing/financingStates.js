@@ -361,6 +361,11 @@ export const getApprovedFinancingStatus = (financing) => {
  * @returns {object} { label, color }
  */
 export const getApprovedFinancingChip = (financing) => {
+  // If paused, show paused chip instead of the usual 'Vigente'
+  if (financing?.paused) {
+    return { label: 'Pausado', color: 'warning' };
+  }
+
   const status = getApprovedFinancingStatus(financing);
   
   switch (status) {

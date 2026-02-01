@@ -104,6 +104,10 @@ const ProviderCatalog = () => {
   const [financingModalOpen, setFinancingModalOpen] = useState(false);
   useBodyScrollLock(financingModalOpen);
 
+  // Determinar si el usuario actual es el propietario del catálogo (propietario del proveedor)
+  const [isOwnProvider, setIsOwnProvider] = useState(false);
+
+
   // Extraer categorías dinámicamente de los productos del proveedor
   const availableCategories = useMemo(() => {
     if (!products || products.length === 0) return [];
@@ -211,6 +215,20 @@ const ProviderCatalog = () => {
           if (!providerData) {
             throw new Error('Proveedor no encontrado');
           }
+        }
+
+        // Establecer bandera de propietario: comparar sesión actual con el provider.user_id
+        try {
+          const sessionRes = await supabase.auth.getSession();
+          const currentUserId = sessionRes?.data?.session?.user?.id || localStorage.getItem('user_id');
+          if (currentUserId && providerData?.user_id) {
+            setIsOwnProvider(String(currentUserId) === String(providerData.user_id));
+          } else {
+            setIsOwnProvider(false);
+          }
+        } catch (e) {
+          const currentUserId = localStorage.getItem('user_id');
+          setIsOwnProvider(currentUserId && providerData?.user_id && String(currentUserId) === String(providerData.user_id));
         }
 
         // Verificar si el proveedor está verificado
@@ -465,12 +483,18 @@ const ProviderCatalog = () => {
   };
 
   const handleFinancingSubmit = async (financingData) => {
+    // Use dynamic import to avoid runtime `require` errors in the browser
+    const module = await import('../../buyer/my-financing/services/financingService');
+    const svc = module?.default || module;
+    const { createExpressRequest, createExtendedRequest } = svc;
+
     try {
-      console.log('📋 Solicitud de financiamiento:', financingData);
-      
-      // TODO: Implementar lógica de envío a backend
-      // Aquí se enviará la solicitud de financiamiento a Supabase
-      
+      if (financingData.type === 'express') {
+        await createExpressRequest({ formData: financingData, supplierId: provider?.user_id });
+      } else if (financingData.type === 'extended') {
+        await createExtendedRequest({ formData: financingData, supplierId: provider?.user_id });
+      }
+
       toast.success('Solicitud de financiamiento enviada exitosamente', {
         icon: '✅',
         duration: 3000,
@@ -481,6 +505,7 @@ const ProviderCatalog = () => {
       toast.error('Error al enviar la solicitud de financiamiento', {
         duration: 3000,
       });
+      throw error; // re-throw para que el modal permanezca abierto si se llamó desde FinancingModals
     }
   };
 
@@ -954,7 +979,7 @@ const ProviderCatalog = () => {
                   </Typography>
 
                   {/* Botón de solicitar financiamiento (solo desktop) */}
-                  {financingEnabled && !isMobile && (
+                  {financingEnabled && !isMobile && !isOwnProvider && (
                     <Button
                       variant="contained"
                       color="primary"
@@ -978,7 +1003,7 @@ const ProviderCatalog = () => {
                 </Box>
 
                 {/* Botón de solicitar financiamiento (solo mobile) */}
-                {financingEnabled && isMobile && (
+                {financingEnabled && isMobile && !isOwnProvider && (
                   <Box sx={{ mt: 1.5, width: '100%' }}>
                     <Button
                       variant="contained"

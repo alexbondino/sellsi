@@ -13,8 +13,10 @@ import { Box, useMediaQuery, useTheme } from '@mui/material';
 import ReactDOM from 'react-dom';
 import { SearchBar } from '../../../../shared/components/forms'; // ✅ REFACTOR: Usar el SearchBar compartido con funcionalidad de switch
 import CategoryNavigation from '../CategoryNavigation/CategoryNavigation';
+import { categoryNavigationStyles as catStyles } from '../CategoryNavigation/CategoryNavigation.styles';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Button } from '@mui/material';
+import { Button, Tooltip } from '@mui/material';
 
 /**
  * Componente que encapsula la barra de búsqueda y navegación de categorías
@@ -90,16 +92,61 @@ const SearchSection = React.memo(({
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const hideOnlyInput = isMobile && !searchBarProps?.isProviderView;
+  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
+  // Hide only the text input on small screens (xs, sm) when not in provider view
+  const hideOnlyInput = isSmall && !searchBarProps?.isProviderView;
+
+  // Extraer control de vista de searchBarProps para renderizarlo fuera del 40%
+  const { isProviderView, onToggleProviderView } = searchBarProps || {};
 
   // Usar portal para que SearchSection siempre esté pegada al viewport y no se mueva con el layout
     return ReactDOM.createPortal(
       <Box sx={finalContainerStyles}>
-        <Box sx={innerContainerStyles}>
-          {/* ✅ USAR SearchBar EXISTENTE - Sin botón de filtros */}
-      <SearchBar {...searchBarProps} hideTextInputOnMobile={hideOnlyInput} showFiltersButton={false} />
-          {/* ✅ USAR CategoryNavigation EXISTENTE */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {/* Contenedor con dos filas: fila superior (search + ordenamiento + proveedor) y fila inferior (categorías) */}
+        <Box sx={{ ...innerContainerStyles, display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1 }}>
+            {/* Fila 1: SearchBar + selector de categorías (botón Categorías/Despacho) + botón Productos/Proveedores */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+              {/* Left column: Search area. md:50%, lg:40% */}
+              <Box sx={{ width: { xs: '55%', sm: '55%', md: '65%', lg: '50%', xl: '40%' }, display: 'flex', alignItems: 'center' }}>
+                <SearchBar {...searchBarProps} hideTextInputOnMobile={hideOnlyInput} />
+              </Box>
+
+              {/* Right column: controls (md:50%, lg:60%) */}
+              <Box sx={{ width: { xs: '45%', sm: '45%', md: '35%', lg: '50%', xl: '60%' }, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: { xs: 0, sm: 0.25, md: 1 } }}>
+                {/* Botón Productos/Proveedores (outline con icono) */}
+                {onToggleProviderView && (
+                  <Box sx={{ display: { xs: 'block', md: 'block' }, ml: { xs: 0, sm: 0, md: 1 }, flexShrink: 0 }}>
+                    <Tooltip title="Alternar vista entre Productos y Proveedores disponibles.">
+                      <span>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={onToggleProviderView}
+                          startIcon={<VisibilityIcon />}
+                          sx={{
+                            ...catStyles.categoriesButton,
+                            borderWidth: 1,
+                            borderStyle: 'solid',
+                            borderColor: '#000',
+                            color: '#000',
+                            height: '36px',
+                            minWidth: 'auto',
+                          }}
+                          aria-pressed={isProviderView}
+                        >
+                          {isProviderView ? 'Ver Productos' : 'Ver Proveedores'}
+                        </Button>
+                      </span>
+                    </Tooltip>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Fila de categorías (segunda fila): navegación completa */}
+          <Box sx={{ mt: 0 }}>
             <CategoryNavigation {...categoryNavigationProps} />
           </Box>
         </Box>

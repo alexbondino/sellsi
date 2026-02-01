@@ -31,6 +31,10 @@ import {
   Popover,
   Checkbox,
   FormControlLabel,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -44,6 +48,8 @@ import {
   History as HistoryIcon,
   Autorenew as AutorenewIcon,
   InfoOutlined as InfoOutlinedIcon,
+  Pause as PauseIcon,
+  PlayArrow as PlayIcon,
 } from '@mui/icons-material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CloseIcon from '@mui/icons-material/Close';
@@ -63,6 +69,8 @@ import {
   getFinancingTransactions,
   restoreFinancingAmount,
   processRefund,
+  pauseFinancing,
+  unpauseFinancing,
 } from '../services/adminFinancingService';
 import { getCurrentAdminId } from './userManagementTable/utils/userUtils';
 import FinancingActionDialog from './FinancingActionDialog';
@@ -99,6 +107,8 @@ const StatusChip = ({ status }) => {
     approved_by_sellsi: { label: 'Aprobado', color: 'success' },
     rejected_by_sellsi: { label: 'Rechazado Sellsi', color: 'error' },
     expired: { label: 'Expirado', color: 'error' },
+    mora: { label: 'Mora', color: 'error' },
+    paused: { label: 'Pausado', color: 'warning' },
     paid: { label: 'Pagado', color: 'success' },
   };
 
@@ -106,6 +116,9 @@ const StatusChip = ({ status }) => {
 
   return <Chip label={config.label} color={config.color} size="small" />;
 };
+
+// Estados permitidos en la vista de créditos (hotfix cliente)
+const ALLOWED_CREDIT_STATUSES = ['approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'pending_sellsi_approval'];
 
 // TableTooltip: tooltip estándar para esta tabla (30% más grande)
 const TableTooltip = ({ title, children, ...props }) => (
@@ -140,6 +153,16 @@ const MODAL_DIALOG_CONTENT_STYLES = {
   px: { xs: 1.5, sm: 3 },
   py: { xs: 1.5, sm: 2.5 },
 };
+
+// Minimal local hook for locking body scroll when a modal is open
+// (keeps behavior consistent with other modals in the control panel)
+function useBodyScrollLock(open) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    if (open) document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+}
 
 const MODAL_BUTTON_BASE_STYLES = {
   textTransform: 'none',
@@ -262,6 +285,28 @@ const FinanciamientosTable = () => {
   const [processingRefund, setProcessingRefund] = useState(false);
   const [refundConfirmed, setRefundConfirmed] = useState(false);
 
+  // Pause modal state
+  const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
+  const [pauseReason, setPauseReason] = useState('');
+  const [processingPause, setProcessingPause] = useState(false);
+  const [pauseMode, setPauseMode] = useState('pause'); // 'pause' | 'unpause'
+
+  // Hotfix: keep full allowed requests for counts + apply UI filters (Pendientes/Aprobados/Expirados/Rechazados/Mora)
+  const [allRequests, setAllRequests] = useState([]);
+  const [activeFilter, setActiveFilter] = useState('pending'); // 'pending' | 'approved' | 'expired' | 'rejected' | 'mora'
+  const [counts, setCounts] = useState({ pending: 0, approved: 0, expired: 0, rejected: 0, mora: 0 });
+
+  useEffect(() => {
+    // re-apply active filter when underlying requests change
+    if (allRequests && allRequests.length > 0) {
+      setRequests(applyFilter(allRequests, activeFilter));
+    }
+  }, [activeFilter, allRequests]);
+  // Lock body scroll for these modals (consistent with other modals in the app)
+  useBodyScrollLock(transactionsOpen);
+  useBodyScrollLock(restoreDialogOpen);
+  useBodyScrollLock(refundDialogOpen);
+
 
 
   useEffect(() => {
@@ -359,7 +404,27 @@ const FinanciamientosTable = () => {
       // Debug: expose a single sample in console to inspect data shape
       if (normalized.length > 0) console.debug('[FinanciamientosTable] sample request:', normalized[0]);
 
-      setRequests(normalized);
+      // Filtrado hotfix: limitar a estados de crédito relevantes
+      const allowed = normalized.filter(r => ALLOWED_CREDIT_STATUSES.includes(r.status));
+      setAllRequests(allowed);
+
+      // Calcular contadores por categoría (incluye Mora: expirado + balance > 0)
+      const cnt = {
+        total: allowed.length,
+        pending: allowed.filter(r => r.status === 'pending_sellsi_approval').length,
+        approved: allowed.filter(r => r.status === 'approved_by_sellsi').length,
+        expired: allowed.filter(r => r.status === 'expired').length,
+        rejected: allowed.filter(r => r.status === 'rejected_by_sellsi').length,
+        mora: allowed.filter(r => r.status === 'expired' && (Number(r.display_balance || r.balance || 0) > 0)).length,
+        refund: allowed.filter(r => Number(r.refund_pending || 0) > 0).length,
+      };
+      setCounts(cnt);
+
+      // Aplicar filtro activo
+      setRequests(applyFilter(allowed, activeFilter));
+
+      // DEBUG: cuántos se trajeron y cuántos quedaron
+      console.debug(`[FinanciamientosTable] fetched ${normalized.length} requests, ${allowed.length} kept after filtering`, cnt);
     } catch (error) {
       console.error('Error loading financing requests:', error);
       toast.error('Error al cargar solicitudes');
@@ -484,6 +549,11 @@ const FinanciamientosTable = () => {
   };
 
   const confirmRestore = async () => {
+    if (!selectedRequest || selectedRequest.status !== 'approved_by_sellsi') {
+      toast.error('Reposición solo permitida en créditos aprobados');
+      return;
+    }
+
     if (!restoreAmount || Number(restoreAmount) <= 0) {
       toast.error('Ingrese un monto válido');
       return;
@@ -532,6 +602,11 @@ const FinanciamientosTable = () => {
   };  
 
   const confirmRefund = async () => {
+    if (!selectedRequest || !['approved_by_sellsi','expired'].includes(selectedRequest.status)) {
+      toast.error('Reembolso solo permitido en créditos aprobados o expirados');
+      return;
+    }
+
     if (!refundAmount || Number(refundAmount) <= 0) {
       toast.error('Ingrese un monto válido');
       return;
@@ -566,6 +641,46 @@ const FinanciamientosTable = () => {
     }
   };
 
+  // Pause/unpause handlers
+  const handleOpenPause = (request) => {
+    setSelectedRequest(request);
+    setPauseMode('pause');
+    setPauseReason('');
+    setPauseDialogOpen(true);
+  };
+
+  const handleOpenUnpause = (request) => {
+    setSelectedRequest(request);
+    setPauseMode('unpause');
+    setPauseReason('');
+    setPauseDialogOpen(true);
+  };
+
+  const confirmPauseUnpause = async () => {
+    if (!selectedRequest) return;
+
+    try {
+      setProcessingPause(true);
+      const adminId = getCurrentAdminId();
+      if (pauseMode === 'pause') {
+        await pauseFinancing(selectedRequest.id, adminId, pauseReason);
+        toast.success('Financiamiento congelado');
+      } else {
+        await unpauseFinancing(selectedRequest.id, adminId, pauseReason);
+        toast.success('Financiamiento reanudado');
+      }
+      setPauseDialogOpen(false);
+      setPauseReason('');
+      setSelectedRequest(null);
+      await fetchRequests();
+    } catch (err) {
+      console.error('Error pausing/unpausing:', err);
+      toast.error(err.message || 'Error al realizar la acción');
+    } finally {
+      setProcessingPause(false);
+    }
+  };
+
 
 
   const formatReadableId = (id) => {
@@ -580,8 +695,21 @@ const FinanciamientosTable = () => {
     return `#${last8}`;
   };
 
+  const applyFilter = (list, filter) => {
+    switch (filter) {
+      case 'all': return list;
+      case 'pending': return list.filter(r => r.status === 'pending_sellsi_approval');
+      case 'approved': return list.filter(r => r.status === 'approved_by_sellsi');
+      case 'expired': return list.filter(r => r.status === 'expired');
+      case 'rejected': return list.filter(r => r.status === 'rejected_by_sellsi');
+      case 'mora': return list.filter(r => r.status === 'expired' && (Number(r.display_balance || r.balance || 0) > 0));
+      default: return list;
+    }
+  };
+
   const columns = useMemo(
     () => [
+
       {
         field: 'id',
         headerName: 'ID',
@@ -789,7 +917,13 @@ const FinanciamientosTable = () => {
         field: 'status',
         headerName: 'Estado',
         width: 160,
-        renderCell: ({ value }) => <StatusChip status={value} />,
+        renderCell: ({ value, row }) => {
+          // Estado derivado: 'Pausado' si paused === true, 'Mora' cuando expirado y hay deuda (balance > 0)
+          if (row?.paused) return <StatusChip status={'paused'} />;
+          const balanceNum = Number(row?.balance ?? row?.display_balance ?? 0);
+          const isMora = row?.status === 'expired' && balanceNum > 0;
+          return <StatusChip status={isMora ? 'mora' : value} />;
+        }
       },
       {
         field: 'actions',
@@ -805,6 +939,7 @@ const FinanciamientosTable = () => {
                   <li><strong>Ver Movimientos:</strong> Historial de transacciones (consumos, pagos, reposiciones, devoluciones).</li>
                   <li><strong>Procesar Reembolso:</strong> Visible solo cuando existe <em>Reembolso pendiente</em>. Primero debe realizarse la devolución de dinero externamente; luego el admin registra aquí el monto devuelto. (El sistema valida que no se procese más que el pendiente).</li>
                   <li><strong>Reponer Monto:</strong> Disponible si existe monto utilizado. Es una corrección de crédito (no devuelve dinero); se considera un caso excepcional y por eso aparece al final.</li>
+                  <li><strong>Congelar / Reanudar:</strong> Permite pausar temporalmente un financiamiento aprobado (impide nuevos consumos) o reanudarlo. Usa esta acción con precaución e incluye un motivo si corresponde.</li>
                   <li><strong>Aprobar / Rechazar:</strong> Solo para solicitudes en estado pendiente de aprobación por Sellsi.</li>
                 </ul>
                 <div style={{ marginTop: 8 }}><em>Tip:</em> Pasa el cursor sobre cada acción para ver una breve descripción específica.</div>
@@ -830,11 +965,11 @@ const FinanciamientosTable = () => {
             </ActionIconButton>
 
             {/* Procesar Reembolso: ahora con icono de dinero y color verde cuando haya reembolso pendiente */}
-            {row.refund_pending > 0 && (
+            {row.refund_pending > 0 && (['approved_by_sellsi','expired'].includes(row.status)) && (
               <ActionIconButton tooltip="Procesar Reembolso" variant="success" onClick={() => handleOpenRefund(row)}>
                 <MoneyIcon />
               </ActionIconButton>
-            )}
+            )} 
 
             {row.status === 'pending_sellsi_approval' && (
               <>
@@ -848,12 +983,25 @@ const FinanciamientosTable = () => {
               </>
             )}
 
-            {/* Reponer Monto: edge case, siempre al extremo derecho */}
-            {row.amount_used > 0 && (
-              <ActionIconButton tooltip="Reponer Monto" variant="warning" onClick={() => handleOpenRestore(row)} sx={{ marginLeft: 'auto' }}>
-                <AutorenewIcon />
+            {/* Congelar / Reanudar (solo para aprobados o cuando ya está pausado) */}
+            {row.status === 'approved_by_sellsi' && !row.paused && (
+              <ActionIconButton tooltip="Congelar Financiamiento" variant="warning" onClick={() => handleOpenPause(row)} sx={{ mr: 0.5 }} ariaLabel="Congelar Financiamiento">
+                <PauseIcon />
               </ActionIconButton>
             )}
+
+            {row.paused && (
+              <ActionIconButton tooltip="Reanudar Financiamiento" variant="primary" onClick={() => handleOpenUnpause(row)} sx={{ mr: 0.5 }} ariaLabel="Reanudar Financiamiento">
+                <PlayIcon />
+              </ActionIconButton>
+            )}
+
+            {/* Reponer Monto: solo para créditos aprobados (edge case, siempre al extremo derecho) */}
+            {row.amount_used > 0 && row.status === 'approved_by_sellsi' && (
+              <ActionIconButton tooltip="Reponer Monto" variant="warning" onClick={() => handleOpenRestore(row)} sx={{ mr: 0.5 }} ariaLabel="Reponer Monto">
+                <AutorenewIcon />
+              </ActionIconButton>
+            )} 
           </Stack>
         ),
       },
@@ -874,6 +1022,26 @@ const FinanciamientosTable = () => {
         </Typography>
       </Box>
 
+      {/* Filters (dropdown) */}
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <FormControl size="small" sx={{ minWidth: 240 }}>
+          <InputLabel id="financing-filter-label">Filtro</InputLabel>
+          <Select
+            labelId="financing-filter-label"
+            value={activeFilter}
+            label="Filtro"
+            onChange={(e) => setActiveFilter(e.target.value)}
+          >
+            <MenuItem value="all">Todos ({counts.total})</MenuItem>
+            <MenuItem value="pending">Pendientes ({counts.pending})</MenuItem>
+            <MenuItem value="approved">Aprobados ({counts.approved})</MenuItem>
+            <MenuItem value="expired">Expirados ({counts.expired})</MenuItem>
+            <MenuItem value="rejected">Rechazados ({counts.rejected})</MenuItem>
+            <MenuItem value="mora"><span style={{ color: '#d32f2f', fontWeight: 700 }}>Mora ({counts.mora})</span></MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+
       {/* Stats */}
       <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
         <Paper sx={{ p: 2, flex: 1 }}>
@@ -881,7 +1049,7 @@ const FinanciamientosTable = () => {
             Pendientes Aprobación
           </Typography>
           <Typography variant="h4" color="warning.main">
-            {requests.filter(r => r.status === 'pending_sellsi_approval').length}
+            {counts.pending}
           </Typography>
         </Paper>
         <Paper sx={{ p: 2, flex: 1 }}>
@@ -889,7 +1057,7 @@ const FinanciamientosTable = () => {
             Aprobados
           </Typography>
           <Typography variant="h4" color="success.main">
-            {requests.filter(r => r.status === 'approved_by_sellsi').length}
+            {counts.approved}
           </Typography>
         </Paper>
         <Paper sx={{ p: 2, flex: 1 }}>
@@ -897,7 +1065,7 @@ const FinanciamientosTable = () => {
             Expirados
           </Typography>
           <Typography variant="h4" color="error.main">
-            {requests.filter(r => r.status === 'expired').length}
+            {counts.expired}
           </Typography>
         </Paper>
         <Paper sx={{ p: 2, flex: 1 }}>
@@ -905,7 +1073,7 @@ const FinanciamientosTable = () => {
             Reembolsos Pendientes
           </Typography>
           <Typography variant="h4" color="warning.main">
-            {requests.filter(r => (r.refund_pending || 0) > 0).length}
+            {counts.refund}
           </Typography>
         </Paper>
       </Stack>
@@ -1132,6 +1300,41 @@ const FinanciamientosTable = () => {
         <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
           <Button onClick={() => (setRefundDialogOpen(false), setRefundConfirmed(false))} disabled={processingRefund} variant="outlined" sx={MODAL_CANCEL_BUTTON_STYLES}>Cancelar</Button>
           <Button onClick={confirmRefund} variant="contained" color="success" disabled={processingRefund || !refundAmount || Number(refundAmount) <= 0 || Number(refundAmount) > (selectedRequest?.refund_pending || 0) || !refundConfirmed} sx={MODAL_SUBMIT_BUTTON_STYLES}>{processingRefund ? 'Procesando...' : 'Procesar'}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Pause / Unpause dialog */}
+      <Dialog open={pauseDialogOpen} onClose={() => !processingPause && setPauseDialogOpen(false)} maxWidth="sm" fullWidth fullScreen={isMobile} disableScrollLock sx={{ zIndex: 1500 }} PaperProps={{ sx: { borderRadius: isMobile ? 0 : 2 } }}>
+        <DialogTitle sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center', textAlign: 'center', backgroundColor: '#2E52B2', color: '#fff', py: { xs: 2, sm: 2 }, px: { xs: 2, sm: 3 }, position: 'relative', fontSize: { xs: '1.125rem', sm: '1.25rem' } }}>
+          <IconButton onClick={() => !processingPause && setPauseDialogOpen(false)} sx={{ position: 'absolute', right: { xs: 8, sm: 16 }, top: '50%', transform: 'translateY(-50%)', color: '#fff', backgroundColor: 'rgba(255, 255, 255, 0.1)', p: { xs: 0.75, sm: 1 }, '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' } }}>
+            <CloseIcon sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
+          </IconButton>
+          {pauseMode === 'pause' ? <PauseIcon sx={{ color: '#fff' }} fontSize="small" /> : <PlayIcon sx={{ color: '#fff' }} fontSize="small" />}
+          {pauseMode === 'pause' ? 'Congelar Financiamiento' : 'Reanudar Financiamiento'} - {selectedRequest ? formatReadableId(selectedRequest.id) : ''}
+        </DialogTitle>
+
+        <DialogContent dividers sx={MODAL_DIALOG_CONTENT_STYLES}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {pauseMode === 'pause'
+              ? 'Al congelar un financiamiento se impedirá su uso para nuevos consumos. Los reembolsos y movimientos históricos permanecerán sin cambios.'
+              : 'Reanudar permitirá que el financiamiento vuelva a ser usado en checkout si aplica.'
+            }
+          </Typography>
+
+          <TextField
+            label="Motivo (opcional)"
+            multiline
+            rows={3}
+            fullWidth
+            value={pauseReason}
+            onChange={(e) => setPauseReason(e.target.value)}
+            sx={{ mb: 1 }}
+          />
+        </DialogContent>
+
+        <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
+          <Button onClick={() => (setPauseDialogOpen(false), setPauseReason(''))} disabled={processingPause} variant="outlined" sx={MODAL_CANCEL_BUTTON_STYLES}>Cancelar</Button>
+          <Button onClick={() => confirmPauseUnpause()} variant="contained" color={pauseMode === 'pause' ? 'warning' : 'primary'} disabled={processingPause} sx={MODAL_SUBMIT_BUTTON_STYLES}>{processingPause ? (pauseMode === 'pause' ? 'Congelando...' : 'Reanudando...') : (pauseMode === 'pause' ? 'Congelar' : 'Reanudar')}</Button>
         </DialogActions>
       </Dialog>
 

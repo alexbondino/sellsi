@@ -49,7 +49,7 @@ import {
   EmptyCartState,
 } from './cart';
 import FinancingSection from './cart/FinancingSection';
-import FinancingConfigModal from './cart/components/FinancingConfigModal';
+import RealFinancingConfigModal from './cart/components/FinancingConfigModal';
 import MobileCartLayout from './cart/components/MobileCartLayout';
 import useShippingValidation from './cart/hooks/useShippingValidation';
 import ShippingCompatibilityModal from './cart/components/ShippingCompatibilityModal';
@@ -68,7 +68,7 @@ import { useRole } from '../../../infrastructure/providers/UnifiedAuthProvider';
 // COMPONENTE PRINCIPAL ULTRA-PREMIUM
 // ============================================================================
 
-const BuyerCart = () => {
+const BuyerCart = ({ FinancingConfigModalOverride } = {}) => {
   // ===== ZUSTAND STORE (SELECTORES MEMOIZADOS) =====
   const items = useCartStore(state => state.items);
   const isLoading = useCartStore(state => state.isLoading);
@@ -987,16 +987,24 @@ const BuyerCart = () => {
         />
 
         {/* Modal de Configuración de Financiamiento */}
-        <FinancingConfigModal
-          open={financingModalOpen}
-          onClose={handleCloseFinancingModal}
-          cartItems={items}
-          formatPrice={formatPrice}
-          onSave={handleFinancingSubmit}
-          currentFinancing={productFinancing}
-          shippingByProduct={priceCalculations.shippingByProduct}
-          overallShipping={priceCalculations.shipping}
-        />
+        {
+          // Allow tests to inject a mock modal via prop `FinancingConfigModalOverride`
+        }
+        {(() => {
+          const Modal = FinancingConfigModalOverride || RealFinancingConfigModal;
+          return (
+            <Modal
+              open={financingModalOpen}
+              onClose={handleCloseFinancingModal}
+              cartItems={items}
+              formatPrice={formatPrice}
+              onSave={handleFinancingSubmit}
+              currentFinancing={productFinancing}
+              shippingByProduct={priceCalculations.shippingByProduct}
+              overallShipping={priceCalculations.shipping}
+            />
+          );
+        })()}
 
         {/* Modal de Verificación de Edad */}
         <AgeVerificationModal

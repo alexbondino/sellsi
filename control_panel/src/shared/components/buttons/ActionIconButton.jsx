@@ -10,6 +10,11 @@ const COLOR_VARIANTS = {
     color: 'error',
     hover: { backgroundColor: 'error.light', color: 'white' },
   },
+  // warning variant: used for cautionary actions (e.g., Congelar / Reponer)
+  warning: {
+    color: 'warning',
+    hover: { backgroundColor: 'warning.light', color: 'white' },
+  },
   primary: {
     color: 'primary',
     hover: { backgroundColor: 'primary.light', color: 'white' },

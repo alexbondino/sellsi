@@ -67,7 +67,7 @@ export const EmptyStateGlobal = ({ role = 'supplier' }) => {
 export const EmptyStateFiltered = () => (
   <Paper sx={{ p: { xs: 3, md: 4 }, textAlign: 'center' }}>
     <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-      <AccountBalanceIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
+      <AccountBalanceIcon sx={{ fontSize: 40,  color: 'primary.main' }} />
     </Box>
     <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
       No hay financiamientos con este estado

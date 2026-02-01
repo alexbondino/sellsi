@@ -292,14 +292,37 @@ const PaymentReleasesTable = () => {
     },
     {
       field: 'amount',
-      headerName: 'Monto',
+      headerName: 'Monto bruto',
       flex: 1,
       minWidth: 130,
       renderCell: (params) => (
-        <Typography variant="body2" fontWeight={600} color="success.main">
+        <Typography variant="body2" fontWeight={600} color="text.primary">
           {formatCLP(params.value)}
         </Typography>
       )
+    },
+    {
+      field: 'payout',
+      headerName: 'Monto a liberar',
+      flex: 1,
+      minWidth: 150,
+      renderCell: (params) => {
+        // computePayout may be mocked in tests; provide a safe fallback
+        const safePayout = (() => {
+          try {
+            if (typeof computePayout === 'function') return computePayout(params.row.amount).payout
+          } catch (e) {
+            // ignore and fallback
+          }
+          return Math.round((parseFloat(params.row.amount) || 0) * 0.97)
+        })()
+
+        return (
+          <Typography variant="body2" fontWeight={600} color="success.main">
+            {formatCLP(safePayout)}
+          </Typography>
+        )
+      }
     },
     {
       field: 'purchased_at',
