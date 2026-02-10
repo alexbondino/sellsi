@@ -19,7 +19,7 @@ class CheckoutService {
    */
   _hashItems(items) {
     return (items || [])
-      .map(it => `${it.product_id || it.productid || it.id}:${it.quantity}:${it.financing_amount || 0}`)
+      .map(it => `${it.product_id || it.productid || it.id}:${it.quantity}`)
       .sort()
       .join('|');
   }
