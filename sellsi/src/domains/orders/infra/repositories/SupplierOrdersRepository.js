@@ -27,6 +27,7 @@ export class SupplierOrdersRepository {
         subtotal,
         shipping_amount,
         total,
+        financing_amount,
         created_at,
         updated_at
       `)
@@ -48,6 +49,7 @@ export class SupplierOrdersRepository {
         subtotal,
         shipping_amount,
         total,
+        financing_amount,
         created_at,
         updated_at
       `)

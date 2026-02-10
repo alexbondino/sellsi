@@ -19,7 +19,7 @@ class CheckoutService {
    */
   _hashItems(items) {
     return (items || [])
-      .map(it => `${it.product_id || it.productid || it.id}:${it.quantity}`)
+      .map(it => `${it.product_id || it.productid || it.id}:${it.quantity}:${it.financing_amount || 0}`)
       .sort()
       .join('|');
   }
@@ -384,6 +384,7 @@ class CheckoutService {
           tax: orderData.tax,
           shipping: orderData.shipping,
           total: orderData.total,
+          financing_amount: orderData.financingAmount || 0, // ✅ CRÍTICO: Monto cubierto por financiamiento
           currency: orderData.currency || 'CLP',
           status: 'pending',
           payment_method: orderData.paymentMethod,
@@ -518,6 +519,7 @@ class CheckoutService {
         userId: paymentData.userId,
         userEmail: paymentData.userEmail,
         total: sealedAmount,
+        financingAmount: paymentData.financingAmount || 0, // ✅ CRÍTICO: Pasar monto financiado
         currency: paymentData.currency || 'CLP',
         items: paymentData.items,
         // ✔ Forward de direcciones
@@ -672,6 +674,7 @@ class CheckoutService {
         userId: paymentData.userId,
         userEmail: paymentData.userEmail,
         total: sealedAmount,
+        financingAmount: paymentData.financingAmount || 0,
         currency: paymentData.currency || 'CLP',
         items: paymentData.items,
         shippingAddress: paymentData.shippingAddress || null,

@@ -37,7 +37,19 @@ const colorMap = {
 /**
  * Renderiza el estado como chip (basado en categoría de filtro)
  */
-export const renderStateChip = (status) => {
+export const renderStateChip = (status, paused = false) => {
+  // Si está pausado, mostrar chip de Pausado independiente del status
+  if (paused) {
+    return (
+      <Chip
+        label="Pausado"
+        color="default"
+        size="small"
+        sx={{ fontWeight: 600, backgroundColor: 'grey.400', color: 'white' }}
+      />
+    );
+  }
+
   const filterCategory = getStateFilterCategory(status);
 
   return (
@@ -179,22 +191,29 @@ export const getBuyerTableColumns = () => [
     key: 'download',
     label: 'Descargables',
     align: 'center',
-    render: (financing, handlers) => (
-      <ActionIconButton
-        tooltip="Descargar documentos"
-        variant="primary"
-        onClick={() => handlers?.onDownload?.(financing)}
-        ariaLabel="Descargar documentos"
-      >
-        <DownloadIcon fontSize="small" />
-      </ActionIconButton>
-    ),
+    render: (financing, handlers) => {
+      // Deshabilitar si es Express y está antes de supplier_signature_pending
+      const isExpressPreSignature = financing.request_type === 'express' && 
+        !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status);
+      
+      return (
+        <ActionIconButton
+          tooltip={isExpressPreSignature ? "Disponible cuando el proveedor firme" : "Descargar documentos"}
+          variant="primary"
+          onClick={() => handlers?.onDownload?.(financing)}
+          ariaLabel="Descargar documentos"
+          disabled={isExpressPreSignature}
+        >
+          <DownloadIcon fontSize="small" />
+        </ActionIconButton>
+      );
+    },
   },
   {
     key: 'state_chip',
     label: 'Estado',
     align: 'center',
-    render: (financing) => renderStateChip(financing.status),
+    render: (financing) => renderStateChip(financing.status, financing.paused),
   },
   {
     key: 'status_description',

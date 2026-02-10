@@ -51,6 +51,9 @@ import { regiones, getComunasByRegion } from '../../../../utils/chileData';
 import CloseIcon from '@mui/icons-material/Close';
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import DeleteIcon from '@mui/icons-material/Delete';
+import FolderIcon from '@mui/icons-material/Folder';
+import { Add as AddIcon } from '@mui/icons-material';
 import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
 import { formatRut, validateRut } from '../../../../utils/validators';
 import { formatNumber } from '../../../../shared/utils/formatters';
@@ -59,6 +62,7 @@ import {
   MODAL_CANCEL_BUTTON_STYLES,
   MODAL_SUBMIT_BUTTON_STYLES,
 } from '../../../../shared/components/feedback/Modal/Modal';
+import { getLastFinancingConfig } from '../services/financingService';
 
 const SELLSI_BLUE = '#2E52B2';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -70,7 +74,7 @@ const INITIAL_FORM_DATA = {
   legalRepresentative: '',
   legalRepresentativeRut: '',
   term: '',
-  others: null,
+  others: [], // Array de hasta 3 archivos
   businessName: '',
   powersCertificate: null,
   rut: '',
@@ -94,6 +98,39 @@ const ExtendedRequestModal = ({ open, onClose, onBack, onSubmit }) => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
+  const [isOtherDocsModalOpen, setIsOtherDocsModalOpen] = useState(false);
+
+  // Cargar configuración anterior cuando se abre el modal
+  useEffect(() => {
+    if (open && formData.autoFillModal) {
+      const loadPreviousConfig = async () => {
+        setIsLoadingConfig(true);
+        try {
+          const config = await getLastFinancingConfig();
+          if (config) {
+            setFormData((prev) => ({
+              ...prev,
+              businessName: config.businessName || prev.businessName,
+              rut: config.rut || prev.rut,
+              legalRepresentative: config.legalRepresentative || prev.legalRepresentative,
+              legalRepresentativeRut: config.legalRepresentativeRut || prev.legalRepresentativeRut,
+              legalAddress: config.legalAddress || prev.legalAddress,
+              legalCommune: config.legalCommune || prev.legalCommune,
+              legalRegion: config.legalRegion || prev.legalRegion,
+              term: config.term || prev.term,
+            }));
+          }
+        } catch (error) {
+          console.warn('[ExtendedRequestModal] Error loading previous config:', error);
+        } finally {
+          setIsLoadingConfig(false);
+        }
+      };
+
+      loadPreviousConfig();
+    }
+  }, [open, formData.autoFillModal]);
 
   // Reiniciar formulario cuando el modal se cierra
   useEffect(() => {
@@ -169,6 +206,19 @@ const ExtendedRequestModal = ({ open, onClose, onBack, onSubmit }) => {
         setErrors((prev) => ({ ...prev, [field]: '' }));
       }
     }
+  };
+
+  // Remover archivo de campos individuales
+  const handleRemoveFile = (field) => {
+    setFormData((prev) => ({ ...prev, [field]: null }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  // Manejar array de "otros documentos"
+  const handleOtherDocsChange = (newOthers) => {
+    setFormData((prev) => ({ ...prev, others: newOthers }));
   };
 
   // Validar formulario
@@ -637,30 +687,77 @@ const ExtendedRequestModal = ({ open, onClose, onBack, onSubmit }) => {
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
                 Certificado de Vigencia de Poderes *
               </Typography>
-              <Button
-                variant="outlined"
-                component="label"
-                fullWidth
-                startIcon={<AttachFileIcon />}
-                sx={{
-                  height: 56,
-                  textTransform: 'none',
-                  justifyContent: 'flex-start',
-                  borderColor: errors.powersCertificate ? 'error.main' : 'rgba(0, 0, 0, 0.23)',
-                  color: formData.powersCertificate ? 'success.main' : 'text.secondary',
-                  fontWeight: formData.powersCertificate ? 600 : 400,
-                }}
-              >
-                {formData.powersCertificate
-                  ? `✓ ${formData.powersCertificate.name}`
-                  : 'Seleccionar archivo...'}
-                <input
-                  type="file"
-                  hidden
-                  accept={ACCEPTED_FILE_TYPES}
-                  onChange={(e) => handleFileChange('powersCertificate', e)}
-                />
-              </Button>
+              {!formData.powersCertificate ? (
+                <Button
+                  variant="outlined"
+                  component="label"
+                  fullWidth
+                  startIcon={<AddIcon />}
+                  sx={{
+                    height: 56,
+                    textTransform: 'none',
+                    justifyContent: 'flex-start',
+                    borderColor: errors.powersCertificate ? 'error.main' : 'rgba(0, 0, 0, 0.23)',
+                    color: 'text.secondary',
+                  }}
+                >
+                  Seleccionar archivo...
+                  <input
+                    type="file"
+                    hidden
+                    accept={ACCEPTED_FILE_TYPES}
+                    onChange={(e) => handleFileChange('powersCertificate', e)}
+                  />
+                </Button>
+              ) : (
+                <Box sx={{ display: 'flex', gap: 0 }}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<AttachFileIcon />}
+                    sx={{
+                      height: 56,
+                      flex: '0 0 80%',
+                      textTransform: 'none',
+                      justifyContent: 'flex-start',
+                      borderTopRightRadius: 0,
+                      borderBottomRightRadius: 0,
+                      borderRight: 'none',
+                      borderColor: 'rgba(0, 0, 0, 0.23)',
+                      color: 'success.main',
+                      fontWeight: 600,
+                    }}
+                  >
+                    ✓ {formData.powersCertificate.name}
+                    <input
+                      type="file"
+                      hidden
+                      accept={ACCEPTED_FILE_TYPES}
+                      onChange={(e) => handleFileChange('powersCertificate', e)}
+                    />
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => handleRemoveFile('powersCertificate')}
+                    sx={{
+                      height: 56,
+                      flex: '0 0 20%',
+                      minWidth: 'unset',
+                      borderTopLeftRadius: 0,
+                      borderBottomLeftRadius: 0,
+                      borderColor: 'rgba(0, 0, 0, 0.23)',
+                      color: 'error.main',
+                      '&:hover': {
+                        backgroundColor: 'error.light',
+                        borderColor: 'error.main',
+                        color: 'white',
+                      },
+                    }}
+                  >
+                    <DeleteIcon />
+                  </Button>
+                </Box>
+              )}
               {errors.powersCertificate && (
                 <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5, display: 'block' }}>
                   {errors.powersCertificate}
@@ -673,30 +770,77 @@ const ExtendedRequestModal = ({ open, onClose, onBack, onSubmit }) => {
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
                 Certificado de Vigencia (Poderes 2) *
               </Typography>
-              <Button
-                variant="outlined"
-                component="label"
-                fullWidth
-                startIcon={<AttachFileIcon />}
-                sx={{
-                  height: 56,
-                  textTransform: 'none',
-                  justifyContent: 'flex-start',
-                  borderColor: errors.powersValidityCertificate ? 'error.main' : 'rgba(0, 0, 0, 0.23)',
-                  color: formData.powersValidityCertificate ? 'success.main' : 'text.secondary',
-                  fontWeight: formData.powersValidityCertificate ? 600 : 400,
-                }}
-              >
-                {formData.powersValidityCertificate
-                  ? `✓ ${formData.powersValidityCertificate.name}`
-                  : 'Seleccionar archivo...'}
-                <input
-                  type="file"
-                  hidden
-                  accept={ACCEPTED_FILE_TYPES}
-                  onChange={(e) => handleFileChange('powersValidityCertificate', e)}
-                />
-              </Button>
+              {!formData.powersValidityCertificate ? (
+                <Button
+                  variant="outlined"
+                  component="label"
+                  fullWidth
+                  startIcon={<AddIcon />}
+                  sx={{
+                    height: 56,
+                    textTransform: 'none',
+                    justifyContent: 'flex-start',
+                    borderColor: errors.powersValidityCertificate ? 'error.main' : 'rgba(0, 0, 0, 0.23)',
+                    color: 'text.secondary',
+                  }}
+                >
+                  Seleccionar archivo...
+                  <input
+                    type="file"
+                    hidden
+                    accept={ACCEPTED_FILE_TYPES}
+                    onChange={(e) => handleFileChange('powersValidityCertificate', e)}
+                  />
+                </Button>
+              ) : (
+                <Box sx={{ display: 'flex', gap: 0 }}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<AttachFileIcon />}
+                    sx={{
+                      height: 56,
+                      flex: '0 0 80%',
+                      textTransform: 'none',
+                      justifyContent: 'flex-start',
+                      borderTopRightRadius: 0,
+                      borderBottomRightRadius: 0,
+                      borderRight: 'none',
+                      borderColor: 'rgba(0, 0, 0, 0.23)',
+                      color: 'success.main',
+                      fontWeight: 600,
+                    }}
+                  >
+                    ✓ {formData.powersValidityCertificate.name}
+                    <input
+                      type="file"
+                      hidden
+                      accept={ACCEPTED_FILE_TYPES}
+                      onChange={(e) => handleFileChange('powersValidityCertificate', e)}
+                    />
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => handleRemoveFile('powersValidityCertificate')}
+                    sx={{
+                      height: 56,
+                      flex: '0 0 20%',
+                      minWidth: 'unset',
+                      borderTopLeftRadius: 0,
+                      borderBottomLeftRadius: 0,
+                      borderColor: 'rgba(0, 0, 0, 0.23)',
+                      color: 'error.main',
+                      '&:hover': {
+                        backgroundColor: 'error.light',
+                        borderColor: 'error.main',
+                        color: 'white',
+                      },
+                    }}
+                  >
+                    <DeleteIcon />
+                  </Button>
+                </Box>
+              )}
               {errors.powersValidityCertificate && (
                 <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5, display: 'block' }}>
                   {errors.powersValidityCertificate}
@@ -709,30 +853,77 @@ const ExtendedRequestModal = ({ open, onClose, onBack, onSubmit }) => {
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
                 Carpeta Tributaria Simplificada *
               </Typography>
-              <Button
-                variant="outlined"
-                component="label"
-                fullWidth
-                startIcon={<AttachFileIcon />}
-                sx={{
-                  height: 56,
-                  textTransform: 'none',
-                  justifyContent: 'flex-start',
-                  borderColor: errors.simplifiedTaxFolder ? 'error.main' : 'rgba(0, 0, 0, 0.23)',
-                  color: formData.simplifiedTaxFolder ? 'success.main' : 'text.secondary',
-                  fontWeight: formData.simplifiedTaxFolder ? 600 : 400,
-                }}
-              >
-                {formData.simplifiedTaxFolder
-                  ? `✓ ${formData.simplifiedTaxFolder.name}`
-                  : 'Seleccionar archivo...'}
-                <input
-                  type="file"
-                  hidden
-                  accept={ACCEPTED_FILE_TYPES}
-                  onChange={(e) => handleFileChange('simplifiedTaxFolder', e)}
-                />
-              </Button>
+              {!formData.simplifiedTaxFolder ? (
+                <Button
+                  variant="outlined"
+                  component="label"
+                  fullWidth
+                  startIcon={<AddIcon />}
+                  sx={{
+                    height: 56,
+                    textTransform: 'none',
+                    justifyContent: 'flex-start',
+                    borderColor: errors.simplifiedTaxFolder ? 'error.main' : 'rgba(0, 0, 0, 0.23)',
+                    color: 'text.secondary',
+                  }}
+                >
+                  Seleccionar archivo...
+                  <input
+                    type="file"
+                    hidden
+                    accept={ACCEPTED_FILE_TYPES}
+                    onChange={(e) => handleFileChange('simplifiedTaxFolder', e)}
+                  />
+                </Button>
+              ) : (
+                <Box sx={{ display: 'flex', gap: 0 }}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<AttachFileIcon />}
+                    sx={{
+                      height: 56,
+                      flex: '0 0 80%',
+                      textTransform: 'none',
+                      justifyContent: 'flex-start',
+                      borderTopRightRadius: 0,
+                      borderBottomRightRadius: 0,
+                      borderRight: 'none',
+                      borderColor: 'rgba(0, 0, 0, 0.23)',
+                      color: 'success.main',
+                      fontWeight: 600,
+                    }}
+                  >
+                    ✓ {formData.simplifiedTaxFolder.name}
+                    <input
+                      type="file"
+                      hidden
+                      accept={ACCEPTED_FILE_TYPES}
+                      onChange={(e) => handleFileChange('simplifiedTaxFolder', e)}
+                    />
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => handleRemoveFile('simplifiedTaxFolder')}
+                    sx={{
+                      height: 56,
+                      flex: '0 0 20%',
+                      minWidth: 'unset',
+                      borderTopLeftRadius: 0,
+                      borderBottomLeftRadius: 0,
+                      borderColor: 'rgba(0, 0, 0, 0.23)',
+                      color: 'error.main',
+                      '&:hover': {
+                        backgroundColor: 'error.light',
+                        borderColor: 'error.main',
+                        color: 'white',
+                      },
+                    }}
+                  >
+                    <DeleteIcon />
+                  </Button>
+                </Box>
+              )}
               {errors.simplifiedTaxFolder && (
                 <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5, display: 'block' }}>
                   {errors.simplifiedTaxFolder}
@@ -747,31 +938,27 @@ const ExtendedRequestModal = ({ open, onClose, onBack, onSubmit }) => {
               </Typography>
               <Button
                 variant="outlined"
-                component="label"
                 fullWidth
-                startIcon={<AttachFileIcon />}
+                startIcon={<FolderIcon />}
+                onClick={() => setIsOtherDocsModalOpen(true)}
                 sx={{
                   height: 56,
                   textTransform: 'none',
-                  justifyContent: 'flex-start',
+                  justifyContent: 'space-between',
                   borderColor: 'rgba(0, 0, 0, 0.23)',
-                  color: formData.others ? 'success.main' : 'text.secondary',
-                  fontWeight: formData.others ? 600 : 400,
+                  color: formData.others?.length > 0 ? 'success.main' : 'text.secondary',
+                  fontWeight: formData.others?.length > 0 ? 600 : 400,
                 }}
               >
-                {formData.others ? `✓ ${formData.others.name}` : 'Seleccionar archivo...'}
-                <input
-                  type="file"
-                  hidden
-                  accept={ACCEPTED_FILE_TYPES}
-                  onChange={(e) => handleFileChange('others', e)}
-                />
-              </Button>
-              {errors.others && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5, display: 'block' }}>
-                  {errors.others}
+                <span>
+                  {formData.others?.length > 0
+                    ? `✓ ${formData.others.length} archivo${formData.others.length > 1 ? 's' : ''}`
+                    : 'Gestionar documentos'}
+                </span>
+                <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                  ({formData.others?.length || 0}/3)
                 </Typography>
-              )}
+              </Button>
             </Box>
           </Box>
         </Box>
@@ -816,6 +1003,224 @@ const ExtendedRequestModal = ({ open, onClose, onBack, onSubmit }) => {
           sx={MODAL_SUBMIT_BUTTON_STYLES}
         >
           {isSubmitting ? 'Enviando...' : 'Solicitar'}
+        </Button>
+      </DialogActions>
+
+      {/* Mini-modal para gestionar "Otros Documentos" */}
+      <OtherDocumentsModal
+        open={isOtherDocsModalOpen}
+        onClose={() => setIsOtherDocsModalOpen(false)}
+        currentFiles={formData.others}
+        onSave={handleOtherDocsChange}
+      />
+    </Dialog>
+  );
+};
+
+/**
+ * ============================================================================
+ * MINI-MODAL: Other Documents Manager
+ * ============================================================================
+ * Mini-modal para gestionar hasta 3 archivos opcionales
+ * z-index superior al modal principal para aparecer encima
+ */
+const OtherDocumentsModal = ({ open, onClose, currentFiles, onSave }) => {
+  const [files, setFiles] = useState([null, null, null]);
+  const [errors, setErrors] = useState(['', '', '']);
+
+  useBodyScrollLock(open);
+
+  // Sincronizar estado interno cuando se abre el modal
+  useEffect(() => {
+    if (open) {
+      const paddedFiles = [...currentFiles];
+      while (paddedFiles.length < 3) {
+        paddedFiles.push(null);
+      }
+      setFiles(paddedFiles.slice(0, 3));
+      setErrors(['', '', '']);
+    }
+  }, [open, currentFiles]);
+
+  const handleFileChange = (index, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validar tamaño
+      if (file.size > MAX_FILE_SIZE) {
+        const newErrors = [...errors];
+        newErrors[index] = 'El archivo no debe superar 10MB';
+        setErrors(newErrors);
+        return;
+      }
+      const newFiles = [...files];
+      newFiles[index] = file;
+      setFiles(newFiles);
+      
+      // Limpiar error
+      const newErrors = [...errors];
+      newErrors[index] = '';
+      setErrors(newErrors);
+    }
+  };
+
+  const handleRemoveFile = (index) => {
+    const newFiles = [...files];
+    newFiles[index] = null;
+    setFiles(newFiles);
+    
+    // Limpiar error
+    const newErrors = [...errors];
+    newErrors[index] = '';
+    setErrors(newErrors);
+  };
+
+  const handleSave = () => {
+    // Filtrar nulls y guardar
+    const validFiles = files.filter((f) => f !== null);
+    onSave(validFiles);
+    onClose();
+  };
+
+  const totalFiles = files.filter((f) => f !== null).length;
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      sx={{
+        zIndex: 1600, // Superior al modal principal (1500)
+      }}
+      slotProps={{
+        backdrop: {
+          sx: {
+            zIndex: 1599, // Backdrop justo debajo del paper pero encima del modal principal
+          },
+        },
+      }}
+      PaperProps={{
+        sx: {
+          zIndex: 1600, // Paper del mini-modal
+        },
+      }}
+    >
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <FolderIcon sx={{ color: SELLSI_BLUE }} />
+          <Typography variant="h6" component="span">
+            Otros Documentos
+          </Typography>
+        </Box>
+        <IconButton onClick={onClose} size="small">
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent dividers>
+        <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+          Puedes agregar hasta 3 documentos adicionales (opcional)
+        </Typography>
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {[0, 1, 2].map((index) => (
+            <Box key={index}>
+              <Typography variant="caption" sx={{ mb: 0.5, display: 'block', fontWeight: 500 }}>
+                Documento {index + 1}
+              </Typography>
+              {!files[index] ? (
+                <Button
+                  variant="outlined"
+                  component="label"
+                  fullWidth
+                  startIcon={<AddIcon />}
+                  sx={{
+                    height: 48,
+                    textTransform: 'none',
+                    justifyContent: 'flex-start',
+                    borderColor: errors[index] ? 'error.main' : 'rgba(0, 0, 0, 0.23)',
+                    color: 'text.secondary',
+                  }}
+                >
+                  Seleccionar archivo...
+                  <input
+                    type="file"
+                    hidden
+                    accept={ACCEPTED_FILE_TYPES}
+                    onChange={(e) => handleFileChange(index, e)}
+                  />
+                </Button>
+              ) : (
+                <Box sx={{ display: 'flex', gap: 0 }}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<AttachFileIcon />}
+                    sx={{
+                      height: 48,
+                      flex: '0 0 80%',
+                      textTransform: 'none',
+                      justifyContent: 'flex-start',
+                      borderTopRightRadius: 0,
+                      borderBottomRightRadius: 0,
+                      borderRight: 'none',
+                      borderColor: 'rgba(0, 0, 0, 0.23)',
+                      color: 'success.main',
+                      fontWeight: 600,
+                    }}
+                  >
+                    ✓ {files[index].name}
+                    <input
+                      type="file"
+                      hidden
+                      accept={ACCEPTED_FILE_TYPES}
+                      onChange={(e) => handleFileChange(index, e)}
+                    />
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => handleRemoveFile(index)}
+                    sx={{
+                      height: 48,
+                      flex: '0 0 20%',
+                      minWidth: 'unset',
+                      borderTopLeftRadius: 0,
+                      borderBottomLeftRadius: 0,
+                      borderColor: 'rgba(0, 0, 0, 0.23)',
+                      color: 'error.main',
+                      '&:hover': {
+                        backgroundColor: 'error.light',
+                        borderColor: 'error.main',
+                        color: 'white',
+                      },
+                    }}
+                  >
+                    <DeleteIcon />
+                  </Button>
+                </Box>
+              )}
+              {errors[index] && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5, display: 'block' }}>
+                  {errors[index]}
+                </Typography>
+              )}
+            </Box>
+          ))}
+        </Box>
+
+        <Box sx={{ mt: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 1 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            <strong>Archivos seleccionados:</strong> {totalFiles}/3
+          </Typography>
+        </Box>
+      </DialogContent>
+
+      <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
+        <Button onClick={onClose} variant="outlined" sx={MODAL_CANCEL_BUTTON_STYLES}>
+          Cancelar
+        </Button>
+        <Button onClick={handleSave} variant="contained" sx={MODAL_SUBMIT_BUTTON_STYLES}>
+          Guardar ({totalFiles})
         </Button>
       </DialogActions>
     </Dialog>

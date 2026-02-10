@@ -116,17 +116,64 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     }
 
     // ========================================================================
-    // EXTRAER orderId DESDE subject
+    // DETECCIÓN DE PAGO DE FINANCIAMIENTO
+    // Si notify_url incluye ?financing_payment=true, procesamos como financing
     // ========================================================================
-    const subject: string = khipuPayload.subject || '';
-    const orderIdMatch = subject.match(/#([0-9a-fA-F-]{36})/);
-    let orderId = orderIdMatch ? orderIdMatch[1] : null;
+    const webhookUrl = new URL(req.url);
+    const isFinancingPayment = webhookUrl.searchParams.get('financing_payment') === 'true';
     const paymentIdFromPayload = khipuPayload.payment_id || khipuPayload.paymentId || null;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
+
+    if (isFinancingPayment) {
+      console.log('🔔 [process-khipu-webhook] Financing payment webhook detected', { paymentIdFromPayload });
+
+      if (!paymentIdFromPayload) {
+        console.error('❌ Financing webhook: falta payment_id');
+        return new Response(JSON.stringify({ error: 'Missing payment_id for financing' }), { status: 400, headers: corsHeaders });
+      }
+
+      // Buscar el financing_payment por khipu_payment_id
+      const { data: fp, error: fpErr } = await supabase
+        .from('financing_payments')
+        .select('id, financing_request_id, amount, payment_status')
+        .eq('khipu_payment_id', paymentIdFromPayload)
+        .maybeSingle();
+
+      if (fpErr || !fp) {
+        console.error('❌ Financing payment no encontrado', { paymentIdFromPayload, error: fpErr });
+        return new Response(JSON.stringify({ error: 'Financing payment not found' }), { status: 200, headers: corsHeaders });
+      }
+
+      // Idempotencia: si ya está pagado, retornar OK
+      if (fp.payment_status === 'paid') {
+        console.log('ℹ️ Financing payment ya procesado (idempotente)', { id: fp.id });
+        return new Response(JSON.stringify({ success: true, already_processed: true }), { status: 200, headers: corsHeaders });
+      }
+
+      // Procesar el pago exitoso
+      const { data: result, error: processErr } = await supabase.rpc('process_financing_payment_success', {
+        p_payment_id: fp.id
+      });
+
+      if (processErr) {
+        console.error('❌ Error procesando financing payment', { error: processErr, paymentId: fp.id });
+        return new Response(JSON.stringify({ error: 'Failed to process financing payment' }), { status: 500, headers: corsHeaders });
+      }
+
+      console.log('✅ Financing payment procesado exitosamente', { paymentId: fp.id, result });
+      return new Response(JSON.stringify({ success: true, financing_payment_id: fp.id, result }), { status: 200, headers: corsHeaders });
+    }
+
+    // ========================================================================
+    // EXTRAER orderId DESDE subject (flujo normal de órdenes)
+    // ========================================================================
+    const subject: string = khipuPayload.subject || '';
+    const orderIdMatch = subject.match(/#([0-9a-fA-F-]{36})/);
+    let orderId = orderIdMatch ? orderIdMatch[1] : null;
 
     // Fallback: buscar order por khipu_payment_id si no se pudo parsear
     if (!orderId && paymentIdFromPayload) {

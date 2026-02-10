@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
 
 // Validación para evitar el error
 if (!supabaseUrl) {
@@ -17,7 +18,30 @@ if (!supabaseKey) {
   )
 }
 
+if (!supabaseServiceKey) {
+  throw new Error(
+    'VITE_SUPABASE_SERVICE_ROLE_KEY is required but not found in environment variables'
+  )
+}
+
+// Cliente principal con anon key (para queries normales)
 export const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Cliente con service_role SOLO para Storage (bypasea RLS)
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+})
+
+// Log de configuración (solo en desarrollo)
+if (import.meta.env.DEV) {
+  console.log('[supabase.js] supabaseUrl:', supabaseUrl);
+  console.log('[supabase.js] anon key (first 20):', supabaseKey?.substring(0, 20));
+  console.log('[supabase.js] service_role key (first 20):', supabaseServiceKey?.substring(0, 20));
+  console.log('[supabase.js] supabaseAdmin configured:', !!supabaseAdmin);
+}
 
 // ✅ AGREGAR ESTAS FUNCIONES QUE FALTAN:
 

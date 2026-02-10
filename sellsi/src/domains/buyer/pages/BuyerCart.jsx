@@ -98,9 +98,10 @@ const BuyerCart = ({ FinancingConfigModalOverride } = {}) => {
   // Estados para modal de financiamiento
   const [financingModalOpen, setFinancingModalOpen] = useState(false);
   
-  // Estado para configuración de financiamiento por producto
-  // { productId: { amount: number, isFullAmount: boolean } }
-  const [productFinancing, setProductFinancing] = useState({});
+  // ✅ REFACTOR: Usar productFinancing del store global en lugar de useState local
+  // Esto permite que la configuración persista al navegar a checkout
+  const productFinancing = useCartStore(state => state.productFinancing || {})
+  const updateProductFinancing = useCartStore(state => state.updateProductFinancing);
 
   const handleOpenFinancingModal = useCallback(() => {
     setFinancingModalOpen(true);
@@ -118,8 +119,13 @@ const BuyerCart = ({ FinancingConfigModalOverride } = {}) => {
       // 2) legacy: mapping productId -> { amount, isFullAmount }
       const newFinancingState = financingData?.config ? financingData.config : financingData;
 
-      // Merge with previous state to avoid overwriting other products
-      setProductFinancing(prev => ({ ...prev, ...newFinancingState }));
+      // ✅ REFACTOR: Usar updateProductFinancing del store en lugar de setProductFinancing
+      updateProductFinancing(newFinancingState);
+      
+      console.log('✅ [BuyerCart] Financiamiento guardado en store:', {
+        newConfig: newFinancingState,
+        storeState: useCartStore.getState().productFinancing
+      });
 
       toast.success('Configuración de financiamiento guardada', {
         icon: '✅',
@@ -132,7 +138,7 @@ const BuyerCart = ({ FinancingConfigModalOverride } = {}) => {
         duration: 3000,
       });
     }
-  }, []);
+  }, [updateProductFinancing]);
 
 
 
@@ -196,30 +202,44 @@ const BuyerCart = ({ FinancingConfigModalOverride } = {}) => {
     stableUserRegion // ⚡ Usar valor estable en lugar de directamente de shippingValidation
   );
 
-  // ===== NUEVO: Calcular monto total financiado (sumando y acotando por product total) =====
+  // ===== NUEVO: Calcular monto total financiado (sumando TODA la configuración, clampeando sobre total del carrito) =====
   const computeTotalFinancing = useCallback(() => {
     try {
-      return items.reduce((sum, item) => {
+      // ✅ FIX: Sumar TODO el financiamiento configurado SIN clampear por producto individual
+      const totalFinancingConfigured = items.reduce((sum, item) => {
         const cfg = productFinancing[item.id];
         if (!cfg || !cfg.amount) return sum;
-        // Calcular total del producto (incluye envío si aplica)
-        const quantity = Number(item.quantity || 1);
-        const price_tiers = item.price_tiers || item.priceTiers || item.price_tier || [];
-        const basePrice = Number(item.originalPrice || item.precioOriginal || item.price || item.precio || item.price_at_addition || 0);
-        const unitPrice = calculatePriceForQuantity(quantity, Array.isArray(price_tiers) ? price_tiers : [], basePrice);
-        const productSubtotal = unitPrice * quantity;
-        const shippingCost = Number(priceCalculations.shippingByProduct?.[item.id] || item.shipping_cost || item.shippingCost || 0);
-        const productTotal = productSubtotal + shippingCost;
         const financed = Number(cfg.amount) || 0;
-        // No permitir financiamiento negativo ni mayor al total del producto
-        const clamped = Math.max(0, Math.min(financed, productTotal));
-        return sum + clamped;
+        // Solo validar que no sea negativo
+        return sum + Math.max(0, financed);
       }, 0);
+      
+      // ✅ FIX: Calcular total del carrito (subtotal + envío real)
+      const cartSubtotal = priceCalculations.subtotal || 0;
+      const cartShipping = priceCalculations.shippingByProduct 
+        ? Object.values(priceCalculations.shippingByProduct).reduce((sum, cost) => sum + (Number(cost) || 0), 0)
+        : realShippingCost || 0;
+      const cartTotal = cartSubtotal + cartShipping;
+      
+      // ✅ FIX: Clampear UNA SOLA VEZ sobre el total del carrito
+      // Esto permite que el financiamiento incluya el envío correctamente
+      const finalFinancing = Math.max(0, Math.min(totalFinancingConfigured, cartTotal));
+      
+      console.log('💰 [BuyerCart] Financiamiento calculado:', {
+        configured: totalFinancingConfigured,
+        cartTotal,
+        cartSubtotal,
+        cartShipping,
+        finalFinancing,
+        difference: totalFinancingConfigured - finalFinancing
+      });
+      
+      return finalFinancing;
     } catch (e) {
       console.error('Error computing total financing', e);
       return 0;
     }
-  }, [items, productFinancing, priceCalculations.shippingByProduct]);
+  }, [items, productFinancing, priceCalculations, realShippingCost]);
 
   const totalFinancing = computeTotalFinancing();
 
@@ -459,15 +479,9 @@ const BuyerCart = ({ FinancingConfigModalOverride } = {}) => {
       updateQuantity(id, quantity);
       setLastAction({ type: 'quantity', id, quantity });
       
-      // Resetear financiamiento del producto cuando cambia la cantidad
-      setProductFinancing(prev => {
-        if (prev[id]) {
-          const newFinancing = { ...prev };
-          delete newFinancing[id];
-          return newFinancing;
-        }
-        return prev;
-      });
+      // ✅ REFACTOR: Resetear financiamiento del producto cuando cambia la cantidad
+      const clearProductFinancing = useCartStore.getState().clearProductFinancing;
+      clearProductFinancing(id);
     },
     [updateQuantity]
   );

@@ -29,6 +29,7 @@ export const PERSIST_CONFIG = {
   version: PERSIST_VERSION,
   partialize: (state) => ({
     items: state.items,
+    productFinancing: state.productFinancing || {}, // ✅ Persistir configuración de financiamiento
     lastModified: Date.now(),
     version: CART_VERSION,
   }),

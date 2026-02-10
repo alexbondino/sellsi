@@ -238,20 +238,32 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
       return { data: { subscription: { unsubscribe: jest.fn() } } };
     });
 
+    console.log('[TEST DEBUG logout] before render calls=', mockOnAuthStateChange.mock.calls.length);
     renderApp('/supplier/home');
     await waitFor(() => expect(screen.getByText('PROVIDER_HOME')).toBeInTheDocument());
+    console.warn('[TEST DEBUG logout] after render calls=', mockOnAuthStateChange.mock.calls.length);
 
     // Trigger sign out via test helper (preferred) or by extracting the registered callback from the mock
-    if (typeof globalThis.__TEST_SUPABASE_TRIGGER_AUTH === 'function') {
-      globalThis.__TEST_SUPABASE_TRIGGER_AUTH('SIGNED_OUT', null);
-    } else if (mockOnAuthStateChange.mock.calls.length > 0) {
+    // Prefer invoking the registered mock callback(s) directly to ensure provider's listener runs,
+    // and also notify the global trigger so any other test-level listeners run too.
+    if (mockOnAuthStateChange.mock.calls.length > 0) {
       const last = mockOnAuthStateChange.mock.calls.slice(-1)[0];
+      console.warn('[TEST DEBUG] mockOnAuthStateChange.calls.length=', mockOnAuthStateChange.mock.calls.length, 'last=', !!last, 'last0_type=', typeof (last && last[0]));
       if (last && typeof last[0] === 'function') {
         const cb = last[0];
         const { act } = require('@testing-library/react');
+        console.warn('[TEST DEBUG] invoking callback directly');
         act(() => cb('SIGNED_OUT', null));
       }
     }
+    if (typeof globalThis.__TEST_SUPABASE_TRIGGER_AUTH === 'function') {
+      console.warn('[TEST DEBUG] also using global trigger');
+      globalThis.__TEST_SUPABASE_TRIGGER_AUTH('SIGNED_OUT', null);
+    }
+
+    // Debug: dump DOM after trigger
+    console.warn('[TEST DEBUG] DOM after SIGNED_OUT:\n', document.body.innerHTML.slice(0, 500));
+    console.warn('[TEST DEBUG] localStorage user_id after SIGNED_OUT:', localStorage.getItem('user_id'));
 
     // Expect landing/marketplace or root content
     await waitFor(() => expect(screen.queryByText(/PROVIDER_HOME/)).not.toBeInTheDocument());
@@ -357,15 +369,20 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
     // Simulate SIGNED_IN event and a profile that is a supplier
     const session = { user: { id: 'signed-in-user' } };
     setUsersResponse({ user_nm: 'Signed', main_supplier: true }, null);
-    if (typeof globalThis.__TEST_SUPABASE_TRIGGER_AUTH === 'function') {
-      globalThis.__TEST_SUPABASE_TRIGGER_AUTH('SIGNED_IN', session);
-    } else if (mockOnAuthStateChange.mock.calls.length > 0) {
+    // Prefer invoking the registered mock callback(s) directly to ensure provider's listener runs,
+    // and also notify the global trigger so any other test-level listeners run too.
+    if (mockOnAuthStateChange.mock.calls.length > 0) {
       const last = mockOnAuthStateChange.mock.calls.slice(-1)[0];
       if (last && typeof last[0] === 'function') {
         const cb = last[0];
         const { act } = require('@testing-library/react');
+        console.warn('[TEST DEBUG] invoking callback directly SIGNED_IN');
         act(() => cb('SIGNED_IN', session));
       }
+    }
+    if (typeof globalThis.__TEST_SUPABASE_TRIGGER_AUTH === 'function') {
+      console.warn('[TEST DEBUG] also using global trigger SIGNED_IN');
+      globalThis.__TEST_SUPABASE_TRIGGER_AUTH('SIGNED_IN', session);
     }
 
     // Expect supplier home to appear as provider reacts to SIGNED_IN

@@ -124,9 +124,9 @@ const CheckoutSummary = ({
   };
 
   // ✅ CÁLCULO CENTRALIZADO Y CORRECTO
-  const { subtotalWithIva, grandTotal, baseTotal, paymentFee, paymentFeeLabel } = useMemo(() => {
+  const { subtotalWithIva, grandTotal, baseTotal, paymentFee, paymentFeeLabel, financingAmount, remainingToPay } = useMemo(() => {
     if (!orderData.items || orderData.items.length === 0) {
-      return { subtotalWithIva: 0, grandTotal: 0, baseTotal: 0, paymentFee: 0, paymentFeeLabel: '' };
+      return { subtotalWithIva: 0, grandTotal: 0, baseTotal: 0, paymentFee: 0, paymentFeeLabel: '', financingAmount: 0, remainingToPay: 0 };
     }
 
     const totalBruto = orderData.items.reduce((total, item) => {
@@ -137,25 +137,31 @@ const CheckoutSummary = ({
 
     // Total base (sin fee de pago)
     const baseTotalCalc = Math.trunc(totalBruto) + shippingCost;
+    
+    // ✅ NUEVO: Obtener monto de financiamiento
+    const financing = orderData.financingAmount || 0;
+    
+    // ✅ NUEVO: Calcular monto restante a pagar (puede ser 0 si está 100% financiado)
+    const remaining = Math.max(0, baseTotalCalc - financing);
 
-    // Calcular fee según método de pago seleccionado
+    // Calcular fee según método de pago seleccionado SOLO sobre el monto restante
     let fee = 0;
     let feeLabel = '';
-    if (selectedMethod) {
+    if (selectedMethod && remaining > 0) {
       if (selectedMethod.id === 'khipu') {
         fee = 500; // Comisión fija Khipu
         feeLabel = 'Comisión Khipu';
       } else if (selectedMethod.id === 'flow') {
-        fee = Math.round(baseTotalCalc * 0.038); // 3.8% Flow
+        fee = Math.round(remaining * 0.038); // 3.8% Flow sobre monto restante
         feeLabel = 'Comisión Flow (3.8%)';
       } else if (selectedMethod.id === 'bank_transfer') {
-        fee = Math.round(baseTotalCalc * 0.005); // 0.5% Transferencia Bancaria
+        fee = Math.round(remaining * 0.005); // 0.5% Transferencia Bancaria sobre monto restante
         feeLabel = 'Comisión Servicio (0.5%)';
       }
     }
 
-    // Total del pedido: Subtotal (con IVA incluido) + Envío + Fee
-    const finalOrderTotal = baseTotalCalc + fee;
+    // Total del pedido: Monto restante + Fee (si hay monto a pagar)
+    const finalOrderTotal = remaining + fee;
 
     return {
       subtotalWithIva: Math.trunc(totalBruto),
@@ -163,8 +169,10 @@ const CheckoutSummary = ({
       baseTotal: baseTotalCalc,
       paymentFee: fee,
       paymentFeeLabel: feeLabel,
+      financingAmount: financing,
+      remainingToPay: remaining,
     };
-  }, [orderData.items, shippingCost, selectedMethod]);
+  }, [orderData.items, orderData.financingAmount, shippingCost, selectedMethod]);
 
   // ===== RENDERIZADO =====
 
@@ -357,6 +365,18 @@ const CheckoutSummary = ({
                   : checkoutService.formatPrice(shippingCost)}
               </Typography>
             </Stack>
+
+            {/* ✅ NUEVO: Mostrar financiamiento si existe */}
+            {financingAmount > 0 && (
+              <Stack direction="row" justifyContent="space-between">
+                <Typography variant="body2" color="success.main">
+                  Financiamiento
+                </Typography>
+                <Typography variant="body2" fontWeight="medium" color="success.main">
+                  - {checkoutService.formatPrice(financingAmount)}
+                </Typography>
+              </Stack>
+            )}
 
             {/* Mostrar comisión según método de pago seleccionado */}
             {selectedMethod && paymentFee > 0 && (

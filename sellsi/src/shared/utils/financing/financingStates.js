@@ -75,7 +75,7 @@ export const STATE_CONFIG = {
     requiresAction: true,
     actions: {
       supplier: ['approve', 'reject'],
-      buyer: [],
+      buyer: ['cancel'],
     },
   },
   [FINANCING_STATES.REJECTED_BY_SUPPLIER]: {

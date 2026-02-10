@@ -238,6 +238,34 @@ const ProviderCatalog = () => {
           );
         }
 
+        // ✅ FIX: Obtener el supplier.id usando RPC que bypasea RLS
+        // Usamos RPC con SECURITY DEFINER para no exponer campos sensibles (supplier_legal_name, legal_rut, etc)
+        // Esto es necesario porque financing_requests.supplier_id es una FK a supplier.id, NO a users.user_id
+        try {
+          console.log('[ProviderCatalog DEBUG] Buscando supplier.id para user_id:', providerData.user_id);
+          const { data: supplierData, error: supplierError } = await supabase
+            .rpc('get_supplier_public_info', { p_user_id: providerData.user_id });
+
+          console.log('[ProviderCatalog DEBUG] RPC result:', { supplierData, supplierError });
+
+          // RPC retorna array, tomar primer elemento
+          const supplierRecord = supplierData && supplierData.length > 0 ? supplierData[0] : null;
+
+          if (!supplierError && supplierRecord) {
+            // Agregar supplier_id al objeto providerData para usarlo en financiamiento
+            providerData.supplier_id = supplierRecord.id;
+            console.log('[ProviderCatalog DEBUG] ✅ supplier.id encontrado:', supplierRecord.id);
+          } else {
+            console.warn('[ProviderCatalog] ⚠️ No se encontró supplier.id para user_id:', providerData.user_id);
+            console.warn('[ProviderCatalog] Error de query:', supplierError);
+            // Si no existe un supplier, el botón de financiamiento debería estar deshabilitado
+            providerData.supplier_id = null;
+          }
+        } catch (e) {
+          console.error('[ProviderCatalog] ❌ Error al obtener supplier.id:', e);
+          providerData.supplier_id = null;
+        }
+
         // 2. Obtener productos del proveedor usando el user_id real
         const { data: productsData, error: productsError } = await supabase
           .from('products')
@@ -483,16 +511,31 @@ const ProviderCatalog = () => {
   };
 
   const handleFinancingSubmit = async (financingData) => {
+    console.log('🔥🔥🔥 [handleFinancingSubmit] INICIO - provider:', provider);
+    console.log('🔥🔥🔥 [handleFinancingSubmit] provider.supplier_id:', provider?.supplier_id);
+    console.log('🔥🔥🔥 [handleFinancingSubmit] provider.user_id:', provider?.user_id);
+    
     // Use dynamic import to avoid runtime `require` errors in the browser
     const module = await import('../../buyer/my-financing/services/financingService');
     const svc = module?.default || module;
     const { createExpressRequest, createExtendedRequest } = svc;
 
     try {
+      // ✅ FIX: Usar provider.supplier_id (supplier.id) en lugar de provider.user_id
+      // financing_requests.supplier_id es FK a supplier.id, NO a users.user_id
+      const supplierId = provider?.supplier_id;
+      
+      if (!supplierId) {
+        toast.error('No se puede crear la solicitud: proveedor no encontrado en el sistema', {
+          duration: 4000,
+        });
+        throw new Error('supplier_id is null - cannot create financing request');
+      }
+
       if (financingData.type === 'express') {
-        await createExpressRequest({ formData: financingData, supplierId: provider?.user_id });
+        await createExpressRequest({ formData: financingData, supplierId });
       } else if (financingData.type === 'extended') {
-        await createExtendedRequest({ formData: financingData, supplierId: provider?.user_id });
+        await createExtendedRequest({ formData: financingData, supplierId });
       }
 
       toast.success('Solicitud de financiamiento enviada exitosamente', {

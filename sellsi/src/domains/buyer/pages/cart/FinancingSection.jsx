@@ -18,6 +18,14 @@ const FinancingSection = ({
   const [hasFinancings, setHasFinancings] = React.useState(false);
   const [isCheckingFinancings, setIsCheckingFinancings] = React.useState(false);
 
+  // ⚡ OPTIMIZACIÓN: Derivar supplier IDs únicos con useMemo para dependencia estable
+  // Solo cambia cuando realmente se agregan/quitan suppliers, no al cambiar cantidades
+  const supplierIds = useMemo(() => {
+    return Array.from(new Set(
+      cartItems.map(item => item.supplier_id || item.supplierId).filter(Boolean)
+    )).sort().join(','); // String estable para comparación
+  }, [cartItems]);
+
   React.useEffect(() => {
     let mounted = true;
     const check = async () => {
@@ -27,16 +35,14 @@ const FinancingSection = ({
         const finSvc = await import('../../../../workspaces/buyer/my-financing/services/financingService');
         const getAvailable = finSvc.getAvailableFinancingsForSupplier || (finSvc.default && finSvc.default.getAvailableFinancingsForSupplier);
 
-        const supplierIds = Array.from(new Set(
-          cartItems.map(item => item.supplier_id || item.supplierId).filter(Boolean)
-        ));
+        const supplierIdsArray = supplierIds.split(',').filter(Boolean);
 
-        if (supplierIds.length === 0) {
+        if (supplierIdsArray.length === 0) {
           if (mounted) setHasFinancings(false);
           return;
         }
 
-        for (const sid of supplierIds) {
+        for (const sid of supplierIdsArray) {
           try {
             if (!getAvailable) continue;
             const list = await getAvailable(sid);
@@ -61,7 +67,7 @@ const FinancingSection = ({
 
     check();
     return () => { mounted = false; };
-  }, [cartItems]);
+  }, [supplierIds]);
   return (
     <Paper
       elevation={3}

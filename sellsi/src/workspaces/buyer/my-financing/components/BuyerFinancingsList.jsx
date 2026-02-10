@@ -233,10 +233,21 @@ const MobileFinancingCard = ({ financing, onViewReason, onCancel, onSign, onDown
 
         {/* Actions */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1, borderTop: 1, borderColor: 'divider' }}>
-          <Tooltip title="Descargar documentos">
-            <IconButton size="small" color="primary" onClick={() => onDownload?.(financing)}>
-              <DownloadIcon />
-            </IconButton>
+          <Tooltip title={(() => {
+            const isExpressPreSignature = financing.request_type === 'express' && 
+              !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status);
+            return isExpressPreSignature ? "Disponible cuando el proveedor firme" : "Descargar documentos";
+          })()}>
+            <span>
+              <IconButton 
+                size="small" 
+                color="primary" 
+                onClick={() => onDownload?.(financing)}
+                disabled={financing.request_type === 'express' && !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status)}
+              >
+                <DownloadIcon />
+              </IconButton>
+            </span>
           </Tooltip>
 
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -459,9 +470,9 @@ const BuyerFinancingsList = ({
     setActionModal({ open: true, mode: 'cancel', financing });
   };
 
-  const handleSignConfirm = async (financing) => {
+  const handleSignConfirm = async (financing, signedFile) => {
     try {
-      await onSign?.(financing.id);
+      await onSign?.(financing.id, signedFile);
       setActionModal({ open: false, mode: null, financing: null });
       showBanner({
         message: `✍️ Documento firmado correctamente.`,
@@ -530,16 +541,6 @@ const BuyerFinancingsList = ({
     console.log('🔽 Abriendo modal de descargables para:', financing);
     setDownloadablesModal({ open: true, financing });
   }, []);
-
-  const handleDownloadFile = useCallback((doc, financing) => {
-    console.log('🔽 Descargando archivo:', doc.name, 'de:', financing);
-    // TODO: Implementar descarga real desde Supabase Storage
-    showBanner({
-      message: `Descargando ${doc.name}...`,
-      severity: 'info',
-      duration: 3000,
-    });
-  }, [showBanner]);
 
   const closeDownloadablesModal = useCallback(() => {
     setDownloadablesModal({ open: false, financing: null });
@@ -652,7 +653,6 @@ const BuyerFinancingsList = ({
           open={downloadablesModal.open}
           onClose={closeDownloadablesModal}
           financing={downloadablesModal.financing}
-          onDownloadFile={handleDownloadFile}
         />
       </>
     );
@@ -749,7 +749,6 @@ const BuyerFinancingsList = ({
         open={downloadablesModal.open}
         onClose={closeDownloadablesModal}
         financing={downloadablesModal.financing}
-        onDownloadFile={handleDownloadFile}
       />
     </>
   );

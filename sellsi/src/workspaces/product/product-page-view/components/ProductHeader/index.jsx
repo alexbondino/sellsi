@@ -121,10 +121,21 @@ const ProductHeader = React.memo(
       const { createExpressRequest, createExtendedRequest } = svc;
 
       try {
+        // ✅ FIX: Usar product.supplier_table_id (supplier.id) en lugar de product.supplier_id (users.user_id)
+        // financing_requests.supplier_id es FK a supplier.id, NO a users.user_id
+        const supplierId = product.supplier_table_id;
+        
+        if (!supplierId) {
+          toast.error('No se puede crear la solicitud: proveedor no encontrado en el sistema', {
+            duration: 4000,
+          });
+          throw new Error('supplier_table_id is null - cannot create financing request');
+        }
+
         if (financingData.type === 'express') {
-          await createExpressRequest({ formData: financingData, supplierId: product.supplier_id });
+          await createExpressRequest({ formData: financingData, supplierId });
         } else if (financingData.type === 'extended') {
-          await createExtendedRequest({ formData: financingData, supplierId: product.supplier_id });
+          await createExtendedRequest({ formData: financingData, supplierId });
         }
         toast.success('Solicitud de financiamiento enviada exitosamente', {
           icon: '✅',

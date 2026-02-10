@@ -92,6 +92,8 @@ export function splitOrderBySupplier(order) {
     const supplierId = groups.size === 1 ? Array.from(groups.keys())[0] : null;
     // Recalcular subtotal a partir de ítems (ya lo hacemos) y robustecer campos de totales
     const subtotalCalc = items.reduce((s,i)=> s + Number(i.price_at_addition || i.price || 0) * (i.quantity || 0),0);
+    // Agregar financing_amount del supplier (suma de financing_amount por item)
+    const financingCalc = items.reduce((s,i)=> s + (Number(i.financing_amount) || 0), 0);
     const shippingVal = Number(order.shipping || order.shipping_amount || 0);
     // Usar total_amount provisto (payment order adaptado) si existe, si no fallback a subtotal calculado
     const totalAmountNormalized = (typeof order.total_amount === 'number' && Number.isFinite(order.total_amount))
@@ -120,6 +122,7 @@ export function splitOrderBySupplier(order) {
       payment_status: order.payment_status,
       payment_method: order.payment_method,
       payment_rejection_reason: order.payment_rejection_reason,
+      financing_amount: financingCalc,
       is_supplier_part: false,
       is_payment_order: true,
       created_at: order.created_at,
@@ -166,7 +169,8 @@ export function splitOrderBySupplier(order) {
       );
       const qty = Number(i.quantity || i.qty || 0);
       return s + (Number.isFinite(unit) ? unit : 0) * (Number.isFinite(qty) ? qty : 0);
-    },0)
+    },0),
+    financing_amount: arr.reduce((s,i)=> s + (Number(i.financing_amount) || 0), 0)
   }));
   const totalSubtotal = entries.reduce((s,x)=> s + x.subtotal, 0) || 1;
 
@@ -237,6 +241,7 @@ export function splitOrderBySupplier(order) {
       payment_status: order.payment_status,
       payment_method: order.payment_method,
       payment_rejection_reason: order.payment_rejection_reason,
+      financing_amount: entry.financing_amount || 0,
       is_supplier_part: true,
       is_payment_order: true,
       created_at: order.created_at,

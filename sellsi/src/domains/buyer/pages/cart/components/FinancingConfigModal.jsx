@@ -24,6 +24,7 @@ import {
 import { Close as CloseIcon, RequestQuote as RequestQuoteIcon } from '@mui/icons-material';
 import { calculatePriceForQuantity } from '../../../../../utils/priceCalculation';
 import { toTitleCase } from '../../../../../utils/textFormatters';
+import { useBodyScrollLock } from '../../../../../shared/hooks/useBodyScrollLock';
 
 const FinancingConfigModal = ({
   open,
@@ -103,6 +104,9 @@ const FinancingConfigModal = ({
   // Financiamientos reales: se cargan desde el servicio (supabase)
   const [financingsBySupplier, setFinancingsBySupplier] = React.useState({});
   const [isLoadingFinancings, setIsLoadingFinancings] = React.useState(false);
+
+  // Lock body scroll when modal is open
+  useBodyScrollLock(open);
 
   // Cargar el servicio dinámicamente en el efecto para evitar usar `require` en runtime (Vite/browser)
   React.useEffect(() => {

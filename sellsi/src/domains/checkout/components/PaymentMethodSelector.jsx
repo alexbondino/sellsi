@@ -76,7 +76,7 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
 
   // Estados de métodos de pago
   const {
-    availableMethods,
+    availableMethods: allAvailableMethods,
     selectedMethod,
     selectMethod,
     validateMethod,
@@ -86,6 +86,15 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
     loadPaymentMethods,
     isLoadingMethods,
   } = usePaymentMethods();
+
+  // ✅ FILTRAR métodos de pago para financiamiento: solo Khipu y Flow
+  const availableMethods = useMemo(() => {
+    if (isFinancingMode || orderData.isFinancingPayment) {
+      // Solo permitir Khipu y Flow para pagos de financiamiento
+      return allAvailableMethods.filter(m => m.id === 'khipu' || m.id === 'flow');
+    }
+    return allAvailableMethods;
+  }, [isFinancingMode, orderData.isFinancingPayment, allAvailableMethods]);
 
   // Estado local
   const [isProcessing, setIsProcessing] = useState(false);
@@ -133,6 +142,18 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
     return Math.trunc(totalBruto) + shippingCost;
   }, [orderData.items, orderData.shipping]);
 
+  // ✅ NUEVO: Detectar si el 100% está cubierto por financiamiento
+  const financingAmount = orderData.financingAmount || 0;
+  const remainingToPay = Math.max(0, baseTotal - financingAmount);
+  const isFullyFinanced = remainingToPay === 0 && baseTotal > 0;
+
+  console.log('💳 [PaymentMethodSelector] Estado de financiamiento:', {
+    financingAmount,
+    baseTotal,
+    remainingToPay,
+    isFullyFinanced
+  });
+
   // ===== CÁLCULO DEL MONTO A MOSTRAR EN MODAL (incluye fee para transferencia manual si grand_total no está sellado por servidor) =====
   const amountForBankModal = useMemo(() => {
     const raw = orderData.grand_total ?? orderData.total ?? baseTotal;
@@ -160,12 +181,31 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
   }, []);
 
   useEffect(() => {
+    // ✅ CRÍTICO: NO redirigir a cart si el pago ya fue exitoso
+    // Previene race condition cuando clearCart() vacía orderData.items después de navigate('/buyer/orders')
+    if (paymentSuccessRef.current) {
+      console.log('[PaymentMethodSelector] useEffect - Pago exitoso detectado, NO redirigiendo a cart');
+      return;
+    }
+    
     if (!orderData.items || orderData.items.length === 0) {
+      console.log('[PaymentMethodSelector] useEffect - Cart vacío detectado, redirigiendo a /buyer/cart');
       navigate('/buyer/cart', { replace: true });
       return;
     }
     clearError();
   }, [orderData, navigate, clearError]);
+
+  // ✅ Limpiar método de pago cuando la orden está 100% financiada
+  useEffect(() => {
+    if (isFullyFinanced && selectedMethod !== null) {
+      console.log('[PaymentMethodSelector] Orden 100% financiada detectada - limpiando método de pago seleccionado');
+      setSelectedMethodId(null);
+      selectMethod(null);
+      selectPaymentMethod(null);
+      clearError();
+    }
+  }, [isFullyFinanced, selectedMethod, selectMethod, selectPaymentMethod, clearError]);
 
   // ===== HANDLERS =====
 
@@ -239,6 +279,154 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
     setShowBankTransferModal(true);
   };
   
+  // ===== 🆕 HANDLER PARA PAGO DE FINANCIAMIENTO =====
+  const handleFinancingPayment = async () => {
+    isProcessingRef.current = true;
+    setIsProcessing(true);
+    
+    try {
+      const userId = localStorage.getItem('user_id');
+      const userEmail = localStorage.getItem('user_email');
+      
+      if (!userId) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      // Obtener financingId del orderData
+      const financingId = orderData.financingId;
+      if (!financingId) {
+        throw new Error('ID de financiamiento no encontrado');
+      }
+
+      const amountToPay = orderData.total || 0;
+      if (amountToPay <= 0) {
+        throw new Error('Monto a pagar inválido');
+      }
+
+      console.log('[PaymentMethodSelector] 💳 Procesando pago de financiamiento:', {
+        financingId,
+        amountToPay,
+        method: selectedMethod.id,
+        userId
+      });
+
+      startPaymentProcessing();
+
+      if (selectedMethod.id === 'khipu') {
+        console.log('[PaymentMethodSelector] Procesando pago de financiamiento con Khipu...');
+        
+        // Importar khipuService
+        const khipuService = (await import('../services/khipuService')).default;
+        
+        const paymentResult = await khipuService.createPaymentOrder({
+          total: amountToPay,
+          currency: 'CLP',
+          orderId: `financing_${financingId}`,
+          userId: userId,
+          items: orderData.items || [],
+          shippingAddress: null,
+          billingAddress: orderData.billingAddress || null,
+          financingAmount: 0, // No hay financiamiento en un pago de deuda
+        });
+
+        if (paymentResult.success && paymentResult.paymentUrl) {
+          paymentSuccessRef.current = true;
+          console.log('[PaymentMethodSelector] Redirigiendo a Khipu:', paymentResult.paymentUrl);
+          toast.success('Redirigiendo a Khipu para completar el pago...');
+          setTimeout(() => {
+            window.location.href = paymentResult.paymentUrl;
+          }, 1500);
+        } else {
+          throw new Error('Error al crear orden de pago en Khipu');
+        }
+      } else if (selectedMethod.id === 'flow') {
+        console.log('[PaymentMethodSelector] Procesando pago de financiamiento con Flow...');
+        
+        // Importar flowService
+        const flowService = (await import('../services/flowService')).default;
+        
+        const paymentResult = await flowService.createPaymentOrder({
+          total: amountToPay,
+          currency: 'CLP',
+          orderId: `financing_${financingId}`,
+          userId: userId,
+          userEmail: userEmail,
+          items: orderData.items || [],
+          shippingAddress: null,
+          billingAddress: orderData.billingAddress || null,
+          financingAmount: 0, // No hay financiamiento en un pago de deuda
+        });
+
+        if (paymentResult.success && paymentResult.paymentUrl) {
+          paymentSuccessRef.current = true;
+          console.log('[PaymentMethodSelector] Redirigiendo a Flow:', paymentResult.paymentUrl);
+          toast.success('Redirigiendo a Flow para completar el pago...');
+          setTimeout(() => {
+            window.location.href = paymentResult.paymentUrl;
+          }, 1500);
+        } else {
+          throw new Error('Error al crear orden de pago en Flow');
+        }
+      } else if (selectedMethod.id === 'bank_transfer') {
+        // ⚠️ NOTA: Transferencia bancaria está DESHABILITADA para pagos de financiamiento
+        // Este bloque existe para futuras implementaciones, pero actualmente bank_transfer
+        // está filtrado en availableMethods cuando isFinancingMode = true
+        console.log('[PaymentMethodSelector] Procesando pago de financiamiento con Transferencia Bancaria...');
+        
+        // Para transferencia bancaria, registrar en financing_payments como pendiente
+        // y mostrar los datos bancarios al usuario
+        const { supabase } = await import('../../../services/supabase');
+        
+        // buyer_id debe ser el ID de la tabla buyer (no auth.users)
+        // porque la RLS policy valida: buyer_id IN (SELECT b.id FROM buyer WHERE b.user_id = auth.uid())
+        const buyerTableId = orderData.items?.[0]?.metadata?.buyerId;
+        if (!buyerTableId) {
+          throw new Error('No se pudo determinar el ID de comprador para la transferencia');
+        }
+        
+        const { data: fpData, error: fpError } = await supabase
+          .from('financing_payments')
+          .insert({
+            financing_request_id: financingId,
+            buyer_id: buyerTableId,
+            amount: amountToPay,
+            currency: 'CLP',
+            payment_method: 'bank_transfer',
+            payment_status: 'pending',
+          })
+          .select('id')
+          .single();
+
+        if (fpError) {
+          console.error('[PaymentMethodSelector] Error registrando pago por transferencia:', fpError);
+          throw new Error('Error al registrar el pago por transferencia');
+        }
+
+        console.log('[PaymentMethodSelector] Pago por transferencia registrado:', fpData?.id);
+        
+        paymentSuccessRef.current = true;
+        toast.success('Pago por transferencia registrado. Envía el comprobante a tu proveedor para que lo valide.');
+        
+        // Redirigir a my-financing después de un momento
+        setTimeout(() => {
+          window.location.href = '/buyer/my-financing';
+        }, 3000);
+      } else {
+        throw new Error('Método de pago no soportado para financiamientos');
+      }
+    } catch (error) {
+      console.error('[PaymentMethodSelector] Error procesando pago de financiamiento:', error);
+      setError(error.message);
+      toast.error(error.message);
+      failPayment(error.message);
+    } finally {
+      setIsProcessing(false);
+      if (!paymentSuccessRef.current) {
+        isProcessingRef.current = false;
+      }
+    }
+  };
+  
   const handleBankTransferConfirmFinal = async () => {
     // Bloqueo inmediato
     if (isProcessingRef.current || paymentSuccessRef.current) {
@@ -294,25 +482,47 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
       const calculatedIva = Math.trunc(totalBruto * 0.19);
       const calculatedSubtotal = Math.trunc(totalBruto) - calculatedIva;
       const shippingCost = orderData.shipping || 0;
-      // Total BASE (sin fee). La comisión se aplicará en finalize_order_pricing
-      const orderTotal = Math.round(
-        calculatedSubtotal + calculatedIva + shippingCost
-      );
+      
+      // ✅ CRÍTICO: Considerar financiamiento
+      const financingAmount = orderData.financingAmount || 0;
+      const baseTotal = Math.round(calculatedSubtotal + calculatedIva + shippingCost);
+      
+      // Total REAL a pagar (después de aplicar financiamiento)
+      const orderTotal = Math.max(0, baseTotal - financingAmount);
+      
+      console.log('💰 [PaymentMethodSelector - Bank Transfer] Cálculo de total:', {
+        baseTotal,
+        financingAmount,
+        orderTotal,
+        remainingToPay: orderTotal
+      });
 
-      // Normalizar a un único campo document_type
+      // ✅ CRÍTICO: Obtener configuración de financiamiento por producto del store
+      const productFinancingBT = useCartStore.getState().productFinancing || {};
+
+      // Normalizar a un único campo document_type + inyectar financing_amount por item
       const itemsWithDocType = (orderData.items || []).map(it => {
         const raw = it.document_type || it.documentType;
         const norm =
           raw && ['boleta', 'factura'].includes(String(raw).toLowerCase())
             ? String(raw).toLowerCase()
             : 'ninguno';
-        return { ...it, document_type: norm };
+        
+        // ✅ NUEVO: Inyectar financing_amount por item
+        const financingCfg = productFinancingBT[it.id];
+        const itemFinancingAmount = financingCfg ? Math.max(0, Number(financingCfg.amount) || 0) : 0;
+        
+        return { 
+          ...it, 
+          document_type: norm,
+          financing_amount: itemFinancingAmount,
+        };
       });
 
       // Obtener cartId del store para vincular orden con carrito
       const cartId = useCartStore.getState().cartId;
 
-      // Calcular payment_fee para transferencia bancaria (0.5%)
+      // Calcular payment_fee para transferencia bancaria (0.5%) sobre el monto restante
       const paymentFee = Math.round(orderTotal * 0.005);
       const grandTotal = orderTotal + paymentFee;
 
@@ -322,7 +532,8 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
         subtotal: orderData.subtotal,
         tax: orderData.tax,
         shipping: orderData.shipping,
-        total: orderTotal,
+        total: baseTotal, // ✅ CORREGIDO: Total BASE (subtotal + shipping), la RPC restará financing
+        financingAmount: financingAmount, // ✅ CRÍTICO: Enviar monto financiado
         currency: orderData.currency || 'CLP',
         paymentMethod: selectedMethod.id,
         paymentFee: paymentFee,
@@ -424,13 +635,34 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
       return;
     }
 
-    if (!selectedMethod) {
+    // ✅ VALIDACIÓN CRÍTICA: Asegurar coherencia entre isFullyFinanced y selectedMethod
+    if (isFullyFinanced && selectedMethod !== null) {
+      toast.error('Error: Orden 100% financiada no requiere procesador de pago');
+      console.error('[PaymentMethodSelector] Inconsistencia: isFullyFinanced=true pero selectedMethod!=null', {
+        isFullyFinanced,
+        selectedMethod: selectedMethod?.id,
+        financingAmount,
+        baseTotal
+      });
+      return;
+    }
+
+    // ✅ NUEVO: Permitir continuar sin método de pago cuando está 100% financiado
+    if (!selectedMethod && !isFullyFinanced) {
       toast.error('Debe seleccionar un método de pago');
       return;
     }
     
+    // ===== 🆕 MANEJO ESPECIAL PARA PAGO DE FINANCIAMIENTO =====
+    // Debe ir ANTES de bank_transfer para que todos los métodos pasen por handleFinancingPayment
+    if (isFinancingMode || orderData.isFinancingPayment) {
+      console.log('[PaymentMethodSelector] 💳 Modo financing detectado - flujo de pago de deuda');
+      await handleFinancingPayment();
+      return;
+    }
+    
     // ===== MANEJO ESPECIAL PARA TRANSFERENCIA BANCARIA =====
-    if (selectedMethod.id === 'bank_transfer') {
+    if (selectedMethod && selectedMethod.id === 'bank_transfer') {
       // Para transferencia bancaria, mostrar el modal
       // Usamos isProcessing solo para sincronizar con CheckoutSummary
       console.log('[DEBUG] Abriendo modal de transferencia bancaria');
@@ -452,7 +684,7 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
 
       const validation = checkoutService.validateCheckoutData({
         ...orderData,
-        paymentMethod: selectedMethod.id,
+        paymentMethod: isFullyFinanced ? 'financing' : selectedMethod.id,
         userId: userId,
       });
 
@@ -488,19 +720,43 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
       const calculatedIva = Math.trunc(totalBruto * 0.19);
       const calculatedSubtotal = Math.trunc(totalBruto) - calculatedIva;
       const shippingCost = orderData.shipping || 0;
-      // Total BASE (sin fee Khipu). La comisión se aplicará en finalize_order_pricing (payment_fee + grand_total)
-      const orderTotal = Math.round(
-        calculatedSubtotal + calculatedIva + shippingCost
-      );
+      
+      // ✅ CRÍTICO: Considerar financiamiento
+      const financingAmount = orderData.financingAmount || 0;
+      const baseTotal = Math.round(calculatedSubtotal + calculatedIva + shippingCost);
+      
+      // Total REAL a pagar (después de aplicar financiamiento)
+      // El servidor añadirá payment_fee y calculará grand_total
+      const orderTotal = Math.max(0, baseTotal - financingAmount);
+      
+      console.log('💰 [PaymentMethodSelector] Cálculo de total para orden:', {
+        baseTotal,
+        financingAmount,
+        orderTotal,
+        remainingToPay: orderTotal
+      });
 
-      // Normalizar a un único campo document_type (alias legacy documentType eliminado en nuevos flujos)
+      // ✅ CRÍTICO: Obtener configuración de financiamiento por producto del store
+      // Esto preserva la información granular de qué productos están financiados
+      const productFinancing = useCartStore.getState().productFinancing || {};
+
+      // Normalizar a un único campo document_type + inyectar financing_amount por item
       const itemsWithDocType = (orderData.items || []).map(it => {
         const raw = it.document_type || it.documentType;
         const norm =
           raw && ['boleta', 'factura'].includes(String(raw).toLowerCase())
             ? String(raw).toLowerCase()
             : 'ninguno';
-        return { ...it, document_type: norm };
+        
+        // ✅ NUEVO: Inyectar financing_amount por item desde productFinancing
+        const financingCfg = productFinancing[it.id];
+        const itemFinancingAmount = financingCfg ? Math.max(0, Number(financingCfg.amount) || 0) : 0;
+        
+        return { 
+          ...it, 
+          document_type: norm,
+          financing_amount: itemFinancingAmount, // Monto financiado para ESTE producto
+        };
       });
 
       // Obtener cartId del store para vincular orden con carrito
@@ -512,15 +768,72 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
         subtotal: orderData.subtotal,
         tax: orderData.tax,
         shipping: orderData.shipping,
-        total: orderTotal, // Guardar el total base (server añadirá payment_fee y grand_total)
+        total: baseTotal, // ✅ CORREGIDO: Total BASE (subtotal + shipping), la RPC restará financing
+        financingAmount: financingAmount, // ✅ CRÍTICO: Enviar monto financiado al backend
         currency: orderData.currency || 'CLP',
-        paymentMethod: selectedMethod.id,
+        paymentMethod: isFullyFinanced ? 'financing' : selectedMethod.id, // ✅ NUEVO: 'financing' cuando 100% financiado
         shippingAddress: orderData.shippingAddress,
         billingAddress: orderData.billingAddress,
         cartId: cartId, // ✅ Vincular orden con carrito para limpieza server-side
       });
 
       console.log('[PaymentMethodSelector] Orden creada:', order);
+
+      // ✅ NUEVO: Si está 100% financiado, no requiere procesador de pago externo
+      if (isFullyFinanced) {
+        console.log('[PaymentMethodSelector] 🔵 Orden 100% financiada, finalizando pricing...');
+        
+        try {
+          // ⭐ CRÍTICO: Llamar a finalize_order_pricing para:
+          // 1. Validar stock y precios
+          // 2. Calcular payment_fee y grand_total
+          // 3. Marcar automáticamente como 'paid' (migration 20260205000002)
+          console.log('[PaymentMethodSelector] 🔵 Llamando finalizeOrderPricing para orden:', order.id);
+          await checkoutService.finalizeOrderPricing(order.id);
+          console.log('[PaymentMethodSelector] ✅ finalizeOrderPricing completado');
+          
+          // ✅ CRÍTICO: Marcar como completado ANTES de navigate y clearCart
+          console.log('[PaymentMethodSelector] 🔵 Marcando paymentSuccessRef = true');
+          paymentSuccessRef.current = true;
+          
+          console.log('[PaymentMethodSelector] 🔵 Llamando completePayment()');
+          completePayment({ transactionId: order.id, paymentReference: `FINANCING_${order.id}` });
+          
+          // ✅ Redirigir PRIMERO a órdenes (sincrónico, sin delay)
+          console.log('[PaymentMethodSelector] 🔵 Navegando a /buyer/orders (paymentSuccessRef:', paymentSuccessRef.current, ')');
+          navigate('/buyer/orders', { replace: true });
+          console.log('[PaymentMethodSelector] 🔵 Navigate ejecutado');
+          
+          // ✅ Limpiar carrito DESPUÉS de la redirección
+          toast.success('¡Orden confirmada! El 100% está cubierto por financiamiento.');
+          const clearCart = useCartStore.getState().clearCart;
+          if (clearCart) {
+            console.log('[PaymentMethodSelector] 🔵 Ejecutando clearCart() en background');
+            // Ejecutar en background sin esperar
+            clearCart()
+              .then(() => console.log('[PaymentMethodSelector] ✅ clearCart() completado'))
+              .catch(err => console.error('[PaymentMethodSelector] ❌ Error limpiando carrito:', err));
+          }
+          
+          console.log('[PaymentMethodSelector] ✅ Flujo de financiamiento 100% completado exitosamente');
+          return;
+        } catch (finalizeErr) {
+          console.error('[PaymentMethodSelector] Error finalizando orden financiada:', finalizeErr);
+          
+          // Mostrar error específico según el tipo
+          if (finalizeErr.message?.includes('INSUFFICIENT_STOCK')) {
+            toast.error('Stock insuficiente para completar la orden');
+          } else if (finalizeErr.message?.includes('MINIMUM_PURCHASE_NOT_MET')) {
+            toast.error('No se alcanzó la compra mínima requerida');
+          } else {
+            toast.error('Error al procesar la orden: ' + finalizeErr.message);
+          }
+          
+          setIsProcessing(false);
+          isProcessingRef.current = false;
+          return;
+        }
+      }
 
       if (selectedMethod.id === 'khipu') {
         console.log('[PaymentMethodSelector] Procesando pago con Khipu...');
@@ -540,6 +853,7 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
           userId: userId,
           userEmail: userEmail || '',
           amount: authoritativeTotal, // monto base; Edge usará grand_total (incluye fee) para cobrar
+          financingAmount: financingAmount, // ✅ CRÍTICO: Pasar monto financiado
           currency: orderData.currency || 'CLP',
           items: itemsWithDocType,
           // ✔ Propagar direcciones para que no se pierdan en el pipeline de pago
@@ -573,6 +887,7 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
           userId: userId,
           userEmail: userEmail || '',
           amount: authoritativeTotal,
+          financingAmount: financingAmount, // ✅ CRÍTICO: Pasar monto financiado
           currency: orderData.currency || 'CLP',
           items: itemsWithDocType,
           shippingAddress: orderData.shippingAddress || null,
@@ -829,8 +1144,22 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
                     >
                       {isCompleted
                         ? '¡Pago Completado!'
+                        : isFullyFinanced
+                        ? 'Pago 100% Financiado'
                         : 'Selecciona tu método de pago'}
                     </Typography>
+
+                    {/* Alerta cuando está 100% financiado */}
+                    {isFullyFinanced && !isCompleted && (
+                      <Alert severity="info" sx={{ mb: 3 }}>
+                        <Typography variant="body1" fontWeight="bold">
+                          Tu compra está 100% cubierta por financiamiento
+                        </Typography>
+                        <Typography variant="body2">
+                          No necesitas seleccionar un método de pago. Puedes continuar directamente para finalizar tu pedido.
+                        </Typography>
+                      </Alert>
+                    )}
 
                     {isCompleted && (
                       <Alert severity="success" sx={{ mb: 3 }}>
@@ -845,25 +1174,27 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
                     )}
 
                     {/* Métodos de pago disponibles */}
-                    <Stack spacing={2}>
-                      <AnimatePresence>
-                        {availableMethods.map(method => {
-                          const isSelected = selectedMethodId === method.id;
-                          const fees = getMethodFees(method.id, baseTotal);
-                          return (
-                            <PaymentMethodCard
-                              key={method.id}
-                              method={method}
-                              isSelected={isSelected}
-                              onSelect={handleMethodSelect}
-                              fees={fees}
-                              formatPrice={checkoutService.formatPrice}
-                              baseTotal={baseTotal}
-                            />
-                          );
-                        })}
-                      </AnimatePresence>
-                    </Stack>
+                    {!isFullyFinanced && (
+                      <Stack spacing={2}>
+                        <AnimatePresence>
+                          {availableMethods.map(method => {
+                            const isSelected = selectedMethodId === method.id;
+                            const fees = getMethodFees(method.id, remainingToPay);
+                            return (
+                              <PaymentMethodCard
+                                key={method.id}
+                                method={method}
+                                isSelected={isSelected}
+                                onSelect={handleMethodSelect}
+                                fees={fees}
+                                formatPrice={checkoutService.formatPrice}
+                                baseTotal={remainingToPay}
+                              />
+                            );
+                          })}
+                        </AnimatePresence>
+                      </Stack>
+                    )}
 
                     {/* Errores de validación */}
                     {Object.keys(validationErrors).length > 0 && (
@@ -898,10 +1229,13 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
                     onBack={handleBack}
                     isProcessing={isProcessing}
                     canContinue={
-                      !!selectedMethodId &&
+                      // Si está 100% financiado, puede continuar sin método de pago
+                      isFullyFinanced ||
+                      // Si hay monto a pagar, requiere método de pago seleccionado y válido
+                      (!!selectedMethodId &&
                       !!selectedMethod &&
                       !isValidating &&
-                      Object.keys(validationErrors).length === 0
+                      Object.keys(validationErrors).length === 0)
                     }
                     isCompleted={isCompleted}
                     onViewOrders={handleViewOrders}
