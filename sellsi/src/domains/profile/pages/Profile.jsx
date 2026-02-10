@@ -106,6 +106,9 @@ const Profile = ({
   // ✅ NUEVO: Estado para highlight de campos de facturación
   const [shouldHighlightBillingFields, setShouldHighlightBillingFields] =
     useState(false);
+  // ✅ NUEVO: Estado para highlight de campos legales (proveedor)
+  const [shouldHighlightSupplierLegalFields, setShouldHighlightSupplierLegalFields] =
+    useState(false);
 
   // Estado para el tab activo del perfil
   const [activeTab, setActiveTab] = useState(0);
@@ -144,6 +147,15 @@ const Profile = ({
         setShouldHighlightBillingFields(true);
         const timer = setTimeout(() => {
           setShouldHighlightBillingFields(false);
+        }, 10000);
+        return () => clearTimeout(timer);
+      }
+    } else if (section === 'legal') {
+      setActiveTab(4);
+      if (highlight === 'true') {
+        setShouldHighlightSupplierLegalFields(true);
+        const timer = setTimeout(() => {
+          setShouldHighlightSupplierLegalFields(false);
         }, 10000);
         return () => clearTimeout(timer);
       }
@@ -1060,7 +1072,7 @@ const Profile = ({
                     onFieldChange={updateField}
                     onRegionChange={handleRegionChange}
                     showErrors={false}
-                    shouldHighlight={false}
+                    shouldHighlight={shouldHighlightSupplierLegalFields}
                   />
                 )}
               </Box>

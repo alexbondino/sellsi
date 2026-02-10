@@ -20,6 +20,7 @@ import useShippingValidation from '../../buyer/pages/cart/hooks/useShippingValid
 // Componentes del checkout
 import PaymentMethodSelector from '../components/PaymentMethodSelector'
 import { useCheckout, useFinancingCheckout } from '../hooks'
+import { PAYMENT_STATUS } from '../constants/paymentMethods'
 
 // Utilidades de cálculo de envío
 import { calculateRealShippingCost } from '../../../utils/shippingCalculation'
@@ -56,7 +57,7 @@ const PaymentMethod = () => {
   const { financing, loading: loadingFinancing, error: financingError } = useFinancingCheckout(financingId)
   
   // Estados del checkout
-  const { initializeCheckout, resetCheckout } = useCheckout()
+  const { initializeCheckout, resetCheckout, paymentStatus } = useCheckout()
 
   // ===== EFECTOS =====
   
@@ -89,8 +90,16 @@ const PaymentMethod = () => {
     // MODO CARRITO (código existente)
     // ============================================================================
     
+    // ✅ CRÍTICO: NO redirigir si el pago ya fue completado
+    // Previene race condition cuando clearCart() vacía items después de navigate('/buyer/orders')
+    if (paymentStatus === PAYMENT_STATUS.COMPLETED) {
+      console.log('[PaymentMethod] 🟢 Payment status COMPLETED detectado - BLOQUEANDO redirección a cart (items:', items?.length, ')');
+      return;
+    }
+    
     // Verificar que haya productos en el carrito
     if (!items || items.length === 0) {
+      console.log('[PaymentMethod] ⚠️ Cart vacío detectado (paymentStatus:', paymentStatus, ') - redirigiendo a /buyer/cart');
       // Silenciosamente redirigir al carrito sin mostrar toast
       navigate('/buyer/cart', { replace: true })
       return
@@ -191,6 +200,39 @@ const PaymentMethod = () => {
       
       // ✅ NUEVO: Calcular costo REAL de envío basado en regiones de despacho
       const shipping = await calculateRealShippingCost(items)
+      
+      // ✅ FIX: Calcular monto total de financiamiento configurado (sin clampear por producto)
+      // Obtener configuración de financiamiento del store
+      const cartStore = useCartStore.getState()
+      const productFinancing = cartStore.productFinancing || {}
+      
+      // Sumar TODO el financiamiento configurado SIN clampear por producto individual  
+      const totalFinancingConfigured = items.reduce((sum, item) => {
+        const cfg = productFinancing[item.id]
+        if (!cfg || !cfg.amount) return sum
+        const financed = Number(cfg.amount) || 0
+        // Solo validar que no sea negativo
+        return sum + Math.max(0, financed)
+      }, 0)
+      
+      // ✅ FIX: Calcular total del carrito
+      const cartTotal = subtotal + shipping
+      
+      // ✅ FIX: Clampear UNA SOLA VEZ sobre el total del carrito
+      // Esto permite que el financiamiento incluya el envío correctamente
+      const financingAmount = Math.max(0, Math.min(totalFinancingConfigured, cartTotal))
+      
+      console.log('💰 [PaymentMethod] Financiamiento calculado:', {
+        productFinancing: useCartStore.getState().productFinancing,
+        totalConfigured: totalFinancingConfigured,
+        cartTotal,
+        subtotal,
+        shipping,
+        finalFinancingAmount: financingAmount,
+        clamped: totalFinancingConfigured > cartTotal,
+        remainingToPay: cartTotal - financingAmount
+      })
+      
       // Total base (sin fee de método de pago): subtotal + shipping
       // El fee del método de pago se calculará después en CheckoutSummary
       const total = subtotal + shipping
@@ -268,6 +310,7 @@ const PaymentMethod = () => {
         subtotal: subtotal,
         shipping: shipping,
         total: total, // Total base: subtotal + shipping (sin fee de pago)
+        financingAmount: financingAmount, // ✅ NUEVO: Monto cubierto por financiamiento
         currency: 'CLP',
         // ✅ NUEVO: Incluir direcciones capturadas del perfil
         shippingAddress: shippingAddress,
@@ -296,7 +339,8 @@ const PaymentMethod = () => {
     navigate, 
     shippingValidation.isLoading, 
     shippingValidation.isCartCompatible, 
-    shippingValidation.userRegion
+    shippingValidation.userRegion,
+    paymentStatus // ✅ CRÍTICO: Agregar dependencia para detectar pago completado
   ])
 
   // ===== RENDERIZADO =====

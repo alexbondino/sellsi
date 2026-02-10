@@ -25,6 +25,7 @@ import {
   TextField,
   Skeleton,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -265,12 +266,107 @@ const SignModal = ({ open, financing, onConfirm, onClose }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [uploadedFile, setUploadedFile] = useState(null);
   const [fileError, setFileError] = useState('');
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   useBodyScrollLock(open);
 
-  const handleDownloadContract = () => {
-    // TODO: Implementar descarga real del contrato marco desde Supabase
-    console.log('Descargando contrato marco para financiamiento:', financing?.id);
-    alert('Función de descarga de contrato marco pendiente de implementación');
+  const handleDownloadContract = async () => {
+    try {
+      if (!financing?.id) {
+        console.error('[SignModal] No financing ID');
+        return;
+      }
+
+      setIsGeneratingPdf(true);
+      console.log('[SignModal Supplier] Descargando contrato para financing:', financing.id);
+      
+      // Importar supabase dinámicamente
+      const { supabase } = await import('../../../../services/supabase');
+      
+      // PRIMERO: Intentar descargar el archivo existente (firmado por buyer si ya existe)
+      const fileName = `contrato_marco_${financing.id}.pdf`;
+      const filePath = `${financing.id}/${fileName}`;
+      
+      console.log('[SignModal Supplier] Intentando descargar archivo existente:', filePath);
+      const { data: existingBlob, error: existingError } = await supabase.storage
+        .from('financing-documents')
+        .download(filePath);
+
+      if (!existingError && existingBlob) {
+        // El archivo ya existe (firmado por buyer), descargarlo
+        console.log('[SignModal Supplier] ✅ Archivo existente encontrado (firmado por buyer)');
+        
+        const url = URL.createObjectURL(existingBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `contrato_marco_${financing.id.slice(0, 8)}.pdf`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }, 100);
+        
+        console.log('[SignModal Supplier] Contrato existente descargado');
+        setIsGeneratingPdf(false);
+        return;
+      }
+      
+      // Si no existe archivo, generar uno nuevo con edge function
+      console.log('[SignModal Supplier] No hay archivo existente, generando nuevo PDF');
+      const { data, error } = await supabase.functions.invoke('generate-financing-contract', {
+        body: { financing_id: financing.id }
+      });
+
+      if (error) {
+        console.error('[SignModal] Error invocando edge function:', error);
+        alert(`Error al generar contrato: ${error.message || 'Error desconocido'}`);
+        setIsGeneratingPdf(false);
+        return;
+      }
+
+      if (!data || !data.path) {
+        console.error('[SignModal] Edge function no retornó path');
+        alert('Error: No se recibió la ruta del contrato generado');
+        setIsGeneratingPdf(false);
+        return;
+      }
+
+      // Descargar archivo generado desde storage
+      const { data: blob, error: downloadError } = await supabase.storage
+        .from('financing-documents')
+        .download(data.path);
+
+      if (downloadError || !blob) {
+        console.error('[SignModal] Error descargando archivo:', downloadError);
+        alert('Error: No se pudo descargar el contrato');
+        setIsGeneratingPdf(false);
+        return;
+      }
+
+      // Crear URL local del blob y forzar descarga sin cambiar de página
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `contrato_marco_${financing.id.slice(0, 8)}.pdf`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
+      console.log('[SignModal] Contrato nuevo descargado');
+      setIsGeneratingPdf(false);
+    } catch (err) {
+      console.error('[SignModal] Error descargando contrato:', err);
+      alert(`Error al descargar contrato: ${err.message || 'Error desconocido'}`);
+      setIsGeneratingPdf(false);
+    }
   };
 
   const handleFileUpload = (event) => {
@@ -397,8 +493,9 @@ const SignModal = ({ open, financing, onConfirm, onClose }) => {
             <Button
               fullWidth
               variant="outlined"
-              startIcon={<DownloadIcon />}
+              startIcon={isGeneratingPdf ? <CircularProgress size={20} /> : <DownloadIcon />}
               onClick={handleDownloadContract}
+              disabled={isGeneratingPdf}
               sx={{
                 py: 1.5,
                 borderColor: '#2E52B2',
@@ -407,9 +504,13 @@ const SignModal = ({ open, financing, onConfirm, onClose }) => {
                   borderColor: '#1e3a8a',
                   backgroundColor: 'rgba(46, 82, 178, 0.04)',
                 },
+                '&.Mui-disabled': {
+                  borderColor: '#9ca3af',
+                  color: '#9ca3af',
+                },
               }}
             >
-              Descargar Contrato Marco
+              {isGeneratingPdf ? 'Generando PDF...' : 'Descargar Contrato Marco'}
             </Button>
           </Box>
 

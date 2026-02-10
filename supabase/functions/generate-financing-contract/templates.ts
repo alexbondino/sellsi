@@ -1,6 +1,6 @@
 export const CONTRACT_TEMPLATE = `CONTRATO MARCO DE LÍNEA DE CRÉDITO
 
-En SANTIAGO, Región METROPOLITANA DE SANTIAGO, Chile, a DIA de MES del ANIO, comparecen: NOMBRE_PROVEEDOR, RUT RUT_PROVEEDOR, representado legalmente por REP_PROVEEDOR y domiciliado/a en DIR_PROVEEDOR, comuna de COMUNA_PROVEEDOR, Región REGION_PROVEEDOR; NOMBRE_COMPRADOR, RUT RUT_COMPRADOR, representado legalmente por REP_COMPRADOR y domiciliado/a en DIR_COMPRADOR, comuna de COMUNA_COMPRADOR, Región REGION_COMPRADOR; y exponen:
+En SANTIAGO, Región METROPOLITANA DE SANTIAGO, Chile, a DIA de MES del ANIO, comparecen: NOMBRE_PROVEEDOR, RUT: RUT_PROVEEDOR, representado legalmente por REP_PROVEEDOR y domiciliado/a en DIR_PROVEEDOR, comuna de COMUNA_PROVEEDOR, Región REGION_PROVEEDOR; NOMBRE_COMPRADOR, RUT: RUT_COMPRADOR, representado legalmente por REP_COMPRADOR y domiciliado/a en DIR_COMPRADOR, comuna de COMUNA_COMPRADOR, Región REGION_COMPRADOR; y exponen:
 
 PRIMERO: OBJETO
 El presente contrato regula el otorgamiento de una línea de crédito comercial por parte del PROVEEDOR al COMPRADOR, para la adquisición de bienes y/o servicios comercializados por el PROVEEDOR a través de la plataforma Sellsi.cl, dispuesta por SELLSI SPA.
@@ -9,7 +9,7 @@ SEGUNDO: NATURALEZA DEL CRÉDITO
 La línea de crédito es otorgada exclusiva y directamente por el PROVEEDOR al COMPRADOR. SELLSI SPA no concede crédito, no garantiza obligaciones de pago ni asume riesgo crediticio alguno.
 
 TERCERO: LÍMITE Y USO DEL CUPO
-El PROVEEDOR aprueba un cupo de $ MONTO que el COMPRADOR podrá utilizar en compras realizadas a través de Sellsi por un plazo de PLAZO días. El cupo se consume al efectuar la compra, y no será renovable de forma automática.
+El PROVEEDOR aprueba un cupo de MONTO que el COMPRADOR podrá utilizar en compras realizadas a través de Sellsi por un plazo de PLAZO días corridos. El cupo se consume al efectuar la compra, y no será renovable de forma automática.
 
 CUARTO: MANDATO DE PAGO, PLATAFORMA Y MEDIOS DE PAGO
 El COMPRADOR confiere mandato especial e irrevocable a SELLSI SPA para gestionar, registrar y verificar los pagos derivados de las operaciones financiadas. El COMPRADOR se obliga a efectuar dichos pagos exclusivamente a través de los medios habilitados por SELLSI SPA.

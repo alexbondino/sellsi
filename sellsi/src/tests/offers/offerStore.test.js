@@ -21,19 +21,40 @@ describe('offerStore', () => {
   let localStorageSetSpy;
 
   beforeEach(() => {
-    // Limpiar todos los mocks antes de cada test
-    jest.clearAllMocks();
+    // Resetear mocks e implementaciones antes de cada test
+    jest.resetAllMocks();
+
+    // Asegurar que rpc tiene una implementación segura por defecto
+    if (mockSupabase.rpc && jest.isMockFunction(mockSupabase.rpc)) {
+      mockSupabase.rpc.mockResolvedValue({ data: null, error: null });
+    } else if (mockSupabase.rpc) {
+      mockSupabase.rpc = jest.fn().mockResolvedValue({ data: null, error: null });
+    }
+
     // Reset completo del store
     resetOfferStore();
 
-    // Espiar localStorage nativo
-    localStorageGetSpy = jest.spyOn(window.localStorage, 'getItem').mockImplementation(() => JSON.stringify(mockOfferData.validUser));
-    localStorageSetSpy = jest.spyOn(window.localStorage, 'setItem').mockImplementation(() => {});
+    // Mock de localStorage con almacenamiento en memoria para evitar bucles
+    let _mockStorage = {};
+    _mockStorage['offer_user_data'] = JSON.stringify(mockOfferData.validUser);
+
+    localStorageGetSpy = jest.spyOn(window.localStorage, 'getItem').mockImplementation((key) => {
+      return _mockStorage[key] || null;
+    });
+
+    localStorageSetSpy = jest.spyOn(window.localStorage, 'setItem').mockImplementation((key, value) => {
+      _mockStorage[key] = value.toString();
+    });
   });
 
   afterEach(() => {
-    localStorageGetSpy.mockRestore();
-    localStorageSetSpy.mockRestore();
+    // Restaurar spies e implementaciones
+    jest.restoreAllMocks();
+
+    // Asegurar estado base de rpc para el siguiente test
+    if (mockSupabase.rpc && jest.isMockFunction(mockSupabase.rpc)) {
+      mockSupabase.rpc.mockResolvedValue({ data: null, error: null });
+    }
   });
 
   describe('validateOfferLimits', () => {
@@ -183,27 +204,33 @@ describe('offerStore', () => {
 
       // Start first and second calls inside a synchronous act to wrap state updates
       let p1, p2;
-      act(() => {
-        p1 = result.current.createOffer({ productId: 'p1', supplierId: 's1', quantity: 1, price: 100 });
-        p2 = result.current.createOffer({ productId: 'p2', supplierId: 's2', quantity: 2, price: 200 });
-      });
+      try {
+        act(() => {
+          p1 = result.current.createOffer({ productId: 'p1', supplierId: 's1', quantity: 1, price: 100 });
+          p2 = result.current.createOffer({ productId: 'p2', supplierId: 's2', quantity: 2, price: 200 });
+        });
 
-      // Allow event loop tick for RPC calls to be registered
-      await new Promise(r => process.nextTick(r));
+        // Allow event loop tick for RPC calls to be registered
+        await new Promise(r => process.nextTick(r));
 
-      // There should be only one create_offer invocation pending
-      const createCalls = mockSupabase.rpc.mock.calls.filter(c => c[0] === 'create_offer').length;
-      expect(createCalls).toBe(1);
-      expect(resolveCreate).toBeDefined();
+        // There should be only one create_offer invocation pending
+        const createCalls = mockSupabase.rpc.mock.calls.filter(c => c[0] === 'create_offer').length;
+        expect(createCalls).toBe(1);
+        expect(resolveCreate).toBeDefined();
 
-      // Resolve the pending create inside act so state updates are wrapped
-      act(() => { resolveCreate({ data: { success: true, offer_id: 'concurrent_offer' }, error: null }); });
+        // Resolve the pending create inside act so state updates are wrapped
+        act(() => { resolveCreate({ data: { success: true, offer_id: 'concurrent_offer' }, error: null }); });
 
-      // Wait both calls to finish inside act
-      await act(async () => { await Promise.all([p1, p2]); });
+        // Wait both calls to finish inside act
+        await act(async () => { await Promise.all([p1, p2]); });
 
-      // After resolution, we should have the resulting offer in supplierOffers
-      expect(result.current.supplierOffers.some(s => s.id === 'concurrent_offer')).toBe(true);
+        // After resolution, we should have the resulting offer in supplierOffers
+        expect(result.current.supplierOffers.some(s => s.id === 'concurrent_offer')).toBe(true);
+      } finally {
+        // CRÍTICO: Limpiar la implementación personalizada para no contaminar otros tests
+        mockSupabase.rpc.mockReset();
+        mockSupabase.rpc.mockResolvedValue({ data: null, error: null });
+      }
     });
 
     it('debería manejar duplicate_pending desde backend y no agregar oferta', async () => {

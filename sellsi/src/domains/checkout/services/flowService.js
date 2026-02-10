@@ -18,6 +18,7 @@ class FlowService {
       userId,
       userEmail,
       items,
+      financingAmount,
       shippingAddress,
       billingAddress,
     } = orderDetails;
@@ -67,6 +68,7 @@ class FlowService {
         buyer_id: userId || null,
         order_id: orderId,
         user_email: userEmail,
+        financing_amount: financingAmount || 0,
         offer_ids: offerIdsDistinct.length ? offerIdsDistinct : undefined,
         cart_items: normalizedItems.map(it => {
           const priceBase =

@@ -29,6 +29,10 @@ const initialState = {
   isBackendSynced: false,
   isSyncing: false,
   lastModified: null,
+  
+  // ✅ NUEVO: Configuración de financiamiento por producto
+  // Estructura: { productId: { amount: number, isFullAmount: boolean } }
+  productFinancing: {},
 }
 
 /**
@@ -111,6 +115,43 @@ export const createCartCoreStore = () => {
           set({
             ...initialState,
             lastModified: Date.now()
+          })
+        },
+
+        /**
+         * Establece la configuración de financiamiento para productos
+         * @param {Object} financing - Objeto con configuración { productId: { amount, isFullAmount } }
+         */
+        setProductFinancing: (financing) => {
+          set({ 
+            productFinancing: financing,
+            lastModified: Date.now()
+          })
+        },
+
+        /**
+         * Actualiza la configuración de financiamiento (merge con estado anterior)
+         * @param {Object} financing - Objeto con nueva configuración
+         */
+        updateProductFinancing: (financing) => {
+          set(state => ({ 
+            productFinancing: { ...state.productFinancing, ...financing },
+            lastModified: Date.now()
+          }))
+        },
+
+        /**
+         * Limpia la configuración de financiamiento de un producto
+         * @param {string} productId - ID del producto
+         */
+        clearProductFinancing: (productId) => {
+          set(state => {
+            const newFinancing = { ...state.productFinancing }
+            delete newFinancing[productId]
+            return {
+              productFinancing: newFinancing,
+              lastModified: Date.now()
+            }
           })
         },
 

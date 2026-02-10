@@ -6,7 +6,7 @@ import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 
 class KhipuService {
   async createPaymentOrder(orderDetails) {
-  const { total, currency, orderId, userId, items, shippingAddress, billingAddress } = orderDetails;
+  const { total, currency, orderId, userId, items, shippingAddress, billingAddress, financingAmount } = orderDetails;
 
     try {
       // <-- CAMBIO 1: Volvemos a preparar el payload con los datos reales de la orden.
@@ -31,6 +31,7 @@ class KhipuService {
         buyer_id: userId || null,
         cart_id: orderId || null,
         order_id: orderId,
+        financing_amount: financingAmount || 0, // ✅ Pasar monto financiado
         // Pasar lista de ofertas explícitamente para que el Edge Function pueda validar y aplicar descuentos
         offer_ids: offerIdsDistinct.length ? offerIdsDistinct : undefined,
         cart_items: normalizedItems.map(it => {

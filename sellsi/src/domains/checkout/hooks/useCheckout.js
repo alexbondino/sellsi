@@ -25,7 +25,11 @@ const useCheckout = create(
         subtotal: 0,
         shipping: 0,
         total: 0, // Total base: subtotal + shipping (sin fee de pago)
-        currency: 'CLP'
+        financingAmount: 0, // ✅ Monto cubierto por financiamiento
+        currency: 'CLP',
+        // ✅ Campos para pagos de financiamiento
+        isFinancingPayment: false,
+        financingId: null
       },
       
       // Estado del pago
@@ -43,10 +47,14 @@ const useCheckout = create(
             subtotal: cartData.subtotal || 0,
             shipping: cartData.shipping || 0,
             total: cartData.total || 0, // Total base: subtotal + shipping
+            financingAmount: cartData.financingAmount || 0, // ✅ CRÍTICO: Monto cubierto por financiamiento
             currency: 'CLP',
             // ✅ CRÍTICO: Guardar direcciones del perfil
             shippingAddress: cartData.shippingAddress || null,
-            billingAddress: cartData.billingAddress || null
+            billingAddress: cartData.billingAddress || null,
+            // ✅ CRÍTICO: Campos para pagos de financiamiento
+            isFinancingPayment: cartData.isFinancingPayment || false,
+            financingId: cartData.financingId || null
           },
           currentStep: CHECKOUT_STEPS.PAYMENT_METHOD,
           completedSteps: [CHECKOUT_STEPS.CART],
@@ -220,6 +228,7 @@ const useCheckout = create(
             serviceFee: 0,
             shipping: 0,
             total: 0,
+            financingAmount: 0, // ✅ Resetear financiamiento
             currency: 'CLP'
           },
           paymentStatus: PAYMENT_STATUS.PENDING,

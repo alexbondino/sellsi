@@ -77,12 +77,13 @@ CREATE TABLE public.billing_info (
 );
 CREATE TABLE public.buyer (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid,
+  user_id uuid UNIQUE,
   name text NOT NULL,
   email text UNIQUE,
   has_overdue_financing boolean NOT NULL DEFAULT false,
   balance numeric NOT NULL DEFAULT 0,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT buyer_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.cart_items (
@@ -207,6 +208,7 @@ CREATE TABLE public.financing_documents (
   file_size integer,
   mime_type text,
   uploaded_by_admin_id uuid,
+  uploaded_at timestamp with time zone DEFAULT now(),
   CONSTRAINT financing_documents_pkey PRIMARY KEY (id),
   CONSTRAINT financing_documents_financing_request_id_fkey FOREIGN KEY (financing_request_id) REFERENCES public.financing_requests(id),
   CONSTRAINT fk_financing_documents_financing FOREIGN KEY (financing_id) REFERENCES public.financing_requests(id)
@@ -216,15 +218,44 @@ CREATE TABLE public.financing_requests (
   buyer_id uuid NOT NULL,
   supplier_id uuid NOT NULL,
   amount numeric NOT NULL,
-  available_amount numeric NOT NULL,
+  available_amount numeric NOT NULL DEFAULT 0,
   status text NOT NULL DEFAULT 'pending'::text,
   due_date date,
   has_overdue boolean NOT NULL DEFAULT false,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  paused boolean NOT NULL DEFAULT false,
+  paused_reason text,
+  paused_at timestamp with time zone,
+  paused_by uuid,
+  unpaused_at timestamp with time zone,
+  unpaused_by uuid,
+  expires_at timestamp with time zone,
+  amount_used numeric NOT NULL DEFAULT 0,
+  amount_paid numeric NOT NULL DEFAULT 0,
+  amount_refunded numeric NOT NULL DEFAULT 0,
+  legal_name text,
+  legal_rut character varying,
+  buyer_legal_representative_name text,
+  buyer_legal_representative_rut character varying,
+  legal_address text,
+  legal_commune text,
+  legal_region text,
+  legal_representative_name text,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  term_days integer NOT NULL DEFAULT 0,
+  rejected_reason text,
+  cancelled_reason text,
+  signed_buyer_at timestamp with time zone,
+  signed_supplier_at timestamp with time zone,
+  signed_sellsi_at timestamp with time zone,
+  approved_by_admin_id uuid,
+  activated_at timestamp with time zone,
+  rejected_at timestamp with time zone,
   CONSTRAINT financing_requests_pkey PRIMARY KEY (id),
   CONSTRAINT financing_requests_buyer_id_fkey FOREIGN KEY (buyer_id) REFERENCES public.buyer(id),
-  CONSTRAINT financing_requests_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.supplier(id)
+  CONSTRAINT financing_requests_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.supplier(id),
+  CONSTRAINT financing_requests_approved_by_admin_id_fkey FOREIGN KEY (approved_by_admin_id) REFERENCES public.control_panel_users(id)
 );
 CREATE TABLE public.financing_transactions (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -451,9 +482,12 @@ CREATE TABLE public.orders (
   payment_reviewed_at timestamp with time zone,
   payment_reviewed_by uuid,
   payment_rejection_reason text,
+  financing_amount numeric NOT NULL DEFAULT 0 CHECK (financing_amount >= 0::numeric),
+  financing_request_id uuid,
   CONSTRAINT orders_pkey PRIMARY KEY (id),
   CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id),
-  CONSTRAINT orders_payment_reviewed_by_fkey FOREIGN KEY (payment_reviewed_by) REFERENCES public.control_panel_users(id)
+  CONSTRAINT orders_payment_reviewed_by_fkey FOREIGN KEY (payment_reviewed_by) REFERENCES public.control_panel_users(id),
+  CONSTRAINT orders_financing_request_id_fkey FOREIGN KEY (financing_request_id) REFERENCES public.financing_requests(id)
 );
 CREATE TABLE public.payment_methods_config (
   id integer NOT NULL DEFAULT 1 CHECK (id = 1),
@@ -642,12 +676,20 @@ CREATE TABLE public.storage_cleanup_logs (
 );
 CREATE TABLE public.supplier (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid,
+  user_id uuid UNIQUE,
   name text NOT NULL,
   legal_rut text,
   balance numeric NOT NULL DEFAULT 0,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT supplier_pkey PRIMARY KEY (id)
+  supplier_legal_name text,
+  supplier_legal_rut character varying,
+  supplier_legal_representative_name text,
+  supplier_legal_representative_rut character varying,
+  supplier_legal_address text,
+  supplier_legal_region character varying,
+  supplier_legal_commune character varying,
+  CONSTRAINT supplier_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_supplier_user FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );
 CREATE TABLE public.supplier_billing_config (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -766,8 +808,8 @@ CREATE TABLE public.supplier_order_items (
 );
 CREATE TABLE public.supplier_order_notifications (
   id bigint NOT NULL DEFAULT nextval('supplier_order_notifications_id_seq'::regclass),
-  order_id bigint NOT NULL,
-  supplier_id bigint NOT NULL,
+  order_id uuid NOT NULL,
+  supplier_id uuid NOT NULL,
   supplier_email text NOT NULL,
   total numeric,
   created_at timestamp with time zone DEFAULT now(),
@@ -794,6 +836,7 @@ CREATE TABLE public.supplier_orders (
   dte_fecha_emision date,
   dte_estado character varying CHECK (dte_estado IS NULL OR (dte_estado::text = ANY (ARRAY['PENDIENTE'::character varying, 'ENVIADO'::character varying, 'ACEPTADO'::character varying, 'RECHAZADO'::character varying, 'ACEPTADO_CON_REPAROS'::character varying, 'ANULADO'::character varying, 'SIMULADO'::character varying, 'ERROR'::character varying]::text[]))),
   dte_id uuid,
+  financing_amount numeric NOT NULL DEFAULT 0 CHECK (financing_amount >= 0::numeric),
   CONSTRAINT supplier_orders_pkey PRIMARY KEY (id),
   CONSTRAINT supplier_orders_parent_order_id_fkey FOREIGN KEY (parent_order_id) REFERENCES public.orders(id),
   CONSTRAINT supplier_orders_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id),

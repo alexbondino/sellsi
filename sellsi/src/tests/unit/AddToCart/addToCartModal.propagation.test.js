@@ -53,12 +53,12 @@ jest.mock('../../../shared/hooks/profile/useBillingInfoValidation', () => ({
   })
 }));
 
+// Shared setup mocks - MUST be imported before components so module-level imports (e.g., `supabase`) are mocked
+import './setupMocks'
+
 // Import the AddToCart orchestrator and modal directly (mocks applied above)
 import AddToCart from '../../../shared/components/cart/AddToCart';
 import AddToCartModal from '../../../shared/components/cart/AddToCartModal';
-
-// Shared setup mocks
-import './setupMocks'
 
 // Note: `supabase` mock is provided by setupMocks; tests can override as needed
 
@@ -85,6 +85,9 @@ describe('AddToCartModal propagation', () => {
     // Ensure shipping state and mock shipping validation result
     mockShippingState.canShip = true
     mockValidateProductShipping.mockResolvedValueOnce({ canShip: true, shippingInfo: { cost: 1500 }, message: 'Entrega 2 días' });
+
+    // Ensure the component uses our local shipping hook mock (setupMocks also mocks this hook globally)
+    jest.spyOn(require('../../../shared/hooks/shipping/useUnifiedShippingValidation'), 'useUnifiedShippingValidation').mockImplementation(() => mockUseUnifiedShippingValidation());
 
     const product = { id: 'p1', name: 'Prod 1', stock: 10, price: 1000 };
     const onAddToCart = jest.fn().mockResolvedValueOnce(true);
@@ -334,6 +337,8 @@ describe('AddToCartModal propagation', () => {
     const eq = jest.fn().mockResolvedValue({ data: [{ id: 'r1', region: 'Region Test', price: 0, delivery_days: 3 }], error: null });
     const select = jest.fn().mockReturnValue({ eq });
     const sup = require('../../../services/supabase').supabase
+    // DEBUG: inspeccionar la implementación de `from` antes de espiar
+    console.log('[TEST DEBUG] sup.from isMockFunction?', jest.isMockFunction(sup.from), 'sup.from name:', sup.from && sup.from.name ? sup.from.name : 'n/a');
     const from = jest.spyOn(sup, 'from').mockReturnValue({ select });
 
     render(

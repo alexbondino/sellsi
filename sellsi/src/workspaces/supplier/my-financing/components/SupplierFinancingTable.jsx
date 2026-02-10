@@ -71,7 +71,19 @@ const SupplierFinancingTable = ({
   /**
    * Renderiza el estado como chip (basado en categoría de filtro)
    */
-  const renderStateChip = (status) => {
+  const renderStateChip = (status, paused = false) => {
+    // Si está pausado, mostrar chip de Pausado independiente del status
+    if (paused) {
+      return (
+        <Chip
+          label="Pausado"
+          color="default"
+          size="small"
+          sx={{ fontWeight: 600, backgroundColor: 'grey.400', color: 'white' }}
+        />
+      );
+    }
+
     const filterCategory = getStateFilterCategory(status);
 
     return (
@@ -265,19 +277,28 @@ const SupplierFinancingTable = ({
 
               {/* Descargables */}
               <TableCell align="center">
-                <ActionIconButton
-                  tooltip="Descargar documentos"
-                  variant="primary"
-                  onClick={() => onDownload?.(financing)}
-                  ariaLabel="Descargar documentos"
-                >
-                  <DownloadIcon fontSize="small" />
-                </ActionIconButton>
+                {(() => {
+                  // Deshabilitar si es Express y está antes de supplier_signature_pending
+                  const isExpressPreSignature = financing.request_type === 'express' && 
+                    !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status);
+                  
+                  return (
+                    <ActionIconButton
+                      tooltip={isExpressPreSignature ? "Disponible cuando el comprador firme" : "Descargar documentos"}
+                      variant="primary"
+                      onClick={() => onDownload?.(financing)}
+                      ariaLabel="Descargar documentos"
+                      disabled={isExpressPreSignature}
+                    >
+                      <DownloadIcon fontSize="small" />
+                    </ActionIconButton>
+                  );
+                })()}
               </TableCell>
 
               {/* Estado (Chip) */}
               <TableCell align="center">
-                {renderStateChip(financing.status)}
+                {renderStateChip(financing.status, financing.paused)}
               </TableCell>
 
               {/* Descripción (Texto detallado) */}

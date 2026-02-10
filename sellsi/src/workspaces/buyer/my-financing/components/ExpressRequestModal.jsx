@@ -55,6 +55,7 @@ import {
 } from '../../../../shared/components/feedback/Modal/Modal';
 import { formatRut, validateRut } from '../../../../utils/validators';
 import { formatNumber } from '../../../../shared/utils/formatters';
+import { getLastFinancingConfig } from '../services/financingService';
 
 const SELLSI_BLUE = '#2E52B2';
 
@@ -84,6 +85,38 @@ const ExpressRequestModal = ({ open, onClose, onBack, onSubmit }) => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
+
+  // Cargar configuración anterior cuando se abre el modal
+  useEffect(() => {
+    if (open && formData.autoFillModal) {
+      const loadPreviousConfig = async () => {
+        setIsLoadingConfig(true);
+        try {
+          const config = await getLastFinancingConfig();
+          if (config) {
+            setFormData((prev) => ({
+              ...prev,
+              businessName: config.businessName || prev.businessName,
+              rut: config.rut || prev.rut,
+              legalRepresentative: config.legalRepresentative || prev.legalRepresentative,
+              legalRepresentativeRut: config.legalRepresentativeRut || prev.legalRepresentativeRut,
+              legalAddress: config.legalAddress || prev.legalAddress,
+              legalCommune: config.legalCommune || prev.legalCommune,
+              legalRegion: config.legalRegion || prev.legalRegion,
+              term: config.term || prev.term,
+            }));
+          }
+        } catch (error) {
+          console.warn('[ExpressRequestModal] Error loading previous config:', error);
+        } finally {
+          setIsLoadingConfig(false);
+        }
+      };
+
+      loadPreviousConfig();
+    }
+  }, [open, formData.autoFillModal]);
 
   // Reiniciar formulario cuando el modal se cierra
   useEffect(() => {

@@ -151,7 +151,71 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 5. Log del webhook
+    // ========================================================================
+    // DETECCIÓN DE PAGO DE FINANCIAMIENTO
+    // Si urlConfirmation incluía ?financing_payment=true, procesamos como financing
+    // ========================================================================
+    const isFinancingPayment = url.searchParams.get('financing_payment') === 'true';
+    const financingIdFromUrl = url.searchParams.get('fid');
+
+    if (isFinancingPayment && financingIdFromUrl) {
+      log('financing_payment_detected', { financingIdFromUrl, flowOrder, paymentStatus: status });
+
+      // Log del webhook de financing
+      try {
+        await supabase.from('flow_webhook_logs').insert({
+          flow_order: flowOrder,
+          commerce_order: commerceOrder,
+          token: token,
+          status: status,
+          webhook_data: statusData,
+          processed: false,
+          order_id: null,
+          category: 'financing_payment',
+        });
+      } catch (logInsertErr) {
+        logErr('financing_webhook_log_insert_failed', { error: String(logInsertErr) });
+      }
+
+      // Solo procesar si el pago fue exitoso (status === 2)
+      if (status !== 2) {
+        log('financing_payment_not_paid', { status });
+        return new Response(JSON.stringify({ success: true, financing: true, status, message: 'Payment not yet completed' }), { status: 200, headers: corsHeaders });
+      }
+
+      // Buscar financing_payment por flow_token o flow_order
+      const { data: fp, error: fpErr } = await supabase
+        .from('financing_payments')
+        .select('id, financing_request_id, amount, payment_status')
+        .or(`flow_token.eq.${token},flow_order.eq.${flowOrder}`)
+        .maybeSingle();
+
+      if (fpErr || !fp) {
+        logErr('financing_payment_not_found', { financingIdFromUrl, flowOrder, token, error: fpErr });
+        return new Response(JSON.stringify({ success: false, reason: 'financing_payment_not_found' }), { status: 200, headers: corsHeaders });
+      }
+
+      // Idempotencia: si ya está pagado, retornar OK
+      if (fp.payment_status === 'paid') {
+        log('financing_payment_already_processed', { id: fp.id });
+        return new Response(JSON.stringify({ success: true, already_processed: true }), { status: 200, headers: corsHeaders });
+      }
+
+      // Procesar el pago exitoso
+      const { data: result, error: processErr } = await supabase.rpc('process_financing_payment_success', {
+        p_payment_id: fp.id
+      });
+
+      if (processErr) {
+        logErr('financing_payment_process_error', { error: processErr, paymentId: fp.id });
+        return new Response(JSON.stringify({ error: 'Failed to process financing payment' }), { status: 500, headers: corsHeaders });
+      }
+
+      log('financing_payment_success', { paymentId: fp.id, result, ms: Date.now() - startedAt });
+      return new Response(JSON.stringify({ success: true, financing_payment_id: fp.id, result }), { status: 200, headers: corsHeaders });
+    }
+
+    // 5. Log del webhook (flujo normal de órdenes)
     try {
       await supabase.from('flow_webhook_logs').insert({
         flow_order: flowOrder,

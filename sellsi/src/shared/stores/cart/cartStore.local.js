@@ -185,6 +185,12 @@ export const removeItemLocal = (id, set, get, historyStore, debouncedSave) => {
 
   if (item) {
     set({ items: currentState.items.filter(item => item.id !== id) });
+    
+    // ✅ Limpiar financiamiento del producto eliminado
+    const clearProductFinancing = get().clearProductFinancing;
+    if (clearProductFinancing) {
+      clearProductFinancing(id);
+    }
   } else {
   }
 
@@ -215,6 +221,12 @@ export const clearCartLocal = (set, get, historyStore, debouncedSave) => {
   set({
     items: [],
   });
+  
+  // ✅ Limpiar toda la configuración de financiamiento
+  const setProductFinancing = get().setProductFinancing;
+  if (setProductFinancing) {
+    setProductFinancing({});
+  }
 
   // Delegar al módulo de historial
   setTimeout(() => {

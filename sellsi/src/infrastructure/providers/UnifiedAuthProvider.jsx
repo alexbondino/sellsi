@@ -277,6 +277,9 @@ export const UnifiedAuthProvider = ({ children }) => {
             account_number: fullProfile.account_number || '',
             transfer_rut: fullProfile.transfer_rut || '',
             confirmation_email: fullProfile.confirmation_email || '',
+            // Información legal del supplier (para validaciones de financiamiento)
+            supplier_legal_representative_name: fullProfile.supplier_legal_representative_name || '',
+            supplier_legal_representative_rut: fullProfile.supplier_legal_representative_rut || '',
           }
         : null;
 
@@ -524,6 +527,9 @@ export const UnifiedAuthProvider = ({ children }) => {
           account_number: fullProfile.account_number || '',
           transfer_rut: fullProfile.transfer_rut || '',
           confirmation_email: fullProfile.confirmation_email || '',
+          // Información legal del supplier (para validaciones de financiamiento)
+          supplier_legal_representative_name: fullProfile.supplier_legal_representative_name || '',
+          supplier_legal_representative_rut: fullProfile.supplier_legal_representative_rut || '',
         };
         
         setUserProfile(userData);

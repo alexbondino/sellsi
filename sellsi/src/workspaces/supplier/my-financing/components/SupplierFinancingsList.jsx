@@ -258,10 +258,21 @@ const MobileFinancingCard = ({ financing, onApprove, onReject, onSign, onCancel,
 
         {/* Actions */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1, borderTop: 1, borderColor: 'divider' }}>
-          <Tooltip title="Descargar documentos">
-            <IconButton size="small" color="primary" onClick={() => onDownload?.(financing)}>
-              <DownloadIcon />
-            </IconButton>
+          <Tooltip title={(() => {
+            const isExpressPreSignature = financing.request_type === 'express' && 
+              !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status);
+            return isExpressPreSignature ? "Disponible cuando el comprador firme" : "Descargar documentos";
+          })()}>
+            <span>
+              <IconButton 
+                size="small" 
+                color="primary" 
+                onClick={() => onDownload?.(financing)}
+                disabled={financing.request_type === 'express' && !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status)}
+              >
+                <DownloadIcon />
+              </IconButton>
+            </span>
           </Tooltip>
 
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -359,7 +370,7 @@ const SupplierFinancingsList = ({
     loading: isLoadingLegalRep,
     missingFieldLabels: legalRepMissingFields,
     checkAndProceed: checkLegalRepAndProceed,
-    handleGoToBilling,
+    handleGoToLegal,
     handleClose: closeLegalRepModal,
   } = useLegalRepModal();
 
@@ -464,8 +475,8 @@ const SupplierFinancingsList = ({
 
   // Handlers de modales
   const openModal = (mode, financing) => {
-    // Si es modo firma, validar representante legal primero
-    if (mode === 'sign') {
+    // Si es modo aprobar, validar representante legal primero
+    if (mode === 'approve') {
       const canProceed = checkLegalRepAndProceed(() => {
         setModalState({ open: true, mode, financing });
       });
@@ -473,7 +484,7 @@ const SupplierFinancingsList = ({
       return;
     }
     
-    // Para otros modos, abrir directamente
+    // Para otros modos (sign, reject, cancel), abrir directamente
     setModalState({ open: true, mode, financing });
   };
 
@@ -518,9 +529,9 @@ const SupplierFinancingsList = ({
     }
   };
 
-  const handleSign = async (financing) => {
+  const handleSign = async (financing, signedFile) => {
     try {
-      await onSign?.(financing.id);
+      await onSign?.(financing.id, signedFile);
       closeModal();
       showBanner({
         message: `✍️ Documento de ${financing.requested_by} firmado correctamente.`,
@@ -566,16 +577,6 @@ const SupplierFinancingsList = ({
     console.log('🔽 Abriendo modal de descargables para:', financing);
     setDownloadablesModal({ open: true, financing });
   };
-
-  const handleDownloadFile = useCallback((doc, financing) => {
-    console.log('🔽 Descargando archivo:', doc.name, 'de:', financing);
-    // TODO: Implementar descarga real desde Supabase Storage
-    showBanner({
-      message: `Descargando ${doc.name}...`,
-      severity: 'info',
-      duration: 3000,
-    });
-  }, [showBanner]);
 
   const closeDownloadablesModal = useCallback(() => {
     setDownloadablesModal({ open: false, financing: null });
@@ -877,7 +878,7 @@ const SupplierFinancingsList = ({
       <LegalRepValidationModal
         isOpen={isLegalRepModalOpen}
         onClose={closeLegalRepModal}
-        onGoToBilling={handleGoToBilling}
+        onGoToLegal={handleGoToLegal}
         loading={isLoadingLegalRep}
         missingFieldLabels={legalRepMissingFields}
       />
@@ -887,7 +888,6 @@ const SupplierFinancingsList = ({
         open={downloadablesModal.open}
         onClose={closeDownloadablesModal}
         financing={downloadablesModal.financing}
-        onDownloadFile={handleDownloadFile}
       />
     </>
   );

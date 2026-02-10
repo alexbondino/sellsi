@@ -55,7 +55,7 @@ const useFinancingCheckout = (financingId) => {
 
               // Calcular días restantes
               const { daysRemaining, status: daysStatus } = getFinancingDaysStatus(
-                mockFinancing.approved_at,
+                mockFinancing.activated_at,
                 mockFinancing.term_days
               );
 
@@ -78,7 +78,7 @@ const useFinancingCheckout = (financingId) => {
                     amountGranted: mockFinancing.amount,
                     amountUsed: mockFinancing.amount_used || 0,
                     termDays: mockFinancing.term_days,
-                    approvedAt: mockFinancing.approved_at,
+                    activatedAt: mockFinancing.activated_at,
                     createdAt: mockFinancing.created_at,
                     daysRemaining: daysRemaining,
                     daysStatus: daysStatus,
@@ -119,14 +119,15 @@ const useFinancingCheckout = (financingId) => {
             amount_used,
             term_days,
             status,
-            payment_status,
-            approved_at,
+            activated_at,
             created_at,
-            buyer:users!financing_requests_buyer_id_fkey(user_nm, email),
-            supplier:users!financing_requests_supplier_id_fkey(user_nm, email)
+            buyer(name, user_id)
           `)
           .eq('id', financingId)
           .single();
+
+        console.log('[useFinancingCheckout] Financing data:', financingData);
+        console.log('[useFinancingCheckout] Financing error:', financingError);
 
         if (financingError) {
           throw new Error(`Error al obtener financiamiento: ${financingError.message}`);
@@ -136,31 +137,48 @@ const useFinancingCheckout = (financingId) => {
           throw new Error('Financiamiento no encontrado');
         }
 
-        // 2. Validar que el financiamiento esté aprobado y pendiente de pago
-        if (financingData.status !== 'approved_by_sellsi') {
-          throw new Error('El financiamiento no está aprobado');
-        }
+        // 1b. Obtener datos del supplier por separado (bypass RLS con RPC)
+        const { data: supplierName, error: supplierError } = await supabase.rpc('get_supplier_name_for_buyer', { 
+          p_supplier_id: financingData.supplier_id 
+        });
+        
+        console.log('[useFinancingCheckout] Supplier name:', supplierName);
+        console.log('[useFinancingCheckout] Supplier error:', supplierError);
+        
+        // Agregar supplier al financingData
+        financingData.supplier = { name: supplierName || 'Proveedor Desconocido' };
 
-        if (financingData.payment_status === 'paid') {
-          throw new Error('El financiamiento ya está pagado');
+        // 2. Validar que el financiamiento esté activo o aprobado
+        if (!['active', 'approved_by_sellsi'].includes(financingData.status)) {
+          throw new Error('El financiamiento no está activo');
         }
 
         // 3. Validar que el usuario actual es el buyer
         const userId = localStorage.getItem('user_id');
-        if (financingData.buyer_id !== userId) {
+        console.log('[useFinancingCheckout] Current userId:', userId);
+        console.log('[useFinancingCheckout] Financing buyer.user_id:', financingData.buyer?.user_id);
+        console.log('[useFinancingCheckout] Financing buyer_id:', financingData.buyer_id);
+        
+        if (financingData.buyer?.user_id !== userId) {
           throw new Error('No tienes permiso para pagar este financiamiento');
         }
+        
+        console.log('[useFinancingCheckout] ✅ Validación de buyer_id pasada');
 
         // 4. Calcular días restantes
         const { daysRemaining, status: daysStatus } = getFinancingDaysStatus(
-          financingData.approved_at,
+          financingData.activated_at,
           financingData.term_days
         );
+        
+        console.log('[useFinancingCheckout] Días restantes:', daysRemaining, 'Status:', daysStatus);
 
         // 5. Obtener dirección de facturación del buyer
         let billingAddress = null;
         try {
+          console.log('[useFinancingCheckout] Obteniendo perfil de usuario...');
           const profile = await getUserProfileData(userId);
+          console.log('[useFinancingCheckout] Perfil obtenido:', profile);
           
           const hasAnyBilling = [
             profile.business_name,
@@ -192,13 +210,19 @@ const useFinancingCheckout = (financingId) => {
         } catch (profileError) {
           console.error('[useFinancingCheckout] Error obteniendo perfil:', profileError);
         }
+        
+        console.log('[useFinancingCheckout] billingAddress preparada:', billingAddress);
 
         // 6. Transformar a formato compatible con CheckoutSummary
+        console.log('[useFinancingCheckout] 🔧 Iniciando preparación checkoutData...');
+        console.log('[useFinancingCheckout] financingData.supplier:', financingData.supplier);
+        console.log('[useFinancingCheckout] financingData.buyer:', financingData.buyer);
+        
         const checkoutData = {
           // Crear un "item virtual" que representa el pago del financiamiento
           items: [{
             id: `financing-${financingData.id}`,
-            name: `Pago de Crédito - ${financingData.supplier.user_nm}`,
+            name: `Pago de Crédito - ${financingData.supplier.name}`,
             quantity: 1,
             price: financingData.amount_used || 0,
             // Metadata adicional para el componente
@@ -206,19 +230,16 @@ const useFinancingCheckout = (financingId) => {
               isFinancing: true,
               financingId: financingData.id,
               supplierId: financingData.supplier_id,
-              supplierName: financingData.supplier.user_nm,
-              supplierEmail: financingData.supplier.email,
+              supplierName: financingData.supplier.name,
               buyerId: financingData.buyer_id,
-              buyerName: financingData.buyer.user_nm,
-              buyerEmail: financingData.buyer.email,
+              buyerName: financingData.buyer.name,
               amountGranted: financingData.amount,
               amountUsed: financingData.amount_used || 0,
               termDays: financingData.term_days,
-              approvedAt: financingData.approved_at,
+              activatedAt: financingData.activated_at,
               createdAt: financingData.created_at,
               daysRemaining: daysRemaining,
-              daysStatus: daysStatus,
-              paymentStatus: financingData.payment_status
+              daysStatus: daysStatus
             }
           }],
           subtotal: financingData.amount_used || 0,
@@ -230,10 +251,14 @@ const useFinancingCheckout = (financingId) => {
           isFinancingPayment: true,
           financingId: financingData.id
         };
-
+        
+        console.log('[useFinancingCheckout] ✅ checkoutData preparado:', checkoutData);
+        console.log('[useFinancingCheckout] Llamando setFinancing...');
         setFinancing(checkoutData);
+        console.log('[useFinancingCheckout] ✅ setFinancing completado exitosamente');
       } catch (err) {
-        console.error('[useFinancingCheckout] Error:', err);
+        console.error('[useFinancingCheckout] ❌ ERROR CAPTURADO:', err);
+        console.error('[useFinancingCheckout] Error stack:', err.stack);
         setError(err.message || 'Error al cargar el financiamiento');
       } finally {
         setLoading(false);

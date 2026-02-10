@@ -12,9 +12,12 @@
  * - Botón de descarga por archivo
  * - Indicador de tamaño de archivo
  * - Responsive (mobile y desktop)
+ * - Carga documentos reales desde financing_documents
+ * - Detecta contexto (buyer/supplier) para mostrar nombre correcto
  */
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Dialog,
   DialogTitle,
@@ -32,6 +35,7 @@ import {
   useTheme,
   useMediaQuery,
   Divider,
+  CircularProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -45,6 +49,7 @@ import {
   MODAL_CANCEL_BUTTON_STYLES,
   MODAL_SUBMIT_BUTTON_STYLES,
 } from '../../feedback/Modal/Modal';
+import { getFinancingDocuments, downloadFinancingDocument } from '../../../services/financingDocumentsService';
 
 const SELLSI_BLUE = '#2E52B2';
 
@@ -83,87 +88,110 @@ const formatFileSize = (bytes) => {
 const DownloadablesModal = ({ open, onClose, financing, onDownloadFile }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const location = useLocation();
+
+  // Detectar contexto: buyer o supplier
+  const isBuyerView = location.pathname.includes('/buyer/');
+  const isSupplierView = location.pathname.includes('/supplier/');
+  
+  // Estados
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   // Bloquear scroll cuando el modal está abierto
   useBodyScrollLock(open);
 
+  // Cargar documentos cuando se abre el modal
+  const loadDocuments = useCallback(async () => {
+    if (!financing?.id) return;
+    
+    setLoading(true);
+    try {
+      console.log('📄 Cargando documentos para financing:', financing.id);
+      const docs = await getFinancingDocuments(financing.id);
+      console.log('📄 Documentos cargados:', docs?.length || 0);
+      setDocuments(docs || []);
+    } catch (error) {
+      console.error('❌ Error cargando documentos:', error);
+      setDocuments([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [financing?.id]);
+
+  useEffect(() => {
+    if (open && financing?.id) {
+      loadDocuments();
+    } else {
+      // Limpiar documentos cuando se cierra
+      setDocuments([]);
+    }
+  }, [open, financing?.id, loadDocuments]);
+
+  // Determinar nombre a mostrar según contexto
+  const getDisplayName = () => {
+    if (isBuyerView) {
+      // Si es buyer, mostrar nombre del supplier
+      return financing?.supplier_name || financing?.supplier?.name || 'Proveedor';
+    } else if (isSupplierView) {
+      // Si es supplier, mostrar nombre del buyer
+      return financing?.buyer_user_nm || financing?.buyer?.user_nm || financing?.legal_name || 'Comprador';
+    }
+    // Fallback
+    return financing?.buyer_user_nm || financing?.requested_by || 'N/A';
+  };
+
   // Handler para descargar todos los documentos
-  const handleDownloadAll = () => {
+  const handleDownloadAll = async () => {
     console.log('📥 Descargando todos los documentos');
     if (documents.length > 0) {
-      documents.forEach(doc => {
-        onDownloadFile?.(doc, financing);
-      });
+      for (const doc of documents) {
+        await handleDownloadFile(doc);
+        // Pequeño delay entre descargas para no sobrecargar
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
   };
 
-  // Documentos disponibles para descargar
-  // TODO: Cuando exista financing_documents, obtener de allí
-  const documents = React.useMemo(() => {
-    if (!financing) return [];
-
-    // Usar document_count si está disponible (para testing), sino usar lógica por defecto
-    const targetCount = financing.document_count || (financing.request_type === 'extended' ? 5 : 2);
+  const handleDownloadFile = async (doc) => {
+    if (downloading) return; // Prevenir múltiples descargas simultáneas
     
-    const allPossibleDocs = [
-      {
-        id: '1',
-        name: 'Contrato Marco de Financiamiento.pdf',
-        type: 'contrato',
-        size: 245678,
-        uploadedAt: financing.created_at,
-      },
-      {
-        id: '2',
-        name: 'Pagaré.pdf',
-        type: 'pagare',
-        size: 123456,
-        uploadedAt: financing.created_at,
-      },
-      {
-        id: '3',
-        name: 'Certificado de Poderes.pdf',
-        type: 'garantia',
-        size: 567890,
-        uploadedAt: financing.created_at,
-      },
-      {
-        id: '4',
-        name: 'Certificado Vigencia Poderes.pdf',
-        type: 'garantia',
-        size: 434567,
-        uploadedAt: financing.created_at,
-      },
-      {
-        id: '5',
-        name: 'Carpeta Tributaria Simplificada.pdf',
-        type: 'garantia',
-        size: 1234567,
-        uploadedAt: financing.created_at,
-      },
-      {
-        id: '6',
-        name: 'Certificado de Deudas Tributarias.pdf',
-        type: 'garantia',
-        size: 789012,
-        uploadedAt: financing.created_at,
-      },
-      {
-        id: '7',
-        name: 'Balance Financiero 2025.pdf',
-        type: 'garantia',
-        size: 2345678,
-        uploadedAt: financing.created_at,
-      },
-    ];
-
-    // Retornar solo la cantidad especificada
-    return allPossibleDocs.slice(0, targetCount);
-  }, [financing]);
-
-  const handleDownloadFile = (doc) => {
-    console.log('🔽 Descargando archivo:', doc.name);
-    onDownloadFile?.(doc, financing);
+    setDownloading(true);
+    try {
+      console.log('🔽 Descargando archivo:', doc.document_name || doc.name);
+      
+      // Descarga real desde storage
+      const storagePath = doc.storage_path || doc.file_path;
+      if (!storagePath) {
+        throw new Error('No se encontró la ruta del documento');
+      }
+      
+      console.log('[DownloadablesModal] Descargando desde:', storagePath);
+      const blob = await downloadFinancingDocument(storagePath);
+      
+      // Crear URL local del blob y forzar descarga sin cambiar de página
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = doc.document_name || doc.name || 'documento.pdf';
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
+      console.log('✅ Documento descargado exitosamente:', doc.document_name || doc.name);
+    } catch (error) {
+      console.error('❌ Error descargando archivo:', error);
+      alert(`Error al descargar: ${error.message}`);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const handleClose = () => {
@@ -248,10 +276,10 @@ const DownloadablesModal = ({ open, onClose, financing, onDownloadFile }) => {
             Solicitud de Financiamiento
           </Typography>
           <Typography variant="h6" fontWeight={600}>
-            {financing?.buyer_user_nm || financing?.buyer?.user_nm || financing?.requested_by || 'N/A'}
+            {getDisplayName()}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {documents.length} {documents.length === 1 ? 'documento disponible' : 'documentos disponibles'}
+            {loading ? 'Cargando documentos...' : `${documents.length} ${documents.length === 1 ? 'documento disponible' : 'documentos disponibles'}`}
           </Typography>
         </Box>
 
@@ -263,7 +291,11 @@ const DownloadablesModal = ({ open, onClose, financing, onDownloadFile }) => {
             overflowY: 'auto', // Scrollbar interna cuando hay más de 5
           }}
         >
-          {documents.length === 0 ? (
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : documents.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <Typography variant="body2" color="text.secondary">
                 No hay documentos disponibles
@@ -288,6 +320,7 @@ const DownloadablesModal = ({ open, onClose, financing, onDownloadFile }) => {
                 >
                   <ListItemButton
                     onClick={() => handleDownloadFile(doc)}
+                    disabled={downloading}
                     sx={{
                       py: { xs: 1.5, sm: 2 },
                       px: { xs: 2, sm: 2.5 },
@@ -295,13 +328,13 @@ const DownloadablesModal = ({ open, onClose, financing, onDownloadFile }) => {
                   >
                     {/* Ícono del archivo */}
                     <ListItemIcon sx={{ minWidth: 40 }}>
-                      {getFileIcon(doc.name)}
+                      {getFileIcon(doc.document_name || doc.name || '')}
                     </ListItemIcon>
 
                     {/* Nombre y tamaño del archivo */}
                     <ListItemText
-                      primary={doc.name}
-                      secondary={formatFileSize(doc.size)}
+                      primary={doc.document_name || doc.name || 'Sin nombre'}
+                      secondary={formatFileSize(doc.file_size || doc.size || 0)}
                       primaryTypographyProps={{
                         fontSize: { xs: '0.875rem', sm: '0.95rem' },
                         fontWeight: 500,
@@ -314,6 +347,7 @@ const DownloadablesModal = ({ open, onClose, financing, onDownloadFile }) => {
                     {/* Botón de descarga */}
                     <IconButton
                       edge="end"
+                      disabled={downloading}
                       sx={{
                         color: SELLSI_BLUE,
                         '&:hover': {
@@ -321,7 +355,7 @@ const DownloadablesModal = ({ open, onClose, financing, onDownloadFile }) => {
                         },
                       }}
                     >
-                      <DownloadIcon />
+                      {downloading ? <CircularProgress size={20} /> : <DownloadIcon />}
                     </IconButton>
                   </ListItemButton>
                 </ListItem>
@@ -339,13 +373,13 @@ const DownloadablesModal = ({ open, onClose, financing, onDownloadFile }) => {
         <Button 
           onClick={handleDownloadAll} 
           variant="contained" 
-          disabled={documents.length === 0}
+          disabled={documents.length === 0 || loading || downloading}
           sx={{
             ...MODAL_SUBMIT_BUTTON_STYLES,
             minWidth: { xs: 'auto', sm: '160px' },
           }}
         >
-          Descargar Todo
+          {downloading ? 'Descargando...' : 'Descargar Todo'}
         </Button>
       </DialogActions>
     </Dialog>

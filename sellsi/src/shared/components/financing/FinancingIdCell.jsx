@@ -60,11 +60,11 @@ const FinancingIdCell = ({ financingId }) => {
     }
   };
 
-  // Formato corto: primeros 9 caracteres en mayúsculas
+  // Formato corto: primeros 8 dígitos con prefijo #
   const shortId = (id) => {
     if (!id) return '—';
     const s = String(id).toUpperCase();
-    return s.slice(0, 9);
+    return `#${s.slice(0, 8)}`;
   };
 
   const openId = Boolean(idAnchor);

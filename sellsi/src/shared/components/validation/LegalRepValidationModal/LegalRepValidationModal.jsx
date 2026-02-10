@@ -31,10 +31,10 @@ export const useLegalRepModal = () => {
   const isComplete = React.useMemo(() => {
     if (!userProfile) return false;
     
-    // Validar campos legal_representative_name y legal_representative_rut de users
+    // Validar campos supplier_legal_representative_name y supplier_legal_representative_rut
     return !!(
-      userProfile.legal_representative_rut && 
-      userProfile.legal_representative_name
+      userProfile.supplier_legal_representative_rut && 
+      userProfile.supplier_legal_representative_name
     );
   }, [userProfile]);
   
@@ -43,8 +43,8 @@ export const useLegalRepModal = () => {
     
     const missing = [];
     
-    if (!userProfile.legal_representative_rut) missing.push('RUT Representante Legal');
-    if (!userProfile.legal_representative_name) missing.push('Nombre Representante Legal');
+    if (!userProfile.supplier_legal_representative_rut) missing.push('RUT Representante Legal');
+    if (!userProfile.supplier_legal_representative_name) missing.push('Nombre Representante Legal');
     
     return missing;
   }, [userProfile]);
@@ -72,11 +72,11 @@ export const useLegalRepModal = () => {
     return true;
   };
 
-  const handleGoToBilling = () => {
+  const handleGoToLegal = () => {
     setIsOpen(false);
-    // Navegar al perfil con parámetros para mostrar pestaña de Facturación
+    // Navegar al perfil con parámetros para mostrar pestaña Legal
     const profilePath = isBuyer ? '/buyer/profile' : '/supplier/profile';
-    navigate(`${profilePath}?section=billing&highlight=true`);
+    navigate(`${profilePath}?section=legal&highlight=true`);
   };
 
   const handleClose = () => {
@@ -88,7 +88,7 @@ export const useLegalRepModal = () => {
     loading: loadingUserStatus,
     missingFieldLabels,
     checkAndProceed,
-    handleGoToBilling,
+    handleGoToLegal,
     handleClose,
     isLegalRepComplete: isComplete,
     isLoadingLegalRep: loadingUserStatus
@@ -101,7 +101,7 @@ export const useLegalRepModal = () => {
 export const LegalRepValidationModal = ({
   isOpen,
   onClose,
-  onGoToBilling,
+  onGoToLegal,
   loading = false,
   missingFieldLabels = []
 }) => {
@@ -109,7 +109,7 @@ export const LegalRepValidationModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      onSubmit={onGoToBilling}
+      onSubmit={onGoToLegal}
       type={MODAL_TYPES.WARNING}
       title="¡Información Incompleta!"
       submitButtonText="Configurar Datos"
@@ -127,7 +127,7 @@ export const LegalRepValidationModal = ({
           </Typography>
         )}
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-          Serás redirigido a tu perfil en la sección de Facturación
+          Serás redirigido a tu perfil en la sección Legal
         </Typography>
       </Box>
     </Modal>

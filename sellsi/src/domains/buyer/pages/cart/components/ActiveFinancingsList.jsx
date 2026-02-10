@@ -218,6 +218,14 @@ const ActiveFinancingsList = ({ cartItems = [] }) => {
   const [financings, setFinancings] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(false);
 
+  // ⚡ OPTIMIZACIÓN: Derivar supplier IDs únicos con useMemo para dependencia estable
+  // Solo cambia cuando realmente se agregan/quitan suppliers, no al cambiar cantidades
+  const supplierIds = useMemo(() => {
+    return Array.from(new Set(
+      cartItems.map(item => item.supplier_id || item.supplierId).filter(Boolean)
+    )).sort().join(','); // String estable para comparación
+  }, [cartItems]);
+
   React.useEffect(() => {
     let mounted = true;
     const load = async () => {
@@ -227,9 +235,7 @@ const ActiveFinancingsList = ({ cartItems = [] }) => {
         const svc = await import('../../../../../workspaces/buyer/my-financing/services/financingService');
         const getAvailable = svc.getAvailableFinancingsForSupplier || (svc.default && svc.default.getAvailableFinancingsForSupplier);
 
-        const supplierIdsInCart = Array.from(new Set(
-          cartItems.map(item => item.supplier_id || item.supplierId).filter(Boolean)
-        ));
+        const supplierIdsInCart = supplierIds.split(',').filter(Boolean);
 
         if (supplierIdsInCart.length === 0) {
           if (mounted) setFinancings([]);
@@ -261,7 +267,7 @@ const ActiveFinancingsList = ({ cartItems = [] }) => {
 
     load();
     return () => { mounted = false; };
-  }, [cartItems]);
+  }, [supplierIds]);
 
   // Si está cargando, mostrar indicador de carga
   if (isLoading) {

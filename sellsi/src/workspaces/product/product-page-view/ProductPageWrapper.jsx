@@ -78,6 +78,24 @@ const ProductPageWrapper = () => {
         if (error) {
           setError('Producto no encontrado');
         } else {
+          // ✅ FIX: Obtener supplier.id real para financiamiento
+          // product.supplier_id es users.user_id, pero financing_requests.supplier_id debe ser supplier.id
+          let realSupplierId = null;
+          try {
+            const { data: supplierData, error: supplierError } = await supabase
+              .rpc('get_supplier_public_info', { p_user_id: data.supplier_id });
+            
+            const supplierRecord = supplierData && supplierData.length > 0 ? supplierData[0] : null;
+            
+            if (!supplierError && supplierRecord) {
+              realSupplierId = supplierRecord.id;
+            } else {
+              console.warn('[ProductPageWrapper] No se encontró supplier.id para user_id:', data.supplier_id);
+            }
+          } catch (e) {
+            console.error('[ProductPageWrapper] Error al obtener supplier.id:', e);
+          }
+
           const orderedImages = (data.product_images || [])
             .slice()
             .sort((a, b) => (a?.image_order || 0) - (b?.image_order || 0));
@@ -88,7 +106,8 @@ const ProductPageWrapper = () => {
           setProduct({
             id: data.productid,
             productid: data.productid,
-            supplier_id: data.supplier_id,
+            supplier_id: data.supplier_id, // Este es users.user_id (para productos, regiones, etc)
+            supplier_table_id: realSupplierId, // ✅ NUEVO: Este es supplier.id (para financiamiento)
             nombre: data.productnm,
             imagen:
               (mainImageRecord && mainImageRecord.image_url) ||

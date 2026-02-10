@@ -320,11 +320,20 @@ const FinanciamientosTable = () => {
     try {
       setLoading(true);
       const data = await getAllFinancingRequests();
+      
+      console.log('[FinanciamientosTable] RAW DATA from getAllFinancingRequests:', data);
+      console.log('[FinanciamientosTable] Data length:', data?.length ?? 0);
+      if (data && data.length > 0) {
+        console.log('[FinanciamientosTable] First item:', data[0]);
+        console.log('[FinanciamientosTable] First item buyer:', data[0]?.buyer);
+        console.log('[FinanciamientosTable] First item supplier:', data[0]?.supplier);
+      }
 
       // Normalize incoming data to avoid missing keys across mocks / API
       const normalized = (data || []).map(r => {
-        const buyerName = r.buyer_user_nm ?? r.buyer?.user_nm ?? r.buyer_name ?? r.requested_by ?? null;
-        const supplierName = r.supplier_user_nm ?? r.supplier?.user_nm ?? r.supplier_name ?? null;
+        // buyer y supplier ahora vienen del JOIN con las tablas buyer/supplier (no users)
+        const buyerName = r.buyer?.name ?? r.buyer_user_nm ?? r.buyer_name ?? r.requested_by ?? null;
+        const supplierName = r.supplier?.name ?? r.supplier?.legal_rut ?? r.supplier_user_nm ?? r.supplier_name ?? null;
         const amount = Number(r.amount ?? 0);
         const amount_paid = Number(r.amount_paid ?? 0);
         const amount_used = Number(r.amount_used ?? 0);
@@ -960,9 +969,12 @@ const FinanciamientosTable = () => {
               <DocumentIcon />
             </ActionIconButton>
 
-            <ActionIconButton tooltip="Ver Movimientos" variant="info" onClick={() => handleViewMovements(row)}>
-              <ViewIcon />
-            </ActionIconButton>
+            {/* Ver Movimientos: solo mostrar cuando el financiamiento ya está aprobado o en estados posteriores */}
+            {row.status !== 'pending_sellsi_approval' && row.status !== 'rejected' && (
+              <ActionIconButton tooltip="Ver Movimientos" variant="info" onClick={() => handleViewMovements(row)}>
+                <ViewIcon />
+              </ActionIconButton>
+            )}
 
             {/* Procesar Reembolso: ahora con icono de dinero y color verde cuando haya reembolso pendiente */}
             {row.refund_pending > 0 && (['approved_by_sellsi','expired'].includes(row.status)) && (
@@ -1154,8 +1166,61 @@ const FinanciamientosTable = () => {
             setProcessingAction(false);
           }
         }}
-        onReject={async (fin, reason) => { setRejectReason(reason || ''); await confirmReject(); }}
-        onSign={async (fin, file) => { /* admin signing flow not implemented yet */ }}
+        onReject={async (fin, reason) => { 
+          console.log('[FinanciamientosTable] onReject called with:', fin.id, reason);
+          if (!reason?.trim()) {
+            toast.error('Debe ingresar un motivo de rechazo');
+            return;
+          }
+          
+          try {
+            setProcessingAction(true);
+            await rejectFinancingRequest(fin.id, reason);
+            toast.success('Financiamiento rechazado');
+            setActionDialogOpen(false);
+            setRejectReason('');
+            setSelectedRequest(null);
+            await fetchRequests();
+          } catch (error) {
+            console.error('Error rejecting request:', error);
+            toast.error('Error al rechazar financiamiento');
+          } finally {
+            setProcessingAction(false);
+          }
+        }}
+        onSign={async (fin, file) => {
+          console.log('[FinanciamientosTable] onSign called with:', fin.id, file);
+          
+          if (!file) {
+            toast.error('Debe seleccionar el contrato firmado para subir');
+            return;
+          }
+          
+          try {
+            setProcessingAction(true);
+            const adminId = getCurrentAdminId();
+            if (!adminId) {
+              toast.error('No se pudo obtener el ID del administrador');
+              return;
+            }
+            
+            console.log('[FinanciamientosTable] Uploading signed contract for financing:', fin.id);
+            
+            // uploadFinancingDocument ya usa document_type='contrato_marco'
+            // El trigger on_financing_document_upsert detectará que es admin y actualizará signed_sellsi_at
+            await uploadFinancingDocument(fin.id, file);
+            
+            toast.success('Contrato firmado subido exitosamente. Firma de Sellsi registrada.');
+            setActionDialogOpen(false);
+            setSelectedRequest(null);
+            await fetchRequests();
+          } catch (err) {
+            console.error('[FinanciamientosTable] Error uploading signed contract:', err);
+            toast.error(err.message || 'Error al subir contrato firmado');
+          } finally {
+            setProcessingAction(false);
+          }
+        }}
       />
 
       {/* Documents: use shared DownloadablesModal to match 'mis financiamientos' UI */}
@@ -1187,20 +1252,45 @@ const FinanciamientosTable = () => {
             <Typography variant="body2">No hay movimientos registrados</Typography>
           ) : (
             <Stack spacing={1}>
-              {transactions.map(tx => (
-                <Paper key={tx.id} sx={{ p: 2 }}>
-                  <Stack direction="row" justifyContent="space-between">
-                    <div>
-                      <Typography variant="subtitle2">{tx.type}</Typography>
-                      <Typography variant="body2" color="text.secondary">{tx.restoration_reason ?? tx.payment_reference ?? ''}</Typography>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <Typography variant="subtitle2">{formatCurrency(tx.amount)}</Typography>
-                      <Typography variant="body2" color="text.secondary">{formatDate(tx.created_at)}</Typography>
-                    </div>
-                  </Stack>
-                </Paper>
-              ))}
+              {transactions.map(tx => {
+                // ✅ FIX: Formatear descripción según tipo de transacción
+                let description = '';
+                
+                if (tx.type === 'uso' && tx.order) {
+                  // Transacción de consumo - mostrar info de orden
+                  const buyerName = tx.order.buyer?.name || 'Buyer desconocido';
+                  const supplierName = selectedRequest?.supplier?.name || 'Supplier desconocido';
+                  const orderTotal = tx.order.total || tx.amount;
+                  const orderDate = tx.order.created_at || tx.created_at;
+                  
+                  description = `${buyerName} compró a ${supplierName} por ${formatCurrency(orderTotal)}`;
+                } else if (tx.type === 'reposicion') {
+                  description = tx.restoration_reason || 'Reposición manual';
+                } else if (tx.type === 'devolucion') {
+                  description = 'Devolución procesada';
+                } else if (tx.type === 'pago') {
+                  description = tx.payment_reference || 'Pago registrado';
+                } else {
+                  description = tx.restoration_reason || tx.payment_reference || tx.type;
+                }
+                
+                return (
+                  <Paper key={tx.id} sx={{ p: 2 }}>
+                    <Stack direction="row" justifyContent="space-between">
+                      <div>
+                        <Typography variant="subtitle2">
+                          {tx.type === 'uso' ? 'Consumo' : tx.type === 'reposicion' ? 'Reposición' : tx.type === 'devolucion' ? 'Devolución' : tx.type === 'pago' ? 'Pago' : tx.type}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">{description}</Typography>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <Typography variant="subtitle2">{formatCurrency(tx.amount)}</Typography>
+                        <Typography variant="body2" color="text.secondary">{formatDate(tx.created_at)}</Typography>
+                      </div>
+                    </Stack>
+                  </Paper>
+                );
+              })}
             </Stack>
           )}
         </DialogContent>
@@ -1258,9 +1348,9 @@ const FinanciamientosTable = () => {
       </Dialog>
 
       {/* Refund dialog (estandarizado) */}
-      <Dialog open={refundDialogOpen} onClose={() => !processingRefund && setRefundDialogOpen(false)} maxWidth="sm" fullWidth fullScreen={isMobile} disableScrollLock sx={{ zIndex: 1500 }} PaperProps={{ sx: { borderRadius: isMobile ? 0 : 2 } }}>
+      <Dialog open={refundDialogOpen} onClose={() => !processingRefund && (setRefundDialogOpen(false), setRefundAmount(''), setRefundConfirmed(false), setSelectedRequest(null))} maxWidth="sm" fullWidth fullScreen={isMobile} disableScrollLock sx={{ zIndex: 1500 }} PaperProps={{ sx: { borderRadius: isMobile ? 0 : 2 } }}>
         <DialogTitle sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center', textAlign: 'center', backgroundColor: '#2E52B2', color: '#fff', py: { xs: 2, sm: 2 }, px: { xs: 2, sm: 3 }, position: 'relative', fontSize: { xs: '1.125rem', sm: '1.25rem' } }}>
-          <IconButton onClick={() => !processingRefund && setRefundDialogOpen(false)} sx={{ position: 'absolute', right: { xs: 8, sm: 16 }, top: '50%', transform: 'translateY(-50%)', color: '#fff', backgroundColor: 'rgba(255, 255, 255, 0.1)', p: { xs: 0.75, sm: 1 }, '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' } }}>
+          <IconButton onClick={() => !processingRefund && (setRefundDialogOpen(false), setRefundAmount(''), setRefundConfirmed(false), setSelectedRequest(null))} sx={{ position: 'absolute', right: { xs: 8, sm: 16 }, top: '50%', transform: 'translateY(-50%)', color: '#fff', backgroundColor: 'rgba(255, 255, 255, 0.1)', p: { xs: 0.75, sm: 1 }, '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' } }}>
             <CloseIcon sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
           </IconButton>
           <MoneyIcon sx={{ color: '#fff' }} fontSize="small" />
@@ -1298,7 +1388,7 @@ const FinanciamientosTable = () => {
         </DialogContent>
 
         <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
-          <Button onClick={() => (setRefundDialogOpen(false), setRefundConfirmed(false))} disabled={processingRefund} variant="outlined" sx={MODAL_CANCEL_BUTTON_STYLES}>Cancelar</Button>
+          <Button onClick={() => (setRefundDialogOpen(false), setRefundAmount(''), setRefundConfirmed(false), setSelectedRequest(null))} disabled={processingRefund} variant="outlined" sx={MODAL_CANCEL_BUTTON_STYLES}>Cancelar</Button>
           <Button onClick={confirmRefund} variant="contained" color="success" disabled={processingRefund || !refundAmount || Number(refundAmount) <= 0 || Number(refundAmount) > (selectedRequest?.refund_pending || 0) || !refundConfirmed} sx={MODAL_SUBMIT_BUTTON_STYLES}>{processingRefund ? 'Procesando...' : 'Procesar'}</Button>
         </DialogActions>
       </Dialog>
@@ -1322,19 +1412,31 @@ const FinanciamientosTable = () => {
           </Typography>
 
           <TextField
-            label="Motivo (opcional)"
+            label="Motivo (obligatorio)"
             multiline
             rows={3}
             fullWidth
             value={pauseReason}
             onChange={(e) => setPauseReason(e.target.value)}
             sx={{ mb: 1 }}
+            required
+            helperText={pauseMode === 'pause' 
+              ? 'Especifica por qué se congela este financiamiento (auditoría)' 
+              : 'Especifica por qué se reanuda este financiamiento (auditoría)'}
           />
         </DialogContent>
 
         <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
           <Button onClick={() => (setPauseDialogOpen(false), setPauseReason(''))} disabled={processingPause} variant="outlined" sx={MODAL_CANCEL_BUTTON_STYLES}>Cancelar</Button>
-          <Button onClick={() => confirmPauseUnpause()} variant="contained" color={pauseMode === 'pause' ? 'warning' : 'primary'} disabled={processingPause} sx={MODAL_SUBMIT_BUTTON_STYLES}>{processingPause ? (pauseMode === 'pause' ? 'Congelando...' : 'Reanudando...') : (pauseMode === 'pause' ? 'Congelar' : 'Reanudar')}</Button>
+          <Button 
+            onClick={() => confirmPauseUnpause()} 
+            variant="contained" 
+            color={pauseMode === 'pause' ? 'warning' : 'primary'} 
+            disabled={processingPause || !pauseReason.trim()} 
+            sx={MODAL_SUBMIT_BUTTON_STYLES}
+          >
+            {processingPause ? (pauseMode === 'pause' ? 'Congelando...' : 'Reanudando...') : (pauseMode === 'pause' ? 'Congelar' : 'Reanudar')}
+          </Button>
         </DialogActions>
       </Dialog>
 

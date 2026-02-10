@@ -72,6 +72,9 @@ export const createCartStoreFacade = () => {
           isBackendSynced: false,
           isSyncing: false,
           lastModified: null,
+          
+          // ✅ NUEVO: Configuración de financiamiento por producto
+          productFinancing: {},
 
           // === PROPIEDADES DELEGADAS PARA RETROCOMPATIBILIDAD ===
           get selectedShipping() {
@@ -391,6 +394,48 @@ export const createCartStoreFacade = () => {
             }
           },
 
+          // === GESTIÓN DE FINANCIAMIENTO ===
+
+          /**
+           * Establece la configuración de financiamiento para productos
+           * @param {Object} financing - Objeto con configuración { productId: { amount, isFullAmount } }
+           */
+          setProductFinancing: (financing) => {
+            set({ 
+              productFinancing: financing,
+              lastModified: Date.now()
+            })
+            debouncedSave()
+          },
+
+          /**
+           * Actualiza la configuración de financiamiento (merge con estado anterior)
+           * @param {Object} financing - Objeto con nueva configuración
+           */
+          updateProductFinancing: (financing) => {
+            set(state => ({ 
+              productFinancing: { ...state.productFinancing, ...financing },
+              lastModified: Date.now()
+            }))
+            debouncedSave()
+          },
+
+          /**
+           * Limpia la configuración de financiamiento de un producto
+           * @param {string} productId - ID del producto
+           */
+          clearProductFinancing: (productId) => {
+            set(state => {
+              const newFinancing = { ...state.productFinancing }
+              delete newFinancing[productId]
+              return {
+                productFinancing: newFinancing,
+                lastModified: Date.now()
+              }
+            })
+            debouncedSave()
+          },
+
           // === RESET COMPLETO PARA KILLSWITCH ===
 
           /**
@@ -417,6 +462,7 @@ export const createCartStoreFacade = () => {
               isBackendSynced: false,
               isSyncing: false,
               lastModified: null,
+              productFinancing: {}, // ✅ Limpiar financiamiento
             })
             
             // Limpiar history store

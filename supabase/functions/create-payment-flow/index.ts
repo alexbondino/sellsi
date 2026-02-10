@@ -87,29 +87,14 @@ serve(req => withMetrics('create-payment-flow', req, async () => {
       cart_items,
       order_id,
       user_email,
+      financing_amount,
       shipping_address,
       billing_address,
       offer_id,
       offer_ids,
     } = await req.json();
 
-    if (!order_id) {
-      return respond(400, { error_code: 'MISSING_ORDER_ID', error: 'Falta order_id' });
-    }
-    if (!amount || !currency) {
-      return respond(400, { error_code: 'INVALID_PAYLOAD', error: 'Faltan datos requeridos' });
-    }
-
-    log('payload_received', {
-      amount,
-      subject,
-      currency,
-      order_id,
-      buyer_id,
-      cart_items_count: Array.isArray(cart_items) ? cart_items.length : 0,
-    });
-
-    // 2. Variables de entorno
+    // 2. Variables de entorno (mover arriba para financing path)
     const flowApiKey = Deno.env.get('FLOW_API_KEY');
     const flowSecretKey = Deno.env.get('FLOW_SECRET_KEY');
     const flowEnv = Deno.env.get('FLOW_ENV') || 'sandbox';
@@ -132,6 +117,180 @@ serve(req => withMetrics('create-payment-flow', req, async () => {
       : 'https://staging-sellsi.vercel.app';
 
     const supabaseAdmin = createClient(supabaseUrl!, supabaseServiceKey!);
+
+    // ================================================================
+    // DETECCIÓN DE PAGO DE FINANCIAMIENTO
+    // Si order_id empieza con "financing_", es un pago de deuda
+    // ================================================================
+    const isFinancingPayment = typeof order_id === 'string' && order_id.startsWith('financing_');
+
+    if (isFinancingPayment) {
+      log('financing_payment_detected', { order_id });
+      const financingId = order_id.replace('financing_', '');
+
+      if (!amount || amount <= 0) {
+        return respond(400, { error_code: 'INVALID_AMOUNT', error: 'Monto inválido para pago de financiamiento' });
+      }
+
+      // Verificar que el financiamiento existe y está activo
+      const { data: financing, error: finErr } = await supabaseAdmin
+        .from('financing_requests')
+        .select('id, buyer_id, supplier_id, amount, amount_used, status')
+        .eq('id', financingId)
+        .maybeSingle();
+
+      if (finErr || !financing) {
+        logErr('financing_not_found', { financingId, error: finErr });
+        return respond(404, { error_code: 'FINANCING_NOT_FOUND', error: 'Financiamiento no encontrado' });
+      }
+
+      if (!['active', 'approved_by_sellsi'].includes(financing.status)) {
+        return respond(409, { error_code: 'FINANCING_NOT_ACTIVE', error: 'El financiamiento no está activo', status: financing.status });
+      }
+
+      if (amount > financing.amount_used) {
+        return respond(409, { error_code: 'AMOUNT_EXCEEDS_DEBT', error: 'El monto excede la deuda pendiente', amount_used: financing.amount_used, requested: amount });
+      }
+
+      const paymentAmount = Math.round(amount);
+      const shortId = financingId.slice(-8).toUpperCase();
+
+      // Validar monto mínimo Flow
+      if (paymentAmount < 350) {
+        return respond(400, { error_code: 'AMOUNT_TOO_LOW', error: 'Monto mínimo $350 CLP', amount: paymentAmount });
+      }
+
+      // Obtener email del usuario
+      let payerEmail = user_email;
+      if (!payerEmail && financing.buyer_id) {
+        // buyer_id es el id de buyer table, necesitamos user_id para buscar email
+        const { data: buyerData } = await supabaseAdmin
+          .from('buyer')
+          .select('user_id')
+          .eq('id', financing.buyer_id)
+          .maybeSingle();
+        if (buyerData?.user_id) {
+          const { data: userData } = await supabaseAdmin
+            .from('users')
+            .select('email')
+            .eq('user_id', buyerData.user_id)
+            .maybeSingle();
+          payerEmail = userData?.email || 'comprador@sellsi.cl';
+        }
+      }
+      if (!payerEmail) payerEmail = 'comprador@sellsi.cl';
+
+      // Construir parámetros para Flow
+      const flowParams: Record<string, any> = {
+        apiKey: flowApiKey,
+        commerceOrder: `FIN-${shortId}`,
+        subject: `Pago Crédito Sellsi #${shortId}`,
+        currency: 'CLP',
+        amount: paymentAmount,
+        email: payerEmail,
+        urlConfirmation: `${supabaseUrl}/functions/v1/process-flow-webhook?financing_payment=true&fid=${financingId}`,
+        urlReturn: `${FRONTEND_URL}/buyer/my-financing`,
+      };
+
+      // Firmar
+      flowParams.s = await signFlowParams(flowParams, flowSecretKey);
+
+      log('financing_flow_request', { amount: paymentAmount, financingId });
+
+      // Llamar a Flow API
+      let flowResponse: Response;
+      try {
+        flowResponse = await fetch(`${FLOW_API}/payment/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams(flowParams as Record<string, string>),
+        });
+      } catch (fetchErr) {
+        logErr('financing_flow_fetch_failed', { error: String(fetchErr) });
+        return respond(502, { error_code: 'FLOW_FETCH_FAILED', error: 'No se pudo conectar con Flow' });
+      }
+
+      let responseData: any;
+      try {
+        const rawText = await flowResponse.text();
+        responseData = JSON.parse(rawText);
+      } catch (parseErr) {
+        logErr('financing_flow_parse_error', { error: String(parseErr) });
+        return respond(502, { error_code: 'FLOW_RESPONSE_PARSE_FAILED' });
+      }
+
+      if (!flowResponse.ok) {
+        logErr('financing_flow_api_error', { status: flowResponse.status, response: responseData });
+        return respond(502, { error_code: 'FLOW_API_ERROR', error: responseData.message || 'Error de Flow' });
+      }
+
+      const paymentUrl = responseData.url && responseData.token
+        ? `${responseData.url}?token=${responseData.token}`
+        : null;
+
+      if (!paymentUrl) {
+        logErr('financing_flow_no_url', { response: responseData });
+        return respond(502, { error_code: 'FLOW_NO_PAYMENT_URL' });
+      }
+
+      const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+
+      // Registrar en financing_payments
+      const { data: fpData, error: fpErr } = await supabaseAdmin
+        .from('financing_payments')
+        .insert({
+          financing_request_id: financingId,
+          buyer_id: financing.buyer_id,
+          amount: paymentAmount,
+          currency: 'CLP',
+          payment_method: 'flow',
+          payment_status: 'pending',
+          flow_order: responseData.flowOrder,
+          flow_token: responseData.token,
+          flow_payment_url: paymentUrl,
+          flow_expires_at: expiresAt,
+          gateway_response: responseData,
+        })
+        .select('id')
+        .single();
+
+      if (fpErr) {
+        logErr('financing_payment_insert_failed', { error: fpErr });
+      }
+
+      log('financing_payment_success', { ms: Date.now() - startedAt, flowOrder: responseData.flowOrder, financingPaymentId: fpData?.id });
+
+      return respond(200, {
+        success: true,
+        payment_url: paymentUrl,
+        token: responseData.token,
+        flow_order: responseData.flowOrder,
+        financing_payment_id: fpData?.id || null,
+        is_financing_payment: true,
+        request_id: requestId,
+      });
+    }
+    // ================================================================
+    // FIN FLUJO DE FINANCIAMIENTO - Continúa flujo normal de órdenes
+    // ================================================================
+
+    if (!order_id) {
+      return respond(400, { error_code: 'MISSING_ORDER_ID', error: 'Falta order_id' });
+    }
+    if (!amount || !currency) {
+      return respond(400, { error_code: 'INVALID_PAYLOAD', error: 'Faltan datos requeridos' });
+    }
+
+    log('payload_received', {
+      amount,
+      subject,
+      currency,
+      order_id,
+      buyer_id,
+      cart_items_count: Array.isArray(cart_items) ? cart_items.length : 0,
+    });
+
+    // 2. Variables de entorno (ya inicializadas arriba para financing path)
 
     // 3. Validación de ofertas (igual que create-payment-khipu)
     const allowPending = Deno.env.get('OFFERS_ALLOW_PENDING') === '1';

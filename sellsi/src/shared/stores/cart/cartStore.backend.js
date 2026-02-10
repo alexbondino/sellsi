@@ -596,6 +596,13 @@ export const removeItemWithBackend = async (itemId, set, get) => {
       ),
       isSyncing: false,
     });
+    
+    // ✅ Limpiar financiamiento del producto eliminado
+    const clearProductFinancing = get().clearProductFinancing;
+    if (clearProductFinancing) {
+      clearProductFinancing(itemId);
+    }
+    
     return true;
   } catch (error) {
     set({ isSyncing: false });
@@ -630,6 +637,13 @@ export const removeItemsBatchWithBackend = async (itemIds, set, get) => {
       ),
       isSyncing: false,
     });
+    
+    // ✅ Limpiar financiamiento de todos los productos eliminados
+    const clearProductFinancing = get().clearProductFinancing;
+    if (clearProductFinancing) {
+      itemIds.forEach(id => clearProductFinancing(id));
+    }
+    
     return true;
   } catch (e) {
     set({ isSyncing: false });
@@ -662,6 +676,12 @@ export const clearCartWithBackend = async (set, get) => {
       items: [],
       isSyncing: false,
     });
+    
+    // ✅ Limpiar toda la configuración de financiamiento
+    const setProductFinancing = get().setProductFinancing;
+    if (setProductFinancing) {
+      setProductFinancing({});
+    }
 
     return true;
   } catch (error) {
