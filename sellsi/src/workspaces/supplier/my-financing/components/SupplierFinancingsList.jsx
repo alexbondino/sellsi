@@ -400,11 +400,16 @@ const SupplierFinancingsList = ({
     financing: null,
   });
 
+  // Dataset base para pestaña "Solicitudes" (excluir operaciones liberadas)
+  const requestFinancings = useMemo(() => {
+    return financings.filter(f => f.status !== 'approved_by_sellsi');
+  }, [financings]);
+
   // Filtrar financiamientos por categoría (Solicitudes)
   const filteredPending = useMemo(() => {
-    if (statusFilter === FILTER_CATEGORIES.ALL) return financings;
-    return financings.filter(f => stateMatchesFilter(f.status, statusFilter));
-  }, [financings, statusFilter]);
+    if (statusFilter === FILTER_CATEGORIES.ALL) return requestFinancings;
+    return requestFinancings.filter(f => stateMatchesFilter(f.status, statusFilter));
+  }, [requestFinancings, statusFilter]);
 
   // Filtrar financiamientos aprobados (solo para tab 2)
   const approvedFinancings = useMemo(() => {
@@ -420,14 +425,14 @@ const SupplierFinancingsList = ({
   // Contadores para filtros de solicitudes
   const filterCounts = useMemo(() => {
     const counts = {
-      [FILTER_CATEGORIES.ALL]: financings.length,
+      [FILTER_CATEGORIES.ALL]: requestFinancings.length,
       [FILTER_CATEGORIES.IN_PROCESS]: 0,
       [FILTER_CATEGORIES.REJECTED]: 0,
       [FILTER_CATEGORIES.CANCELLED]: 0,
       [FILTER_CATEGORIES.FINALIZED]: 0,
     };
 
-    financings.forEach(f => {
+    requestFinancings.forEach(f => {
       Object.keys(counts).forEach(category => {
         if (category !== FILTER_CATEGORIES.ALL && stateMatchesFilter(f.status, category)) {
           counts[category]++;
@@ -436,7 +441,7 @@ const SupplierFinancingsList = ({
     });
 
     return counts;
-  }, [financings]);
+  }, [requestFinancings]);
 
   const filterOptions = [
     { value: FILTER_CATEGORIES.ALL, label: 'Todos', count: filterCounts[FILTER_CATEGORIES.ALL] },
@@ -489,8 +494,12 @@ const SupplierFinancingsList = ({
   };
 
   const closeModal = () => {
-    setModalState({ open: false, mode: null, financing: null });
+    setModalState(prev => ({ ...prev, open: false }));
   };
+
+  const handleModalExited = useCallback(() => {
+    setModalState({ open: false, mode: null, financing: null });
+  }, []);
 
   // Handlers de acciones
   const handleApprove = async (financing) => {
@@ -570,8 +579,12 @@ const SupplierFinancingsList = ({
   };
 
   const closeReasonModal = () => {
-    setReasonModal({ open: false, financing: null });
+    setReasonModal(prev => ({ ...prev, open: false }));
   };
+
+  const handleReasonModalExited = useCallback(() => {
+    setReasonModal({ open: false, financing: null });
+  }, []);
 
   const handleDownload = (financing) => {
     console.log('🔽 Abriendo modal de descargables para:', financing);
@@ -579,6 +592,10 @@ const SupplierFinancingsList = ({
   };
 
   const closeDownloadablesModal = useCallback(() => {
+    setDownloadablesModal(prev => ({ ...prev, open: false }));
+  }, []);
+
+  const handleDownloadablesModalExited = useCallback(() => {
     setDownloadablesModal({ open: false, financing: null });
   }, []);
 
@@ -691,7 +708,7 @@ const SupplierFinancingsList = ({
 
             <Box sx={{ px: { xs: 2, sm: 0 } }}>
               {filteredPending.length === 0 ? (
-                financings.length === 0 ? (
+                requestFinancings.length === 0 ? (
                   <EmptyStateGlobal />
                 ) : (
                   <EmptyStateFiltered />
@@ -744,6 +761,7 @@ const SupplierFinancingsList = ({
           mode={modalState.mode}
           financing={modalState.financing}
           onClose={closeModal}
+          onExited={handleModalExited}
           onApprove={handleApprove}
           onReject={handleReject}
           onSign={handleSign}
@@ -755,6 +773,7 @@ const SupplierFinancingsList = ({
           open={reasonModal.open}
           financing={reasonModal.financing}
           onClose={closeReasonModal}
+          onExited={handleReasonModalExited}
         />
       </>
     );
@@ -792,7 +811,7 @@ const SupplierFinancingsList = ({
 
           {/* Contenido - Solicitudes */}
           {filteredPending.length === 0 ? (
-            financings.length === 0 ? (
+            requestFinancings.length === 0 ? (
               <EmptyStateGlobal />
             ) : (
               <EmptyStateFiltered />
@@ -854,6 +873,7 @@ const SupplierFinancingsList = ({
         mode={modalState.mode}
         financing={modalState.financing}
         onClose={closeModal}
+        onExited={handleModalExited}
         onApprove={handleApprove}
         onReject={handleReject}
         onSign={handleSign}
@@ -865,6 +885,7 @@ const SupplierFinancingsList = ({
         open={reasonModal.open}
         financing={reasonModal.financing}
         onClose={closeReasonModal}
+        onExited={handleReasonModalExited}
       />
 
       {/* Modal 'Cómo Funciona' */}
@@ -888,6 +909,7 @@ const SupplierFinancingsList = ({
         open={downloadablesModal.open}
         onClose={closeDownloadablesModal}
         financing={downloadablesModal.financing}
+        onExited={handleDownloadablesModalExited}
       />
     </>
   );

@@ -25,6 +25,7 @@ import { Close as CloseIcon, RequestQuote as RequestQuoteIcon } from '@mui/icons
 import { calculatePriceForQuantity } from '../../../../../utils/priceCalculation';
 import { toTitleCase } from '../../../../../utils/textFormatters';
 import { useBodyScrollLock } from '../../../../../shared/hooks/useBodyScrollLock';
+import toast from 'react-hot-toast';
 
 const FinancingConfigModal = ({
   open,
@@ -52,7 +53,8 @@ const FinancingConfigModal = ({
   // Estado para tracking de qué financiamiento se usará para cada producto
   const [selectedFinancingByProduct, setSelectedFinancingByProduct] = useState(() => {
     return cartItems.reduce((acc, item) => {
-      acc[item.id] = ''; // Sin financiamiento asignado por defecto
+      const existing = currentFinancing[item.id];
+      acc[item.id] = existing?.financingRequestId || existing?.financingId || '';
       return acc;
     }, {});
   });
@@ -177,6 +179,17 @@ const FinancingConfigModal = ({
 
   // Guardar configuración
   const handleSave = () => {
+    const invalidProduct = cartItems.find((item) => {
+      const financedAmount = Number(productFinancingConfig?.[item.id]?.amount || 0);
+      const selectedFinancing = selectedFinancingByProduct?.[item.id] || '';
+      return financedAmount > 0 && !selectedFinancing;
+    });
+
+    if (invalidProduct) {
+      toast.error(`Debes asignar un financiamiento para ${toTitleCase(invalidProduct.name || invalidProduct.nombre || 'el producto')}`);
+      return;
+    }
+
     // TODO: Incluir selectedFinancingByProduct en el save
     onSave({
       config: productFinancingConfig,

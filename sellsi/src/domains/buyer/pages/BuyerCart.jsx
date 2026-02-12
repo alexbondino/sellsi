@@ -117,7 +117,17 @@ const BuyerCart = ({ FinancingConfigModalOverride } = {}) => {
       // financingData may come in two shapes:
       // 1) { config: { productId: { amount, isFullAmount }}, financingAssignments: { productId: financingId } }
       // 2) legacy: mapping productId -> { amount, isFullAmount }
-      const newFinancingState = financingData?.config ? financingData.config : financingData;
+      const baseConfig = financingData?.config ? financingData.config : financingData;
+      const financingAssignments = financingData?.financingAssignments || {};
+
+      const newFinancingState = Object.entries(baseConfig || {}).reduce((acc, [productId, cfg]) => {
+        const selectedFinancingId = financingAssignments?.[productId] || null;
+        acc[productId] = {
+          ...(cfg || {}),
+          financingRequestId: selectedFinancingId,
+        };
+        return acc;
+      }, {});
 
       // ✅ REFACTOR: Usar updateProductFinancing del store en lugar de setProductFinancing
       updateProductFinancing(newFinancingState);

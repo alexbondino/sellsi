@@ -130,6 +130,89 @@ class KhipuService {
     return amount >= 1;
   }
 
+  /**
+   * Crear orden de pago de financiamiento en Khipu
+   * @param {Object} details - Datos del pago de financiamiento
+   * @returns {Object} Respuesta con URL de pago
+   */
+  async createFinancingPaymentOrder(details) {
+    const { 
+      total, 
+      debtAmount,
+      currency, 
+      financingId, 
+      financingPaymentId,
+      buyerId, 
+      items, 
+      billingAddress 
+    } = details;
+
+    try {
+      console.log('[khipuService] Creando pago de financiamiento para Khipu:', {
+        financingId,
+        financingPaymentId,
+        amount: total,
+      });
+
+      const paymentPayload = {
+        amount: Math.round(total),
+        debt_amount: Math.round(debtAmount ?? total),
+        currency: currency || 'CLP',
+        subject: `Pago de Crédito #${financingId}`,
+        buyer_id: buyerId,
+        order_id: `financing_${financingId}_${financingPaymentId}`,
+        financing_payment_id: financingPaymentId, // ✅ ID del pago de financiamiento
+        financing_id: financingId, // ✅ ID del financiamiento
+        is_financing_payment: true, // ✅ Flag para identificar este tipo de pago
+        cart_items: [],
+      };
+
+      // Añadir dirección de facturación si existe
+      if (billingAddress && typeof billingAddress === 'object') {
+        paymentPayload.billing_address = billingAddress;
+      }
+
+      console.log('[khipuService] Invocando create-payment-khipu para financing:', 
+        JSON.stringify(paymentPayload));
+
+      const { data: khipuResponse, error } = await supabase.functions.invoke('create-payment-khipu', {
+        body: paymentPayload,
+      });
+
+      if (error) {
+        console.error('[khipuService] Error invocando create-payment-khipu:', error);
+        throw new Error(`Error al invocar la función de Supabase: ${error.message}`);
+      }
+
+      if (khipuResponse?.error) {
+        console.error('[khipuService] Edge Function returned error:', khipuResponse);
+        throw new Error(`Error devuelto por la función de pago: ${khipuResponse.error}`);
+      }
+
+      if (!khipuResponse?.payment_url) {
+        console.error('[khipuService] Respuesta inesperada:', khipuResponse);
+        throw new Error('La respuesta no contenía una URL de pago.');
+      }
+
+      console.log('[khipuService] ✅ Pago de financiamiento creado exitosamente:', {
+        paymentId: khipuResponse.payment_id,
+        financingPaymentId,
+      });
+
+      return {
+        success: true,
+        paymentUrl: khipuResponse.payment_url,
+        paymentId: khipuResponse.payment_id,
+        transactionId: khipuResponse.transaction_id,
+        expiresAt: khipuResponse.expires_date,
+        financingPaymentId: financingPaymentId,
+      };
+    } catch (err) {
+      console.error('[khipuService] Error en createFinancingPaymentOrder:', err);
+      throw err;
+    }
+  }
+
   async verifyPaymentStatus(paymentId) {
     console.warn('khipuService.verifyPaymentStatus no está implementado.');
     return { success: false, status: 'unknown' };

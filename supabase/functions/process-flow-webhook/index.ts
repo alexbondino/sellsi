@@ -177,38 +177,176 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
         logErr('financing_webhook_log_insert_failed', { error: String(logInsertErr) });
       }
 
-      // Solo procesar si el pago fue exitoso (status === 2)
-      if (status !== 2) {
-        log('financing_payment_not_paid', { status });
-        return new Response(JSON.stringify({ success: true, financing: true, status, message: 'Payment not yet completed' }), { status: 200, headers: corsHeaders });
-      }
-
-      // Buscar financing_payment por flow_token o flow_order
-      const { data: fp, error: fpErr } = await supabase
+      // ✅ FIX: Buscar financing_payment PRIMERO (antes de validar status)
+      let fp: any = null;
+      let fpErr: any = null;
+      
+      // Intento 1: Buscar por flow_token o flow_order (método principal)
+      const { data: fpData, error: fpError } = await supabase
         .from('financing_payments')
-        .select('id, financing_request_id, amount, payment_status')
+        .select('id, financing_request_id, amount, payment_status, payment_method, gateway_response')
         .or(`flow_token.eq.${token},flow_order.eq.${flowOrder}`)
         .maybeSingle();
+      
+      fp = fpData;
+      fpErr = fpError;
+      
+      // Intento 2: Fallback si no se encuentra (edge case: edge function falló después de crear pago en Flow pero antes de UPDATE)
+      if (!fp && !fpErr && financingIdFromUrl) {
+        log('financing_payment_fallback_search', { financingIdFromUrl, reason: 'no_flow_tokens_found' });
+        
+        // Buscar por financing_request_id + payment_method=flow + status=pending
+        // Esto cubre el caso donde el pago se creó en Flow pero nunca se actualizó con flow_token/flow_order
+        const { data: fallbackData, error: fallbackErr } = await supabase
+          .from('financing_payments')
+          .select('id, financing_request_id, amount, payment_status, payment_method, gateway_response')
+          .eq('financing_request_id', financingIdFromUrl)
+          .eq('payment_method', 'flow')
+          .eq('payment_status', 'pending')
+          .is('flow_token', null)
+          .is('flow_order', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        fp = fallbackData;
+        fpErr = fallbackErr;
+        
+        if (fp) {
+          log('financing_payment_found_via_fallback', { fpId: fp.id, financingIdFromUrl });
+          
+          // Actualizar registro con tokens de Flow (recuperación)
+          const { error: updateErr } = await supabase
+            .from('financing_payments')
+            .update({
+              flow_token: token,
+              flow_order: flowOrder,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', fp.id);
+          
+          // ✅ BUG #21: Loguear si la recuperación falla (no crítico, continúa procesando)
+          if (updateErr) {
+            logErr('financing_payment_fallback_update_failed', { fpId: fp.id, error: updateErr });
+          }
+        }
+      }
 
       if (fpErr || !fp) {
         logErr('financing_payment_not_found', { financingIdFromUrl, flowOrder, token, error: fpErr });
         return new Response(JSON.stringify({ success: false, reason: 'financing_payment_not_found' }), { status: 200, headers: corsHeaders });
       }
 
-      // Idempotencia: si ya está pagado, retornar OK
-      if (fp.payment_status === 'paid') {
-        log('financing_payment_already_processed', { id: fp.id });
-        return new Response(JSON.stringify({ success: true, already_processed: true }), { status: 200, headers: corsHeaders });
+      // Idempotencia: si ya está procesado (paid, failed, expired), retornar OK
+      if (['paid', 'failed', 'expired', 'refunded'].includes(fp.payment_status)) {
+        log('financing_payment_already_processed', { id: fp.id, status: fp.payment_status });
+        return new Response(JSON.stringify({ success: true, already_processed: true, status: fp.payment_status }), { status: 200, headers: corsHeaders });
       }
 
-      // Procesar el pago exitoso
+      // Manejar estados de Flow: 1=pending, 2=paid, 3=rejected, 4=cancelled
+      if (status === 3 || status === 4) {
+        // Pago rechazado o cancelado - marcar como failed
+        log('financing_payment_failed', { status, flowOrder, fpId: fp.id });
+        
+        const { data: markResult, error: markErr } = await supabase.rpc('mark_financing_payment_as_failed', {
+          p_payment_id: fp.id,
+          p_new_status: 'failed'
+        });
+        
+        // Verificar errores de RPC
+        if (markErr) {
+          logErr('financing_payment_mark_failed_error_rpc', { error: markErr });
+          return new Response(JSON.stringify({ error: 'Failed to mark payment as failed' }), { status: 500, headers: corsHeaders });
+        }
+        
+        // Verificar errores lógicos de la función SQL
+        if (markResult && markResult.error) {
+          logErr('financing_payment_mark_failed_error_logic', { error: markResult.error });
+          return new Response(JSON.stringify({ error: markResult.error }), { status: 500, headers: corsHeaders });
+        }
+        
+        return new Response(JSON.stringify({ success: true, financing: true, status, payment_status: 'failed' }), { status: 200, headers: corsHeaders });
+      }
+      
+      if (status !== 2) {
+        // Status 1 (pending) u otro estado desconocido
+        log('financing_payment_not_paid', { status });
+        return new Response(JSON.stringify({ success: true, financing: true, status, message: 'Payment not yet completed' }), { status: 200, headers: corsHeaders });
+      }
+
+      // ✅ VALIDAR MONTO - Seguridad crítica
+      // El monto pagado en Flow debe coincidir con el monto en financing_payments
+      // Esto previene que usuarios manipulen la request HTTP para pagar menos
+      // ✅ BUG #31: Guard contra amount undefined/null (misma defensa que Khipu webhook)
+      const amountPaidInFlow = (amount != null && !isNaN(amount)) ? Math.round(amount) : null;
+      const amountExpectedDebt = Math.round(Number(fp.amount || 0));
+      const gatewayMeta = fp.gateway_response || {};
+      const gatewayExpectedFromMeta = Math.round(Number(
+        gatewayMeta.expected_gateway_amount ?? gatewayMeta.payment_amount ?? gatewayMeta.amount
+      ));
+
+      // Backward compatibility para registros antiguos sin metadata enriquecida
+      // Flow cobra deuda + fee (3.8%), no solo deuda neta.
+      const amountExpectedGateway = Number.isFinite(gatewayExpectedFromMeta) && gatewayExpectedFromMeta > 0
+        ? gatewayExpectedFromMeta
+        : (fp.payment_method === 'flow'
+            ? amountExpectedDebt + Math.round(amountExpectedDebt * 0.038)
+            : amountExpectedDebt);
+      
+      if (amountPaidInFlow !== null && amountPaidInFlow !== amountExpectedGateway) {
+        logErr('financing_payment_amount_mismatch', {
+          paymentId: fp.id,
+          amountPaid: amountPaidInFlow,
+          amountExpected: amountExpectedGateway,
+          debtAmount: amountExpectedDebt,
+          difference: amountPaidInFlow - amountExpectedGateway
+        });
+        
+        // Marcar como failed por monto incorrecto
+        const { data: markResult, error: markErr } = await supabase.rpc('mark_financing_payment_as_failed', {
+          p_payment_id: fp.id,
+          p_new_status: 'failed'
+        });
+        
+        // ✅ BUG #19: Si mark_as_failed falla, retornar 500 (no 200)
+        if (markErr) {
+          logErr('financing_payment_mark_failed_error_amount_rpc', { error: markErr });
+          return new Response(JSON.stringify({ error: 'Failed to mark payment as failed after amount mismatch' }), { status: 500, headers: corsHeaders });
+        }
+        
+        if (markResult && markResult.error) {
+          logErr('financing_payment_mark_failed_error_amount_logic', { error: markResult.error });
+          return new Response(JSON.stringify({ error: markResult.error }), { status: 500, headers: corsHeaders });
+        }
+        
+        return new Response(JSON.stringify({ 
+          error: 'Amount mismatch', 
+          financing: true,
+          payment_status: 'failed',
+          reason: 'amount_validation_failed'
+        }), { status: 200, headers: corsHeaders });
+      }
+      
+      if (amountPaidInFlow !== null) {
+        log('financing_payment_amount_validated', { paymentId: fp.id, amount: amountPaidInFlow });
+      } else {
+        log('financing_payment_amount_skipped', { paymentId: fp.id, reason: 'Flow getStatus did not include amount' });
+      }
+
+      // Procesar el pago exitoso (status 2)
       const { data: result, error: processErr } = await supabase.rpc('process_financing_payment_success', {
         p_payment_id: fp.id
       });
 
       if (processErr) {
-        logErr('financing_payment_process_error', { error: processErr, paymentId: fp.id });
+        logErr('financing_payment_process_error_rpc', { error: processErr, paymentId: fp.id });
         return new Response(JSON.stringify({ error: 'Failed to process financing payment' }), { status: 500, headers: corsHeaders });
+      }
+      
+      // Verificar errores lógicos de la función SQL
+      if (result && result.error) {
+        logErr('financing_payment_process_error_logic', { error: result.error, paymentId: fp.id });
+        return new Response(JSON.stringify({ error: result.error }), { status: 500, headers: corsHeaders });
       }
 
       log('financing_payment_success', { paymentId: fp.id, result, ms: Date.now() - startedAt });

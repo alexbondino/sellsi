@@ -53,7 +53,7 @@ export const useBuyerFinancings = () => {
       // Usamos los campos directamente de financing_requests si es necesario
       const { data, error } = await supabase
         .from('financing_requests')
-        .select('id, buyer_id, supplier_id, amount, available_amount, amount_used, status, due_date, term_days, created_at, updated_at, legal_name, legal_rut, metadata, rejected_reason, cancelled_reason, signed_buyer_at, signed_supplier_at, signed_sellsi_at, paused, paused_reason')
+        .select('id, buyer_id, supplier_id, amount, available_amount, amount_used, amount_paid, status, due_date, expires_at, activated_at, term_days, created_at, updated_at, legal_name, legal_rut, metadata, rejected_reason, cancelled_reason, signed_buyer_at, signed_supplier_at, signed_sellsi_at, paused, paused_reason')
         .eq('buyer_id', buyerId) // 🔒 FILTRO CRÍTICO
         .order('created_at', { ascending: false });
 
@@ -91,6 +91,9 @@ export const useBuyerFinancings = () => {
             amount: parseFloat(f.amount),
             available_amount: parseFloat(f.available_amount || 0),
             amount_used: parseFloat(f.amount_used || 0),
+            amount_paid: parseFloat(f.amount_paid || 0),
+            expires_at: f.expires_at || null,
+            activated_at: f.activated_at || null,
             term_days: f.term_days || null,
             status: f.status,
             created_at: f.created_at,

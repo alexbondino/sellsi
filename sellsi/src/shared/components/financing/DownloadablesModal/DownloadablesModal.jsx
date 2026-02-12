@@ -85,7 +85,7 @@ const formatFileSize = (bytes) => {
   return `${mb.toFixed(1)} MB`;
 };
 
-const DownloadablesModal = ({ open, onClose, financing, onDownloadFile }) => {
+const DownloadablesModal = ({ open, onClose, financing, onDownloadFile, onExited }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const location = useLocation();
@@ -201,6 +201,7 @@ const DownloadablesModal = ({ open, onClose, financing, onDownloadFile }) => {
   return (
     <Dialog
       open={open}
+      TransitionProps={{ onExited }}
       onClose={(event, reason) => {
         // Solo permitir cierre con ESC o botón X, no con clic en backdrop
         if (reason === 'backdropClick') {

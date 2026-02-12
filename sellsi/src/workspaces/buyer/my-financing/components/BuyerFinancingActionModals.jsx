@@ -8,7 +8,7 @@
  * - Cancelar operación
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -33,6 +33,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
 import { formatPrice } from '../../../../shared/utils/formatters/priceFormatters';
+import { getAvailableAmountToPay, getUsedAmount } from '../../../../shared/utils/financing/paymentAmounts';
 import {
   MODAL_DIALOG_ACTIONS_STYLES,
   MODAL_DIALOG_CONTENT_STYLES,
@@ -43,7 +44,7 @@ import {
 /**
  * Modal de confirmación para firmar
  */
-const SignModal = ({ open, financing, onConfirm, onClose }) => {
+const SignModal = ({ open, financing, onConfirm, onClose, onExited }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -166,6 +167,7 @@ const SignModal = ({ open, financing, onConfirm, onClose }) => {
     <Dialog 
       open={open} 
       onClose={handleCloseModal} 
+      TransitionProps={{ onExited }}
       maxWidth="sm" 
       fullWidth
       fullScreen={isMobile}
@@ -352,7 +354,7 @@ const SignModal = ({ open, financing, onConfirm, onClose }) => {
 /**
  * Modal de confirmación para cancelar operación
  */
-const CancelModal = ({ open, financing, onConfirm, onClose }) => {
+const CancelModal = ({ open, financing, onConfirm, onClose, onExited }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [reason, setReason] = useState('');
@@ -372,6 +374,7 @@ const CancelModal = ({ open, financing, onConfirm, onClose }) => {
     <Dialog 
       open={open} 
       onClose={handleClose} 
+      TransitionProps={{ onExited }}
       maxWidth="sm" 
       fullWidth
       fullScreen={isMobile}
@@ -472,15 +475,44 @@ const CancelModal = ({ open, financing, onConfirm, onClose }) => {
 /**
  * Modal de pago en línea
  */
-const PayOnlineModal = ({ open, financing, onConfirm, onClose }) => {
+const PayOnlineModal = ({ open, financing, onConfirm, onClose, onExited }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [amountInput, setAmountInput] = useState('');
   useBodyScrollLock(open);
+
+  const formatThousands = (value) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric <= 0) return '';
+    return numeric.toLocaleString('es-CL');
+  };
+
+  const amountUsed = useMemo(() => getUsedAmount(financing), [financing]);
+  const availableToPay = useMemo(() => getAvailableAmountToPay(financing), [financing]);
+  const parsedAmount = useMemo(() => {
+    const value = Number(amountInput);
+    if (!Number.isFinite(value)) return 0;
+    return Math.round(value);
+  }, [amountInput]);
+
+  const isValidAmount = parsedAmount >= 1 && parsedAmount <= availableToPay;
+  const canPay = amountUsed > 1 && availableToPay >= 1;
+
+  useEffect(() => {
+    if (!open) return;
+    setAmountInput(availableToPay > 0 ? String(availableToPay) : '');
+  }, [open, availableToPay]);
+
+  const handleConfirm = () => {
+    if (!canPay || !isValidAmount) return;
+    onConfirm(financing, parsedAmount);
+  };
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
+      TransitionProps={{ onExited }}
       maxWidth="sm"
       fullWidth
       fullScreen={isMobile}
@@ -528,7 +560,7 @@ const PayOnlineModal = ({ open, financing, onConfirm, onClose }) => {
       </DialogTitle>
       <DialogContent dividers sx={MODAL_DIALOG_CONTENT_STYLES}>
         <DialogContentText>
-          Serás redirigido al checkout para realizar el pago del crédito al: <strong>{financing?.supplier_name}</strong> por un monto utilizado de <strong>{formatPrice(financing?.amount_used || 0)}</strong>.
+          Ingresa cuánto deseas abonar del crédito de <strong>{financing?.supplier_name}</strong>.
         </DialogContentText>
         {financing && (
           <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
@@ -539,9 +571,42 @@ const PayOnlineModal = ({ open, financing, onConfirm, onClose }) => {
               <strong>Monto Utilizado:</strong> {formatPrice(financing.amount_used || 0)}
             </Typography>
             <Typography variant="body2">
+              <strong>Disponible para abonar:</strong> {formatPrice(availableToPay)}
+            </Typography>
+            <Typography variant="body2">
               <strong>Plazo:</strong> {financing.term_days} días
             </Typography>
           </Box>
+        )}
+
+        <Box sx={{ mt: 2 }}>
+          <TextField
+            fullWidth
+            type="text"
+            label="Monto a abonar"
+            value={formatThousands(amountInput)}
+            onChange={(event) => {
+              const digitsOnly = event.target.value.replace(/\D/g, '');
+              setAmountInput(digitsOnly);
+            }}
+            inputProps={{
+              inputMode: 'numeric',
+              pattern: '[0-9]*',
+            }}
+            disabled={!canPay}
+            helperText={
+              canPay
+                ? `Rango permitido: ${formatPrice(1)} a ${formatPrice(availableToPay)}`
+                : 'No hay saldo disponible para abonar'
+            }
+            error={canPay && amountInput !== '' && !isValidAmount}
+          />
+        </Box>
+
+        {amountUsed <= 1 && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            El pago en línea requiere monto utilizado mayor a $1.
+          </Alert>
         )}
       </DialogContent>
       <DialogActions sx={MODAL_DIALOG_ACTIONS_STYLES}>
@@ -553,9 +618,10 @@ const PayOnlineModal = ({ open, financing, onConfirm, onClose }) => {
           Cerrar
         </Button>
         <Button
-          onClick={() => onConfirm(financing)}
+          onClick={handleConfirm}
           variant="contained"
           color="primary"
+          disabled={!canPay || !isValidAmount}
           sx={MODAL_SUBMIT_BUTTON_STYLES}
         >
           Ir a pagar
@@ -574,6 +640,7 @@ const BuyerFinancingActionModals = ({
   mode,
   financing,
   onClose,
+  onExited,
   onSign,
   onCancel,
   onPayOnline,
@@ -585,18 +652,21 @@ const BuyerFinancingActionModals = ({
         financing={financing}
         onConfirm={onSign}
         onClose={onClose}
+        onExited={onExited}
       />
       <CancelModal
         open={open && mode === 'cancel'}
         financing={financing}
         onConfirm={onCancel}
         onClose={onClose}
+        onExited={onExited}
       />
       <PayOnlineModal
         open={open && mode === 'payOnline'}
         financing={financing}
         onConfirm={onPayOnline}
         onClose={onClose}
+        onExited={onExited}
       />
     </>
   );

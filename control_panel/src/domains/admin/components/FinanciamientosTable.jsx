@@ -94,6 +94,12 @@ const formatDate = (dateString) => {
   });
 };
 
+const formatThousands = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return '';
+  return numeric.toLocaleString('es-CL');
+};
+
 // ✅ STATUS CHIP COMPONENT
 const StatusChip = ({ status }) => {
   const statusConfig = {
@@ -338,15 +344,33 @@ const FinanciamientosTable = () => {
         const amount_paid = Number(r.amount_paid ?? 0);
         const amount_used = Number(r.amount_used ?? 0);
         const amount_refunded = Number(r.amount_refunded ?? 0);
+        const approvedAt = r.approved_at ?? r.activated_at ?? r.signed_sellsi_at ?? null;
+
+        // Inferir tipo de solicitud con fallback robusto (igual criterio buyer/supplier)
+        let requestType = r.request_type;
+        if (requestType !== 'express' && requestType !== 'extended') {
+          requestType = 'express';
+          try {
+            const metadata = typeof r.metadata === 'string'
+              ? JSON.parse(r.metadata)
+              : (r.metadata || {});
+            if (metadata.has_powers_certificate || metadata.has_tax_folder || Number(metadata.document_count || 0) > 0) {
+              requestType = 'extended';
+            }
+          } catch (e) {
+            requestType = 'express';
+          }
+        }
+
         const createdAt = r.created_at ?? r.approved_at ?? null;
 
         // Calculate expires_at if not present: prefer explicit expires_at, then approved_at+term_days, then created_at+term_days (estimate)
         let computedExpires = r.expires_at ?? null;
         const termDays = Number(r.term_days || 0);
 
-        if (!computedExpires && r.approved_at && termDays > 0) {
+        if (!computedExpires && approvedAt && termDays > 0) {
           try {
-            const approved = new Date(r.approved_at);
+            const approved = new Date(approvedAt);
             const expires = new Date(approved);
             expires.setDate(expires.getDate() + termDays);
             computedExpires = expires.toISOString().split('T')[0];
@@ -367,13 +391,15 @@ const FinanciamientosTable = () => {
           }
         }
 
-        // Balance MUST be amount_used - amount_paid (per DISEÑO_BACKEND.md)
-        const balance = amount_used - amount_paid;
+        // Saldo neto: deuda real pendiente tras considerar reembolsos
+        // Fórmula: Utilizado - Pagado + Reembolsado
+        const balance = amount_used - amount_paid + amount_refunded;
         const available = Math.max(0, amount - amount_used);
         const refund_pending = Math.max(0, amount_paid - amount_used - amount_refunded);
 
         const out = {
           ...r,
+          request_type: requestType,
           buyer_user_nm: buyerName,
           supplier_user_nm: supplierName,
           amount,
@@ -398,7 +424,7 @@ const FinanciamientosTable = () => {
 
         // Formatted display fields to avoid runtime formatter mismatches in DataGrid
         out.display_created_at_formatted = out.display_created_at ? formatDate(out.display_created_at) : '-';
-        out.display_approved_at_formatted = r.approved_at ? formatDate(r.approved_at) : '-';
+        out.display_approved_at_formatted = approvedAt ? formatDate(approvedAt) : '-';
         out.display_amount_formatted = formatCurrency(out.display_amount);
         out.display_expires_at_formatted = out.display_expires_at ? formatDate(out.display_expires_at) : '-';
         out.display_balance_formatted = formatCurrency(out.display_balance);
@@ -888,6 +914,7 @@ const FinanciamientosTable = () => {
           <TableTooltip title={
             <span>
               <div><strong>Saldo:</strong> Diferencia entre lo consumido y lo pagado: <em>Utilizado − Pagado</em>.</div>
+              <div>Incluye reembolsos ya procesados para reflejar deuda neta real: <em>Utilizado − Pagado + Reembolsado</em>.</div>
               <div>Si es mayor a 0, representa deuda pendiente que el comprador debe pagar. Si es 0 o negativo, no hay deuda (puede existir saldo a favor).</div>
             </span>
           }>
@@ -1255,10 +1282,28 @@ const FinanciamientosTable = () => {
               {transactions.map(tx => {
                 // ✅ FIX: Formatear descripción según tipo de transacción
                 let description = '';
+                const isConsumption = tx.type === 'uso' || tx.type === 'consumo';
+                const isPause = tx.type === 'pause';
+                const isUnpause = tx.type === 'unpause';
+                const isPauseOrUnpause = isPause || isUnpause;
+
+                const parsedMetadata = (() => {
+                  if (!tx?.metadata) return {};
+                  if (typeof tx.metadata === 'string') {
+                    try {
+                      return JSON.parse(tx.metadata);
+                    } catch (error) {
+                      return {};
+                    }
+                  }
+                  return tx.metadata;
+                })();
+
+                const pauseReason = parsedMetadata?.reason || tx.restoration_reason || tx.reason || 'Sin razón registrada';
                 
-                if (tx.type === 'uso' && tx.order) {
+                if (isConsumption && tx.order) {
                   // Transacción de consumo - mostrar info de orden
-                  const buyerName = tx.order.buyer?.name || 'Buyer desconocido';
+                  const buyerName = selectedRequest?.buyer?.name || tx.order.buyer?.name || 'Buyer desconocido';
                   const supplierName = selectedRequest?.supplier?.name || 'Supplier desconocido';
                   const orderTotal = tx.order.total || tx.amount;
                   const orderDate = tx.order.created_at || tx.created_at;
@@ -1270,22 +1315,43 @@ const FinanciamientosTable = () => {
                   description = 'Devolución procesada';
                 } else if (tx.type === 'pago') {
                   description = tx.payment_reference || 'Pago registrado';
+                } else if (isPause) {
+                  description = `Razón: ${pauseReason}`;
+                } else if (isUnpause) {
+                  description = `Razón: ${pauseReason}`;
                 } else {
                   description = tx.restoration_reason || tx.payment_reference || tx.type;
                 }
+
+                const rightPrimary = isPauseOrUnpause ? formatDate(tx.created_at) : formatCurrency(tx.amount);
+                const rightSecondary = isPauseOrUnpause ? null : formatDate(tx.created_at);
                 
                 return (
                   <Paper key={tx.id} sx={{ p: 2 }}>
                     <Stack direction="row" justifyContent="space-between">
                       <div>
                         <Typography variant="subtitle2">
-                          {tx.type === 'uso' ? 'Consumo' : tx.type === 'reposicion' ? 'Reposición' : tx.type === 'devolucion' ? 'Devolución' : tx.type === 'pago' ? 'Pago' : tx.type}
+                          {isConsumption
+                            ? 'Consumo'
+                            : tx.type === 'reposicion'
+                              ? 'Reposición'
+                              : tx.type === 'devolucion'
+                                ? 'Devolución'
+                                : tx.type === 'pago'
+                                  ? 'Pago'
+                                  : isPause
+                                    ? 'Financiamiento Pausado'
+                                    : isUnpause
+                                      ? 'Financiamiento Reanudado'
+                                      : tx.type}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">{description}</Typography>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <Typography variant="subtitle2">{formatCurrency(tx.amount)}</Typography>
-                        <Typography variant="body2" color="text.secondary">{formatDate(tx.created_at)}</Typography>
+                        <Typography variant="subtitle2">{rightPrimary}</Typography>
+                        {rightSecondary && (
+                          <Typography variant="body2" color="text.secondary">{rightSecondary}</Typography>
+                        )}
                       </div>
                     </Stack>
                   </Paper>
@@ -1319,10 +1385,14 @@ const FinanciamientosTable = () => {
 
           <TextField
             label="Monto a reponer"
-            type="number"
+            type="text"
             fullWidth
-            value={restoreAmount}
-            onChange={(e) => setRestoreAmount(e.target.value)}
+            value={formatThousands(restoreAmount)}
+            onChange={(e) => setRestoreAmount(e.target.value.replace(/\D/g, ''))}
+            inputProps={{
+              inputMode: 'numeric',
+              pattern: '[0-9]*',
+            }}
             helperText={selectedRequest ? `Máximo: ${formatCurrency(selectedRequest.amount_used)}` : ''}
             sx={{ mb: 1 }}
           />
@@ -1368,10 +1438,14 @@ const FinanciamientosTable = () => {
 
           <TextField
             label="Monto a devolver"
-            type="number"
+            type="text"
             fullWidth
-            value={refundAmount}
-            onChange={(e) => setRefundAmount(e.target.value)}
+            value={formatThousands(refundAmount)}
+            onChange={(e) => setRefundAmount(e.target.value.replace(/\D/g, ''))}
+            inputProps={{
+              inputMode: 'numeric',
+              pattern: '[0-9]*',
+            }}
             helperText={selectedRequest ? `Máximo permitido: ${formatCurrency(selectedRequest.refund_pending)}` : ''}
             sx={{ mb: 1 }}
           />

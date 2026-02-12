@@ -12,11 +12,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../../services/supabase';
 import { getUserProfileData } from '../../../services/user/profileService';
 import { getFinancingDaysStatus } from '../../../shared/utils/financingDaysLogic';
+import { getAvailableAmountToPay, getUsedAmount } from '../../../shared/utils/financing/paymentAmounts';
 
 /**
  * Hook para obtener y preparar datos de financiamiento para checkout
  */
-const useFinancingCheckout = (financingId) => {
+const useFinancingCheckout = (financingId, requestedAmount = null) => {
   const [financing, setFinancing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,13 +60,31 @@ const useFinancingCheckout = (financingId) => {
                 mockFinancing.term_days
               );
 
+              const amountUsed = getUsedAmount(mockFinancing);
+              const availableToPay = getAvailableAmountToPay(mockFinancing);
+              const hasRequestedAmount = requestedAmount !== null && requestedAmount !== undefined && String(requestedAmount).trim() !== '';
+              const parsedRequested = hasRequestedAmount ? Number(requestedAmount) : NaN;
+              const paymentAmount = hasRequestedAmount ? Math.round(parsedRequested) : availableToPay;
+
+              if (amountUsed <= 1) {
+                throw new Error('El monto utilizado debe ser mayor a $1 para pagar en línea');
+              }
+
+              if (availableToPay < 1) {
+                throw new Error('No hay saldo disponible para abonar');
+              }
+
+              if (paymentAmount < 1 || paymentAmount > availableToPay) {
+                throw new Error(`Monto inválido. Rango permitido: 1 a ${availableToPay}`);
+              }
+
               // Transformar mock a formato checkout
               const checkoutData = {
                 items: [{
                   id: `financing-${mockFinancing.id}`,
                   name: `Pago de Crédito - ${mockFinancing.supplier_name}`,
                   quantity: 1,
-                  price: mockFinancing.amount_used || 0,
+                  price: paymentAmount,
                   metadata: {
                     isFinancing: true,
                     financingId: mockFinancing.id,
@@ -76,7 +95,9 @@ const useFinancingCheckout = (financingId) => {
                     buyerName: 'Mock Buyer',
                     buyerEmail: 'mock@buyer.com',
                     amountGranted: mockFinancing.amount,
-                    amountUsed: mockFinancing.amount_used || 0,
+                    amountUsed: amountUsed,
+                    availableToPay: availableToPay,
+                    requestedAmount: paymentAmount,
                     termDays: mockFinancing.term_days,
                     activatedAt: mockFinancing.activated_at,
                     createdAt: mockFinancing.created_at,
@@ -85,9 +106,9 @@ const useFinancingCheckout = (financingId) => {
                     paymentStatus: mockFinancing.payment_status
                   }
                 }],
-                subtotal: mockFinancing.amount_used || 0,
+                subtotal: paymentAmount,
                 shipping: 0,
-                total: mockFinancing.amount_used || 0,
+                total: paymentAmount,
                 currency: 'CLP',
                 billingAddress: null,
                 isFinancingPayment: true,
@@ -117,6 +138,7 @@ const useFinancingCheckout = (financingId) => {
             supplier_id,
             amount,
             amount_used,
+            amount_paid,
             term_days,
             status,
             activated_at,
@@ -164,6 +186,24 @@ const useFinancingCheckout = (financingId) => {
         }
         
         console.log('[useFinancingCheckout] ✅ Validación de buyer_id pasada');
+
+        const amountUsed = getUsedAmount(financingData);
+        const availableToPay = getAvailableAmountToPay(financingData);
+        const hasRequestedAmount = requestedAmount !== null && requestedAmount !== undefined && String(requestedAmount).trim() !== '';
+        const parsedRequested = hasRequestedAmount ? Number(requestedAmount) : NaN;
+        const paymentAmount = hasRequestedAmount ? Math.round(parsedRequested) : availableToPay;
+
+        if (amountUsed <= 1) {
+          throw new Error('El monto utilizado debe ser mayor a $1 para pagar en línea');
+        }
+
+        if (availableToPay < 1) {
+          throw new Error('No hay saldo disponible para abonar');
+        }
+
+        if (paymentAmount < 1 || paymentAmount > availableToPay) {
+          throw new Error(`Monto inválido. Rango permitido: 1 a ${availableToPay}`);
+        }
 
         // 4. Calcular días restantes
         const { daysRemaining, status: daysStatus } = getFinancingDaysStatus(
@@ -224,7 +264,7 @@ const useFinancingCheckout = (financingId) => {
             id: `financing-${financingData.id}`,
             name: `Pago de Crédito - ${financingData.supplier.name}`,
             quantity: 1,
-            price: financingData.amount_used || 0,
+            price: paymentAmount,
             // Metadata adicional para el componente
             metadata: {
               isFinancing: true,
@@ -234,7 +274,9 @@ const useFinancingCheckout = (financingId) => {
               buyerId: financingData.buyer_id,
               buyerName: financingData.buyer.name,
               amountGranted: financingData.amount,
-              amountUsed: financingData.amount_used || 0,
+              amountUsed: amountUsed,
+              availableToPay: availableToPay,
+              requestedAmount: paymentAmount,
               termDays: financingData.term_days,
               activatedAt: financingData.activated_at,
               createdAt: financingData.created_at,
@@ -242,9 +284,9 @@ const useFinancingCheckout = (financingId) => {
               daysStatus: daysStatus
             }
           }],
-          subtotal: financingData.amount_used || 0,
+          subtotal: paymentAmount,
           shipping: 0, // No hay envío en pagos de financiamiento
-          total: financingData.amount_used || 0,
+          total: paymentAmount,
           currency: 'CLP',
           billingAddress: billingAddress,
           // Flag especial para identificar que es un pago de financiamiento
@@ -266,7 +308,7 @@ const useFinancingCheckout = (financingId) => {
     };
 
     fetchFinancing();
-  }, [financingId]);
+  }, [financingId, requestedAmount]);
 
   return {
     financing,

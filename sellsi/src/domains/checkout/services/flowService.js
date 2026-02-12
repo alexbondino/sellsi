@@ -214,6 +214,91 @@ class FlowService {
   }
 
   /**
+   * Crear orden de pago de financiamiento en Flow
+   * @param {Object} details - Datos del pago de financiamiento
+   * @returns {Object} Respuesta con URL de pago
+   */
+  async createFinancingPaymentOrder(details) {
+    const {
+      total,
+      debtAmount,
+      currency,
+      financingId,
+      financingPaymentId,
+      buyerId,
+      userEmail,
+      items,
+      billingAddress,
+    } = details;
+
+    try {
+      console.log('[flowService] Creando pago de financiamiento para Flow:', {
+        financingId,
+        financingPaymentId,
+        amount: total,
+      });
+
+      const paymentPayload = {
+        amount: Math.round(total),
+        debt_amount: Math.round(debtAmount ?? total),
+        subject: `Pago de Crédito #${financingId}`,
+        currency: currency || 'CLP',
+        buyer_id: buyerId,
+        order_id: `financing_${financingId}_${financingPaymentId}`,
+        user_email: userEmail,
+        financing_payment_id: financingPaymentId, // ✅ ID del pago de financiamiento
+        financing_id: financingId, // ✅ ID del financiamiento
+        is_financing_payment: true, // ✅ Flag para identificar este tipo de pago
+        cart_items: [],
+      };
+
+      // Añadir dirección de facturación si existe
+      if (billingAddress && typeof billingAddress === 'object') {
+        paymentPayload.billing_address = billingAddress;
+      }
+
+      console.log('[flowService] Invocando create-payment-flow para financing:',
+        JSON.stringify(paymentPayload));
+
+      const { data: flowResponse, error } = await supabase.functions.invoke(
+        'create-payment-flow',
+        { body: paymentPayload }
+      );
+
+      if (error) {
+        console.error('[flowService] Error invocando create-payment-flow:', error);
+        throw new Error(`Error al invocar la función de Supabase: ${error.message}`);
+      }
+
+      if (flowResponse?.error) {
+        console.error('[flowService] Edge Function returned error:', flowResponse);
+        throw new Error(`Error devuelto por create-payment-flow: ${flowResponse.error}`);
+      }
+
+      if (!flowResponse?.payment_url) {
+        console.error('[flowService] Respuesta inesperada:', flowResponse);
+        throw new Error('La respuesta no contenía una URL de pago');
+      }
+
+      console.log('[flowService] ✅ Pago de financiamiento creado exitosamente:', {
+        flowOrder: flowResponse.flow_order,
+        financingPaymentId,
+      });
+
+      return {
+        success: true,
+        paymentUrl: flowResponse.payment_url,
+        flowOrder: flowResponse.flow_order,
+        token: flowResponse.token,
+        financingPaymentId: financingPaymentId,
+      };
+    } catch (err) {
+      console.error('[flowService] Error en createFinancingPaymentOrder:', err);
+      throw err;
+    }
+  }
+
+  /**
    * Verificar estado de pago (placeholder)
    * @param {string} token - Token del pago
    * @returns {Object} Estado del pago

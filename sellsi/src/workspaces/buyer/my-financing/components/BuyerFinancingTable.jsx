@@ -40,10 +40,11 @@ const BuyerFinancingTable = ({
   onSign,
   onDownload,
   onPayOnline,
+  onViewPaymentHistory,
   isApproved = false, // Nueva prop para indicar si son aprobados
 }) => {
   const columns = isApproved ? buyerApprovedColumns : getBuyerTableColumns();
-  const handlers = { onViewReason, onCancel, onSign, onDownload, onPayOnline };
+  const handlers = { onViewReason, onCancel, onSign, onDownload, onPayOnline, onViewPaymentHistory };
 
   return (
     <TableContainer component={Paper} elevation={1}>

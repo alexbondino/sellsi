@@ -298,23 +298,24 @@ export function getDocumentUrl(storagePath) {
  * ✅ FIX3: Solo traer campos reales de supplier_orders (NO tiene order_number)
  */
 export async function getFinancingTransactions(requestId) {
-  const { data, error } = await supabase
-    .from('financing_transactions')
-    .select(`
-      *,
-      order:supplier_order_id (
-        id,
-        total,
-        created_at,
-        parent_order_id,
-        status
-      )
-    `)
-    .eq('financing_request_id', requestId)
-    .order('created_at', { ascending: false });
+  const { data, error } = await supabase.rpc('admin_get_financing_transactions', {
+    p_financing_id: requestId
+  });
 
   if (error) throw error;
-  return data ?? [];
+
+  return (data ?? []).map((item) => ({
+    ...item,
+    order: item.supplier_order_id
+      ? {
+          id: item.supplier_order_id,
+          total: item.order_total,
+          created_at: item.order_created_at,
+          parent_order_id: item.order_parent_order_id,
+          status: item.order_status
+        }
+      : null
+  }));
 }
 
 /**

@@ -57,6 +57,7 @@ import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock';
 import { useFeatureFlag } from '../../../shared/hooks/useFeatureFlag';
 import useCartStore from '../../../shared/stores/cart/cartStore';
 import { filterActiveProducts } from '../../../utils/productActiveStatus';
+import { showErrorToast } from '../../../utils/toastHelpers';
 import { CATEGORIAS } from '../components/CategoryNavigation/CategoryNavigation';
 import { formatNumber } from '../../../shared/utils/formatters';
 import FinancingModals from '../../buyer/my-financing/components/FinancingModals';
@@ -502,8 +503,25 @@ const ProviderCatalog = () => {
   };
 
   // Handlers para modal de financiamiento
-  const handleOpenFinancingModal = () => {
-    setFinancingModalOpen(true);
+  const handleOpenFinancingModal = async () => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session || !session.user) {
+        showErrorToast('Debes iniciar sesión para solicitar financiamiento', {
+          icon: '🔒',
+        });
+        window.dispatchEvent(new CustomEvent('openLogin'));
+        return;
+      }
+
+      setFinancingModalOpen(true);
+    } catch (error) {
+      console.error('[ProviderCatalog] Error verificando sesión para financiamiento:', error);
+      showErrorToast('Error al verificar sesión. Por favor, inténtalo de nuevo.');
+    }
   };
 
   const handleCloseFinancingModal = () => {

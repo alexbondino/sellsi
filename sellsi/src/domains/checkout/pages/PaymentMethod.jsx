@@ -42,6 +42,7 @@ const PaymentMethod = () => {
   
   // Detectar modo de financiamiento
   const financingId = searchParams.get('financing')
+  const financingAmountParam = searchParams.get('amount')
   const isFinancingMode = !!financingId
   
   // ===== DETECCIÓN DE MOBILE =====
@@ -54,7 +55,7 @@ const PaymentMethod = () => {
   const shippingValidation = useShippingValidation(items, !isFinancingMode)
   
   // ✅ Hook de financiamiento (solo para modo financing)
-  const { financing, loading: loadingFinancing, error: financingError } = useFinancingCheckout(financingId)
+  const { financing, loading: loadingFinancing, error: financingError } = useFinancingCheckout(financingId, financingAmountParam)
   
   // Estados del checkout
   const { initializeCheckout, resetCheckout, paymentStatus } = useCheckout()
