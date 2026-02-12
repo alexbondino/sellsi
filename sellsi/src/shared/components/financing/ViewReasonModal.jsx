@@ -31,7 +31,7 @@ import {
 /**
  * Modal para ver motivo de rechazo o cancelación
  */
-const ViewReasonModal = ({ open, financing, onClose }) => {
+const ViewReasonModal = ({ open, financing, onClose, onExited }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   useBodyScrollLock(open);
@@ -55,6 +55,7 @@ const ViewReasonModal = ({ open, financing, onClose }) => {
     <Dialog 
       open={open} 
       onClose={onClose} 
+      TransitionProps={{ onExited }}
       maxWidth="sm" 
       fullWidth
       fullScreen={isMobile}

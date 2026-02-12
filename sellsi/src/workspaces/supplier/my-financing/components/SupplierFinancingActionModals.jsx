@@ -48,7 +48,7 @@ import {
 /**
  * Modal de confirmación para aprobar
  */
-const ApproveModal = ({ open, financing, onConfirm, onClose }) => {
+const ApproveModal = ({ open, financing, onConfirm, onClose, onExited }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   useBodyScrollLock(open);
@@ -57,6 +57,7 @@ const ApproveModal = ({ open, financing, onConfirm, onClose }) => {
     <Dialog 
       open={open} 
       onClose={onClose} 
+      TransitionProps={{ onExited }}
       maxWidth="sm" 
       fullWidth
       fullScreen={isMobile}
@@ -144,7 +145,7 @@ const ApproveModal = ({ open, financing, onConfirm, onClose }) => {
 /**
  * Modal de confirmación para rechazar
  */
-const RejectModal = ({ open, financing, onConfirm, onClose }) => {
+const RejectModal = ({ open, financing, onConfirm, onClose, onExited }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [reason, setReason] = useState('');
@@ -164,6 +165,7 @@ const RejectModal = ({ open, financing, onConfirm, onClose }) => {
     <Dialog 
       open={open} 
       onClose={handleClose} 
+      TransitionProps={{ onExited }}
       maxWidth="sm" 
       fullWidth
       fullScreen={isMobile}
@@ -261,7 +263,7 @@ const RejectModal = ({ open, financing, onConfirm, onClose }) => {
 /**
  * Modal de confirmación para firmar
  */
-const SignModal = ({ open, financing, onConfirm, onClose }) => {
+const SignModal = ({ open, financing, onConfirm, onClose, onExited }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -416,6 +418,7 @@ const SignModal = ({ open, financing, onConfirm, onClose }) => {
     <Dialog 
       open={open} 
       onClose={handleCloseModal} 
+      TransitionProps={{ onExited }}
       maxWidth="sm" 
       fullWidth
       fullScreen={isMobile}
@@ -602,7 +605,7 @@ const SignModal = ({ open, financing, onConfirm, onClose }) => {
 /**
  * Modal de confirmación para cancelar operación
  */
-const CancelModal = ({ open, financing, onConfirm, onClose }) => {
+const CancelModal = ({ open, financing, onConfirm, onClose, onExited }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [reason, setReason] = useState('');
@@ -622,6 +625,7 @@ const CancelModal = ({ open, financing, onConfirm, onClose }) => {
     <Dialog 
       open={open} 
       onClose={handleClose} 
+      TransitionProps={{ onExited }}
       maxWidth="sm" 
       fullWidth
       fullScreen={isMobile}
@@ -728,6 +732,7 @@ const SupplierFinancingActionModals = ({
   mode,
   financing,
   onClose,
+  onExited,
   onApprove,
   onReject,
   onSign,
@@ -740,24 +745,28 @@ const SupplierFinancingActionModals = ({
         financing={financing}
         onConfirm={onApprove}
         onClose={onClose}
+        onExited={onExited}
       />
       <RejectModal
         open={open && mode === 'reject'}
         financing={financing}
         onConfirm={onReject}
         onClose={onClose}
+        onExited={onExited}
       />
       <SignModal
         open={open && mode === 'sign'}
         financing={financing}
         onConfirm={onSign}
         onClose={onClose}
+        onExited={onExited}
       />
       <CancelModal
         open={open && mode === 'cancel'}
         financing={financing}
         onConfirm={onCancel}
         onClose={onClose}
+        onExited={onExited}
       />
     </>
   );

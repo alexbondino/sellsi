@@ -15,8 +15,10 @@ import CloseIcon from '@mui/icons-material/Close';
 import DrawIcon from '@mui/icons-material/Draw';
 import ActionIconButton from '../../../../shared/components/buttons/ActionIconButton';
 import PaymentIcon from '@mui/icons-material/Payment';
+import HistoryIcon from '@mui/icons-material/History';
 import { formatPrice } from '../../../../shared/utils/formatters/priceFormatters';
 import { getStateConfig, getAvailableActions, getStateFilterCategory, getApprovedFinancingChip } from '../../../../shared/utils/financing/financingStates';
+import { canPayOnlineFinancing } from '../../../../shared/utils/financing/paymentAmounts';
 import FinancingIdCell from '../../../../shared/components/financing/FinancingIdCell';
 import FinancingAmountsCell from '../../../../shared/components/financing/FinancingAmountsCell';
 import FinancingDatesCell from '../../../../shared/components/financing/FinancingDatesCell';
@@ -322,8 +324,10 @@ export const buyerApprovedColumns = [
     label: 'Pagar en línea',
     align: 'center',
     render: (financing, handlers) => {
-      const isDisabled = financing.payment_status === 'paid' || financing.paused;
-      const tooltip = financing.paused ? 'Financiamiento pausado' : 'Pagar en línea';
+      const isDisabled = financing.payment_status === 'paid' || !canPayOnlineFinancing(financing);
+      const tooltip = financing.paused
+        ? 'Financiamiento pausado'
+        : 'Pagar en línea';
       return (
         <ActionIconButton
           tooltip={tooltip}
@@ -333,6 +337,23 @@ export const buyerApprovedColumns = [
           disabled={isDisabled}
         >
           <PaymentIcon fontSize="small" />
+        </ActionIconButton>
+      );
+    },
+  },
+  {
+    key: 'payment_history',
+    label: 'Historial',
+    align: 'center',
+    render: (financing, handlers) => {
+      return (
+        <ActionIconButton
+          tooltip="Ver historial de pagos"
+          variant="info"
+          onClick={() => handlers?.onViewPaymentHistory?.(financing)}
+          ariaLabel="Ver historial de pagos"
+        >
+          <HistoryIcon fontSize="small" />
         </ActionIconButton>
       );
     },

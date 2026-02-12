@@ -93,7 +93,7 @@ describe('financingService (integration-like unit tests)', () => {
       legal_address: 'Calle Falsa 123',
       legal_commune: 'Providencia',
       legal_region: 'Metropolitana',
-      status: 'pending_sellsi_approval',
+      status: 'pending_supplier_review',
     });
 
     expect(insertedArg.metadata).toBe(JSON.stringify(Object.assign({}, metadata, {

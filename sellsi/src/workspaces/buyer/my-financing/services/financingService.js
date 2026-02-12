@@ -93,8 +93,7 @@ async function createExpressRequest({ formData, supplierId = null, metadata = nu
     legal_address: formData.legalAddress || null,
     legal_commune: formData.legalCommune || null,
     legal_region: formData.legalRegion || null,
-    // Use Sellsi-specific status expected by existing callers/tests
-    status: 'pending_sellsi_approval',
+    status: 'pending_supplier_review',
     // Also keep representative data inside metadata as a fallback for environments where columns are missing
     metadata: JSON.stringify({
       ...(metadata || {}),

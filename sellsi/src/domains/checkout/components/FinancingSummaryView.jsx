@@ -91,15 +91,28 @@ const FinancingSummaryView = ({
     }
   }, [isProcessing]);
 
+  const selectedPaymentAmount = useMemo(() => {
+    const fromOrder = Number(orderData?.financingAmount);
+    if (Number.isFinite(fromOrder) && fromOrder > 0) return Math.round(fromOrder);
+
+    const fromRequested = Number(data?.requestedAmount);
+    if (Number.isFinite(fromRequested) && fromRequested > 0) return Math.round(fromRequested);
+
+    const fromUsed = Number(data?.amountUsed);
+    if (Number.isFinite(fromUsed) && fromUsed > 0) return Math.round(fromUsed);
+
+    return 0;
+  }, [orderData?.financingAmount, data?.requestedAmount, data?.amountUsed]);
+
   // Cálculos de pago
   const paymentFee = useMemo(
-    () => calculatePaymentFee(data.amountUsed, selectedMethod),
-    [data.amountUsed, selectedMethod]
+    () => calculatePaymentFee(selectedPaymentAmount, selectedMethod),
+    [selectedPaymentAmount, selectedMethod]
   );
 
   const totalWithFee = useMemo(
-    () => calculateTotalWithFee(data.amountUsed, selectedMethod),
-    [data.amountUsed, selectedMethod]
+    () => calculateTotalWithFee(selectedPaymentAmount, selectedMethod),
+    [selectedPaymentAmount, selectedMethod]
   );
 
   const feeLabel = useMemo(
@@ -181,16 +194,16 @@ const FinancingSummaryView = ({
               </Typography>
             </Box>
 
-            {/* Monto Utilizado (a pagar) */}
+            {/* Monto a Abonar */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <PaymentIcon sx={{ fontSize: 16, color: 'primary.main' }} />
                 <Typography variant="body2" color="text.secondary">
-                  Monto Utilizado:
+                  Monto a Abonar:
                 </Typography>
               </Box>
               <Typography variant="body2" fontWeight={700} color="primary.main">
-                {formatPrice(data.amountUsed)}
+                {formatPrice(selectedPaymentAmount)}
               </Typography>
             </Box>
 
@@ -240,7 +253,7 @@ const FinancingSummaryView = ({
                 Monto a Pagar:
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {formatPrice(data.amountUsed)}
+                {formatPrice(selectedPaymentAmount)}
               </Typography>
             </Box>
 

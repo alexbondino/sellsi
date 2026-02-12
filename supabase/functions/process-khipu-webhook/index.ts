@@ -121,6 +121,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     // ========================================================================
     const webhookUrl = new URL(req.url);
     const isFinancingPayment = webhookUrl.searchParams.get('financing_payment') === 'true';
+    const financingIdFromUrl = webhookUrl.searchParams.get('fid');
     const paymentIdFromPayload = khipuPayload.payment_id || khipuPayload.paymentId || null;
 
     const supabase = createClient(
@@ -137,31 +138,210 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
       }
 
       // Buscar el financing_payment por khipu_payment_id
-      const { data: fp, error: fpErr } = await supabase
+      let fp: any = null;
+      let fpErr: any = null;
+      
+      // Intento 1: Buscar por khipu_payment_id (método principal)
+      const { data: fpData, error: fpError } = await supabase
         .from('financing_payments')
-        .select('id, financing_request_id, amount, payment_status')
+        .select('id, financing_request_id, amount, payment_status, payment_method, gateway_response')
         .eq('khipu_payment_id', paymentIdFromPayload)
         .maybeSingle();
+      
+      fp = fpData;
+      fpErr = fpError;
+      
+      // Intento 2: Fallback si no se encuentra (edge case: edge function falló después de crear pago en Khipu pero antes de UPDATE)
+      if (!fp && !fpErr && financingIdFromUrl) {
+        console.log('⚠️ Financing payment no encontrado por khipu_payment_id, intentando fallback...', { paymentIdFromPayload, financingIdFromUrl });
+        
+        // Buscar por financing_request_id + payment_method=khipu + status=pending (sin khipu_payment_id)
+        // Esto cubre el caso donde el pago se creó en Khipu pero nunca se actualizó con khipu_payment_id
+        // ✅ CRITICO: Filtramos por financing_request_id para prevenir cross-contamination entre usuarios
+        // Ordenamos por created_at DESC para tomar el más reciente
+        const { data: fallbackData, error: fallbackErr } = await supabase
+          .from('financing_payments')
+          .select('id, financing_request_id, amount, payment_status, payment_method, gateway_response')
+          .eq('financing_request_id', financingIdFromUrl)
+          .eq('payment_method', 'khipu')
+          .eq('payment_status', 'pending')
+          .is('khipu_payment_id', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        fp = fallbackData;
+        fpErr = fallbackErr;
+        
+        if (fp) {
+          console.log('✅ Financing payment encontrado via fallback', { fpId: fp.id });
+          
+          // Actualizar registro con khipu_payment_id (recuperación)
+          const { error: updateErr } = await supabase
+            .from('financing_payments')
+            .update({
+              khipu_payment_id: paymentIdFromPayload,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', fp.id);
+          
+          // ✅ BUG #21: Loguear si la recuperación falla (no crítico, continúa procesando)
+          if (updateErr) {
+            console.warn('⚠️ Error actualizando khipu_payment_id en fallback', { fpId: fp.id, error: updateErr });
+          }
+        }
+      }
 
       if (fpErr || !fp) {
         console.error('❌ Financing payment no encontrado', { paymentIdFromPayload, error: fpErr });
         return new Response(JSON.stringify({ error: 'Financing payment not found' }), { status: 200, headers: corsHeaders });
       }
 
-      // Idempotencia: si ya está pagado, retornar OK
-      if (fp.payment_status === 'paid') {
-        console.log('ℹ️ Financing payment ya procesado (idempotente)', { id: fp.id });
-        return new Response(JSON.stringify({ success: true, already_processed: true }), { status: 200, headers: corsHeaders });
+      // Idempotencia: si ya está procesado (paid, failed, expired), retornar OK
+      if (['paid', 'failed', 'expired', 'refunded'].includes(fp.payment_status)) {
+        console.log('ℹ️ Financing payment ya procesado (idempotente)', { id: fp.id, status: fp.payment_status });
+        return new Response(JSON.stringify({ success: true, already_processed: true, status: fp.payment_status }), { status: 200, headers: corsHeaders });
       }
 
+      // ✅ VALIDACIÓN DE ESTADO DE KHIPU
+      // Khipu envía webhooks para todos los cambios de estado, no solo pagos exitosos.
+      // Debemos validar que el pago esté realmente pagado antes de procesarlo.
+      //
+      // Según documentación de Khipu, el payload puede incluir:
+      // - status: string ('done', 'expired', etc.)
+      // - paid: boolean
+      // - paid_at: timestamp (solo si está pagado)
+      //
+      // Por seguridad, solo procesamos como exitoso si:
+      // 1. Existe paid_at (indica que fue pagado)
+      // 2. O status === 'done' (pagado confirmado)
+      const khipuPaidAt = khipuPayload.paid_at || khipuPayload.paidAt || null;
+      const khipuStatus = khipuPayload.status || null;
+      
+      // Si el webhook indica que el pago NO fue exitoso, marcar como failed
+      if (!khipuPaidAt && khipuStatus !== 'done') {
+        console.log('⚠️ Khipu webhook recibido pero pago no está confirmado', { 
+          paymentId: fp.id, 
+          khipuStatus, 
+          hasPaidAt: !!khipuPaidAt 
+        });
+        
+        // Si el status indica expiración o rechazo, marcar como failed
+        if (khipuStatus === 'expired' || khipuStatus === 'canceled') {
+          const newStatus = khipuStatus === 'expired' ? 'expired' : 'failed';
+          const { data: markResult, error: markErr } = await supabase.rpc('mark_financing_payment_as_failed', {
+            p_payment_id: fp.id,
+            p_new_status: newStatus
+          });
+          
+          // Verificar errores de RPC
+          if (markErr) {
+            console.error('❌ Error marcando pago como fallido (RPC)', { error: markErr });
+            return new Response(JSON.stringify({ error: 'Failed to mark payment as failed' }), { status: 500, headers: corsHeaders });
+          }
+          
+          // Verificar errores lógicos
+          if (markResult && markResult.error) {
+            console.error('❌ Error marcando pago como fallido (Logic)', { error: markResult.error });
+            return new Response(JSON.stringify({ error: markResult.error }), { status: 500, headers: corsHeaders });
+          }
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            financing: true, 
+            payment_status: newStatus,
+            message: `Payment ${newStatus}` 
+          }), { status: 200, headers: corsHeaders });
+        }
+        
+        // Si es otro estado (ej: pending), no hacer nada y esperar próximo webhook
+        return new Response(JSON.stringify({ 
+          success: true, 
+          financing: true, 
+          message: 'Payment not yet completed',
+          khipuStatus 
+        }), { status: 200, headers: corsHeaders });
+      }
+      
+      console.log('✅ Khipu pago confirmado, procesando...', { paymentId: fp.id, khipuStatus, hasPaidAt: !!khipuPaidAt });
+      
+      // ✅ VALIDAR MONTO - Seguridad crítica
+      // El monto pagado en Khipu debe coincidir con el monto en financing_payments
+      // Khipu webhook puede incluir amount en el payload
+      // ✅ BUG #32: Guard consistente con Flow webhook (null/NaN safe)
+      // Cuando content-type es form-urlencoded, amount es STRING → Math.round("abc") = NaN
+      const rawAmount = khipuPayload.amount;
+      const amountPaidInKhipu = (rawAmount != null && rawAmount !== '' && !isNaN(Number(rawAmount)))
+        ? Math.round(Number(rawAmount))
+        : null;
+      const amountExpectedDebt = Math.round(Number(fp.amount || 0));
+      const gatewayMeta = fp.gateway_response || {};
+      const gatewayExpectedFromMeta = Math.round(Number(
+        gatewayMeta.expected_gateway_amount ?? gatewayMeta.payment_amount ?? gatewayMeta.amount
+      ));
+
+      // Backward compatibility para registros antiguos sin metadata enriquecida
+      // Khipu cobra deuda + fee fijo ($500), no solo deuda neta.
+      const amountExpectedGateway = Number.isFinite(gatewayExpectedFromMeta) && gatewayExpectedFromMeta > 0
+        ? gatewayExpectedFromMeta
+        : (fp.payment_method === 'khipu'
+            ? amountExpectedDebt + 500
+            : amountExpectedDebt);
+      
+      if (amountPaidInKhipu !== null && amountPaidInKhipu !== amountExpectedGateway) {
+        console.error('❌ Monto del pago no coincide', {
+          paymentId: fp.id,
+          amountPaid: amountPaidInKhipu,
+          amountExpected: amountExpectedGateway,
+          debtAmount: amountExpectedDebt,
+          difference: amountPaidInKhipu - amountExpectedGateway
+        });
+        
+        // Marcar como failed por monto incorrecto
+        const { data: markResult, error: markErr } = await supabase.rpc('mark_financing_payment_as_failed', {
+          p_payment_id: fp.id,
+          p_new_status: 'failed'
+        });
+        
+        // ✅ BUG #19: Si mark_as_failed falla, retornar 500 (no 200)
+        if (markErr) {
+          console.error('❌ Error marcando pago como fallido (monto-RPC)', { error: markErr });
+          return new Response(JSON.stringify({ error: 'Failed to mark payment as failed after amount mismatch' }), { status: 500, headers: corsHeaders });
+        }
+        
+        if (markResult && markResult.error) {
+          console.error('❌ Error marcando pago como fallido (monto-Logic)', { error: markResult.error });
+          return new Response(JSON.stringify({ error: markResult.error }), { status: 500, headers: corsHeaders });
+        }
+        
+        return new Response(JSON.stringify({ 
+          error: 'Amount mismatch', 
+          financing: true,
+          payment_status: 'failed',
+          reason: 'amount_validation_failed'
+        }), { status: 200, headers: corsHeaders });
+      }
+      
+      if (amountPaidInKhipu !== null) {
+        console.log('✅ Monto validado correctamente', { paymentId: fp.id, amount: amountPaidInKhipu });
+      } else {
+        console.warn('⚠️ Khipu webhook no incluye amount, saltando validación de monto');
+      }
+      
       // Procesar el pago exitoso
       const { data: result, error: processErr } = await supabase.rpc('process_financing_payment_success', {
         p_payment_id: fp.id
       });
 
       if (processErr) {
-        console.error('❌ Error procesando financing payment', { error: processErr, paymentId: fp.id });
+        console.error('❌ Error procesando financing payment (RPC)', { error: processErr, paymentId: fp.id });
         return new Response(JSON.stringify({ error: 'Failed to process financing payment' }), { status: 500, headers: corsHeaders });
+      }
+      
+      // Verificar errores lógicos de la función SQL
+      if (result && result.error) {
+        console.error('❌ Error procesando financing payment (Logic)', { error: result.error, paymentId: fp.id });
+        return new Response(JSON.stringify({ error: result.error }), { status: 500, headers: corsHeaders });
       }
 
       console.log('✅ Financing payment procesado exitosamente', { paymentId: fp.id, result });

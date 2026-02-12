@@ -281,8 +281,8 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
   
   // ===== 🆕 HANDLER PARA PAGO DE FINANCIAMIENTO =====
   const handleFinancingPayment = async () => {
-    isProcessingRef.current = true;
-    setIsProcessing(true);
+    // 🐛 BUG #35: isProcessingRef ya se establece ANTES de llamar a esta función
+    // para prevenir doble-click en handleContinue
     
     try {
       const userId = localStorage.getItem('user_id');
@@ -294,17 +294,38 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
 
       // Obtener financingId del orderData
       const financingId = orderData.financingId;
+      
+      // 🔍 DEBUG: Ver qué datos tiene orderData
+      console.log('[PaymentMethodSelector] 🔍 DEBUG orderData completo:', {
+        orderData,
+        financingId,
+        hasFinancingId: !!financingId,
+        typeofFinancingId: typeof financingId
+      });
+      
       if (!financingId) {
         throw new Error('ID de financiamiento no encontrado');
       }
 
-      const amountToPay = orderData.total || 0;
-      if (amountToPay <= 0) {
+      const baseAmount = orderData.total || 0;
+      if (baseAmount <= 0) {
         throw new Error('Monto a pagar inválido');
       }
 
+      // 🐛 BUG #33 FIX: Incluir fee del método de pago en el monto total
+      let paymentFee = 0;
+      if (selectedMethod.id === 'khipu') {
+        paymentFee = 500; // Comisión fija Khipu
+      } else if (selectedMethod.id === 'flow') {
+        paymentFee = Math.round(baseAmount * 0.038); // 3.8% Flow
+      }
+      
+      const amountToPay = baseAmount + paymentFee;
+
       console.log('[PaymentMethodSelector] 💳 Procesando pago de financiamiento:', {
         financingId,
+        baseAmount,
+        paymentFee,
         amountToPay,
         method: selectedMethod.id,
         userId
@@ -312,21 +333,87 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
 
       startPaymentProcessing();
 
+      // Obtener buyer_id de la tabla buyer (no auth.users)
+      const buyerTableId = orderData.items?.[0]?.metadata?.buyerId;
+      if (!buyerTableId) {
+        throw new Error('No se pudo determinar el ID de comprador');
+      }
+
+      // 🐛 BUG #35 FIX: Verificar si ya existe un pago pending para este financing
+      // Esto previene crear múltiples registros si el usuario intenta pagar varias veces
+      const { supabase: supabaseCheck } = await import('../../../services/supabase');
+      const { data: existingPayments, error: checkError } = await supabaseCheck
+        .from('financing_payments')
+        .select('id, payment_method, payment_status, khipu_payment_id, khipu_payment_url, flow_order, flow_payment_url')
+        .eq('financing_request_id', financingId)
+        .eq('payment_status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!checkError && existingPayments && existingPayments.length > 0) {
+        const existingPayment = existingPayments[0];
+        console.warn('[PaymentMethodSelector] ⚠️ Ya existe un pago pending:', existingPayment);
+        
+        // Si es el mismo método de pago y ya tiene gateway ID, redirigir a completar pago existente
+        if (existingPayment.payment_method === selectedMethod.id) {
+          if (selectedMethod.id === 'khipu' && existingPayment.khipu_payment_id && existingPayment.khipu_payment_url) {
+            console.log('[PaymentMethodSelector] 🔄 Redirigiendo a pago Khipu existente:', existingPayment.khipu_payment_id);
+            paymentSuccessRef.current = true;
+            toast.info('Ya tienes un pago en proceso. Redirigiendo a Khipu para completarlo...', { duration: 3000 });
+            setTimeout(() => {
+              window.location.href = existingPayment.khipu_payment_url;
+            }, 1500);
+            return; // Salir temprano, no crear nuevo pago
+          } else if (selectedMethod.id === 'flow' && existingPayment.flow_order && existingPayment.flow_payment_url) {
+            console.log('[PaymentMethodSelector] 🔄 Redirigiendo a pago Flow existente:', existingPayment.flow_order);
+            paymentSuccessRef.current = true;
+            toast.info('Ya tienes un pago en proceso. Redirigiendo a Flow para completarlo...', { duration: 3000 });
+            setTimeout(() => {
+              window.location.href = existingPayment.flow_payment_url;
+            }, 1500);
+            return; // Salir temprano, no crear nuevo pago
+          }
+        }
+      }
+
       if (selectedMethod.id === 'khipu') {
         console.log('[PaymentMethodSelector] Procesando pago de financiamiento con Khipu...');
         
-        // Importar khipuService
+        // Importar supabase y khipuService
+        const { supabase } = await import('../../../services/supabase');
         const khipuService = (await import('../services/khipuService')).default;
         
-        const paymentResult = await khipuService.createPaymentOrder({
+        // 1. Crear registro en financing_payments ANTES de redirigir
+        const { data: fpData, error: fpError } = await supabase
+          .from('financing_payments')
+          .insert({
+            financing_request_id: financingId,
+            buyer_id: buyerTableId,
+            amount: baseAmount,
+            currency: 'CLP',
+            payment_method: 'khipu',
+            payment_status: 'pending',
+          })
+          .select('id')
+          .single();
+
+        if (fpError) {
+          console.error('[PaymentMethodSelector] Error creando financing_payment:', fpError);
+          throw new Error('Error al registrar el pago de financiamiento');
+        }
+
+        console.log('[PaymentMethodSelector] Financing payment creado:', fpData.id);
+        
+        // 2. Llamar a khipuService con financing_payment_id
+        const paymentResult = await khipuService.createFinancingPaymentOrder({
           total: amountToPay,
+          debtAmount: baseAmount,
           currency: 'CLP',
-          orderId: `financing_${financingId}`,
-          userId: userId,
+          financingId: financingId,
+          financingPaymentId: fpData.id,
+          buyerId: buyerTableId,
           items: orderData.items || [],
-          shippingAddress: null,
           billingAddress: orderData.billingAddress || null,
-          financingAmount: 0, // No hay financiamiento en un pago de deuda
         });
 
         if (paymentResult.success && paymentResult.paymentUrl) {
@@ -342,19 +429,42 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
       } else if (selectedMethod.id === 'flow') {
         console.log('[PaymentMethodSelector] Procesando pago de financiamiento con Flow...');
         
-        // Importar flowService
+        // Importar supabase y flowService
+        const { supabase } = await import('../../../services/supabase');
         const flowService = (await import('../services/flowService')).default;
         
-        const paymentResult = await flowService.createPaymentOrder({
+        // 1. Crear registro en financing_payments ANTES de redirigir
+        const { data: fpData, error: fpError } = await supabase
+          .from('financing_payments')
+          .insert({
+            financing_request_id: financingId,
+            buyer_id: buyerTableId,
+            amount: baseAmount,
+            currency: 'CLP',
+            payment_method: 'flow',
+            payment_status: 'pending',
+          })
+          .select('id')
+          .single();
+
+        if (fpError) {
+          console.error('[PaymentMethodSelector] Error creando financing_payment:', fpError);
+          throw new Error('Error al registrar el pago de financiamiento');
+        }
+
+        console.log('[PaymentMethodSelector] Financing payment creado:', fpData.id);
+        
+        // 2. Llamar a flowService con financing_payment_id
+        const paymentResult = await flowService.createFinancingPaymentOrder({
           total: amountToPay,
+          debtAmount: baseAmount,
           currency: 'CLP',
-          orderId: `financing_${financingId}`,
-          userId: userId,
+          financingId: financingId,
+          financingPaymentId: fpData.id,
+          buyerId: buyerTableId,
           userEmail: userEmail,
           items: orderData.items || [],
-          shippingAddress: null,
           billingAddress: orderData.billingAddress || null,
-          financingAmount: 0, // No hay financiamiento en un pago de deuda
         });
 
         if (paymentResult.success && paymentResult.paymentUrl) {
@@ -511,11 +621,13 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
         // ✅ NUEVO: Inyectar financing_amount por item
         const financingCfg = productFinancingBT[it.id];
         const itemFinancingAmount = financingCfg ? Math.max(0, Number(financingCfg.amount) || 0) : 0;
+        const itemFinancingRequestId = financingCfg?.financingRequestId || financingCfg?.financingId || null;
         
         return { 
           ...it, 
           document_type: norm,
           financing_amount: itemFinancingAmount,
+          financing_request_id: itemFinancingRequestId,
         };
       });
 
@@ -657,6 +769,9 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
     // Debe ir ANTES de bank_transfer para que todos los métodos pasen por handleFinancingPayment
     if (isFinancingMode || orderData.isFinancingPayment) {
       console.log('[PaymentMethodSelector] 💳 Modo financing detectado - flujo de pago de deuda');
+      // 🐛 BUG #35 FIX: Bloquear ANTES de llamar a handleFinancingPayment para prevenir doble-click
+      isProcessingRef.current = true;
+      setIsProcessing(true);
       await handleFinancingPayment();
       return;
     }
@@ -751,11 +866,13 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
         // ✅ NUEVO: Inyectar financing_amount por item desde productFinancing
         const financingCfg = productFinancing[it.id];
         const itemFinancingAmount = financingCfg ? Math.max(0, Number(financingCfg.amount) || 0) : 0;
+        const itemFinancingRequestId = financingCfg?.financingRequestId || financingCfg?.financingId || null;
         
         return { 
           ...it, 
           document_type: norm,
           financing_amount: itemFinancingAmount, // Monto financiado para ESTE producto
+          financing_request_id: itemFinancingRequestId,
         };
       });
 

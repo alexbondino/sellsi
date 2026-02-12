@@ -29,11 +29,13 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
 import DrawIcon from '@mui/icons-material/Draw';
 import PaymentIcon from '@mui/icons-material/Payment';
+import HistoryIcon from '@mui/icons-material/History';
 import DownloadablesModal from '../../../../shared/components/financing/DownloadablesModal';
 import { useBanner } from '../../../../shared/components/display/banners/BannerContext';
 import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
 import BuyerFinancingTable from './BuyerFinancingTable';
 import ViewReasonModal from '../../../../shared/components/financing/ViewReasonModal';
+import PaymentHistoryModal from '../../../../shared/components/financing/PaymentHistoryModal';
 import BuyerFinancingActionModals from './BuyerFinancingActionModals';
 import FinancingTabs from '../../../../shared/components/financing/FinancingTabs';
 import HowItWorksModal from '../../../../shared/components/modals/HowItWorksModal';
@@ -60,11 +62,12 @@ import { getFinancingDaysStatus } from '../../../../shared/utils/financingDaysLo
 import FinancingIdCell from '../../../../shared/components/financing/FinancingIdCell';
 import FinancingAmountsCell from '../../../../shared/components/financing/FinancingAmountsCell';
 import FinancingDatesCell from '../../../../shared/components/financing/FinancingDatesCell';
+import { canPayOnlineFinancing } from '../../../../shared/utils/financing/paymentAmounts';
 
 /**
  * Componente de tarjeta mobile para financiamientos (Buyer)
  */
-const MobileFinancingCard = ({ financing, onViewReason, onCancel, onSign, onDownload, onPayOnline, isApproved }) => {
+const MobileFinancingCard = ({ financing, onViewReason, onCancel, onSign, onDownload, onPayOnline, onViewPaymentHistory, isApproved }) => {
   const statusInfo = getStateConfig(financing.status, 'buyer');
   const availableActions = getAvailableActions(financing.status, 'buyer');
   const cardFields = getBuyerCardFields();
@@ -252,19 +255,31 @@ const MobileFinancingCard = ({ financing, onViewReason, onCancel, onSign, onDown
 
           <Box sx={{ display: 'flex', gap: 1 }}>
             {isApproved ? (
-              <Tooltip title={financing.paused ? 'Financiamiento pausado' : 'Pagar en línea'}>
-                <span>
+              <>
+                <Tooltip title={financing.paused ? 'Financiamiento pausado' : 'Pagar en línea'}>
+                  <span>
+                    <IconButton 
+                      size="small" 
+                      color="primary" 
+                      onClick={() => onPayOnline?.(financing)}
+                      disabled={financing.payment_status === 'paid' || !canPayOnlineFinancing(financing)}
+                      sx={{ '&:hover': { backgroundColor: 'primary.light', color: 'white' } }}
+                    >
+                      <PaymentIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Tooltip title="Ver historial de pagos">
                   <IconButton 
                     size="small" 
-                    color="primary" 
-                    onClick={() => onPayOnline?.(financing)}
-                    disabled={financing.payment_status === 'paid' || financing.paused}
-                    sx={{ '&:hover': { backgroundColor: 'primary.light', color: 'white' } }}
+                    color="info" 
+                    onClick={() => onViewPaymentHistory?.(financing)}
+                    sx={{ '&:hover': { backgroundColor: 'info.light', color: 'white' } }}
                   >
-                    <PaymentIcon fontSize="small" />
+                    <HistoryIcon fontSize="small" />
                   </IconButton>
-                </span>
-              </Tooltip>
+                </Tooltip>
+              </>
             ) : (
               <>
                 {availableActions.includes('sign') && (
@@ -365,6 +380,12 @@ const BuyerFinancingsList = ({
 
   // Estado de modal de descargables
   const [downloadablesModal, setDownloadablesModal] = useState({
+    open: false,
+    financing: null,
+  });
+
+  // Estado de modal de historial de pagos
+  const [paymentHistoryModal, setPaymentHistoryModal] = useState({
     open: false,
     financing: null,
   });
@@ -473,7 +494,7 @@ const BuyerFinancingsList = ({
   const handleSignConfirm = async (financing, signedFile) => {
     try {
       await onSign?.(financing.id, signedFile);
-      setActionModal({ open: false, mode: null, financing: null });
+      setActionModal(prev => ({ ...prev, open: false }));
       showBanner({
         message: `✍️ Documento firmado correctamente.`,
         severity: 'success',
@@ -491,7 +512,7 @@ const BuyerFinancingsList = ({
   const handleCancelConfirm = async (financing, reason) => {
     try {
       await onCancel?.(financing.id, reason);
-      setActionModal({ open: false, mode: null, financing: null });
+      setActionModal(prev => ({ ...prev, open: false }));
       showBanner({
         message: `❌ Solicitud cancelada correctamente.`,
         severity: 'warning',
@@ -506,11 +527,11 @@ const BuyerFinancingsList = ({
     }
   };
 
-  const handlePayOnlineConfirm = async (financing) => {
+  const handlePayOnlineConfirm = async (financing, amountToPay) => {
     try {
-      setActionModal({ open: false, mode: null, financing: null });
+      setActionModal(prev => ({ ...prev, open: false }));
       // Navegar a paymentmethod con financing ID como query parameter
-      navigate(`/buyer/paymentmethod?financing=${financing.id}`);
+      navigate(`/buyer/paymentmethod?financing=${financing.id}&amount=${amountToPay}`);
       showBanner({
         message: '💳 Redirigiendo al checkout...',
         severity: 'info',
@@ -530,12 +551,20 @@ const BuyerFinancingsList = ({
   }, []);
 
   const closeReasonModal = useCallback(() => {
+    setReasonModal(prev => ({ ...prev, open: false }));
+  }, []);
+
+  const handleReasonModalExited = useCallback(() => {
     setReasonModal({ open: false, financing: null });
   }, []);
 
   const closeActionModal = () => {
-    setActionModal({ open: false, mode: null, financing: null });
+    setActionModal(prev => ({ ...prev, open: false }));
   };
+
+  const handleActionModalExited = useCallback(() => {
+    setActionModal({ open: false, mode: null, financing: null });
+  }, []);
 
   const handleDownload = useCallback((financing) => {
     console.log('🔽 Abriendo modal de descargables para:', financing);
@@ -543,6 +572,10 @@ const BuyerFinancingsList = ({
   }, []);
 
   const closeDownloadablesModal = useCallback(() => {
+    setDownloadablesModal(prev => ({ ...prev, open: false }));
+  }, []);
+
+  const handleDownloadablesModalExited = useCallback(() => {
     setDownloadablesModal({ open: false, financing: null });
   }, []);
 
@@ -550,6 +583,19 @@ const BuyerFinancingsList = ({
     console.log('💳 Abrir modal de pago en línea:', financing);
     setActionModal({ open: true, mode: 'payOnline', financing });
   };
+
+  const handleViewPaymentHistory = useCallback((financing) => {
+    console.log('📜 Abrir historial de pagos:', financing);
+    setPaymentHistoryModal({ open: true, financing });
+  }, []);
+
+  const closePaymentHistoryModal = useCallback(() => {
+    setPaymentHistoryModal(prev => ({ ...prev, open: false }));
+  }, []);
+
+  const handlePaymentHistoryModalExited = useCallback(() => {
+    setPaymentHistoryModal({ open: false, financing: null });
+  }, []);
 
   // Loading state
   if ((initializing || loading) && (!financings || financings.length === 0)) {
@@ -614,6 +660,7 @@ const BuyerFinancingsList = ({
                     onViewReason={handleViewReason}
                     onDownload={handleDownload}
                     onPayOnline={handlePayOnline}
+                    onViewPaymentHistory={handleViewPaymentHistory}
                     isApproved={true}
                   />
                 ))
@@ -627,6 +674,7 @@ const BuyerFinancingsList = ({
           open={reasonModal.open}
           financing={reasonModal.financing}
           onClose={closeReasonModal}
+          onExited={handleReasonModalExited}
         />
 
         {/* Modal 'Cómo Funciona' */}
@@ -643,6 +691,7 @@ const BuyerFinancingsList = ({
           mode={actionModal.mode}
           financing={actionModal.financing}
           onClose={closeActionModal}
+          onExited={handleActionModalExited}
           onSign={handleSignConfirm}
           onCancel={handleCancelConfirm}
           onPayOnline={handlePayOnlineConfirm}
@@ -653,6 +702,7 @@ const BuyerFinancingsList = ({
           open={downloadablesModal.open}
           onClose={closeDownloadablesModal}
           financing={downloadablesModal.financing}
+          onExited={handleDownloadablesModalExited}
         />
       </>
     );
@@ -711,6 +761,7 @@ const BuyerFinancingsList = ({
               onPayOnline={handlePayOnline}
               isApproved={true}
               onViewReason={handleViewReason}
+              onViewPaymentHistory={handleViewPaymentHistory}
             />
           )}
         </>
@@ -721,6 +772,15 @@ const BuyerFinancingsList = ({
         open={reasonModal.open}
         financing={reasonModal.financing}
         onClose={closeReasonModal}
+        onExited={handleReasonModalExited}
+      />
+
+      {/* Modal de Historial de Pagos */}
+      <PaymentHistoryModal
+        open={paymentHistoryModal.open}
+        financing={paymentHistoryModal.financing}
+        onClose={closePaymentHistoryModal}
+        onExited={handlePaymentHistoryModalExited}
       />
 
       {/* Modal 'Cómo Funciona' */}
@@ -739,6 +799,7 @@ const BuyerFinancingsList = ({
         mode={actionModal.mode}
         financing={actionModal.financing}
         onClose={closeActionModal}
+        onExited={handleActionModalExited}
         onSign={handleSignConfirm}
         onCancel={handleCancelConfirm}
         onPayOnline={handlePayOnlineConfirm}
@@ -749,6 +810,7 @@ const BuyerFinancingsList = ({
         open={downloadablesModal.open}
         onClose={closeDownloadablesModal}
         financing={downloadablesModal.financing}
+        onExited={handleDownloadablesModalExited}
       />
     </>
   );

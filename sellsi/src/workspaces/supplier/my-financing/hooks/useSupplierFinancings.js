@@ -73,7 +73,7 @@ export const useSupplierFinancings = () => {
       // En su lugar, usamos los campos legal_name, legal_rut directamente de financing_requests
       const { data, error } = await supabase
         .from('financing_requests')
-        .select('id, buyer_id, supplier_id, amount, available_amount, status, due_date, term_days, created_at, updated_at, legal_name, legal_rut, buyer_legal_representative_name, buyer_legal_representative_rut, legal_address, legal_commune, legal_region, metadata, rejected_reason, cancelled_reason, signed_buyer_at, signed_supplier_at, signed_sellsi_at, paused, paused_reason')
+        .select('id, buyer_id, supplier_id, amount, available_amount, amount_used, amount_paid, status, due_date, expires_at, term_days, created_at, updated_at, legal_name, legal_rut, buyer_legal_representative_name, buyer_legal_representative_rut, legal_address, legal_commune, legal_region, metadata, rejected_reason, cancelled_reason, signed_buyer_at, signed_supplier_at, signed_sellsi_at, activated_at, paused, paused_reason')
         .eq('supplier_id', supplierId) // 🔒 FILTRO CRÍTICO
         .order('created_at', { ascending: false });
 
@@ -116,6 +116,9 @@ export const useSupplierFinancings = () => {
             buyer_legal_commune: f.legal_commune || null,
             buyer_legal_region: f.legal_region || null,
             amount: parseFloat(f.amount),
+            amount_used: parseFloat(f.amount_used || 0),
+            amount_paid: parseFloat(f.amount_paid || 0),
+            expires_at: f.expires_at || null,
             term_days: f.term_days || null,
             documents: [],
             status: f.status,
@@ -129,6 +132,7 @@ export const useSupplierFinancings = () => {
             signed_buyer_at: f.signed_buyer_at || null,
             signed_supplier_at: f.signed_supplier_at || null,
             signed_sellsi_at: f.signed_sellsi_at || null,
+            activated_at: f.activated_at || f.signed_sellsi_at || null,
             paused: f.paused || false,
             paused_reason: f.paused_reason || null,
           };

@@ -45,7 +45,24 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
 
     // 1. Leer los datos dinámicos que envía el frontend (khipuService.js)
     // Ahora esperamos también order_id (ID de la fila ya creada en orders)
-  const { amount, subject, currency, buyer_id, cart_items, cart_id, order_id, shipping_address, billing_address, offer_id, offer_ids, financing_amount } = await req.json();
+    const { 
+      amount, 
+      subject, 
+      currency, 
+      buyer_id, 
+      cart_items, 
+      cart_id, 
+      order_id, 
+      shipping_address, 
+      billing_address, 
+      offer_id, 
+      offer_ids, 
+      financing_amount,
+      financing_payment_id,
+      financing_id,
+      debt_amount,
+      is_financing_payment
+    } = await req.json();
 
     // 2. Verificar variables de entorno (mover arriba para usar en financing path)
   const apiKey = Deno.env.get('KHIPU_API_KEY');
@@ -60,27 +77,40 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
 
   // ================================================================
   // DETECCIÓN DE PAGO DE FINANCIAMIENTO
-  // Si order_id empieza con "financing_", es un pago de deuda
+  // Ahora detectamos por is_financing_payment flag o por order_id legacy
   // ================================================================
-  const isFinancingPayment = typeof order_id === 'string' && order_id.startsWith('financing_');
+  const isFinancingPayment = is_financing_payment === true || (typeof order_id === 'string' && order_id.startsWith('financing_'));
 
   if (isFinancingPayment) {
-    log('financing_payment_detected', { order_id });
-    const financingId = order_id.replace('financing_', '');
+    log('financing_payment_detected', { order_id, financing_payment_id, financing_id });
+
+    // Validar que tenemos financing_payment_id (nuevo flujo) o financing_id (legacy)
+    const targetFinancingId = financing_id || (typeof order_id === 'string' && order_id.startsWith('financing_') ? order_id.replace('financing_', '').split('_')[0] : null);
+    
+    if (!targetFinancingId) {
+      return respond(400, { error_code: 'MISSING_FINANCING_ID', error: 'Falta financing_id para pago de financiamiento' });
+    }
 
     if (!amount || amount <= 0) {
       return respond(400, { error_code: 'INVALID_AMOUNT', error: 'Monto inválido para pago de financiamiento' });
     }
 
+    const paymentAmount = Math.round(Number(amount));
+    const debtAmount = Math.round(Number(debt_amount ?? amount));
+
+    if (!debtAmount || debtAmount <= 0) {
+      return respond(400, { error_code: 'INVALID_DEBT_AMOUNT', error: 'Monto de deuda inválido para pago de financiamiento' });
+    }
+
     // Verificar que el financiamiento existe y está activo
     const { data: financing, error: finErr } = await supabaseAdmin
       .from('financing_requests')
-      .select('id, buyer_id, supplier_id, amount, amount_used, status')
-      .eq('id', financingId)
+      .select('id, buyer_id, supplier_id, amount, amount_used, amount_paid, status')
+      .eq('id', targetFinancingId)
       .maybeSingle();
 
     if (finErr || !financing) {
-      logErr('financing_not_found', { financingId, error: finErr });
+      logErr('financing_not_found', { financingId: targetFinancingId, error: finErr });
       return respond(404, { error_code: 'FINANCING_NOT_FOUND', error: 'Financiamiento no encontrado' });
     }
 
@@ -88,28 +118,36 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       return respond(409, { error_code: 'FINANCING_NOT_ACTIVE', error: 'El financiamiento no está activo', status: financing.status });
     }
 
-    if (amount > financing.amount_used) {
-      return respond(409, { error_code: 'AMOUNT_EXCEEDS_DEBT', error: 'El monto excede la deuda pendiente', amount_used: financing.amount_used, requested: amount });
+    const availableToPay = Math.max(0, Number(financing.amount_used || 0) - Number(financing.amount_paid || 0));
+
+    if (debtAmount > availableToPay) {
+      return respond(409, {
+        error_code: 'AMOUNT_EXCEEDS_DEBT',
+        error: 'El monto excede la deuda pendiente',
+        amount_used: financing.amount_used,
+        amount_paid: financing.amount_paid || 0,
+        available_to_pay: availableToPay,
+        requested: debtAmount,
+        gateway_amount: paymentAmount,
+      });
     }
+    const shortId = targetFinancingId.slice(-8).toUpperCase();
 
-    const paymentAmount = Math.round(amount);
-    const shortId = financingId.slice(-8).toUpperCase();
-
-    // Determinar URL de frontend según entorno (igual que Flow)
+    // Determinar URL de frontend según entorno
     const isProduction = supabaseUrl?.includes('clbngnjetipglkikondm');
     const frontendUrl = isProduction ? 'https://sellsi.cl' : 'https://staging-sellsi.vercel.app';
 
-    // Crear pago en Khipu
+    // Crear pago en Khipu con notify_url que incluye financing_payment flag Y financing_id
     const khipuApiUrl = 'https://payment-api.khipu.com/v3/payments';
     const khipuBody = JSON.stringify({
       subject: `Pago Crédito Sellsi #${shortId}`,
       amount: paymentAmount,
       currency: currency || 'CLP',
       return_url: `${frontendUrl}/buyer/my-financing`,
-      notify_url: `${supabaseUrl}/functions/v1/process-khipu-webhook?financing_payment=true`,
+      notify_url: `${supabaseUrl}/functions/v1/process-khipu-webhook?financing_payment=true&fid=${targetFinancingId}`,
     });
 
-    log('financing_khipu_request', { amount: paymentAmount, financingId });
+    log('financing_khipu_request', { amount: paymentAmount, debt_amount: debtAmount, financingId: targetFinancingId });
 
     let khipuResponse: Response;
     try {
@@ -146,34 +184,120 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     const transactionId = responseData.transaction_id || responseData.trx_id || null;
     const expiresDate = responseData.expires_date || null;
     const expiresAt = expiresDate ? new Date(expiresDate).toISOString() : new Date(Date.now() + 20 * 60 * 1000).toISOString();
+    const gatewayFee = Math.max(0, paymentAmount - debtAmount);
+    const gatewayValidationMeta = {
+      debt_amount: debtAmount,
+      payment_amount: paymentAmount,
+      payment_fee: gatewayFee,
+      expected_gateway_amount: paymentAmount,
+    };
 
     if (!paymentUrl) {
       logErr('financing_khipu_no_url', { response: responseData });
       return respond(502, { error_code: 'KHIPU_NO_PAYMENT_URL', error: 'Khipu no retornó URL de pago' });
     }
 
-    // Registrar en financing_payments
-    const { data: fpData, error: fpErr } = await supabaseAdmin
-      .from('financing_payments')
-      .insert({
-        financing_request_id: financingId,
-        buyer_id: financing.buyer_id,
-        amount: paymentAmount,
-        currency: currency || 'CLP',
-        payment_method: 'khipu',
-        payment_status: 'pending',
-        khipu_payment_id: paymentId,
-        khipu_payment_url: paymentUrl,
-        khipu_transaction_id: transactionId,
-        khipu_expires_at: expiresAt,
-        gateway_response: responseData,
-      })
-      .select('id')
-      .single();
+    // Si recibimos financing_payment_id, ACTUALIZAR el registro existente
+    // Si no, CREAR uno nuevo (legacy backward compatibility)
+    let fpData: any = null;
+    let fpErr: any = null;
 
-    if (fpErr) {
-      logErr('financing_payment_insert_failed', { error: fpErr });
-      // No bloquear el pago, pero loguear
+    if (financing_payment_id) {
+      // ✅ BUG #20: Validar que financing_payment_id pertenece al financing correcto
+      // Previene que un atacante envíe el ID de pago de otro usuario
+      const { data: existingPayment, error: verifyErr } = await supabaseAdmin
+        .from('financing_payments')
+        .select('financing_request_id, payment_status, khipu_payment_id')
+        .eq('id', financing_payment_id)
+        .single();
+      
+      if (verifyErr || !existingPayment) {
+        logErr('financing_payment_verify_failed', { financing_payment_id, error: verifyErr });
+        return respond(404, { error_code: 'PAYMENT_NOT_FOUND', error: 'Registro de pago no encontrado' });
+      }
+      
+      // ✅ BUG #28: No sobreescribir pagos ya procesados
+      if (existingPayment.payment_status !== 'pending') {
+        logErr('financing_payment_not_pending', { financing_payment_id, status: existingPayment.payment_status });
+        return respond(409, { error_code: 'PAYMENT_NOT_PENDING', error: 'El pago ya fue procesado', current_status: existingPayment.payment_status });
+      }
+      
+      if (existingPayment.financing_request_id !== targetFinancingId) {
+        logErr('financing_payment_mismatch', { 
+          financing_payment_id, 
+          expected_financing_id: targetFinancingId,
+          actual_financing_id: existingPayment.financing_request_id
+        });
+        return respond(403, { error_code: 'PAYMENT_MISMATCH', error: 'El pago no pertenece a este financiamiento' });
+      }
+      
+      // 🐛 BUG #35 FIX: Prevenir re-crear pago en Khipu si ya tiene khipu_payment_id
+      // Esto previene duplicados cuando el usuario hace click múltiple o refresca la página
+      if (existingPayment.khipu_payment_id) {
+        log('financing_payment_already_has_khipu_id', { 
+          financing_payment_id, 
+          khipu_payment_id: existingPayment.khipu_payment_id 
+        });
+        return respond(409, { 
+          error_code: 'PAYMENT_ALREADY_CREATED', 
+          error: 'Este pago ya tiene una orden de Khipu activa. Usa el link de pago existente o cancela el pago anterior.',
+          khipu_payment_id: existingPayment.khipu_payment_id
+        });
+      }
+      
+      // NUEVO FLUJO: Actualizar registro existente con datos de Khipu
+      const { data, error } = await supabaseAdmin
+        .from('financing_payments')
+        .update({
+          khipu_payment_id: paymentId,
+          khipu_payment_url: paymentUrl,
+          khipu_transaction_id: transactionId,
+          khipu_expires_at: expiresAt,
+          gateway_response: { ...responseData, ...gatewayValidationMeta },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', financing_payment_id)
+        .select('id')
+        .single();
+      
+      fpData = data;
+      fpErr = error;
+      
+      if (!fpErr) {
+        log('financing_payment_updated', { financing_payment_id });
+      } else {
+        logErr('financing_payment_update_failed', { financing_payment_id, error: fpErr });
+        return respond(500, { error_code: 'DB_UPDATE_FAILED', error: 'Error al actualizar registro de pago' });
+      }
+    } else {
+      // LEGACY FLUJO: Crear nuevo registro
+      const { data, error } = await supabaseAdmin
+        .from('financing_payments')
+        .insert({
+          financing_request_id: targetFinancingId,
+          buyer_id: financing.buyer_id,
+          amount: debtAmount,
+          currency: currency || 'CLP',
+          payment_method: 'khipu',
+          payment_status: 'pending',
+          khipu_payment_id: paymentId,
+          khipu_payment_url: paymentUrl,
+          khipu_transaction_id: transactionId,
+          khipu_expires_at: expiresAt,
+          gateway_response: { ...responseData, ...gatewayValidationMeta },
+        })
+        .select('id')
+        .single();
+      
+      fpData = data;
+      fpErr = error;
+      
+      if (!fpErr) {
+        log('financing_payment_created', { financing_payment_id: fpData?.id });
+      } else {
+        logErr('financing_payment_insert_failed', { error: fpErr });
+        return respond(500, { error_code: 'DB_INSERT_FAILED', error: 'Error al crear registro de pago' });
+      }
     }
 
     log('financing_payment_success', { ms: Date.now() - startedAt, paymentId, financingPaymentId: fpData?.id });
@@ -184,7 +308,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       payment_id: paymentId,
       transaction_id: transactionId,
       expires_date: expiresDate,
-      financing_payment_id: fpData?.id || null,
+      financing_payment_id: fpData?.id || financing_payment_id || null,
       is_financing_payment: true,
       request_id: requestId,
     });
