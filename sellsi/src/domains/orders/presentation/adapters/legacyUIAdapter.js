@@ -18,6 +18,8 @@ export function toSupplierUIOrder(domainOrder, { includeAliases = true } = {}) {
     status: o.status, // se mantendrá en inglés, store hace display
     payment_status: o.paymentStatus || o.payment_status,
     payment_method: o.paymentMethod || o.payment_method,
+    khipu_payment_id: o.khipuPaymentId || o.khipu_payment_id || null,
+    flow_order: o.flowOrder || o.flow_order || null,
     payment_rejection_reason: o.paymentRejectionReason || o.payment_rejection_reason,
     created_at: o.createdAt || o.created_at,
     updated_at: o.updatedAt || o.updated_at,

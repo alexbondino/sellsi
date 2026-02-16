@@ -140,19 +140,24 @@ serve(req => withMetrics('update-supplier-part-status', req, async () => {
       });
     }
 
-    // (Opc) Insertar notificación simple
+    // Notificación buyer: usar RPC create_notification para aplicar dedupe/stacking
     if (orderRow.user_id) {
       try {
-        await supabase.from('notifications').insert({
-          user_id: orderRow.user_id,
-          supplier_id: supplier_id,
-          order_id: order_id,
-          type: 'supplier_part_status',
-          context_section: 'supplier_part',
-          title: 'Estado actualizado',
-          body: `Parte proveedor pasó de ${fromStatus} a ${toStatus}`,
-          metadata: { supplier_id, from: fromStatus, to: toStatus }
-        });
+        await supabase.rpc('create_notification', {
+          p_payload: {
+            p_user_id: orderRow.user_id,
+            p_supplier_id: supplier_id,
+            p_order_id: order_id,
+            p_product_id: null,
+            p_type: 'supplier_part_status',
+            p_order_status: toStatus,
+            p_role_context: 'buyer',
+            p_context_section: 'buyer_orders',
+            p_title: '🔄 Estado actualizado',
+            p_body: `Parte proveedor pasó de ${fromStatus} a ${toStatus}`,
+            p_metadata: { supplier_id, from: fromStatus, to: toStatus }
+          }
+        } as any);
       } catch (_e) { /* silencioso */ }
     }
 

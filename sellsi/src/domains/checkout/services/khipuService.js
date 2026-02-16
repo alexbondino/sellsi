@@ -213,9 +213,34 @@ class KhipuService {
     }
   }
 
-  async verifyPaymentStatus(paymentId) {
-    console.warn('khipuService.verifyPaymentStatus no está implementado.');
-    return { success: false, status: 'unknown' };
+  async verifyPaymentStatus(paymentId, options = {}) {
+    const { triggerProcess = true } = options;
+    if (!paymentId) return { success: false, status: 'unknown', error: 'missing_payment_id' };
+
+    try {
+      const { data, error } = await supabase.functions.invoke('get-payment-status', {
+        body: {
+          payment_id: paymentId,
+          trigger_process: !!triggerProcess,
+        },
+      });
+
+      if (error) {
+        return { success: false, status: 'unknown', error: error.message || 'invoke_error' };
+      }
+
+      const payload = data?.payment || data || {};
+      const status = String(payload?.status || '').toLowerCase().trim() || 'unknown';
+
+      return {
+        success: !!data?.success || !!payload?.payment_id,
+        status,
+        payment: payload,
+        syncResult: data?.sync_result || null,
+      };
+    } catch (err) {
+      return { success: false, status: 'unknown', error: err?.message || 'unknown_error' };
+    }
   }
 }
 

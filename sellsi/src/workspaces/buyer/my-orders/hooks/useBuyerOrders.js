@@ -5,6 +5,7 @@ import { isUUID } from '../../../../domains/orders/shared/validation'
 import { splitOrderBySupplier } from '../../../../domains/orders/shared/splitOrderBySupplier'
 import { formatDate } from '../../../../shared/utils/formatters/dateFormatters'
 import { formatCurrency } from '../../../../shared/utils/formatters/priceFormatters'
+import khipuService from '../../../../domains/checkout/services/khipuService'
 
 /**
  * Hook para manejar los pedidos de un comprador.
@@ -374,6 +375,28 @@ export const useBuyerOrders = (buyerId) => {
       if (!hasPending) return // stop polling until a pending exists
       if (Date.now() - lastRealtimeRef.current < POLL_INTERVAL_MS * 2) return // recent realtime
       try {
+        const pendingKhipuPaymentIds = Array.from(
+          new Set(
+            orders
+              .filter(
+                (o) =>
+                  o.is_payment_order &&
+                  String(o.payment_method || '').toLowerCase() === 'khipu' &&
+                  String(o.payment_status || '').toLowerCase() === 'pending' &&
+                  !!o.khipu_payment_id
+              )
+              .map((o) => o.khipu_payment_id)
+          )
+        )
+
+        if (pendingKhipuPaymentIds.length > 0) {
+          await Promise.allSettled(
+            pendingKhipuPaymentIds.slice(0, 6).map((paymentId) =>
+              khipuService.verifyPaymentStatus(paymentId, { triggerProcess: true })
+            )
+          )
+        }
+
         const statuses = await orderService.getPaymentStatusesForBuyer(buyerId)
         if (Array.isArray(statuses)) {
           setOrders((prev) =>

@@ -74,7 +74,7 @@ class NotificationService {
             p_order_status: 'paid',
             p_role_context: 'buyer',
             p_context_section: 'buyer_orders',
-            p_title: 'Se registró tu compra',
+            p_title: '🧾 Se registró tu compra',
             p_body: 'Pago confirmado',
             p_metadata: { quantity: it.quantity, price_at_addition: it.price_at_addition }
           }
@@ -103,7 +103,7 @@ class NotificationService {
             p_order_status: 'paid',
             p_role_context: 'supplier',
             p_context_section: 'supplier_orders',
-            p_title: 'Nuevo pedido pagado',
+            p_title: '📦 Nuevo pedido pagado',
             p_body: 'Revisa y prepara el despacho.',
             p_metadata: { buyer_id: buyerId }
           }
@@ -142,7 +142,7 @@ class NotificationService {
           p_order_status: null,
           p_role_context: 'supplier',
           p_context_section: 'supplier_offers',
-          p_title: 'Nueva oferta recibida',
+          p_title: '💬 Nueva oferta recibida',
           p_body: `${buyerName} hizo una oferta por ${productName}`,
           // Campos legacy
           p_message: `${buyerName} ha realizado una oferta`,
@@ -208,7 +208,7 @@ class NotificationService {
           p_order_status: null,
           p_role_context: 'buyer',
           p_context_section: 'buyer_offers',
-          p_title: isAccepted ? 'Oferta aceptada' : 'Oferta rechazada',
+          p_title: isAccepted ? '✅ Oferta aceptada' : '❌ Oferta rechazada',
           p_body: isAccepted 
             ? `${supplierName} aceptó tu oferta por ${productName}`
             : `${supplierName} rechazó tu oferta por ${productName}`,
@@ -267,7 +267,7 @@ class NotificationService {
       const offeredQuantity = offerData.offered_quantity || offerData.quantity;
       const userId = role === 'buyer' ? offerData.buyer_id : offerData.supplier_id;
       const contextSection = role === 'buyer' ? 'buyer_offers' : 'supplier_offers';
-      const title = role === 'buyer' ? 'Tu oferta expiró' : 'Oferta recibida expiró';
+      const title = role === 'buyer' ? '⏰ Tu oferta expiró' : '⏰ Oferta recibida expiró';
       const body = role === 'buyer' 
         ? `Tu oferta por ${productName} ha expirado`
         : `La oferta de ${offerData.buyer_name || offerData.buyer?.name || 'Comprador'} por ${productName} expiró`;
@@ -282,7 +282,7 @@ class NotificationService {
           p_order_status: null,
           p_role_context: role,
           p_context_section: contextSection,
-          p_title: role === 'buyer' ? 'Oferta expirada' : title,
+          p_title: role === 'buyer' ? '⏰ Oferta expirada' : title,
           p_body: body,
           p_message: body,
           p_related_id: offerId,
