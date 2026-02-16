@@ -128,14 +128,21 @@ const SearchSection = React.memo(({
                             ...catStyles.categoriesButton,
                             borderWidth: 1,
                             borderStyle: 'solid',
-                            borderColor: '#000',
-                            color: '#000',
+                            borderColor: '#2E52B2',
+                            color: '#2E52B2',
                             height: '36px',
                             minWidth: 'auto',
+                            boxShadow: 'none',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              boxShadow: '0 6px 20px rgba(46,82,178,0.6)',
+                              transform: 'translateY(-2px)',
+                              backgroundColor: 'rgba(46,82,178,0.04)',
+                            },
                           }}
                           aria-pressed={isProviderView}
                         >
-                          {isProviderView ? 'Ver Productos' : 'Ver Proveedores'}
+                          {isProviderView ? 'Ver Compradores' : 'Ver Proveedores'}
                         </Button>
                       </span>
                     </Tooltip>

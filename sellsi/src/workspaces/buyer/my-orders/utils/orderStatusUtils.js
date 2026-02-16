@@ -13,13 +13,17 @@
  * @returns {{ label: string, color: string, tooltip: string }}
  */
 export const getPaymentChipInfo = (paymentStatus, paymentMethod = null, rejectionReason = null) => {
-  switch (paymentStatus) {
+  const normalizedStatus = String(paymentStatus || 'pending').toLowerCase();
+
+  switch (normalizedStatus) {
     case 'paid':
       return {
         label: 'Pago Confirmado',
         color: 'success',
         tooltip: 'Tu pago fue verificado y confirmado.'
       };
+    case 'failed':
+    case 'cancelled':
     case 'rejected':
       return {
         label: 'Pago Rechazado',
@@ -68,8 +72,9 @@ export const getPaymentChipInfo = (paymentStatus, paymentMethod = null, rejectio
  */
 export const getStatusChips = (status, paymentStatus, order = null) => {
   // FIX: Verificar cancelled_at además de status para determinar cancelación real
-  const isPaymentExpired = paymentStatus === 'expired';
-  const isPaymentRejected = paymentStatus === 'rejected';
+  const normalizedPaymentStatus = String(paymentStatus || 'pending').toLowerCase();
+  const isPaymentExpired = normalizedPaymentStatus === 'expired';
+  const isPaymentRejected = ['rejected', 'failed', 'cancelled'].includes(normalizedPaymentStatus);
   
   // Do not treat a payment expiration alone as a rejected/cancelled order for UI chips.
   // If payment expired, avoid marking cancelled/rejected chips as active.
@@ -79,7 +84,7 @@ export const getStatusChips = (status, paymentStatus, order = null) => {
   // Obtener información de pago
   const paymentMethod = order?.payment_method || null;
   const rejectionReason = order?.payment_rejection_reason || null;
-  const paymentInfo = getPaymentChipInfo(paymentStatus, paymentMethod, rejectionReason);
+  const paymentInfo = getPaymentChipInfo(normalizedPaymentStatus, paymentMethod, rejectionReason);
 
   // Si el pago fue rechazado, mostrar configuración especial
   if (isPaymentRejected) {
@@ -121,7 +126,7 @@ export const getStatusChips = (status, paymentStatus, order = null) => {
       {
         key: 'pago',
         label: paymentInfo.label,
-        active: paymentStatus === 'paid' || paymentStatus === 'pending' || paymentStatus === 'expired',
+        active: normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'pending' || normalizedPaymentStatus === 'expired',
         color: paymentInfo.color,
         tooltip: paymentInfo.tooltip
       },
@@ -160,7 +165,7 @@ export const getStatusChips = (status, paymentStatus, order = null) => {
     activeKey = 'en_transito';
   } else if (status === 'accepted') {
     activeKey = 'aceptado';
-  } else if (paymentStatus === 'paid' || paymentStatus === 'pending' || paymentStatus === 'expired') {
+  } else if (normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'pending' || normalizedPaymentStatus === 'expired') {
     activeKey = 'pago';
   }
 
@@ -173,7 +178,7 @@ export const getStatusChips = (status, paymentStatus, order = null) => {
       // IMPROVEMENT: Si ya hemos avanzado más allá del pago, mostrar como completado
       color: (activeKey === 'pago') 
         ? paymentInfo.color
-        : (paymentStatus === 'paid' && ['aceptado', 'en_transito', 'entregado'].includes(activeKey)) 
+        : (normalizedPaymentStatus === 'paid' && ['aceptado', 'en_transito', 'entregado'].includes(activeKey)) 
           ? 'success' : 'default',
       tooltip: paymentInfo.tooltip
     },

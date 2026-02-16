@@ -104,7 +104,7 @@ const ProfileDrawer = ({
     { icon: <ProductsIcon />, text: 'Mis Productos', path: '/supplier/myproducts' },
     { icon: <OrdersIcon />, text: 'Mis Pedidos', path: '/supplier/my-orders' },
     { icon: <OffersIcon />, text: 'Mis Ofertas', path: '/supplier/offers' },
-    ...(financingEnabled ? [{ icon: <FinancingIcon />, text: 'Financiamientos', path: '/supplier/my-financing' }] : []),
+    ...(financingEnabled ? [{ icon: <FinancingIcon />, text: 'Mis Financiamientos', path: '/supplier/my-financing' }] : []),
   ];
 
   // Determinar ruta de configuración según el rol

@@ -21,6 +21,32 @@ const OrderItem = memo(function OrderItem({
   formatCurrency,
   recentlyPaid,
 }) {
+  const normalizePaymentStatus = (status) => {
+    const normalized = String(status || 'pending').toLowerCase()
+    if (normalized === 'failed' || normalized === 'cancelled') return 'rejected'
+    return normalized
+  }
+
+  const getEffectivePaymentStatus = () => {
+    const baseStatus = normalizePaymentStatus(order.payment_status)
+
+    const qty = Math.max(0, Number(item?.quantity || 0))
+    const unitPrice = Math.max(
+      0,
+      Number(item?.price_at_addition ?? item?.priceAtAddition ?? item?.product?.price ?? 0)
+    )
+    const lineTotal = Math.round(unitPrice * qty)
+    const financedAmount = Math.max(0, Math.round(Number(item?.financing_amount || 0)))
+
+    if (lineTotal > 0 && financedAmount >= lineTotal) {
+      return 'paid'
+    }
+
+    return baseStatus
+  }
+
+  const effectivePaymentStatus = getEffectivePaymentStatus()
+
   // Cálculo de productStatus
   const productStatus = order.is_supplier_part
     ? order.status // ya viene overlay aplicado en hook
@@ -69,6 +95,7 @@ const OrderItem = memo(function OrderItem({
         <StatusChipsDisplay
           order={order}
           productStatus={productStatus}
+          paymentStatus={effectivePaymentStatus}
           isMobile={isMobile}
           recentlyPaid={recentlyPaid}
         />

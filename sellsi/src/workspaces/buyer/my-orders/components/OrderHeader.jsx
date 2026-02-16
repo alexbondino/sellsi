@@ -118,7 +118,7 @@ const OrderHeader = memo(function OrderHeader({
           }}
         >
           <Box>
-            {(order.payment_status === 'expired' || order.payment_status === 'rejected') && (
+            {['expired', 'rejected', 'failed', 'cancelled'].includes(String(order.payment_status || '').toLowerCase()) && (
               <Button
                 size="small"
                 color="error"
@@ -155,7 +155,7 @@ const OrderHeader = memo(function OrderHeader({
           color="text.secondary"
           sx={{ textAlign: 'center', mb: 1 }}
         >
-          ¿Deseas solicitar alguna condición especial?
+          ¿Necesitas ayuda?
         </Typography>
 
         <Button
@@ -201,7 +201,7 @@ const OrderHeader = memo(function OrderHeader({
                   color="text.secondary"
                   sx={{ display: { xs: 'none', md: 'block' } }}
                 >
-                  ¿Deseas solicitar alguna condición especial? No dudes en
+                  ¿Necesitas ayuda? No dudes en
                 </Typography>
                 <Button
                   variant="text"
@@ -251,7 +251,7 @@ const OrderHeader = memo(function OrderHeader({
             }}
           >
             {/* Delete button for expired or rejected payment orders */}
-            {(order.payment_status === 'expired' || order.payment_status === 'rejected') ? (
+            {['expired', 'rejected', 'failed', 'cancelled'].includes(String(order.payment_status || '').toLowerCase()) ? (
               <Tooltip title="Eliminar pedido de la lista">
                 <IconButton
                   size="small"

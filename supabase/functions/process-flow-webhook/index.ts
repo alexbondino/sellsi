@@ -116,6 +116,9 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
       paymentData,
     } = statusData;
 
+    const statusNum = Number(status);
+    const statusNorm = Number.isFinite(statusNum) ? statusNum : null;
+
     // Extraer order_id (UUID) - múltiples fuentes por orden de prioridad
     let orderId: string | null = null;
     
@@ -158,8 +161,13 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
     const isFinancingPayment = url.searchParams.get('financing_payment') === 'true';
     const financingIdFromUrl = url.searchParams.get('fid');
 
-    if (isFinancingPayment && financingIdFromUrl) {
-      log('financing_payment_detected', { financingIdFromUrl, flowOrder, paymentStatus: status });
+    if (isFinancingPayment) {
+      log('financing_payment_detected', {
+        financingIdFromUrl,
+        flowOrder,
+        paymentStatus: status,
+        paymentStatusNorm: statusNorm,
+      });
 
       // Log del webhook de financing
       try {
@@ -167,7 +175,7 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
           flow_order: flowOrder,
           commerce_order: commerceOrder,
           token: token,
-          status: status,
+          status: statusNorm ?? status,
           webhook_data: statusData,
           processed: false,
           order_id: null,
@@ -244,9 +252,9 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
       }
 
       // Manejar estados de Flow: 1=pending, 2=paid, 3=rejected, 4=cancelled
-      if (status === 3 || status === 4) {
+      if (statusNorm === 3 || statusNorm === 4) {
         // Pago rechazado o cancelado - marcar como failed
-        log('financing_payment_failed', { status, flowOrder, fpId: fp.id });
+        log('financing_payment_failed', { status: statusNorm ?? status, flowOrder, fpId: fp.id });
         
         const { data: markResult, error: markErr } = await supabase.rpc('mark_financing_payment_as_failed', {
           p_payment_id: fp.id,
@@ -265,13 +273,13 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
           return new Response(JSON.stringify({ error: markResult.error }), { status: 500, headers: corsHeaders });
         }
         
-        return new Response(JSON.stringify({ success: true, financing: true, status, payment_status: 'failed' }), { status: 200, headers: corsHeaders });
+        return new Response(JSON.stringify({ success: true, financing: true, status: statusNorm ?? status, payment_status: 'failed' }), { status: 200, headers: corsHeaders });
       }
       
-      if (status !== 2) {
+      if (statusNorm !== 2) {
         // Status 1 (pending) u otro estado desconocido
-        log('financing_payment_not_paid', { status });
-        return new Response(JSON.stringify({ success: true, financing: true, status, message: 'Payment not yet completed' }), { status: 200, headers: corsHeaders });
+        log('financing_payment_not_paid', { status: statusNorm ?? status });
+        return new Response(JSON.stringify({ success: true, financing: true, status: statusNorm ?? status, message: 'Payment not yet completed' }), { status: 200, headers: corsHeaders });
       }
 
       // ✅ VALIDAR MONTO - Seguridad crítica
@@ -359,11 +367,11 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
         flow_order: flowOrder,
         commerce_order: commerceOrder,
         token: token,
-        status: status,
+        status: statusNorm ?? status,
         webhook_data: statusData,
         processed: false,
         order_id: orderId || null,
-        category: status === 2 ? 'payment_confirmed' : status === 3 ? 'payment_rejected' : status === 4 ? 'payment_cancelled' : 'other',
+        category: statusNorm === 2 ? 'payment_confirmed' : statusNorm === 3 ? 'payment_rejected' : statusNorm === 4 ? 'payment_cancelled' : 'other',
       });
     } catch (logInsertErr) {
       logErr('webhook_log_insert_failed', { error: String(logInsertErr) });
@@ -380,9 +388,17 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
     log('order_id_resolved', { orderId });
 
     // 6. Obtener orden actual
+    if (statusNorm == null) {
+      logErr('invalid_flow_status', { flowOrder, rawStatus: status, token_prefix: token.substring(0, 20) + '...' });
+      return new Response(JSON.stringify({ success: true, ignored: true, reason: 'invalid_status', status }), {
+        status: 200,
+        headers: corsHeaders,
+      });
+    }
+
     const { data: preOrder, error: preErr } = await supabase
       .from('orders')
-      .select('id, payment_status, inventory_processed_at, cancelled_at, status, items, items_hash, user_id, supplier_parts_meta, cart_id')
+      .select('id, payment_status, inventory_processed_at, cancelled_at, status, items, items_hash, user_id, supplier_parts_meta, cart_id, financing_amount, estimated_delivery_date, shipping_address, created_at')
       .eq('id', orderId)
       .maybeSingle();
 
@@ -465,7 +481,7 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
     const paidAt = paymentData?.date || new Date().toISOString();
     let justMarkedPaid = false;
 
-    if (status === 2 && preOrder.payment_status !== 'paid') {
+    if (statusNorm === 2 && preOrder.payment_status !== 'paid') {
       // PAGO EXITOSO
       log('payment_confirmed', { flowOrder, amount });
 
@@ -516,21 +532,81 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
         })
         .eq('token', token);
 
-    } else if (status === 3) {
+    } else if (statusNorm === 3) {
       // PAGO RECHAZADO
       log('payment_rejected', { flowOrder });
-      await supabase
+      if (preOrder.payment_status === 'paid') {
+        log('reject_ignored_already_paid', { orderId, flowOrder });
+      } else {
+        const { error: updateErr } = await supabase
         .from('orders')
         .update({ payment_status: 'failed', updated_at: new Date().toISOString() })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .neq('payment_status', 'paid')
+        .is('cancelled_at', null);
 
-    } else if (status === 4) {
+        if (updateErr) {
+          logErr('payment_rejected_update_error', { orderId, error: updateErr });
+        }
+
+        if (!updateErr && Number(preOrder.financing_amount || 0) > 0) {
+          const { data: rollbackData, error: rollbackErr } = await supabase.rpc(
+            'rollback_order_financing_on_payment_failure',
+            {
+              p_order_id: orderId,
+              p_gateway: 'flow',
+              p_gateway_status: String(statusNorm ?? status),
+              p_reason: 'flow_rejected',
+            }
+          );
+
+          if (rollbackErr) {
+            logErr('financing_rollback_error_rpc', { orderId, error: rollbackErr });
+          } else if (rollbackData?.error) {
+            logErr('financing_rollback_error_logic', { orderId, error: rollbackData.error });
+          } else {
+            log('financing_rollback_ok', { orderId, rollback: rollbackData });
+          }
+        }
+      }
+
+    } else if (statusNorm === 4) {
       // PAGO ANULADO
       log('payment_cancelled', { flowOrder });
-      await supabase
+      if (preOrder.payment_status === 'paid') {
+        log('cancel_ignored_already_paid', { orderId, flowOrder });
+      } else {
+        const { error: updateErr } = await supabase
         .from('orders')
         .update({ payment_status: 'cancelled', updated_at: new Date().toISOString() })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .neq('payment_status', 'paid')
+        .is('cancelled_at', null);
+
+        if (updateErr) {
+          logErr('payment_cancelled_update_error', { orderId, error: updateErr });
+        }
+
+        if (!updateErr && Number(preOrder.financing_amount || 0) > 0) {
+          const { data: rollbackData, error: rollbackErr } = await supabase.rpc(
+            'rollback_order_financing_on_payment_failure',
+            {
+              p_order_id: orderId,
+              p_gateway: 'flow',
+              p_gateway_status: String(statusNorm ?? status),
+              p_reason: 'flow_cancelled',
+            }
+          );
+
+          if (rollbackErr) {
+            logErr('financing_rollback_error_rpc', { orderId, error: rollbackErr });
+          } else if (rollbackData?.error) {
+            logErr('financing_rollback_error_logic', { orderId, error: rollbackData.error });
+          } else {
+            log('financing_rollback_ok', { orderId, rollback: rollbackData });
+          }
+        }
+      }
     }
 
     // 11. Si ya se procesó inventario, salir (idempotencia)
@@ -727,9 +803,9 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
       }
     }
 
-    log('webhook_processed_successfully', { orderId, status, ms: Date.now() - startedAt });
+    log('webhook_processed_successfully', { orderId, status: statusNorm ?? status, ms: Date.now() - startedAt });
 
-    return new Response(JSON.stringify({ success: true, orderId, status }), {
+    return new Response(JSON.stringify({ success: true, orderId, status: statusNorm ?? status }), {
       headers: corsHeaders,
       status: 200,
     });

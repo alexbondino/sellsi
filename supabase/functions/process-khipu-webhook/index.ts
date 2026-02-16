@@ -18,7 +18,7 @@ async function verifyKhipuSignature(
   secret: string
 ): Promise<boolean> {
   try {
-    const parts = signatureHeader.split(',');
+    const parts = signatureHeader.split(',').map((p) => p.trim());
     const timestampPart = parts.find(p => p.startsWith('t='));
     const signaturePart = parts.find(p => p.startsWith('s='));
 
@@ -216,7 +216,8 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
       // 1. Existe paid_at (indica que fue pagado)
       // 2. O status === 'done' (pagado confirmado)
       const khipuPaidAt = khipuPayload.paid_at || khipuPayload.paidAt || null;
-      const khipuStatus = khipuPayload.status || null;
+      const khipuStatusRaw = khipuPayload.status || null;
+      const khipuStatus = String(khipuStatusRaw || '').toLowerCase().trim();
       
       // Si el webhook indica que el pago NO fue exitoso, marcar como failed
       if (!khipuPaidAt && khipuStatus !== 'done') {
@@ -226,8 +227,9 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
           hasPaidAt: !!khipuPaidAt 
         });
         
-        // Si el status indica expiración o rechazo, marcar como failed
-        if (khipuStatus === 'expired' || khipuStatus === 'canceled') {
+        // Si el status indica expiración o rechazo/cancelación/falla, marcar terminal
+        const isTerminalFailureStatus = ['expired', 'canceled', 'cancelled', 'failed', 'rejected'].includes(khipuStatus);
+        if (isTerminalFailureStatus) {
           const newStatus = khipuStatus === 'expired' ? 'expired' : 'failed';
           const { data: markResult, error: markErr } = await supabase.rpc('mark_financing_payment_as_failed', {
             p_payment_id: fp.id,
@@ -417,12 +419,14 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     // ========================================================================
     // ACTUALIZAR EN SUPABASE + IDEMPOTENCIA INVENTARIO (inventory_processed_at)
     // ========================================================================
-  const paidAt = khipuPayload.paid_at || khipuPayload.paidAt || new Date().toISOString();
+  const khipuPaidAtRaw = khipuPayload.paid_at || khipuPayload.paidAt || null;
+  const khipuStatusRaw = String(khipuPayload.status || '').toLowerCase();
+  const paidAt = khipuPaidAtRaw || new Date().toISOString();
 
     // Intento obtener estado actual incluyendo inventory_processed_at y supplier_parts_meta para decidir idempotencia
     const { data: preOrder, error: preErr } = await supabase
       .from('orders')
-      .select('id, payment_status, inventory_processed_at, supplier_parts_meta, items, cancelled_at, status')
+      .select('id, payment_status, inventory_processed_at, supplier_parts_meta, items, cancelled_at, status, financing_amount')
       .eq('id', orderId)
       .maybeSingle();
     if (preErr) {
@@ -471,6 +475,67 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
 
   let alreadyProcessedInventory = false;
   let justMarkedPaid = false;
+
+    // Si Khipu reporta estado no exitoso, NO marcar paid
+    if (!khipuPaidAtRaw && khipuStatusRaw !== 'done') {
+      if (preOrder?.payment_status === 'paid') {
+        return new Response(
+          JSON.stringify({ success: true, orderId, already_paid: true }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      }
+
+      const normalizedKhipuStatus = typeof khipuStatusRaw === 'string'
+        ? khipuStatusRaw.toLowerCase().trim()
+        : khipuStatusRaw;
+
+      const isTerminalFailureStatus = ['expired', 'canceled', 'cancelled', 'failed', 'rejected'].includes(String(normalizedKhipuStatus || ''));
+
+      if (isTerminalFailureStatus) {
+        const nextPaymentStatus = normalizedKhipuStatus === 'expired' ? 'expired' : 'rejected';
+        const { error: failUpdErr } = await supabase
+          .from('orders')
+          .update({
+            payment_status: nextPaymentStatus,
+            payment_rejection_reason:
+              normalizedKhipuStatus === 'expired'
+                ? 'Pago expirado en Khipu'
+                : 'Pago rechazado/cancelado en Khipu',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', orderId)
+          .neq('payment_status', 'paid')
+          .is('cancelled_at', null);
+
+        if (failUpdErr) {
+          console.error('❌ Error marcando orden con fallo Khipu:', failUpdErr);
+        }
+
+        if (!failUpdErr && Number(preOrder?.financing_amount || 0) > 0) {
+          const { data: rollbackData, error: rollbackErr } = await supabase.rpc(
+            'rollback_order_financing_on_payment_failure',
+            {
+              p_order_id: orderId,
+              p_gateway: 'khipu',
+              p_gateway_status: normalizedKhipuStatus || null,
+              p_reason: normalizedKhipuStatus === 'expired' ? 'khipu_expired' : 'khipu_failed_or_rejected',
+            }
+          );
+
+          if (rollbackErr) {
+            console.error('❌ Error RPC rollback financing (Khipu):', rollbackErr);
+          } else if (rollbackData?.error) {
+            console.error('❌ Error lógico rollback financing (Khipu):', rollbackData.error);
+          }
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, orderId, khipu_status: normalizedKhipuStatus || null, processed: false }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
     if (preOrder?.inventory_processed_at) {
       alreadyProcessedInventory = true;
     }

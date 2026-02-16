@@ -293,7 +293,30 @@ async function getAvailableFinancingsForSupplier(supplierId) {
   }
   
   if (error) throw error;
-  return data || [];
+
+  const now = new Date();
+  return (data || []).filter((financing) => {
+    if (!financing || financing.paused || financing.status !== 'approved_by_sellsi') {
+      return false;
+    }
+
+    const dbAvailableAmount = Math.max(0, Number(financing.available_amount) || 0);
+    const derivedAvailableAmount = Math.max(0, (Number(financing.amount || 0) - Number(financing.amount_used || 0)));
+    const availableAmount = Math.max(dbAvailableAmount, derivedAvailableAmount);
+
+    if (!(availableAmount > 0)) {
+      return false;
+    }
+
+    if (financing.expires_at) {
+      const expiresAt = new Date(financing.expires_at);
+      if (!Number.isNaN(expiresAt.getTime()) && expiresAt <= now) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 }
 
 /**

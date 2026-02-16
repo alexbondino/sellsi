@@ -83,6 +83,9 @@ describe('BuyerFinancingActionModals', () => {
     const payBtn = screen.getByRole('button', { name: /Ir a pagar/i });
     fireEvent.click(payBtn);
 
-    await waitFor(() => expect(onPayOnline).toHaveBeenCalledWith(financing));
+    await waitFor(() => expect(onPayOnline).toHaveBeenCalled());
+    // onPayOnline is invoked with (financing, amount)
+    expect(onPayOnline.mock.calls[0][0]).toEqual(financing);
+    expect(typeof onPayOnline.mock.calls[0][1]).toBe('number');
   });
 });

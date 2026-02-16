@@ -85,7 +85,12 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     log('financing_payment_detected', { order_id, financing_payment_id, financing_id });
 
     // Validar que tenemos financing_payment_id (nuevo flujo) o financing_id (legacy)
-    const targetFinancingId = financing_id || (typeof order_id === 'string' && order_id.startsWith('financing_') ? order_id.replace('financing_', '').split('_')[0] : null);
+    const targetFinancingId = financing_id || (() => {
+      if (!(typeof order_id === 'string' && order_id.startsWith('financing_'))) return null;
+      const legacy = order_id.replace('financing_', '');
+      const uuidMatch = legacy.match(/^[0-9a-fA-F-]{36}/);
+      return uuidMatch ? uuidMatch[0] : legacy;
+    })();
     
     if (!targetFinancingId) {
       return respond(400, { error_code: 'MISSING_FINANCING_ID', error: 'Falta financing_id para pago de financiamiento' });
