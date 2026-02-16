@@ -2,6 +2,37 @@ import React from 'react';
 import { Box, Tabs, Tab, List, ListItemButton, ListItemText, Typography, Divider, Button, useMediaQuery } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 
+const TYPE_ICON_MAP = {
+  payment_confirmed: '✅',
+  payment_rejected: '❌',
+  order_new: '📦',
+  supplier_part_status: '🔄',
+  order_status: '🔄',
+  offer_received: '💬',
+  offer_accepted: '✅',
+  offer_rejected: '❌',
+  offer_expired: '⏰',
+  financing_request_created: '💳',
+  financing_supplier_approved: '✅',
+  financing_supplier_rejected: '❌',
+  financing_buyer_signed: '✍️',
+  financing_supplier_signed: '✍️',
+  financing_sellsi_approved: '✅',
+  financing_sellsi_rejected: '❌',
+  payment_released: '💸',
+  welcome: '👋',
+};
+
+const LEADING_ICON_REGEX = /^[\u{1F300}-\u{1FAFF}✅❌⚠️✍️⏰💳💸📦💬🔄🧾🛒]\s/u;
+
+function withNotificationIcon(notification) {
+  const title = String(notification?.title || '').trim();
+  if (!title) return title;
+  if (LEADING_ICON_REGEX.test(title)) return title;
+  const icon = TYPE_ICON_MAP[notification?.type] || '🔔';
+  return `${icon} ${title}`;
+}
+
 export const NotificationListPanel = ({
   notifications,
   activeTab,
@@ -112,7 +143,7 @@ export const NotificationListPanel = ({
                     boxSizing: 'border-box',
                   }}
                 >
-                  {n.title}
+                  {withNotificationIcon(n)}
                 </Typography>
               }
               secondary={

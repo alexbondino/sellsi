@@ -44,6 +44,8 @@ export function mapSupplierOrderFromServiceObject(o) {
     status: o.status,
     paymentStatus: o.payment_status || null,
     paymentMethod: o.payment_method || null,
+    khipuPaymentId: o.khipu_payment_id || null,
+    flowOrder: o.flow_order || null,
     paymentRejectionReason: o.payment_rejection_reason || null,
     createdAt: o.created_at,
     updatedAt: o.updated_at,

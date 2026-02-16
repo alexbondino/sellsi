@@ -24,6 +24,8 @@ export class OrdersRepository {
           payment_rejection_reason,
           estimated_delivery_date,
           payment_method,
+          khipu_payment_id,
+          flow_order,
           created_at,
           updated_at,
           supplier_parts_meta,

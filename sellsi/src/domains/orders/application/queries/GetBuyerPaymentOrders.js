@@ -184,6 +184,8 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
       payment_status: row.payment_status || 'pending',
       financing_amount: Math.max(0, Math.round(Number(row.financing_amount || 0))),
       payment_method: row.payment_method || null,
+      khipu_payment_id: row.khipu_payment_id || null,
+      flow_order: row.flow_order || null,
       payment_rejection_reason: row.payment_rejection_reason || null,
       created_at: row.created_at,
       updated_at: row.updated_at,

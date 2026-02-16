@@ -69,8 +69,15 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     const requestBodyString = await req.text();
     const signatureHeader = req.headers.get('X-Khipu-Signature');
     const khipuWebhookSecret = Deno.env.get('KHIPU_SECRET_KEY');
+    const internalSyncHeader = req.headers.get('x-internal-khipu-sync');
+    const internalWebhookSecret = Deno.env.get('INTERNAL_WEBHOOK_SECRET');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const isInternalSync = !!internalSyncHeader && (
+      (internalWebhookSecret && internalSyncHeader === internalWebhookSecret) ||
+      (serviceRoleKey && internalSyncHeader === serviceRoleKey)
+    );
 
-    if (!signatureHeader || !khipuWebhookSecret) {
+    if (!isInternalSync && (!signatureHeader || !khipuWebhookSecret)) {
       console.error('❌ Falta cabecera de firma o secreto');
       return new Response(JSON.stringify({ error: 'Configuration error' }), {
         status: 401,
@@ -78,11 +85,13 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
       });
     }
 
-    const isValidSignature = await verifyKhipuSignature(
-      requestBodyString,
-      signatureHeader,
-      khipuWebhookSecret
-    );
+    const isValidSignature = isInternalSync
+      ? true
+      : await verifyKhipuSignature(
+          requestBodyString,
+          signatureHeader,
+          khipuWebhookSecret
+        );
 
     if (!isValidSignature) {
       console.error('❌ Firma de webhook inválida.');
@@ -676,7 +685,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
                     p_order_status: 'paid',
                     p_role_context: 'buyer',
                     p_context_section: 'buyer_orders',
-                    p_title: 'Se registró tu compra',
+                    p_title: '🧾 Se registró tu compra',
                     p_body: 'Pago confirmado',
                     p_metadata: { quantity: it.quantity, price_at_addition: it.price_at_addition }
                   }
@@ -701,7 +710,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
                     p_order_status: 'paid',
                     p_role_context: 'supplier',
                     p_context_section: 'supplier_orders',
-                    p_title: 'Nuevo pedido pagado',
+                    p_title: '📦 Nuevo pedido pagado',
                     p_body: 'Tienes productos listos para despacho.',
                     p_metadata: { buyer_id: meta.buyer_id, product_ids: meta.products }
                   }
