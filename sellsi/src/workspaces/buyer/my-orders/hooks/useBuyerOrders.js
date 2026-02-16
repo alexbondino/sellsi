@@ -272,8 +272,8 @@ export const useBuyerOrders = (buyerId) => {
             const row = payload.new
             const newPaymentStatus = (row?.payment_status || '').toLowerCase()
 
-            // Handle all relevant payment status transitions (pending, paid, expired, rejected)
-            if (['paid', 'pending', 'expired', 'rejected'].includes(newPaymentStatus)) {
+            // Handle all relevant payment status transitions (pending, paid, expired, rejected/failed/cancelled)
+            if (['paid', 'pending', 'expired', 'rejected', 'failed', 'cancelled'].includes(newPaymentStatus)) {
               setOrders((prev) => {
                 const exists = prev.some((o) => o.order_id === row.id)
                 if (exists) {
@@ -369,7 +369,7 @@ export const useBuyerOrders = (buyerId) => {
     if (pollRef.current) clearInterval(pollRef.current)
     pollRef.current = setInterval(async () => {
       const hasPending = orders.some(
-        (o) => o.is_payment_order && o.payment_status !== 'paid'
+        (o) => o.is_payment_order && !['paid', 'rejected', 'failed', 'expired', 'cancelled'].includes(String(o.payment_status || '').toLowerCase())
       )
       if (!hasPending) return // stop polling until a pending exists
       if (Date.now() - lastRealtimeRef.current < POLL_INTERVAL_MS * 2) return // recent realtime
@@ -441,7 +441,7 @@ export const useBuyerOrders = (buyerId) => {
   /**
    * Hide an expired or rejected payment order from the buyer's list.
    * Calls RPC mark_order_hidden_by_buyer which sets hidden_by_buyer = true.
-   * Only works for orders with payment_status IN ('expired', 'rejected').
+    * Only works for orders with payment_status IN ('expired', 'rejected', 'failed', 'cancelled').
    * @param {string} orderId - The order ID to hide
    * @returns {Promise<{success: boolean, error?: string}>}
    */

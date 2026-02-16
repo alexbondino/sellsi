@@ -14,8 +14,10 @@ import { getStatusChips } from '../utils/orderStatusUtils'
  */
 function calculateChipProps(chip, order, recentlyPaid) {
   // Determine whether each stage was reached historically
+  const paymentStatus = (order._effective_payment_status || order.payment_status || 'pending').toLowerCase()
+
   const pagoConfirmadoReached =
-    order.payment_status === 'paid' ||
+    paymentStatus === 'paid' ||
     ['accepted', 'in_transit', 'delivered'].includes(order.status)
   
   const aceptadoReached =
@@ -35,15 +37,20 @@ function calculateChipProps(chip, order, recentlyPaid) {
   
   // Calcular tooltip dinámico
   if (chip.key === 'pago') {
-    if (order.payment_status === 'paid') {
+    if (paymentStatus === 'paid') {
       computedTooltip =
         'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.'
-    } else if (order.payment_status === 'expired') {
+    } else if (paymentStatus === 'expired') {
       computedTooltip =
         'El tiempo para completar el pago se agotó (20 minutos).'
-    } else if (order.payment_status === 'pending' && order.payment_method === 'bank_transfer') {
+    } else if (paymentStatus === 'pending' && order.payment_method === 'bank_transfer') {
       computedTooltip =
         'Tu transferencia bancaria está siendo verificada por nuestro equipo. Esto puede tomar hasta 24 horas.'
+    } else if (paymentStatus === 'rejected') {
+      const reason = order.payment_rejection_reason
+      computedTooltip = reason
+        ? `El pago fue rechazado. Razón: "${reason}"`
+        : 'El pago fue rechazado. Por favor contacta a soporte para más información.'
     } else {
       computedTooltip = 'Pago aún no confirmado.'
     }
@@ -83,7 +90,7 @@ function calculateChipProps(chip, order, recentlyPaid) {
   
   const highlight =
     isPagoChip &&
-    order.payment_status === 'paid' &&
+    paymentStatus === 'paid' &&
     recentlyPaid.has(order.order_id) &&
     !hasAdvancedStatus
 
@@ -101,10 +108,17 @@ function calculateChipProps(chip, order, recentlyPaid) {
 const StatusChipsDisplay = memo(function StatusChipsDisplay({
   order,
   productStatus,
+  paymentStatus,
   isMobile,
   recentlyPaid,
 }) {
-  const allChips = getStatusChips(productStatus, order.payment_status, order)
+  const normalizedPaymentStatus = (paymentStatus || order.payment_status || 'pending').toLowerCase()
+  const orderWithEffectivePayment = {
+    ...order,
+    _effective_payment_status: normalizedPaymentStatus,
+  }
+
+  const allChips = getStatusChips(productStatus, normalizedPaymentStatus, orderWithEffectivePayment)
   
   // En mobile, solo mostrar chip activo
   const chipsToRender = isMobile
@@ -126,7 +140,7 @@ const StatusChipsDisplay = memo(function StatusChipsDisplay({
       {chipsToRender.map((chip) => {
         const { tooltip, highlight, glowClass } = calculateChipProps(
           chip,
-          order,
+          orderWithEffectivePayment,
           recentlyPaid
         )
 

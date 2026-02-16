@@ -236,22 +236,24 @@ const MobileFinancingCard = ({ financing, onViewReason, onCancel, onSign, onDown
 
         {/* Actions */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1, borderTop: 1, borderColor: 'divider' }}>
-          <Tooltip title={(() => {
-            const isExpressPreSignature = financing.request_type === 'express' && 
-              !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status);
-            return isExpressPreSignature ? "Disponible cuando el proveedor firme" : "Descargar documentos";
-          })()}>
-            <span>
-              <IconButton 
-                size="small" 
-                color="primary" 
-                onClick={() => onDownload?.(financing)}
-                disabled={financing.request_type === 'express' && !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status)}
-              >
-                <DownloadIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
+          {!isApproved && (
+            <Tooltip title={(() => {
+              const isExpressPreSignature = financing.request_type === 'express' && 
+                !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status);
+              return isExpressPreSignature ? "Disponible cuando el proveedor firme" : "Descargar documentos";
+            })()}>
+              <span>
+                <IconButton 
+                  size="small" 
+                  color="primary" 
+                  onClick={() => onDownload?.(financing)}
+                  disabled={financing.request_type === 'express' && !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status)}
+                >
+                  <DownloadIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
 
           <Box sx={{ display: 'flex', gap: 1 }}>
             {isApproved ? (
@@ -675,6 +677,14 @@ const BuyerFinancingsList = ({
           financing={reasonModal.financing}
           onClose={closeReasonModal}
           onExited={handleReasonModalExited}
+        />
+
+        {/* Modal de Historial de Pagos (Mobile) */}
+        <PaymentHistoryModal
+          open={paymentHistoryModal.open}
+          financing={paymentHistoryModal.financing}
+          onClose={closePaymentHistoryModal}
+          onExited={handlePaymentHistoryModalExited}
         />
 
         {/* Modal 'Cómo Funciona' */}

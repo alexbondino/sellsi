@@ -19,6 +19,7 @@ function mapItem(raw, fallbackOrderId, idx = 0) {
     productId: raw.product_id || raw.productid || raw.id || null,
     quantity: raw.quantity || 1,
     priceAtAddition: raw.price_at_addition || raw.price || 0,
+    financing_amount: Number(raw.financing_amount || 0),
     document_type: normalizeDocumentType(raw.document_type || raw.documentType),
   product: raw.product || raw.products || raw.product_data || {},
   // Propagar campos necesarios para asignacin de shipping exacto en splitOrderBySupplier

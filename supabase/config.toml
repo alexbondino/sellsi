@@ -258,6 +258,16 @@ enabled = false
 # project_id = "my-firebase-project"
 
 # Use Auth0 as a third-party provider alongside Supabase Auth.
+
+[functions.create-payment-khipu]
+verify_jwt = false
+
+[functions.process-khipu-webhook]
+verify_jwt = false
+
+[functions.verify-khipu-payment]
+verify_jwt = false
+
 [auth.third_party.auth0]
 enabled = false
 # tenant = "my-auth0-tenant"

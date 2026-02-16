@@ -532,16 +532,20 @@ class CheckoutService {
       }
 
       // Actualizar orden con datos de Khipu
+      const khipuUpdatePayload = {
+        khipu_payment_id: khipuResponse.paymentId,
+        khipu_transaction_id: khipuResponse.transactionId,
+        khipu_payment_url: khipuResponse.paymentUrl,
+        payment_status: 'pending',
+        updated_at: new Date().toISOString(),
+      }
+      if (khipuResponse.expiresAt) {
+        khipuUpdatePayload.khipu_expires_at = khipuResponse.expiresAt
+      }
+
       const { error: updateError } = await supabase
         .from('orders')
-        .update({
-          khipu_payment_id: khipuResponse.paymentId,
-          khipu_transaction_id: khipuResponse.transactionId,
-          khipu_payment_url: khipuResponse.paymentUrl,
-          khipu_expires_at: khipuResponse.expiresAt,
-          payment_status: 'pending',
-          updated_at: new Date().toISOString(),
-        })
+        .update(khipuUpdatePayload)
         .eq('id', paymentData.orderId);
 
       if (updateError) {

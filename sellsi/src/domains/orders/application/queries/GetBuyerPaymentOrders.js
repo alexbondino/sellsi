@@ -118,6 +118,7 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
         product_id: it.product_id || it.productid || it.id || null,
         quantity: it.quantity || 1,
         price_at_addition,
+        financing_amount: Math.max(0, Math.round(Number(it.financing_amount || 0))),
         priceAtAddition: price_at_addition, // alias para capas que esperan camelCase
         price_tiers: it.price_tiers || null,
         document_type: normalizeDocumentType(
@@ -181,6 +182,7 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
       buyer_id: row.user_id,
       status: row.status || 'pending',
       payment_status: row.payment_status || 'pending',
+      financing_amount: Math.max(0, Math.round(Number(row.financing_amount || 0))),
       payment_method: row.payment_method || null,
       payment_rejection_reason: row.payment_rejection_reason || null,
       created_at: row.created_at,

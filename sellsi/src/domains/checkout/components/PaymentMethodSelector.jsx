@@ -256,6 +256,77 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
     navigate('/buyer/marketplace');
   };
 
+  const removeFullyFinancedItemsFromCart = async (sealedOrder, source = 'unknown') => {
+    try {
+      if (!sealedOrder || !Array.isArray(sealedOrder.items)) {
+        return { removed: 0, ids: [] };
+      }
+
+      const orderFinancing = Math.round(Number(sealedOrder.financing_amount || 0));
+      if (!Number.isFinite(orderFinancing) || orderFinancing <= 0) {
+        return { removed: 0, ids: [] };
+      }
+
+      const removableIds = sealedOrder.items
+        .map(item => {
+          const qty = Math.max(0, Number(item?.quantity || 0));
+          const unitPrice = Math.max(
+            0,
+            Number(
+              item?.unit_price_effective ??
+                item?.price_at_addition ??
+                item?.price ??
+                0
+            )
+          );
+          const lineTotal = Math.round(unitPrice * qty);
+          const financedAmount = Math.max(
+            0,
+            Math.round(Number(item?.financing_amount || 0))
+          );
+
+          if (lineTotal <= 0 || financedAmount < lineTotal) {
+            return null;
+          }
+
+          return item?.cart_items_id || item?.id || null;
+        })
+        .filter(Boolean);
+
+      const uniqueIds = Array.from(new Set(removableIds));
+      if (uniqueIds.length === 0) {
+        return { removed: 0, ids: [] };
+      }
+
+      const removeItemsBatch = useCartStore.getState().removeItemsBatch;
+      if (typeof removeItemsBatch !== 'function') {
+        return { removed: 0, ids: [] };
+      }
+
+      const ok = await removeItemsBatch(uniqueIds);
+      if (ok) {
+        console.log('[PaymentMethodSelector] ✅ Ítems 100% financiados removidos del carrito', {
+          source,
+          removed: uniqueIds.length,
+          ids: uniqueIds,
+        });
+        return { removed: uniqueIds.length, ids: uniqueIds };
+      }
+
+      console.warn('[PaymentMethodSelector] ⚠️ No se pudieron remover ítems 100% financiados del carrito', {
+        source,
+        ids: uniqueIds,
+      });
+      return { removed: 0, ids: [] };
+    } catch (removeErr) {
+      console.warn('[PaymentMethodSelector] ⚠️ Error removiendo ítems 100% financiados', {
+        source,
+        error: removeErr?.message,
+      });
+      return { removed: 0, ids: [] };
+    }
+  };
+
   // ===== HANDLERS PARA TRANSFERENCIA BANCARIA =====
   
   const handleBankTransferModalClose = () => {
@@ -530,8 +601,9 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
       toast.error(error.message);
       failPayment(error.message);
     } finally {
-      setIsProcessing(false);
+      // Mantener lock mientras esperamos redirección al gateway
       if (!paymentSuccessRef.current) {
+        setIsProcessing(false);
         isProcessingRef.current = false;
       }
     }
@@ -658,8 +730,13 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
       console.log('[PaymentMethodSelector] Orden creada con transferencia bancaria:', order);
 
       // Finalizar precios y validar (stock, precios, compra mínima)
-      await checkoutService.finalizeOrderPricing(order.id);
+      const sealedOrder = await checkoutService.finalizeOrderPricing(order.id);
       console.log('[PaymentMethodSelector] Precios finalizados y validados para orden:', order.id);
+
+      // ✅ Solo cuando hay financiamiento: remover del carrito las líneas 100% financiadas.
+      if (financingAmount > 0) {
+        await removeFullyFinancedItemsFromCart(sealedOrder, 'bank_transfer_pending');
+      }
 
       // Para transferencia bancaria, marcar como pending y redirigir a Mis Pedidos
       paymentSuccessRef.current = true;
@@ -667,9 +744,12 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
       // Cerrar modal de confirmación
       setShowBankTransferConfirmModal(false);
       
-      // Vaciar el carrito ya que la orden pasó a pending
-      await useCartStore.getState().clearCart();
-      console.log('[PaymentMethodSelector] Carrito vaciado después de crear orden pending');
+      // 🔒 Si no hay financiamiento, se mantiene comportamiento previo (clearCart completo).
+      // Si hay financiamiento, solo se eliminaron líneas 100% financiadas (arriba).
+      if (financingAmount <= 0) {
+        await useCartStore.getState().clearCart();
+        console.log('[PaymentMethodSelector] Carrito vaciado después de crear orden pending');
+      }
       
       toast.success('¡Pedido registrado! Recibirás confirmación cuando se verifique el pago.');
       
@@ -876,6 +956,59 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
         };
       });
 
+      const financingByRequest = itemsWithDocType.reduce((acc, item) => {
+        const amount = Math.max(0, Number(item.financing_amount) || 0);
+        if (amount <= 0) return acc;
+
+        const financingId = item.financing_request_id;
+        if (!financingId) {
+          throw new Error('FINANCING_UNAVAILABLE Debes asignar un financiamiento válido para cada producto financiado.');
+        }
+
+        acc[financingId] = (acc[financingId] || 0) + amount;
+        return acc;
+      }, {});
+
+      const financingIds = Object.keys(financingByRequest);
+      if (financingIds.length > 0) {
+        const { supabase } = await import('../../../services/supabase');
+        const { data: financingRows, error: financingCheckError } = await supabase
+          .from('financing_requests')
+          .select('id, amount, amount_used, available_amount, status, expires_at, paused')
+          .in('id', financingIds);
+
+        if (financingCheckError) {
+          throw new Error('FINANCING_UNAVAILABLE No se pudo validar el cupo de financiamiento en tiempo real.');
+        }
+
+        const rowById = new Map((financingRows || []).map((row) => [row.id, row]));
+        const nowTs = Date.now();
+
+        for (const [financingId, requestedAmount] of Object.entries(financingByRequest)) {
+          const row = rowById.get(financingId);
+          if (!row) {
+            throw new Error(`FINANCING_UNAVAILABLE Financiamiento no encontrado: ${financingId}`);
+          }
+
+          const isExpired = row.expires_at ? new Date(row.expires_at).getTime() <= nowTs : false;
+          if (row.paused || row.status !== 'approved_by_sellsi' || isExpired) {
+            throw new Error('FINANCING_UNAVAILABLE El financiamiento seleccionado no está disponible actualmente.');
+          }
+
+          const availableFromDb = Math.max(0, Number(row.available_amount) || 0);
+          const availableDerived = Math.max(0, (Number(row.amount || 0) - Number(row.amount_used || 0)));
+          const availableEffective = Math.max(availableFromDb, availableDerived);
+
+          if (requestedAmount > availableEffective) {
+            throw new Error('FINANCING_UNAVAILABLE El monto configurado excede el cupo disponible. Actualiza la configuración de financiamiento.');
+          }
+
+          if (requestedAmount > availableFromDb && requestedAmount <= availableDerived) {
+            throw new Error('FINANCING_BALANCE_OUT_OF_SYNC Detectamos una desincronización temporal del cupo. Refresca y vuelve a intentar o contacta soporte para sincronizar saldos.');
+          }
+        }
+      }
+
       // Obtener cartId del store para vincular orden con carrito
       const cartId = useCartStore.getState().cartId;
 
@@ -896,6 +1029,17 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
 
       console.log('[PaymentMethodSelector] Orden creada:', order);
 
+      // ✅ Solo cuando hay financiamiento: sellar temprano y remover del carrito
+      // las líneas que quedaron 100% cubiertas por financiamiento.
+      let sealedOrderForFinancing = null;
+      if (financingAmount > 0) {
+        sealedOrderForFinancing = await checkoutService.finalizeOrderPricing(order.id);
+        await removeFullyFinancedItemsFromCart(
+          sealedOrderForFinancing,
+          'gateway_before_redirect'
+        );
+      }
+
       // ✅ NUEVO: Si está 100% financiado, no requiere procesador de pago externo
       if (isFullyFinanced) {
         console.log('[PaymentMethodSelector] 🔵 Orden 100% financiada, finalizando pricing...');
@@ -906,7 +1050,9 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
           // 2. Calcular payment_fee y grand_total
           // 3. Marcar automáticamente como 'paid' (migration 20260205000002)
           console.log('[PaymentMethodSelector] 🔵 Llamando finalizeOrderPricing para orden:', order.id);
-          await checkoutService.finalizeOrderPricing(order.id);
+          if (!sealedOrderForFinancing) {
+            sealedOrderForFinancing = await checkoutService.finalizeOrderPricing(order.id);
+          }
           console.log('[PaymentMethodSelector] ✅ finalizeOrderPricing completado');
           
           // ✅ CRÍTICO: Marcar como completado ANTES de navigate y clearCart
@@ -921,16 +1067,14 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
           navigate('/buyer/orders', { replace: true });
           console.log('[PaymentMethodSelector] 🔵 Navigate ejecutado');
           
+          // ✅ Para orden 100% financiada, asegurar limpieza de líneas financiadas
+          await removeFullyFinancedItemsFromCart(
+            sealedOrderForFinancing,
+            'fully_financed'
+          );
+
           // ✅ Limpiar carrito DESPUÉS de la redirección
           toast.success('¡Orden confirmada! El 100% está cubierto por financiamiento.');
-          const clearCart = useCartStore.getState().clearCart;
-          if (clearCart) {
-            console.log('[PaymentMethodSelector] 🔵 Ejecutando clearCart() en background');
-            // Ejecutar en background sin esperar
-            clearCart()
-              .then(() => console.log('[PaymentMethodSelector] ✅ clearCart() completado'))
-              .catch(err => console.error('[PaymentMethodSelector] ❌ Error limpiando carrito:', err));
-          }
           
           console.log('[PaymentMethodSelector] ✅ Flujo de financiamiento 100% completado exitosamente');
           return;
@@ -1043,6 +1187,12 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
         INVALID_PRODUCT: 'Uno o más productos no tienen proveedor asignado.',
         INVALID_SUPPLIER: 'El proveedor de uno o más productos no existe.',
         INVALID_ORDER: 'La orden está vacía o es inválida.',
+        FINANCING_UNAVAILABLE:
+          'El financiamiento seleccionado ya no tiene cupo disponible. Actualiza la configuración e inténtalo nuevamente.',
+        FINANCING_AMOUNT_EXCEEDS_AVAILABLE:
+          'El monto de financiamiento excede el cupo disponible. Ajusta los montos y vuelve a intentar.',
+        FINANCING_BALANCE_OUT_OF_SYNC:
+          'Detectamos un desajuste en el saldo disponible del financiamiento. Refresca y vuelve a intentar.',
       };
 
       // Buscar mensaje de error conocido
@@ -1055,6 +1205,12 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
         console.log(
           `[PaymentMethodSelector] Error de validación: ${knownError}`
         );
+
+        if (knownError === 'FINANCING_BALANCE_OUT_OF_SYNC') {
+          setError(userMessage);
+          toast.error(`${userMessage} Refresca la página e intenta nuevamente.`);
+          return;
+        }
 
         // Todos los errores de validación redirigen al carrito para corrección
         toast.error(userMessage + ' Revisa tu carrito.');
@@ -1083,9 +1239,10 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
       toast.error(error.message);
       failPayment(error.message);
     } finally {
-      setIsProcessing(false);
-      // Solo resetear ref si NO hubo éxito (evita race condition con setTimeout del redirect)
+      // Mantener lock visual/lógico si ya se inició un flujo de pago exitoso
+      // (ej: Khipu/Flow con redirect pendiente) para prevenir doble invocación.
       if (!paymentSuccessRef.current) {
+        setIsProcessing(false);
         isProcessingRef.current = false;
       }
     }

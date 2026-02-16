@@ -80,25 +80,46 @@ const FinancingConfigModal = ({
     return productSubtotal + shippingCost;
   };
 
+  const getFinancingAvailable = (financing) => {
+    const dbAvailable = Math.max(0, Number(financing?.available_amount) || 0);
+    const derivedAvailable = Math.max(0, (Number(financing?.amount || 0) - Number(financing?.amount_used || 0)));
+    const value = Math.max(dbAvailable, derivedAvailable);
+    return Number.isFinite(value) ? Math.max(0, value) : 0;
+  };
+
   // Handler para cambiar el monto de financiamiento con el slider
   const handleAmountChange = (productId, newValue) => {
+    const selectedFinancingId = selectedFinancingByProduct?.[productId];
+    const selectedFinancing = selectedFinancingId
+      ? Object.values(financingsBySupplier).flat().find((f) => f.id === selectedFinancingId)
+      : null;
+    const maxByFinancing = selectedFinancing ? getFinancingAvailable(selectedFinancing) : Number.POSITIVE_INFINITY;
+    const normalized = Math.max(0, Number(newValue) || 0);
+    const clamped = Math.min(normalized, maxByFinancing);
+
     setProductFinancingConfig(prev => ({
       ...prev,
       [productId]: {
         ...prev[productId],
-        amount: newValue,
+        amount: clamped,
       },
     }));
   };
 
   // Handler para el checkbox de "Pagar la totalidad"
   const handleFullAmountToggle = (productId, total) => {
+    const selectedFinancingId = selectedFinancingByProduct?.[productId];
+    const selectedFinancing = selectedFinancingId
+      ? Object.values(financingsBySupplier).flat().find((f) => f.id === selectedFinancingId)
+      : null;
+    const maxByFinancing = selectedFinancing ? getFinancingAvailable(selectedFinancing) : total;
+
     setProductFinancingConfig(prev => ({
       ...prev,
       [productId]: {
         ...prev[productId],
         isFullAmount: !prev[productId].isFullAmount,
-        amount: !prev[productId].isFullAmount ? total : prev[productId].amount,
+        amount: !prev[productId].isFullAmount ? Math.min(total, maxByFinancing) : prev[productId].amount,
       },
     }));
   };
@@ -152,13 +173,27 @@ const FinancingConfigModal = ({
   // Función helper para obtener financiamientos del supplier de un producto
   const getFinancingsForProduct = (item) => {
     const supplierId = item.supplier_id || item.supplierId;
-    return (financingsBySupplier[supplierId] || []).filter(f => !f.paused);
+    const now = new Date();
+    return (financingsBySupplier[supplierId] || []).filter((f) => {
+      if (!f || f.paused) return false;
+      const available = getFinancingAvailable(f);
+      if (available <= 0) return false;
+
+      if (f.expires_at) {
+        const expiresAt = new Date(f.expires_at);
+        if (!Number.isNaN(expiresAt.getTime()) && expiresAt <= now) {
+          return false;
+        }
+      }
+
+      return true;
+    });
   };
 
   // Función helper para formatear info del financiamiento
   const getFinancingStatus = (financing) => {
-    const available = financing.amount - financing.amount_used;
-    const usagePercent = (financing.amount_used / financing.amount) * 100;
+    const available = getFinancingAvailable(financing);
+    const usagePercent = financing.amount > 0 ? (financing.amount_used / financing.amount) * 100 : 0;
     const expiresAt = new Date(financing.expires_at);
     const now = new Date();
     const daysRemaining = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
@@ -175,6 +210,25 @@ const FinancingConfigModal = ({
       ...prev,
       [productId]: financingId,
     }));
+
+    if (!financingId) return;
+
+    const selectedFinancing = Object.values(financingsBySupplier).flat().find((f) => f.id === financingId);
+    if (!selectedFinancing) return;
+
+    const maxByFinancing = getFinancingAvailable(selectedFinancing);
+    setProductFinancingConfig((prev) => {
+      const current = Number(prev?.[productId]?.amount || 0);
+      if (current <= maxByFinancing) return prev;
+
+      return {
+        ...prev,
+        [productId]: {
+          ...prev[productId],
+          amount: maxByFinancing,
+        },
+      };
+    });
   };
 
   // Guardar configuración
@@ -187,6 +241,25 @@ const FinancingConfigModal = ({
 
     if (invalidProduct) {
       toast.error(`Debes asignar un financiamiento para ${toTitleCase(invalidProduct.name || invalidProduct.nombre || 'el producto')}`);
+      return;
+    }
+
+    const exceededProduct = cartItems.find((item) => {
+      const financedAmount = Number(productFinancingConfig?.[item.id]?.amount || 0);
+      if (financedAmount <= 0) return false;
+
+      const selectedFinancingId = selectedFinancingByProduct?.[item.id];
+      if (!selectedFinancingId) return false;
+
+      const selectedFinancing = getFinancingsForProduct(item).find((f) => f.id === selectedFinancingId);
+      if (!selectedFinancing) return true;
+
+      const available = getFinancingAvailable(selectedFinancing);
+      return financedAmount > available;
+    });
+
+    if (exceededProduct) {
+      toast.error(`El monto supera el cupo disponible para ${toTitleCase(exceededProduct.name || exceededProduct.nombre || 'el producto')}`);
       return;
     }
 

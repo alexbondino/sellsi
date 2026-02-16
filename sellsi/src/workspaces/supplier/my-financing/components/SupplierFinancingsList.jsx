@@ -258,22 +258,24 @@ const MobileFinancingCard = ({ financing, onApprove, onReject, onSign, onCancel,
 
         {/* Actions */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1, borderTop: 1, borderColor: 'divider' }}>
-          <Tooltip title={(() => {
-            const isExpressPreSignature = financing.request_type === 'express' && 
-              !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status);
-            return isExpressPreSignature ? "Disponible cuando el comprador firme" : "Descargar documentos";
-          })()}>
-            <span>
-              <IconButton 
-                size="small" 
-                color="primary" 
-                onClick={() => onDownload?.(financing)}
-                disabled={financing.request_type === 'express' && !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status)}
-              >
-                <DownloadIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
+          {!isApproved && (
+            <Tooltip title={(() => {
+              const isExpressPreSignature = financing.request_type === 'express' && 
+                !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status);
+              return isExpressPreSignature ? "Disponible cuando el comprador firme" : "Descargar documentos";
+            })()}>
+              <span>
+                <IconButton 
+                  size="small" 
+                  color="primary" 
+                  onClick={() => onDownload?.(financing)}
+                  disabled={financing.request_type === 'express' && !['supplier_signature_pending', 'pending_sellsi_approval', 'approved_by_sellsi', 'rejected_by_sellsi', 'expired', 'paid'].includes(financing.status)}
+                >
+                  <DownloadIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
 
           <Box sx={{ display: 'flex', gap: 1 }}>
             {availableActions.includes('approve') && (
@@ -669,32 +671,8 @@ const SupplierFinancingsList = ({
   if (isMobile) {
     return (
       <>
-        {/* Tabs Mobile */}
-        <Paper sx={{ mb: 2, width: 'fit-content', mx: 'auto' }}>
-          <Tabs
-            value={activeTab}
-            onChange={(e, newValue) => setActiveTab(newValue)}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{
-              borderBottom: 1,
-              borderColor: 'divider',
-              '& .MuiTab-root': {
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                color: 'text.primary',
-                '&.Mui-selected': {
-                  backgroundColor: '#2E52B2',
-                  color: 'white',
-                },
-              },
-            }}
-          >
-            <Tab label="Solicitudes de financiamiento" />
-            <Tab label="Financiamientos aprobados" />
-          </Tabs>
-        </Paper>
+        {/* Tabs + 'Cómo Funciona' (Mobile) */}
+        <FinancingTabs activeTab={activeTab} onTabChange={setActiveTab} isMobile={true} onHowItWorks={openHowModal} />
 
         {/* Contenido según tab activo */}
         {activeTab === 0 ? (
@@ -755,6 +733,13 @@ const SupplierFinancingsList = ({
             </Box>
           </>
         )}
+
+        {/* Modal 'Cómo Funciona' */}
+        <HowItWorksModal 
+          open={howOpen} 
+          onClose={closeHowModal}
+          steps={SUPPLIER_FINANCING_STEPS}
+        />
 
         <SupplierFinancingActionModals
           open={modalState.open}
