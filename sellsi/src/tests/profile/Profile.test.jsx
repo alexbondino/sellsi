@@ -169,7 +169,7 @@ describe('Profile.jsx - deep and edge tests', () => {
     mockGetUserProfile.mockResolvedValue({ data: {
       user_id: 'uid-123', user_nm: 'Existing User', phone_nbr: '123', country: 'CL', shipping_region: '', logo_url: null, document_types: []
     } });
-    mockUpdateUserProfile.mockResolvedValue({});
+    mockUpdateUserProfile.mockResolvedValue({ success: true, error: null });
     mockUploadProfileImage.mockResolvedValue({ url: 'https://cdn/logo.png' });
     mockDeleteAllUserImages.mockResolvedValue({ success: true });
 
@@ -481,9 +481,8 @@ describe('Profile.jsx - deep and edge tests', () => {
     const btn = screen.getByRole('button', { name: /Actualizar/i });
     fireEvent.click(btn);
     await waitFor(() => expect(mockUpdateUserProfile).toHaveBeenCalled());
-    // La implementación actual invalida cache de usuario en todas las actualizaciones
-    // Este es el comportamiento esperado
-    expect(mockInvalidateUserCache).toHaveBeenCalled();
+    // Nuevo comportamiento: solo invalidar cache de shipping cuando hay cambios reales de shipping
+    expect(mockInvalidateUserCache).not.toHaveBeenCalled();
   });
 
   test('opens change password modal when clicking change password', async () => {

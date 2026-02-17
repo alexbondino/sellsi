@@ -230,7 +230,14 @@ const Profile = ({
       }
 
       // Actualizar usando el servicio
-      await updateUserProfile(user.id, profileData);
+      const result = await updateUserProfile(user.id, profileData);
+
+      if (
+        !result?.success ||
+        (result?.partialErrors && Object.keys(result.partialErrors).length > 0)
+      ) {
+        throw new Error(formatProfileUpdateError(result));
+      }
 
       // ✅ INVALIDAR CACHE DE INFORMACIÓN BANCARIA si se actualizaron campos relacionados
       // NOTA: Los campos que llegan aquí están en formato BD (snake_case)
@@ -413,6 +420,65 @@ const Profile = ({
 
   const inFlightUpdateRef = useRef(false);
 
+  const getChangedPayload = (nextPayload, baselinePayload = {}) => {
+    const changed = {};
+    const normalize = value => (value === null || value === undefined ? '' : value);
+    const isObjectLike = value =>
+      value !== null && typeof value === 'object' && !Array.isArray(value);
+
+    Object.entries(nextPayload || {}).forEach(([key, nextValue]) => {
+      const baselineValue = baselinePayload?.[key];
+
+      if (Array.isArray(nextValue) || Array.isArray(baselineValue)) {
+        const nextArray = Array.isArray(nextValue) ? nextValue : [];
+        const baselineArray = Array.isArray(baselineValue) ? baselineValue : [];
+        if (JSON.stringify(nextArray) !== JSON.stringify(baselineArray)) {
+          changed[key] = nextValue;
+        }
+        return;
+      }
+
+      if (isObjectLike(nextValue) || isObjectLike(baselineValue)) {
+        if (JSON.stringify(nextValue || {}) !== JSON.stringify(baselineValue || {})) {
+          changed[key] = nextValue;
+        }
+        return;
+      }
+
+      if (normalize(nextValue) !== normalize(baselineValue)) {
+        changed[key] = nextValue;
+      }
+    });
+
+    return changed;
+  };
+
+  const formatProfileUpdateError = result => {
+    if (!result) return 'No se pudo actualizar el perfil.';
+
+    if (result.validationErrors && Object.keys(result.validationErrors).length > 0) {
+      const labels = {
+        shipping: 'Despacho incompleto',
+        billing: 'Facturación incompleta',
+        shippingNumber: 'Número de dirección inválido',
+        accountNumber: 'Número de cuenta inválido',
+      };
+      const errors = Object.keys(result.validationErrors).map(
+        key => labels[key] || key
+      );
+      return `No se pudo actualizar: ${errors.join(', ')}`;
+    }
+
+    if (result.partialErrors && Object.keys(result.partialErrors).length > 0) {
+      const partial = Object.entries(result.partialErrors)
+        .map(([section, message]) => `${section}: ${message}`)
+        .join(' | ');
+      return `Actualización parcial con error (${partial})`;
+    }
+
+    return result.error?.message || 'No se pudo actualizar el perfil.';
+  };
+
   const handleUpdate = async () => {
     // Prevent duplicate rapid submissions
     if (inFlightUpdateRef.current) return;
@@ -447,9 +513,49 @@ const Profile = ({
       delete dataToUpdate.user_nm;
       delete dataToUpdate.logo_url;
 
+      const changedPayload = getChangedPayload(dataToUpdate, loadedProfile || {});
+
       console.log(
         '📤 Datos finales a enviar (COMPLETO):',
         JSON.stringify(dataToUpdate, null, 2)
+      );
+
+      if (Object.keys(changedPayload).length === 0) {
+        showBanner({
+          message: 'No hay cambios para actualizar',
+          severity: 'info',
+          duration: 3000,
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log(
+        '🧩 Datos detectados como cambiados:',
+        JSON.stringify(changedPayload, null, 2)
+      );
+
+      const shippingFieldsToValidate = [
+        'shipping_region',
+        'shipping_commune',
+        'shipping_address',
+        'shipping_number',
+        'shipping_dept',
+      ];
+      const hasShippingChanges = shippingFieldsToValidate.some(field =>
+        changedPayload.hasOwnProperty(field)
+      );
+
+      const billingFieldsToValidate = [
+        'business_name',
+        'billing_rut',
+        'business_line',
+        'billing_address',
+        'billing_region',
+        'billing_commune',
+      ];
+      const hasBillingChanges = billingFieldsToValidate.some(field =>
+        changedPayload.hasOwnProperty(field)
       );
       // Strict validation: check both the raw formData and the already-mapped dataToUpdate.
       // This prevents cases where mapping or missing properties would allow an update to proceed
@@ -486,6 +592,7 @@ const Profile = ({
         String(finalAddress).trim() !== '';
 
       if (
+        hasShippingChanges &&
         (regionSelected || finalRegion) &&
         (!communeFilled || !addressFilled)
       ) {
@@ -506,7 +613,7 @@ const Profile = ({
         (formData?.businessName && formData.businessName.trim() !== '') ||
         (dataToUpdate.business_name &&
           String(dataToUpdate.business_name).trim() !== '');
-      if (businessNameFilled) {
+      if (businessNameFilled && hasBillingChanges) {
         const billingRut = dataToUpdate.billing_rut ?? formData?.billingRut;
         const businessLine =
           dataToUpdate.business_line ?? formData?.businessLine;
@@ -535,7 +642,7 @@ const Profile = ({
           return;
         }
       }
-      await handleUpdateProfile(dataToUpdate);
+      await handleUpdateProfile(changedPayload);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
 
       // ✅ INVALIDAR / PRIMAR CACHÉ DE SHIPPING si cambió la región o campos de despacho
@@ -546,10 +653,10 @@ const Profile = ({
         'shipping_number',
       ];
       const hasShippingUpdate = shippingFields.some(field =>
-        dataToUpdate.hasOwnProperty(field)
+        changedPayload.hasOwnProperty(field)
       );
       const newRegion =
-        dataToUpdate.shipping_region || dataToUpdate.shippingRegion;
+        changedPayload.shipping_region || changedPayload.shippingRegion;
 
       if (newRegion || hasShippingUpdate) {
         invalidateUserCache();
@@ -586,6 +693,7 @@ const Profile = ({
       // Mostrar banner de error
       showBanner({
         message:
+          error?.message ||
           '❌ Error al actualizar el perfil. Por favor, inténtalo nuevamente.',
         severity: 'error',
         duration: 6000,
