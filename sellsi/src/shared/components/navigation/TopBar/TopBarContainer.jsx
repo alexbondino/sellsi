@@ -69,8 +69,24 @@ export default function TopBarContainer({
 
   const notifCtx = useNotificationsContext?.() || null;
   const marketplaceSearchBus = useMarketplaceSearchBus();
+  const updateExternalSearchTerm = marketplaceSearchBus?.updateExternalSearchTerm;
+  const notifications = notifCtx?.notifications || [];
+  const unreadCount = notifCtx?.unreadCount || 0;
+  const activeNotifTab = notifCtx?.activeTab || 'all';
+  const setActiveNotifTab = notifCtx?.setActiveTab;
+  const markNotificationsAsRead = notifCtx?.markAsRead;
 
   const isBuyerRole = currentRole === 'buyer';
+  const handleReactiveMarketplaceSearch = useCallback((searchTerm) => {
+    updateExternalSearchTerm?.(searchTerm);
+  }, [updateExternalSearchTerm]);
+
+  const handleNavigateToBuyerMarketplace = useCallback((searchTerm) => {
+    navigate('/buyer/marketplace', {
+      state: { initialSearch: searchTerm, fromTopBar: true },
+    });
+  }, [navigate]);
+
   const {
     term: mobileSearch,
     inputProps: mobileSearchInputProps,
@@ -79,13 +95,8 @@ export default function TopBarContainer({
     enabled: !!session,
     pathname: location.pathname,
     isBuyerRole,
-    onReactive: t => {
-      marketplaceSearchBus?.updateExternalSearchTerm?.(t);
-    },
-    onNavigateOutside: t =>
-      navigate('/buyer/marketplace', {
-        state: { initialSearch: t, fromTopBar: true },
-      }),
+    onReactive: handleReactiveMarketplaceSearch,
+    onNavigateOutside: handleNavigateToBuyerMarketplace,
   });
 
   // ====== FIN DE HOOKS ======
@@ -199,10 +210,10 @@ export default function TopBarContainer({
     else if (n.order_status && currentRole === 'supplier')
       navigate('/supplier/my-orders');
     try {
-      notifCtx?.markAsRead?.([n.id]);
+      markNotificationsAsRead?.([n.id]);
     } catch (_) {}
     handleCloseNotif();
-  }, [navigate, currentRole, notifCtx, handleCloseNotif]);
+  }, [navigate, currentRole, markNotificationsAsRead, handleCloseNotif]);
 
   // Memoize paddingX to prevent TopBarView re-renders
   const paddingX = useMemo(() => {
@@ -296,10 +307,10 @@ export default function TopBarContainer({
         </Button>
         <NotificationsMenu
           showBell
-          unreadCount={notifCtx?.unreadCount || 0}
-          notifications={notifCtx?.notifications || []}
-          activeTab={notifCtx?.activeTab || 'all'}
-          onTabChange={t => notifCtx?.setActiveTab?.(t)}
+          unreadCount={unreadCount}
+          notifications={notifications}
+          activeTab={activeNotifTab}
+          onTabChange={setActiveNotifTab}
           onItemClick={handleNotifItemClick}
           onViewAll={handleViewAllNotif}
           onCloseDialog={handleCloseNotifModal}
@@ -337,7 +348,10 @@ export default function TopBarContainer({
     currentRole,
     isRoleLoading,
     handleRoleToggleChange,
-    notifCtx,
+    unreadCount,
+    notifications,
+    activeNotifTab,
+    setActiveNotifTab,
     handleNotifItemClick,
     handleViewAllNotif,
     handleCloseNotifModal,
@@ -539,7 +553,7 @@ export default function TopBarContainer({
       mobileSearchInputProps={mobileSearchInputProps}
       onMobileSearchButton={handleMobileSearchButton}
       mobileSearchInputRef={mobileSearchInputRef}
-      notifBellCount={notifCtx?.unreadCount || 0}
+      notifBellCount={unreadCount}
       onOpenNotif={handleOpenNotif}
       notifMenuOpen={Boolean(notifAnchor)}
       onLogoClick={handleLogoClick}

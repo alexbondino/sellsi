@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNotificationsStore } from '../store/notificationsStore';
 import { notificationService } from '../services/notificationService';
 import { timeAgo } from '../utils/timeAgo';
@@ -89,8 +89,11 @@ export function useNotifications(userId) {
         } catch (e) { console.error('[useNotifications] poll refresh error', e); }
       }
     }, 30000);
-    return () => { try { supabase.removeChannel(channel); } catch (_) {} };
-  }, [userId, add, triggerOrdersRefresh]);
+    return () => {
+      clearInterval(pollInterval);
+      try { supabase.removeChannel(channel); } catch (_) {}
+    };
+  }, [userId, add, bootstrap, triggerOrdersRefresh]);
 
   const loadMore = useCallback(async () => {
     if (!notifications.length) return;
@@ -114,19 +117,33 @@ export function useNotifications(userId) {
     try { await notificationService.markRead(ids); } catch (_) {}
   }, [bulkMarkContext]);
 
-  const humanized = notifications.map(n => ({ ...n, time_ago: timeAgo(n.created_at) }));
+  const humanized = useMemo(
+    () => notifications.map(n => ({ ...n, time_ago: timeAgo(n.created_at) })),
+    [notifications]
+  );
 
-  return {
+  const handleSetActiveTab = useCallback((tab) => {
+    setActiveTab(tab);
+    if (tab === 'unread') markUnreadTabAsRead();
+  }, [setActiveTab, markUnreadTabAsRead]);
+
+  return useMemo(() => ({
     notifications: humanized,
     unreadCount,
     hasMore,
     activeTab,
     loadMore,
-    setActiveTab: (tab) => {
-      setActiveTab(tab);
-      if (tab === 'unread') markUnreadTabAsRead();
-    },
-  markContext,
-  markAsRead, // expose individual mark for UI interactions
-  };
+    setActiveTab: handleSetActiveTab,
+    markContext,
+    markAsRead,
+  }), [
+    humanized,
+    unreadCount,
+    hasMore,
+    activeTab,
+    loadMore,
+    handleSetActiveTab,
+    markContext,
+    markAsRead,
+  ]);
 }
