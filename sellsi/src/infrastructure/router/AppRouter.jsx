@@ -211,6 +211,21 @@ export const AppRouter = ({ scrollTargets }) => {
         {/* Ruta para testing de 404 (solo desarrollo) */}
         <Route path="/404" element={<NotFound />} />
 
+        {/* ─── RUTA EXCLUSIVA DEV: Onboarding sin sesión ─────────────────────
+            Solo existe en npm run dev (import.meta.env.DEV).
+            Vite elimina este bloque del bundle de producción.
+        ─────────────────────────────────────────────────────────────────── */}
+        {import.meta.env.DEV && (
+          <Route
+            path="/dev/onboarding"
+            element={
+              <Suspense fallback={<SuspenseLoader />}>
+                <Onboarding devMode />
+              </Suspense>
+            }
+          />
+        )}
+
         {/* Ruta de callback de autenticación Supabase */}
         <Route path="/auth/callback" element={<AuthCallback />} />
 

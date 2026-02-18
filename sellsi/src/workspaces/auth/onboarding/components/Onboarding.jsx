@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -7,56 +7,41 @@ import {
   TextField,
   CircularProgress,
   Avatar,
-  Divider,
   Card,
   CardActionArea,
+  Stepper,
+  Step,
+  StepLabel,
+  LinearProgress,
   useTheme,
+  useMediaQuery,
+  Button,
 } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
+import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
+import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import { supabase } from '../../../../services/supabase';
 import { useOptimizedUserShippingRegion } from '../../../../hooks/useOptimizedUserShippingRegion';
 import { useBanner } from '../../../../shared/components/display/banners/BannerContext';
-
-// Asumimos que estos componentes existen en tu proyecto y están bien estilizados.
 import PrimaryButton from '../../../../shared/components/forms/PrimaryButton';
 import CountrySelector from '../../../../shared/components/forms/CountrySelector';
 import { validatePhone, normalizePhone } from '../../../../utils/validators';
 import { invalidateUserProfileCache } from '../../../../services/user/profileService';
-import {
-  TaxDocumentSelector,
-  BillingInfoForm,
-} from '../../../../shared/components';
-import { Collapse } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../infrastructure/providers/UnifiedAuthProvider';
 
-// Si usas Grid v6 (Grid2), mantén "size={{ xs: 12 }}".
-// Si usas Grid v5, cambia a item xs={12}.
-import Grid from '@mui/material/Grid';
-
-// ==================================================================
-// COMPONENTE HELPER: Uploader de logos (estilo mejorado)
-// ==================================================================
-const LogoUploader = ({
-  logoPreview,
-  onLogoSelect,
-  size = 'large',
-  logoError,
-}) => {
-  const uploaderSize = size === 'large' ? 120 : 80;
+// ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+// Helper: LogoUploader
+// ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+const LogoUploader = ({ logoPreview, onLogoSelect, logoError }) => {
   const theme = useTheme();
+  const size = 100;
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 1.5,
-      }}
-    >
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
       <label htmlFor="logo-upload" style={{ cursor: 'pointer' }}>
         <input
           id="logo-upload"
@@ -68,90 +53,182 @@ const LogoUploader = ({
         <Avatar
           src={logoPreview}
           sx={{
-            width: uploaderSize,
-            height: uploaderSize,
-            bgcolor: logoError
-              ? theme.palette.error.light
-              : theme.palette.grey[100],
+            width: size,
+            height: size,
+            bgcolor: logoError ? theme.palette.error.light : theme.palette.grey[100],
             border: logoError
               ? `2px solid ${theme.palette.error.main}`
               : `2px dashed ${theme.palette.grey[400]}`,
-            transition: 'border-color 0.3s, background-color 0.3s',
+            transition: 'all 0.25s',
             boxShadow: theme.shadows[2],
             '&:hover': {
               borderColor: theme.palette.primary.main,
               bgcolor: theme.palette.grey[200],
+              transform: 'scale(1.03)',
             },
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             color: theme.palette.text.secondary,
-            '& svg': {
-              fontSize: uploaderSize / 2,
-            },
+            '& svg': { fontSize: size / 2.5 },
           }}
         >
           {!logoPreview && <PhotoCameraIcon />}
           {logoPreview && !logoError && (
-            <Typography
-              sx={{ fontSize: 14, color: '#666', textAlign: 'center', p: 1 }}
-            >
-              Cambiar Logo
+            <Typography sx={{ fontSize: 12, color: '#666', textAlign: 'center', p: 1 }}>
+              Cambiar
             </Typography>
           )}
         </Avatar>
       </label>
-      {logoError && (
-        <Typography
-          color="error"
-          variant="caption"
-          sx={{ fontSize: 12, mt: 0.5 }}
-        >
-          {logoError}
+
+      {logoError ? (
+        <Typography color="error" variant="caption">{logoError}</Typography>
+      ) : (
+        <Typography variant="caption" color="text.secondary">
+          {logoPreview ? '?? Logo cargado' : 'Haz clic para subir tu logo'}
         </Typography>
       )}
+
+      <Typography variant="caption" color="text.disabled">
+        JPG, PNG o WEBP · Máximo 300 KB
+      </Typography>
     </Box>
   );
 };
 
-// ==================================================================
-// COMPONENTE PRINCIPAL: Onboarding
-// ==================================================================
-const Onboarding = () => {
-  const [isLoading, setIsLoading] = useState(false);
+// ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+// Helper: TypeCard ?? tarjeta de selección de tipo de cuenta
+// ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+const TypeCard = ({ selected, onClick, icon: Icon, title, subtitle, accentColor }) => {
   const theme = useTheme();
+  return (
+    <Card
+      variant="outlined"
+      sx={{
+        width: '100%',
+        borderRadius: 3,
+        borderColor: selected ? accentColor : theme.palette.grey[300],
+        borderWidth: selected ? 2 : 1,
+        boxShadow: selected ? `0 4px 20px ${accentColor}33` : theme.shadows[1],
+        transition: 'all 0.25s ease',
+        cursor: 'pointer',
+        '&:hover': {
+          boxShadow: `0 6px 24px ${accentColor}44`,
+          transform: 'translateY(-4px)',
+          borderColor: accentColor,
+          borderWidth: 2,
+        },
+      }}
+    >
+      <CardActionArea
+        onClick={onClick}
+        sx={{ px: 1, py: { xs: 2, sm: 3 }, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}
+      >
+        <Box
+          sx={{
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            bgcolor: selected ? accentColor : theme.palette.grey[100],
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.25s',
+          }}
+        >
+          <Icon sx={{ fontSize: 28, color: selected ? '#fff' : theme.palette.grey[500] }} />
+        </Box>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: selected ? accentColor : 'text.primary' }}>
+          {title}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+          {subtitle}
+        </Typography>
+        {selected && (
+          <Box
+            sx={{
+              mt: 0.5,
+              px: 2,
+              py: 0.4,
+              borderRadius: 99,
+              bgcolor: accentColor,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+            }}
+          >
+            <CheckRoundedIcon sx={{ fontSize: 14, color: '#fff' }} />
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>Seleccionado</Typography>
+          </Box>
+        )}
+      </CardActionArea>
+    </Card>
+  );
+};
+
+// ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+// Helper: StepContent ?? animación de entrada al cambiar de paso
+// ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+const StepContent = ({ stepKey, children }) => (
+  <Box
+    key={stepKey}
+    sx={{
+      animation: 'onboardingSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+      '@keyframes onboardingSlideIn': {
+        from: { opacity: 0, transform: 'translateY(18px)' },
+        to:   { opacity: 1, transform: 'translateY(0)' },
+      },
+    }}
+  >
+    {children}
+  </Box>
+);
+
+// ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+// COMPONENTE PRINCIPAL: Onboarding
+// ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+const Onboarding = ({ devMode = false }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const { showBanner } = useBanner();
   const { refreshUserProfile } = useAuth();
+  const { primeUserRegionCache } = useOptimizedUserShippingRegion();
 
   const [formData, setFormData] = useState({
     accountType: '',
     nombreEmpresa: '',
     telefonoContacto: '',
-    codigoPais: 'CL', // Default to Chile
+    codigoPais: 'CL',
     descripcionProveedor: '',
-
-    // Documento Tributario
-    documentTypes: [],
-
-    // Facturación
-    businessName: '',
-    billingRut: '',
-    businessLine: '',
-    billingAddress: '',
-    billingRegion: '',
-    billingCommune: '',
   });
 
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoError, setLogoError] = useState('');
 
-  // Hook para primar caché de región inmediatamente al finalizar onboarding
-  const { primeUserRegionCache } = useOptimizedUserShippingRegion();
+  // ???? Definición dinámica de pasos ??????????????????????????????????????????????????????????????????????????????????
+  const steps = useMemo(() => {
+    const base = [
+      { label: 'Tu rol',    subtitle: '¿Cómo usarás Sellsi?' },
+      { label: 'Tus datos', subtitle: 'Nombre y contacto' },
+      { label: 'Tu logo',   subtitle: 'Imagen de marca' },
+    ];
+    if (formData.accountType === 'proveedor') {
+      base.push({ label: 'Tu negocio', subtitle: 'Cuéntanos más' });
+    }
+    return base;
+  }, [formData.accountType]);
 
-  useEffect(() => {}, [logoPreview]);
+  // Clamp activeStep si cambia la cantidad de pasos
+  useEffect(() => {
+    if (activeStep >= steps.length) setActiveStep(steps.length - 1);
+  }, [steps.length, activeStep]);
 
+  // Limpia URL de objeto al desmontar
   const handleFieldChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
@@ -189,22 +266,45 @@ const Onboarding = () => {
     setLogoFile(file);
     try {
       setLogoPreview(URL.createObjectURL(file));
-    } catch (e) {
-      // Graceful fallback if createObjectURL isn't available or throws
+    } catch {
       setLogoError('No se pudo procesar la imagen');
       setLogoFile(null);
       setLogoPreview(null);
-      return;
     }
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (logoPreview) URL.revokeObjectURL(logoPreview);
-    };
+    return () => { if (logoPreview) URL.revokeObjectURL(logoPreview); };
   }, [logoPreview]);
 
+  // ???? Validación por paso ??????????????????????????????????????????????????????????????????????????????????????????????????????
+  const canProceed = useMemo(() => {
+    switch (activeStep) {
+      case 0: return !!formData.accountType;
+      case 1: return !!formData.nombreEmpresa.trim();
+      case 2: return !logoError;
+      case 3: return true;
+      default: return false;
+    }
+  }, [activeStep, formData, logoError]);
+
+  const isLastStep = activeStep === steps.length - 1;
+  const handleNext = () => { if (!isLastStep) setActiveStep(s => s + 1); else handleFinishOnboarding(); };
+  const handleBack = () => setActiveStep(s => s - 1);
+
   const handleFinishOnboarding = async () => {
+    // ?????? MODO DEV: no guarda nada en Supabase ??????????????????????????????????????????????????????????????????
+    if (devMode) {
+      console.log('??️ [DEV ONBOARDING] Submit interceptado. Payload:', formData);
+      showBanner({
+        message: '??️ DEV MODE ?? Los datos NO se guardaron en Supabase.',
+        severity: 'info',
+        duration: 4000,
+      });
+      return;
+    }
+    // ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+
     // Validaciones mínimas
     if (!formData.accountType) {
       console.error('Por favor, elige un tipo de cuenta.');
@@ -213,25 +313,6 @@ const Onboarding = () => {
     if (!formData.nombreEmpresa.trim()) {
       console.error('El nombre es obligatorio.');
       return;
-    }
-
-    // Validar facturación si corresponde
-    if (
-      formData.accountType === 'proveedor' &&
-      formData.documentTypes?.includes('factura')
-    ) {
-      const hasBillingInfo =
-        formData.businessName &&
-        formData.billingRut &&
-        formData.businessLine &&
-        formData.billingAddress &&
-        formData.billingRegion &&
-        formData.billingCommune;
-
-      if (!hasBillingInfo) {
-        console.error('Por favor completa todos los campos de Facturación.');
-        return;
-      }
     }
 
     if (logoError) {
@@ -305,14 +386,14 @@ const Onboarding = () => {
             .from('user-logos')
             .remove([oldLogoPathToDelete]);
           if (removeError) {
-            console.error('❌ [ONBOARDING] Supabase Remove Error:', removeError);
+            console.error('? [ONBOARDING] Supabase Remove Error:', removeError);
             throw new Error(`Error al eliminar el logo: ${removeError.message}`);
           }
           logoPublicUrl = null;
         }
       }
 
-      // 📝 Payload para tabla users (solo campos que existen)
+      // ?? Payload para tabla users (solo campos que existen)
       const userUpdates = {
         user_id: user.id,
         user_nm: formData.nombreEmpresa,
@@ -326,12 +407,11 @@ const Onboarding = () => {
         email: user.email,
         ...(formData.accountType === 'proveedor' && {
           descripcion_proveedor: formData.descripcionProveedor,
-          document_types: formData.documentTypes || [],
         }),
       };
 
       console.log(
-        '🔍 [ONBOARDING] Payload users:',
+        '?? [ONBOARDING] Payload users:',
         JSON.stringify(userUpdates, null, 2)
       );
 
@@ -341,49 +421,14 @@ const Onboarding = () => {
         .upsert(userUpdates, { onConflict: 'user_id' });
 
       if (upsertError) {
-        console.error('❌ [ONBOARDING] Supabase Upsert Error:', upsertError);
-        console.error('📦 Payload que falló:', userUpdates);
+        console.error('? [ONBOARDING] Supabase Upsert Error:', upsertError);
+        console.error('?? Payload que falló:', userUpdates);
         throw new Error(`Error al guardar tu perfil: ${upsertError.message}`);
       }
 
-      console.log('✅ [ONBOARDING] Usuario guardado exitosamente');
+      console.log('?? [ONBOARDING] Usuario guardado exitosamente');
 
-      // 💰 Si es proveedor y seleccionó factura, guardar en billing_info
-      if (
-        formData.accountType === 'proveedor' &&
-        formData.documentTypes?.includes('factura')
-      ) {
-        const billingUpdates = {
-          user_id: user.id,
-          business_name: formData.businessName,
-          billing_rut: formData.billingRut,
-          business_line: formData.businessLine,
-          billing_address: formData.billingAddress,
-          billing_region: formData.billingRegion,
-          billing_commune: formData.billingCommune,
-        };
-
-        console.log(
-          '🔍 [ONBOARDING] Payload billing_info:',
-          JSON.stringify(billingUpdates, null, 2)
-        );
-
-        const { error: billingError } = await supabase
-          .from('billing_info')
-          .upsert(billingUpdates, { onConflict: 'user_id' });
-
-        if (billingError) {
-          console.error('❌ [ONBOARDING] Billing Info Error:', billingError);
-          console.error('📦 Payload que falló:', billingUpdates);
-          throw new Error(
-            `Error al guardar información de facturación: ${billingError.message}`
-          );
-        }
-
-        console.log('✅ [ONBOARDING] Billing info guardada exitosamente');
-      }
-
-      // 🔒 Evita el bucle del guard:
+      //  Evita el bucle del guard:
       // 1) Refresca sesión (opcional pero recomendado)
       await supabase.auth.refreshSession().catch(() => {});
       // 2) Invalida cache de profile para forzar refetch con datos actualizados
@@ -391,21 +436,13 @@ const Onboarding = () => {
       // 3) Refresca el perfil en el Auth Provider para que `needsOnboarding` se actualice
       await refreshUserProfile();
 
-      // Prime de región (si aplica) - ahora de formData ya que billing va a otra tabla
-      const regionCandidate =
-        formData.billingRegion || formData.shippingRegion || null;
-      if (regionCandidate) {
-        try {
-          primeUserRegionCache(regionCandidate);
-        } catch {
-          /* silencioso */
-        }
-      }
+      // Prime de región (silencioso)
+      try { primeUserRegionCache(null); } catch { /* silencioso */ }
 
-      // ✅ Mostrar banner de éxito
+      // ?? Mostrar banner de éxito
       showBanner({
         message:
-          '¡Bienvenido a Sellsi! Tu perfil fue configurado correctamente 🎉',
+          '¡Bienvenido a Sellsi! Tu perfil fue configurado correctamente ???',
         severity: 'success',
         duration: 3000,
       });
@@ -413,9 +450,9 @@ const Onboarding = () => {
       // Navega a la home
       navigate('/', { replace: true });
     } catch (error) {
-      console.error('❌ Error al actualizar el perfil:', error);
+      console.error('? Error al actualizar el perfil:', error);
 
-      // ✅ Mostrar banner de error
+      // ?? Mostrar banner de error
       showBanner({
         message:
           error.message ||
@@ -428,475 +465,359 @@ const Onboarding = () => {
     }
   };
 
-  const isFormValid = () => {
-    const hasBasicInfo = formData.accountType && formData.nombreEmpresa.trim();
-
-    if (
-      formData.accountType === 'proveedor' &&
-      formData.documentTypes?.includes('factura')
-    ) {
-      const hasBillingInfo =
-        formData.businessName &&
-        formData.billingRut &&
-        formData.businessLine &&
-        formData.billingAddress &&
-        formData.billingRegion &&
-        formData.billingCommune;
-      return hasBasicInfo && hasBillingInfo;
-    }
-    return hasBasicInfo;
-  };
-
-  // Precompute helper text for phone field to avoid passing a function as helperText
-  const phoneHelperText = (() => {
+  const phoneHelperText = useMemo(() => {
     if (!formData.telefonoContacto) return 'Opcional';
-    const res = validatePhone(
-      formData.codigoPais || 'CL',
-      formData.telefonoContacto || ''
-    );
+    const res = validatePhone(formData.codigoPais || 'CL', formData.telefonoContacto || '');
     return res.isValid ? `${formData.telefonoContacto.length}/15` : res.reason;
-  })();
+  }, [formData.telefonoContacto, formData.codigoPais]);
+
+  const progressPct = (activeStep / (steps.length - 1)) * 100;
 
   return (
-    <>
-      {/* Debug opcional */}
-      {/* <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 9999, background: '#fff', color: '#000' }}>
-        Onboarding debug
-      </div> */}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: 'linear-gradient(to bottom, #000000 0%, #000000 65%, #2E52B2 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: { xs: 'stretch', md: 'center' },
+        justifyContent: { xs: 'flex-start', md: 'center' },
+        py: { xs: 0, md: 6 },
+        px: { xs: 0, md: 2 },
+      }}
+    >
+      <Container maxWidth="md" disableGutters sx={{ display: 'flex', flexDirection: 'column', flexGrow: { xs: 1, md: 0 }, minHeight: { xs: '100vh', md: 'auto' } }}>
+        {/* Branding header - solo desktop */}
+        <Box sx={{ textAlign: 'center', mb: 3, px: 1, display: { xs: 'none', sm: 'none', md: 'block' } }}>
+          <Typography
+            component="h1"
+            sx={{
+              fontSize: { xs: '1.9rem', sm: '2.4rem' },
+              fontWeight: 800,
+              color: '#fff',
+              letterSpacing: '-0.5px',
+              lineHeight: 1.2,
+            }}
+          >
+            ¡Bienvenido a Sellsi!
+          </Typography>
+          <Typography sx={{ mt: 1, color: 'rgba(255,255,255,0.8)', fontSize: '1rem' }}>
+            Configura tu cuenta en unos simples pasos
+          </Typography>
+        </Box>
 
-      <Container
-        component="main"
-        sx={{ maxWidth: '1100px', my: { xs: 4, md: 8 } }}
-      >
+        {/* Card principal */}
         <Paper
-          elevation={6}
+          elevation={0}
           sx={{
-            p: { xs: 3, sm: 4, md: 6 },
-            borderRadius: 4,
+            borderRadius: { xs: 0, sm: 0, md: 4 },
             overflow: 'hidden',
-            bgcolor: theme.palette.background.paper,
-            boxShadow: `0px 10px 30px rgba(0, 0, 0, 0.1)`,
+            boxShadow: { xs: 'none', md: '0 24px 64px rgba(0,0,0,0.18)' },
+            display: 'flex',
+            flexDirection: 'column',
+            flexGrow: { xs: 1, md: 0 },
           }}
         >
-          {/* Header */}
-          <Box sx={{ textAlign: 'center', mb: 5 }}>
+          {/* Branding header mobile - solo xs/sm */}
+          <Box
+            sx={{
+              display: { xs: 'flex', sm: 'flex', md: 'none' },
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              py: { xs: 1.5, sm: 3 },
+              px: 2,
+              background: 'linear-gradient(to bottom, #000000, #1a1a2e)',
+            }}
+          >
             <Typography
               component="h1"
-              variant="h4"
-              sx={{
-                fontWeight: 700,
-                color: theme.palette.primary.main,
-                mb: 1.5,
-                fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
-              }}
+              sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.2 }}
             >
               ¡Bienvenido a Sellsi!
             </Typography>
-            <Typography
-              variant="h6"
-              color="text.secondary"
-              sx={{ fontSize: { xs: '1rem', sm: '1.15rem' } }}
-            >
-              Finaliza la configuración de tu cuenta para empezar.
+            <Typography sx={{ mt: 0.5, color: 'rgba(255,255,255,0.75)', fontSize: '0.87rem' }}>
+              Configura tu cuenta en unos simples pasos
             </Typography>
           </Box>
+          {/* Barra de progreso */}
+          <LinearProgress
+            variant="determinate"
+            value={progressPct}
+            sx={{
+              height: 8,
+              bgcolor: theme.palette.grey[200],
+              '& .MuiLinearProgress-bar': {
+                background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+                transition: 'transform 0.5s ease',
+              },
+            }}
+          />
 
-          <Divider sx={{ mb: 5 }} />
-
-          {/* Paso 1: Tipo de cuenta */}
-          <Box sx={{ mb: 5, textAlign: 'center' }}>
-            <Typography
-              variant="h5"
-              sx={{ fontWeight: 600, mb: 3, color: theme.palette.text.primary }}
-            >
-              Paso 1: Elige tu rol principal
-            </Typography>
-
-            <Grid container spacing={3} justifyContent="center">
-              {/* Proveedor */}
-              <Grid item xs={12} sm={6}>
-                <Card
-                  variant="outlined"
-                  sx={{
-                    borderRadius: 3,
-                    borderColor:
-                      formData.accountType === 'proveedor'
-                        ? theme.palette.primary.main
-                        : theme.palette.grey[300],
-                    borderWidth:
-                      formData.accountType === 'proveedor' ? '2px' : '1px',
-                    boxShadow:
-                      formData.accountType === 'proveedor'
-                        ? theme.shadows[4]
-                        : 'none',
-                    transition: 'all 0.3s ease-in-out',
-                    '&:hover': {
-                      boxShadow: theme.shadows[6],
-                      transform: 'translateY(-3px)',
-                    },
-                  }}
-                >
-                  <CardActionArea
-                    onClick={() => handleTypeSelect('proveedor')}
-                    sx={{
-                      p: 4,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <BusinessIcon
-                      sx={{
-                        fontSize: 60,
-                        color:
-                          formData.accountType === 'proveedor'
-                            ? theme.palette.primary.main
-                            : theme.palette.grey[600],
-                        mb: 1.5,
-                      }}
-                    />
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                      Soy Proveedor
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ textAlign: 'center' }}
-                    >
-                      Ofrece tus productos y servicios al mercado.
-                    </Typography>
-                  </CardActionArea>
-                </Card>
-              </Grid>
-
-              {/* Comprador */}
-              <Grid item xs={12} sm={6}>
-                <Card
-                  variant="outlined"
-                  sx={{
-                    borderRadius: 3,
-                    borderColor:
-                      formData.accountType === 'comprador'
-                        ? theme.palette.primary.main
-                        : theme.palette.grey[300],
-                    borderWidth:
-                      formData.accountType === 'comprador' ? '2px' : '1px',
-                    boxShadow:
-                      formData.accountType === 'comprador'
-                        ? theme.shadows[4]
-                        : 'none',
-                    transition: 'all 0.3s ease-in-out',
-                    '&:hover': {
-                      boxShadow: theme.shadows[6],
-                      transform: 'translateY(-3px)',
-                    },
-                  }}
-                >
-                  <CardActionArea
-                    onClick={() => handleTypeSelect('comprador')}
-                    sx={{
-                      p: 4,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <ShoppingCartIcon
-                      sx={{
-                        fontSize: 60,
-                        color:
-                          formData.accountType === 'comprador'
-                            ? theme.palette.primary.main
-                            : theme.palette.grey[600],
-                        mb: 1.5,
-                      }}
-                    />
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                      Soy Comprador
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ textAlign: 'center' }}
-                    >
-                      Explora y adquiere los mejores productos.
-                    </Typography>
-                  </CardActionArea>
-                </Card>
-              </Grid>
-            </Grid>
-
-            <Typography
-              variant="caption"
+          {/* Stepper */}
+          <Box sx={{ px: { xs: 2, sm: 4 }, pt: 3, pb: 1 }}>
+            <Stepper
+              activeStep={activeStep}
+              alternativeLabel
               sx={{
-                color: theme.palette.text.secondary,
-                mt: 2,
-                display: 'block',
+                '& .MuiStepLabel-label': { fontSize: { xs: '0.7rem', sm: '0.8rem' }, mt: 0.5 },
+                '& .MuiStepConnector-line': { borderColor: theme.palette.grey[300] },
+                '& .MuiStepConnector-root.Mui-active .MuiStepConnector-line': { borderColor: theme.palette.primary.main },
+                '& .MuiStepConnector-root.Mui-completed .MuiStepConnector-line': { borderColor: theme.palette.primary.main },
+                '& .MuiStepIcon-root.Mui-active': { color: theme.palette.primary.main },
+                '& .MuiStepIcon-root.Mui-completed': { color: theme.palette.primary.main },
               }}
             >
-              *Este será tu rol por defecto, pero podrás cambiarlo más adelante
-              en tu perfil.
-            </Typography>
+              {steps.map((step, index) => (
+                <Step key={step.label} completed={index < activeStep}>
+                  <StepLabel>{isMobile ? '' : step.label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
           </Box>
 
-          <Divider sx={{ mb: 5 }} />
+          {/* Contenido del paso */}
+          <Box sx={{ px: { xs: 3, sm: 5 }, pt: { xs: 1, md: 3 }, pb: 4, height: { xs: 'auto', md: 400 }, flex: { xs: 1, md: 'none' }, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
 
-          {/* Paso 2: Datos de perfil */}
-          <Box sx={{ mb: 5 }}>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 600,
-                mb: 3,
-                textAlign: 'center',
-                color: theme.palette.text.primary,
-              }}
-            >
-              Paso 2: Completa los datos de tu perfil
-            </Typography>
+            {/* Paso 0: Tipo de cuenta */}
+            {activeStep === 0 && (
+              <StepContent stepKey="step-0">
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5, textAlign: 'center' }}>
+                  ¿Cómo usarás Sellsi?
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+                  Puedes cambiar esto más adelante en tu perfil.
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'column', md: 'row' }, gap: 2 }}>
+                  <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
+                    <TypeCard
+                      selected={formData.accountType === 'comprador'}
+                      onClick={() => handleTypeSelect('comprador')}
+                      icon={ShoppingCartIcon}
+                      title="Soy Comprador"
+                      subtitle="Explora y adquiere los mejores productos"
+                      accentColor={theme.palette.primary.main}
+                    />
+                  </Box>
+                  <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
+                    <TypeCard
+                      selected={formData.accountType === 'proveedor'}
+                      onClick={() => handleTypeSelect('proveedor')}
+                      icon={BusinessIcon}
+                      title="Soy Proveedor"
+                      subtitle="Ofrece tus productos y servicios al mercado B2B"
+                      accentColor="#F59E0B"
+                    />
+                  </Box>
+                </Box>
+              </StepContent>
+            )}
 
-            <Grid
-              container
-              spacing={5}
-              alignItems="flex-start"
-              justifyContent="center"
-              sx={{
-                maxWidth: { xs: '100%', md: '800px', lg: '950px' },
-                mx: 'auto',
-              }}
-            >
-              {/* Columna Izquierda */}
-              <Grid item xs={12} md={7}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Paso 1: Datos de perfil */}
+            {activeStep === 1 && (
+              <StepContent stepKey="step-1">
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                  Datos de tu perfil
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Esta información será visible para otros usuarios de la plataforma.
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                   <TextField
-                    label="Nombre de Empresa o Personal *"
+                    label="Nombre de empresa o personal *"
                     variant="outlined"
                     fullWidth
                     value={formData.nombreEmpresa}
                     inputProps={{ maxLength: 35 }}
-                    onChange={e =>
-                      handleFieldChange('nombreEmpresa', e.target.value)
-                    }
-                    required
-                    helperText={`Este será tu nombre público en la plataforma (ej. Tu Empresa S.A., o Juan Pérez). (${formData.nombreEmpresa.length}/35)`}
+                    onChange={e => handleFieldChange('nombreEmpresa', e.target.value)}
+                    helperText={`Tu nombre público en la plataforma (${formData.nombreEmpresa.length}/35)`}
                     sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
+                    autoFocus
                   />
-
                   <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Box sx={{ minWidth: 180 }}>
+                    <Box sx={{ minWidth: 160 }}>
                       <CountrySelector
                         value={formData.codigoPais}
-                        onChange={e =>
-                          handleFieldChange('codigoPais', e.target.value)
-                        }
+                        onChange={e => handleFieldChange('codigoPais', e.target.value)}
                         countries={['+56', '+54', '+52', '+51', '+57']}
-                        size="small"
+                        size="medium"
                         fullWidth
                         sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
                       />
                     </Box>
-
                     <TextField
                       fullWidth
-                      size="small"
                       label="Teléfono de contacto"
                       value={formData.telefonoContacto}
-                      inputProps={{
-                        maxLength: 15,
-                        inputMode: 'numeric',
-                        pattern: '[0-9]*',
-                      }}
+                      inputProps={{ maxLength: 15, inputMode: 'numeric', pattern: '[0-9]*' }}
                       onChange={e => {
-                        const digits = (e.target.value || '').replace(
-                          /\D+/g,
-                          ''
-                        );
+                        const digits = (e.target.value || '').replace(/\D+/g, '');
                         handleFieldChange('telefonoContacto', digits);
                       }}
                       placeholder="Ej: 912345678"
                       type="tel"
                       error={
                         formData.telefonoContacto.length > 0 &&
-                        !validatePhone(
-                          formData.codigoPais || 'CL',
-                          formData.telefonoContacto || ''
-                        ).isValid
+                        !validatePhone(formData.codigoPais || 'CL', formData.telefonoContacto || '').isValid
                       }
                       helperText={phoneHelperText}
                       sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
                     />
                   </Box>
-
-                  {/* Descripción para proveedores */}
-                  {formData.accountType === 'proveedor' && (
-                    <TextField
-                      label="Descripción breve del proveedor"
-                      variant="outlined"
-                      fullWidth
-                      multiline
-                      rows={3}
-                      value={formData.descripcionProveedor}
-                      onChange={e => {
-                        const value = e.target.value;
-                        if (value.length <= 200) {
-                          handleFieldChange('descripcionProveedor', value);
-                        }
-                      }}
-                      placeholder="Una descripción resumida del tipo de productos que comercializas..."
-                      helperText={`Ayuda a los compradores a identificar tu oferta. (${formData.descripcionProveedor.length}/200)`}
-                      sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
-                    />
-                  )}
                 </Box>
-              </Grid>
+              </StepContent>
+            )}
 
-              {/* Columna Derecha: Uploader */}
-              <Grid item xs={12} md={5}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                    bgcolor: theme.palette.grey[50],
-                    p: 3,
-                    borderRadius: 3,
-                    minHeight: '200px',
-                    justifyContent: 'center',
-                    boxShadow: theme.shadows[1],
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontWeight: 500,
-                      fontSize: 16,
-                      mb: 2,
-                      color: theme.palette.text.primary,
-                    }}
-                  >
-                    Logo (Opcional)
-                  </Typography>
+            {/* Paso 2: Logo */}
+            {activeStep === 2 && (
+              <StepContent stepKey="step-2">
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5, textAlign: 'center' }}>
+                  Logo de tu marca
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 4, textAlign: 'center' }}>
+                  Opcional. Puedes agregarlo o cambiarlo desde tu perfil en cualquier momento.
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                   <LogoUploader
                     logoPreview={logoPreview}
                     onLogoSelect={handleLogoChange}
                     logoError={logoError}
                   />
-                  {!logoError && (
-                    <Typography
-                      variant="caption"
-                      sx={{ color: theme.palette.text.secondary, mt: 2 }}
-                    >
-                      Máximo 300 KB (JPG, PNG, WEBP)
-                    </Typography>
-                  )}
-                </Paper>
-              </Grid>
-            </Grid>
-
-            {/* Configuración Tributaria (solo proveedores) */}
-            <Collapse in={formData.accountType === 'proveedor'}>
-              {formData.accountType === 'proveedor' && (
-                <Box
-                  sx={{
-                    mt: 4,
-                    maxWidth: { xs: '100%', md: '800px', lg: '950px' },
-                    mx: 'auto',
-                  }}
-                >
-                  <Divider sx={{ mb: 3 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Configuración Tributaria
-                    </Typography>
-                  </Divider>
-
-                  <Grid container spacing={3}>
-                    {/* Tipo de documento */}
-                    <Grid item xs={12} md={6}>
-                      <TaxDocumentSelector
-                        documentTypes={formData.documentTypes}
-                        onDocumentTypesChange={types =>
-                          handleFieldChange('documentTypes', types)
-                        }
-                        showTitle
-                        size="medium"
-                      />
-                    </Grid>
-
-                    {/* Facturación (si selecciona factura) */}
-                    <Grid item xs={12} md={6}>
-                      <Collapse
-                        in={formData.documentTypes?.includes('factura')}
-                      >
-                        {formData.documentTypes?.includes('factura') && (
-                          <Box
-                            sx={{
-                              border: 1,
-                              borderColor: 'divider',
-                              borderRadius: 2,
-                              p: 3,
-                              mb: 5,
-                              bgcolor: 'grey.50',
-                              height: 'fit-content',
-                            }}
-                          >
-                            <BillingInfoForm
-                              formData={formData}
-                              onFieldChange={handleFieldChange}
-                              showTitle
-                              size="small"
-                            />
-                          </Box>
-                        )}
-                      </Collapse>
-                    </Grid>
-                  </Grid>
                 </Box>
-              )}
-            </Collapse>
+                {!logoPreview && (
+                  <Typography variant="body2" color="text.disabled" sx={{ textAlign: 'center', mt: 3, fontSize: '0.8rem' }}>
+                    Puedes continuar sin subir un logo
+                  </Typography>
+                )}
+              </StepContent>
+            )}
+
+            {/* Paso 3: Descripción del proveedor */}
+            {activeStep === 3 && formData.accountType === 'proveedor' && (
+              <StepContent stepKey="step-3">
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                  Cuéntanos sobre tu negocio
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Opcional. Ayuda a los compradores a identificar tu oferta.
+                </Typography>
+                <TextField
+                  label="Descripción breve"
+                  variant="outlined"
+                  fullWidth
+                  multiline
+                  rows={5}
+                  value={formData.descripcionProveedor}
+                  onChange={e => {
+                    if (e.target.value.length <= 200)
+                      handleFieldChange('descripcionProveedor', e.target.value);
+                  }}
+                  placeholder="Ej: Distribuidor mayorista de tecnología y electrónica. Especializados en monitores, computadores y accesorios para empresas..."
+                  helperText={`${formData.descripcionProveedor.length}/200 caracteres`}
+                  sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  autoFocus
+                />
+              </StepContent>
+            )}
           </Box>
 
-          {/* Botón Final */}
-          <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center' }}>
-            <PrimaryButton
-              type="button"
-              onClick={handleFinishOnboarding}
-              disabled={isLoading || !isFormValid()}
+          {/* Navegación */}
+          <Box
+            sx={{
+              px: { xs: 3, sm: 5 },
+              pb: 4,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Button
+              onClick={handleBack}
+              startIcon={<ArrowBackRoundedIcon />}
               sx={{
-                py: 1.8,
-                px: 8,
-                fontSize: '1.2rem',
+                borderRadius: 99,
+                px: 3,
+                py: 1.2,
+                fontWeight: 600,
+                color: 'text.secondary',
+                visibility: activeStep === 0 ? 'hidden' : 'visible',
+                '&:hover': { bgcolor: theme.palette.grey[100] },
+              }}
+            >
+              Atrás
+            </Button>
+
+            <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+              {activeStep + 1} / {steps.length}
+            </Typography>
+
+            <PrimaryButton
+              onClick={handleNext}
+              disabled={!canProceed || isLoading}
+              endIcon={
+                isLoading
+                  ? <CircularProgress size={18} color="inherit" />
+                  : isLastStep
+                  ? <CheckRoundedIcon />
+                  : <ArrowForwardRoundedIcon />
+              }
+              sx={{
+                borderRadius: 99,
+                px: { xs: 3, sm: 4 },
+                py: 1.2,
+                minWidth: 140,
+                fontSize: '0.95rem',
                 fontWeight: 700,
-                borderRadius: 3,
-                boxShadow: theme.shadows[8],
-                background: `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
+                background: canProceed
+                  ? `linear-gradient(45deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`
+                  : undefined,
                 color: 'white',
+                boxShadow: canProceed ? theme.shadows[4] : 'none',
+                transition: 'all 0.2s',
                 '&:hover': {
-                  background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.light} 90%)`,
-                  boxShadow: theme.shadows[10],
-                  transform: 'translateY(-2px)',
+                  boxShadow: theme.shadows[8],
+                  transform: 'translateY(-1px)',
                 },
-                transition: 'all 0.3s ease-in-out',
                 '&.Mui-disabled': {
-                  background: theme.palette.grey[400],
-                  color: 'white',
+                  background: theme.palette.grey[300],
+                  color: theme.palette.grey[500],
                   boxShadow: 'none',
-                  cursor: 'not-allowed',
-                  transform: 'none',
-                  '&:hover': { background: theme.palette.grey[400] },
                 },
               }}
             >
               {isLoading ? (
-                <CircularProgress size={26} color="inherit" />
+                <CircularProgress size={18} color="inherit" />
               ) : (
-                'Guardar y Finalizar'
+                <Box sx={{ position: 'relative', display: 'inline-flex', justifyContent: 'center' }}>
+                  {/* Spacer invisible que reserva el ancho de "Siguiente" siempre */}
+                  <span style={{ visibility: 'hidden', pointerEvents: 'none' }}>Siguiente</span>
+                  <span style={{ position: 'absolute' }}>{isLastStep ? 'Finalizar' : 'Siguiente'}</span>
+                </Box>
               )}
             </PrimaryButton>
           </Box>
         </Paper>
+
+        {/* Dots indicador - solo desktop (en mobile el Paper es fullscreen) */}
+        {!isMobile && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.8, mt: 2 }}>
+            {steps.map((_, i) => (
+              <Box
+                key={i}
+                sx={{
+                  width: i === activeStep ? 20 : 8,
+                  height: 8,
+                  borderRadius: 99,
+                  bgcolor: i === activeStep ? '#fff' : 'rgba(255,255,255,0.35)',
+                  transition: 'all 0.3s ease',
+                }}
+              />
+            ))}
+          </Box>
+        )}
       </Container>
-    </>
+    </Box>
   );
 };
 

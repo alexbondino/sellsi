@@ -79,8 +79,8 @@ const Home = ({ scrollTargets }) => {
       const refMap = {
         top: { ref: topRef, offset: 0 },
         quienesSomosRef: { ref: quienesSomosRef, offset: 0 },
-        // Scroll a bit higher than the exact top so the section appears a few px above
-        serviciosRef: { ref: serviciosRef, offset: 60 },
+        // Scroll past the TrustBar overlap area so the section header is visible
+        serviciosRef: { ref: serviciosRef, offset: -10 },
         contactModal: { ref: contactRef, offset: 0 },
         trabajaConNosotrosRef: { ref: serviciosRef, offset: 0 }, // fallback
       };

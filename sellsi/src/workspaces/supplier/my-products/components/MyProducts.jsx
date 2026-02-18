@@ -849,11 +849,12 @@ const MyProducts = () => {
               <Fab
                 color="primary"
                 onClick={handleAddProduct}
+                size="medium"
                 sx={{
                   position: 'fixed',
-                  bottom: 16,
-                  right: 16,
-                  zIndex: 1000,
+                  bottom: isMobile ? 160 : 16,
+                  right: isMobile ? 10 : 16,
+                  zIndex: 1402,
                 }}
               >
                 <AddIcon />
@@ -866,13 +867,14 @@ const MyProducts = () => {
                 onClick={scrollToTop}
                 sx={{
                   position: 'fixed',
-                  bottom: isMobile ? 80 : 16,
-                  right: isMobile ? 16 : 80,
-                  zIndex: 999,
+                  bottom: isMobile ? 100 : 40,
+                  right: isMobile ? 10 : 120,
+                  zIndex: 1401,
                   backgroundColor: 'background.paper',
                   color: 'primary.main',
                   border: '2px solid',
                   borderColor: 'primary.main',
+                  boxShadow: '0 6px 24px rgba(25, 118, 210, 0.18)',
                   '&:hover': {
                     backgroundColor: 'primary.main',
                     color: 'primary.contrastText',

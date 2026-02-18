@@ -16,10 +16,12 @@ const PUBLIC_FUNCTIONS = new Set([
   'create-payment-flow',
   'process-flow-webhook',
   'flow-return',
+  'generate-thumbnail',
   'create-khipu-payment',
   'process-khipu-webhook',
   'verify-khipu-payment',
   'preview-invoice',
+  'retry-thumbnail-jobs',
 ]);
 
 function safeExec(cmd) {

@@ -71,7 +71,6 @@ const MobileOfferCard = ({ variant, data, fullOffer, onAction, isMobile }) => {
     // Intentar obtener desde fullOffer si existe
     const product = fullOffer?.product || data?.product;
     const productThumbnails = fullOffer?.product_thumbnails || product?.thumbnails;
-    const productThumbnailUrl = fullOffer?.product_thumbnail_url || product?.thumbnail_url;
     const productImage = fullOffer?.product_image || product?.imagen || product?.image || product_image;
 
     let avatarSrc = null;
@@ -81,15 +80,7 @@ const MobileOfferCard = ({ variant, data, fullOffer, onAction, isMobile }) => {
       avatarSrc = productThumbnails.mobile || null;
     }
 
-    // Prioridad 2: thumbnail_url transformado a mobile
-    if (!avatarSrc && productThumbnailUrl) {
-      avatarSrc = productThumbnailUrl.replace(
-        '_desktop_320x260.jpg',
-        '_mobile_190x153.jpg'
-      );
-    }
-
-    // Prioridad 3: imagen principal (para WebP sin thumbnails)
+    // Prioridad 2: imagen principal (para WebP sin thumbnails)
     if (!avatarSrc && productImage) {
       avatarSrc = productImage;
     }

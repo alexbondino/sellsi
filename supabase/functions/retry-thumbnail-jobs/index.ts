@@ -17,6 +17,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SERVICE_ROLE_KEY')
+const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
 const GENERATE_FN_URL = Deno.env.get('GENERATE_THUMBNAIL_URL') // opcional override
 // Consolidated maintenance token (single secret for cleanup, purge, retry)
 const MAINTENANCE_SECRET_TOKEN = Deno.env.get('CLEANUP_SECRET_TOKEN')
@@ -33,9 +34,24 @@ if (!MAINTENANCE_SECRET_TOKEN) {
   throw new Error('Missing CLEANUP_SECRET_TOKEN env var')
 }
 
+const EDGE_AUTH_KEY = SERVICE_KEY || ANON_KEY || ''
+
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY || Deno.env.get('SUPABASE_ANON_KEY') || '', { auth: { persistSession: false } })
 
 interface JobRow { product_id: string; product_image_id: string | null }
+
+function extractThumbnailObjectName(url: string | null): string | null {
+  if (!url) return null
+  try {
+    const clean = url.split('?')[0]
+    const marker = '/storage/v1/object/public/product-images-thumbnails/'
+    const idx = clean.indexOf(marker)
+    if (idx >= 0) return clean.substring(idx + marker.length)
+    return clean
+  } catch {
+    return null
+  }
+}
 
 serve((req) => withMetrics('retry-thumbnail-jobs', req, async () => {
   if (req.method !== 'POST') {
@@ -73,7 +89,7 @@ serve((req) => withMetrics('retry-thumbnail-jobs', req, async () => {
       // Recuperar imagen principal (para datos supplierId + URL)
       const { data: mainImg, error: mainImgErr } = await supabase
         .from('product_images')
-        .select('id, product_id, image_url, thumbnails, product_id, product_id')
+        .select('id, product_id, image_url, thumbnails, thumbnail_url')
         .eq('product_id', productId)
         .eq('image_order', 0)
         .single()
@@ -82,14 +98,15 @@ serve((req) => withMetrics('retry-thumbnail-jobs', req, async () => {
         errors.push(`${productId}: main image missing`)
         continue
       }
-      if (mainImg.thumbnails && mainImg.thumbnails.desktop && mainImg.thumbnail_url) {
+      const desktopUrl = mainImg?.thumbnails?.desktop || mainImg?.thumbnail_url || null
+      if (desktopUrl) {
         // Verificar existencia física del archivo antes de marcar success
         let headCheckOk = false
         try {
           const controller = new AbortController()
           const timeout = setTimeout(() => controller.abort(), 3000)
           try {
-            const headResp = await fetch(mainImg.thumbnail_url, {
+            const headResp = await fetch(desktopUrl, {
               method: 'HEAD',
               signal: controller.signal,
             })
@@ -102,6 +119,14 @@ serve((req) => withMetrics('retry-thumbnail-jobs', req, async () => {
         }
 
         if (headCheckOk) {
+          const objectName = extractThumbnailObjectName(desktopUrl)
+          if (objectName) {
+            await supabase
+              .from('product_images')
+              .update({ thumbnail_object_name: objectName })
+              .eq('product_id', productId)
+              .eq('image_order', 0)
+          }
           await supabase.rpc('mark_thumbnail_job_success', { p_product_id: productId })
           successes.push(productId)
           continue
@@ -128,10 +153,20 @@ serve((req) => withMetrics('retry-thumbnail-jobs', req, async () => {
       } catch { /* noop */ }
 
       // Llamar generate-thumbnail (fire & wait)
+      if (!EDGE_AUTH_KEY) {
+        await supabase.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: 'missing_edge_auth_key' })
+        errors.push(`${productId}: missing edge auth key`)
+        continue
+      }
+
       const genResp = await fetch(generateUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: mainImg.image_url, productId, supplierId })
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${EDGE_AUTH_KEY}`,
+          apikey: EDGE_AUTH_KEY,
+        },
+        body: JSON.stringify({ imageUrl: mainImg.image_url, productId, supplierId, skipJobTracking: true })
       })
       if (!genResp.ok) {
         const txt = await genResp.text()
