@@ -6,7 +6,7 @@ import { ENV } from '../../../../utils/env';
 
 // Helper para normalizar URLs de thumbnails
 // Si es path relativo, construye la URL completa de Supabase Storage
-function normalizeThumbnailUrl(url, supplierId, productId) {
+function normalizeStorageUrl(url, supplierId, productId, bucketName) {
   if (!url) return null;
   // Si ya es URL absoluta, retornar tal cual
   if (/^https?:\/\//.test(url)) return url;
@@ -15,11 +15,24 @@ function normalizeThumbnailUrl(url, supplierId, productId) {
     const filename = url.split('/').pop();
     const correctPath = `${supplierId}/${productId}/${filename}`;
     const { data } = supabase.storage
-      .from('product-images')
+      .from(bucketName)
       .getPublicUrl(correctPath);
     return data?.publicUrl || null;
   }
   return null;
+}
+
+function normalizeProductImageUrl(url, supplierId, productId) {
+  return normalizeStorageUrl(url, supplierId, productId, 'product-images');
+}
+
+function normalizeThumbnailUrl(url, supplierId, productId) {
+  return normalizeStorageUrl(
+    url,
+    supplierId,
+    productId,
+    'product-images-thumbnails'
+  );
 }
 
 // Helper para normalizar objeto thumbnails completo
@@ -339,7 +352,7 @@ export function useProducts() {
 
           // Normalizar URLs de imágenes (convertir paths relativos a URLs completas)
           const imagen =
-            normalizeThumbnailUrl(
+            normalizeProductImageUrl(
               firstImage.image_url,
               p.supplier_id,
               p.productid

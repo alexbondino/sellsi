@@ -43,18 +43,19 @@ async function processRetryThumbnailJobs(deps = {}) {
         continue
       }
 
-      if (
-        mainImg.thumbnails &&
-        mainImg.thumbnails.desktop &&
-        mainImg.thumbnail_url
-      ) {
+      const desktopUrl =
+        (mainImg.thumbnails && mainImg.thumbnails.desktop) ||
+        mainImg.thumbnail_url ||
+        null
+
+      if (desktopUrl) {
         // HEAD check with timeout
         let headOk = false
         try {
           const controller = new AbortController()
           const timeout = setTimeout(() => controller.abort(), 3000)
           try {
-            const r = await fetchFn(mainImg.thumbnail_url, {
+            const r = await fetchFn(desktopUrl, {
               method: 'HEAD',
               signal: controller.signal,
             })

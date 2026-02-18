@@ -19,6 +19,10 @@ import {
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
+import SupportAgentIcon from '@mui/icons-material/SupportAgent';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import IconButton from '@mui/material/IconButton';
 import PriceDisplay from '../../../../../shared/components/display/price/PriceDisplay';
 import { PriceTiersSkeleton } from '../skeletons/PriceSkeletons';
@@ -29,7 +33,110 @@ import {
 } from '../../styles/productPageStyles';
 
 /**
- * QuotationButtons - Botones de contacto y cotización
+ * ActionCard - Tarjeta de acción reutilizable para las 3 opciones CTA
+ */
+const ActionCard = ({
+  icon,
+  label,
+  description,
+  onClick,
+  featured = false,
+}) => (
+  <Box
+    onClick={onClick}
+    role="button"
+    tabIndex={0}
+    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick?.(); }}
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: { xs: 1.5, sm: 2 },
+      px: { xs: 1.5, sm: 2 },
+      py: { xs: 1.25, sm: 1.5 },
+      borderRadius: 2,
+      cursor: 'pointer',
+      border: featured ? '2px solid #2E52B2' : '1px solid',
+      borderColor: featured ? '#2E52B2' : 'divider',
+      background: 'background.paper',
+      boxShadow: featured
+        ? '0 2px 10px rgba(46,82,178,0.15)'
+        : '0 1px 4px rgba(0,0,0,0.07)',
+      transition: 'all 0.18s ease',
+      '&:hover': {
+        transform: 'translateY(-2px)',
+        boxShadow: featured
+          ? '0 6px 20px rgba(46,82,178,0.25)'
+          : '0 4px 12px rgba(0,0,0,0.12)',
+        borderColor: featured ? '#1a3a8f' : 'primary.main',
+      },
+      '&:active': { transform: 'translateY(0)' },
+      outline: 'none',
+      '&:focus-visible': {
+        outline: '2px solid',
+        outlineColor: 'primary.main',
+        outlineOffset: '2px',
+      },
+    }}
+  >
+    {/* Icono */}
+    <Box
+      sx={{
+        flexShrink: 0,
+        width: { xs: 36, sm: 40 },
+        height: { xs: 36, sm: 40 },
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, rgba(46,82,178,0.10) 0%, rgba(46,82,178,0.04) 100%)',
+        color: 'primary.main',
+      }}
+    >
+      {React.cloneElement(icon, { sx: { fontSize: { xs: '1.15rem', sm: '1.3rem' } } })}
+    </Box>
+
+    {/* Texto */}
+    <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Typography
+        variant="body2"
+        sx={{
+          fontWeight: 700,
+          fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+          lineHeight: 1.3,
+          color: 'text.primary',
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{
+          display: 'block',
+          fontSize: { xs: '0.7rem', sm: '0.75rem' },
+          lineHeight: 1.3,
+          color: 'text.secondary',
+          mt: 0.25,
+        }}
+      >
+        {description}
+      </Typography>
+    </Box>
+
+    {/* Flecha */}
+    <ArrowForwardIcon
+      sx={{
+        flexShrink: 0,
+        fontSize: '1rem',
+        color: 'text.disabled',
+        transition: 'transform 0.15s ease',
+        '.MuiBox-root:hover &': { transform: 'translateX(3px)' },
+      }}
+    />
+  </Box>
+);
+
+/**
+ * QuotationButtons - Cards de acción: Financiamiento, Cotización y Contacto
  * Exportado para reutilizar en mobile y desktop
  */
 export const QuotationButtons = ({
@@ -49,98 +156,38 @@ export const QuotationButtons = ({
         mt: 2,
         display: 'flex',
         flexDirection: 'column',
-        gap: 0.5,
+        gap: { xs: 1, sm: 1.25 },
+        maxWidth: { xs: '100%', md: '77.5%' },
+        width: '100%',
         ...sx,
       }}
     >
-      {/* Fila 1 - Financiamiento (si aplica) */}
+      {/* Card 1 - Financiamiento (destacada, solo si aplica) */}
       {financingEnabled && (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.75,
-            lineHeight: 1.2,
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ color: 'text.secondary', lineHeight: 1.2 }}
-          >
-            ¿Necesitas pagar a plazo?
-          </Typography>
-
-          <Button
-            variant="text"
-            size="small"
-            onClick={onOpenFinancingModal}
-            sx={{
-              fontWeight: 600,
-              minHeight: 'auto',
-              py: 0,
-            }}
-          >
-            Solicita Financiamiento
-          </Button>
-        </Box>
+        <ActionCard
+          icon={<AccountBalanceWalletIcon />}
+          label="Solicita Financiamiento"
+          description="¿Necesitas pagar a plazo?"
+          onClick={onOpenFinancingModal}
+          featured
+        />
       )}
 
-      {/* Fila 2 - Cotización */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.75,
-          lineHeight: 1.2,
-        }}
-      >
-        <Typography
-          variant="body2"
-          sx={{ color: 'text.secondary', lineHeight: 1.2 }}
-        >
-          Obtén el detalle de la operación
-        </Typography>
+      {/* Card 2 - Cotización */}
+      <ActionCard
+        icon={<RequestQuoteIcon />}
+        label="Cotiza aquí"
+        description="Obtén el detalle de la operación."
+        onClick={onOpenQuotationModal}
+      />
 
-        <Button
-          variant="text"
-          size="small"
-          onClick={onOpenQuotationModal}
-          sx={{
-            fontWeight: 600,
-            minHeight: 'auto',
-            py: 0,
-          }}
-        >
-          Cotiza aquí
-        </Button>
-      </Box>
-
-      {/* Fila 3 - Contacto */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.75,
-          lineHeight: 1.2,
-        }}
-      >
-        <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.2 }}>
-          ¿Necesitas solicitar alguna condición especial?
-        </Typography>
-
-        <Button
-          variant="text"
-          size="small"
-          onClick={onOpenContactModal}
-          sx={{
-            fontWeight: 600,
-            minHeight: 'auto',
-            py: 0,
-          }}
-        >
-          Contáctanos
-        </Button>
-      </Box>
+      {/* Card 3 - Contacto */}
+      <ActionCard
+        icon={<SupportAgentIcon />}
+        label="Contáctanos"
+        description="¿Necesitas una condición especial?"
+        onClick={onOpenContactModal}
+      />
     </Box>
   );
 };

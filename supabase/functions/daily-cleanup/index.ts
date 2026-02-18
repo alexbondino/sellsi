@@ -311,6 +311,26 @@ async function performRobustCleanup(options: CleanupRequestBody): Promise<Cleanu
         } catch (_) { /* noop */ }
       }
     })
+
+    // 3.1 Marcar como "vistos recientemente" los candidatos que SÍ están referenciados en BD.
+    // Esto evita que un candidato antiguo (detectado antes de fixes) sea purgado aunque hoy esté referenciado.
+    try {
+      const referencedPaths = Array.from(dbUrls)
+      const CHUNK = 500
+      for (let i = 0; i < referencedPaths.length; i += CHUNK) {
+        const chunk = referencedPaths.slice(i, i + CHUNK)
+        const { error: touchErr } = await supabase
+          .from('image_orphan_candidates')
+          .update({ last_seen_reference: new Date().toISOString() })
+          .in('path', chunk)
+          .is('confirmed_deleted_at', null)
+        if (touchErr) {
+          console.warn('⚠️ Error actualizando last_seen_reference:', touchErr.message)
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ last_seen_reference touch failed:', (e as any)?.message || e)
+    }
     
     // 4. Procesar cada producto de forma robusta
     const failedProductsSet = new Set<string>()

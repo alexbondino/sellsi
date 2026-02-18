@@ -332,3 +332,9 @@ verify_jwt = false
 
 [functions.flow-return]
 verify_jwt = false
+
+[functions.generate-thumbnail]
+verify_jwt = false
+
+[functions.retry-thumbnail-jobs]
+verify_jwt = false

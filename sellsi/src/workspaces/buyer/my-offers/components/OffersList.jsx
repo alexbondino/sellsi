@@ -385,7 +385,6 @@ const OffersList = ({
                   id: o.product_id,
                   name: o.product_name || 'Producto',
                   thumbnails: o.product_thumbnails || null,
-                  thumbnail_url: o.product_thumbnail_url || null,
                   imagen: o.product_image || null,
                   ...(o.product || {}), // Fusionar datos adicionales si existen
                 };
@@ -397,16 +396,8 @@ const OffersList = ({
                 if (product.thumbnails && typeof product.thumbnails === 'object') {
                   avatarSrc = product.thumbnails.mobile || null;
                 }
-                
-                // Prioridad 2: thumbnail_url transformado a mobile
-                if (!avatarSrc && product.thumbnail_url) {
-                  avatarSrc = product.thumbnail_url.replace(
-                    '_desktop_320x260.jpg',
-                    '_mobile_190x153.jpg'
-                  );
-                }
-                
-                // Prioridad 3: imagen principal (para WebP sin thumbnails)
+
+                // Prioridad 2: imagen principal (para WebP sin thumbnails)
                 if (!avatarSrc && product.imagen) {
                   avatarSrc = product.imagen;
                 }
@@ -599,7 +590,6 @@ const OffersList = ({
                 id: o.product_id,
                 name: o.product_name || 'Producto',
                 thumbnails: o.product_thumbnails || null,
-                thumbnail_url: o.product_thumbnail_url || null,
                 imagen: o.product_image || null,
                 ...(o.product || {}), // Fusionar datos adicionales si existen
               };
@@ -613,8 +603,6 @@ const OffersList = ({
               if (thumbRow) {
                 if (thumbRow.thumbnails?.mobile) {
                   avatarSrc = thumbRow.thumbnails.mobile;
-                } else if (thumbRow.thumbnail_url) {
-                  avatarSrc = thumbRow.thumbnail_url.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
                 }
               }
               
@@ -623,12 +611,7 @@ const OffersList = ({
                 avatarSrc = product.thumbnails.mobile;
               }
               
-              // Prioridad 3: thumbnail_url transformado a mobile
-              if (!avatarSrc && product.thumbnail_url) {
-                avatarSrc = product.thumbnail_url.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
-              }
-              
-              // Prioridad 4: imagen principal (para WebP sin thumbnails)
+              // Prioridad 3: imagen principal (para WebP sin thumbnails)
               if (!avatarSrc && product.imagen) {
                 avatarSrc = product.imagen;
               }

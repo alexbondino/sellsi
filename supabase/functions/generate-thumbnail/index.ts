@@ -59,6 +59,19 @@ function extractBasename(url: string): string {
   }
 }
 
+function extractThumbnailObjectName(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    const clean = url.split('?')[0];
+    const marker = '/storage/v1/object/public/product-images-thumbnails/';
+    const idx = clean.indexOf(marker);
+    if (idx >= 0) return clean.substring(idx + marker.length);
+    return clean;
+  } catch (_) {
+    return null;
+  }
+}
+
 // --- CORE IMAGE FUNCTIONS ---
 
 // Exportamos para poder testear unitariamente si es necesario
@@ -174,7 +187,7 @@ export async function processGenerateThumbnail(requestBody: any, deps: any = {})
   const imageProcessor = deps.imageProcessor || createThumbnailFromOriginal;
 
   const trace: any = { startedAt: Date.now(), steps: [], productId: requestBody?.productId, supplierId: requestBody?.supplierId };
-  const { imageUrl, productId, supplierId, force } = requestBody || {};
+  const { imageUrl, productId, supplierId, force, skipJobTracking } = requestBody || {};
   
   dbg('REQUEST_BODY', safeJson({ productId, supplierId, force, hasImageUrl: !!imageUrl }));
   thumbsLog('REQ_BODY', { productId, supplierId, hasImageUrl: !!imageUrl, force: !!force });
@@ -260,15 +273,17 @@ export async function processGenerateThumbnail(requestBody: any, deps: any = {})
 
   // Job Tracking
   let jobTrackingEnabled = true;
-  try {
-    const { error: startErr } = await dbClient.rpc('start_thumbnail_job', { p_product_id: productId, p_product_image_id: mainImage.id });
-    if (startErr) {
+  if (!skipJobTracking) {
+    try {
+      const { error: startErr } = await dbClient.rpc('start_thumbnail_job', { p_product_id: productId, p_product_image_id: mainImage.id });
+      if (startErr) {
+        jobTrackingEnabled = false;
+        logError('⚠️ start_thumbnail_job failed (sin tracking):', startErr.message);
+      }
+    } catch (e) {
       jobTrackingEnabled = false;
-      logError('⚠️ start_thumbnail_job failed (sin tracking):', startErr.message);
+      logError('⚠️ Error RPC start_thumbnail_job:', e);
     }
-  } catch (e) {
-    jobTrackingEnabled = false;
-    logError('⚠️ Error RPC start_thumbnail_job:', e);
   }
 
   // Fetch Imagen Original
@@ -523,18 +538,48 @@ export async function processGenerateThumbnail(requestBody: any, deps: any = {})
       }
     }
 
-    // DB Update
-    const thumbnailsPayload: Record<string,string> = {};
-    if (minithumbUrl && successfulVariants.has('minithumb')) thumbnailsPayload.minithumb = minithumbUrl;
-    if (mobileUrl && successfulVariants.has('mobile')) thumbnailsPayload.mobile = mobileUrl;
-    if (tabletUrl && successfulVariants.has('tablet')) thumbnailsPayload.tablet = tabletUrl;
-    if (desktopUrl && successfulVariants.has('desktop')) thumbnailsPayload.desktop = desktopUrl;
+    // DB Update (IMPORTANTE): recomputar URLs finales después de los HEAD checks.
+    // Si alguna variante fue removida de successfulVariants por no existir físicamente,
+    // NO debemos persistir su URL en thumbnail_url.
+    const finalMinithumbUrl = successfulVariants.has('minithumb') ? buildUrl('minithumb') : null;
+    const finalMobileUrl = successfulVariants.has('mobile') ? buildUrl('mobile') : null;
+    const finalTabletUrl = successfulVariants.has('tablet') ? buildUrl('tablet') : null;
+    const finalDesktopUrl = successfulVariants.has('desktop') ? buildUrl('desktop') : null;
 
-    const primaryThumbnail = desktopUrl || tabletUrl || mobileUrl || minithumbUrl || null;
+    const thumbnailsPayload: Record<string, string> = {};
+    if (finalMinithumbUrl) thumbnailsPayload.minithumb = finalMinithumbUrl;
+    if (finalMobileUrl) thumbnailsPayload.mobile = finalMobileUrl;
+    if (finalTabletUrl) thumbnailsPayload.tablet = finalTabletUrl;
+    if (finalDesktopUrl) thumbnailsPayload.desktop = finalDesktopUrl;
+
+    const primaryThumbnail = finalDesktopUrl || finalTabletUrl || finalMobileUrl || finalMinithumbUrl || null;
+
+    if (!primaryThumbnail) {
+      if (jobTrackingEnabled) {
+        try {
+          await dbClient.rpc('mark_thumbnail_job_error', {
+            p_product_id: productId,
+            p_error: 'variants_missing_after_head_verification'
+          });
+        } catch (e) {
+          logError('RPC mark_thumbnail_job_error failed:', e);
+        }
+      }
+      return {
+        status: 422,
+        body: {
+          success: false,
+          error: 'VARIANTS_MISSING_AFTER_HEAD',
+          productId,
+          trace: { durationMs: Date.now() - trace.startedAt, steps: trace.steps }
+        }
+      };
+    }
     
     const updatePayload: Record<string, unknown> = {
       thumbnails: thumbnailsPayload,
-      thumbnail_url: primaryThumbnail
+      thumbnail_url: primaryThumbnail,
+      thumbnail_object_name: extractThumbnailObjectName(primaryThumbnail)
     };
 
     if (ENABLE_SIGNATURE_COLUMN) {

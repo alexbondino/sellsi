@@ -405,12 +405,6 @@ const SupplierOffersList = ({
                   ) {
                     avatarSrc = thumbRow.thumbnails.mobile || null;
                   }
-                  if (!avatarSrc && thumbRow.thumbnail_url) {
-                    avatarSrc = thumbRow.thumbnail_url.replace(
-                      '_desktop_320x260.jpg',
-                      '_mobile_190x153.jpg'
-                    );
-                  }
                 } catch (_) {}
               }
 

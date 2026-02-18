@@ -654,7 +654,8 @@ export const UnifiedAuthProvider = ({ children }) => {
 
   // Redirect onboarding when needed
   useEffect(() => {
-    if (session && needsOnboarding && location.pathname !== '/onboarding') {
+    const isDevOnboarding = import.meta.env.DEV && location.pathname === '/dev/onboarding';
+    if (session && needsOnboarding && location.pathname !== '/onboarding' && !isDevOnboarding) {
       navigate('/onboarding', { replace: true });
     }
   }, [session, needsOnboarding, location.pathname]);
@@ -672,6 +673,7 @@ export const UnifiedAuthProvider = ({ children }) => {
         '/terms-and-conditions',
         '/privacy-policy',
         '/tailwind',
+        ...(import.meta.env.DEV ? ['/dev/onboarding'] : []),
       ];
       const isAllowed = allowed.some(
         r =>

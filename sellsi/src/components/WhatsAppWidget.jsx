@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Paper, Typography, Button, TextField, IconButton, Fade, Slide } from '@mui/material';
-import { Close as CloseIcon, WhatsApp as WhatsAppIcon, Send as SendIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Send as SendIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+
+// Sellsi brand colors
+const SELLSI_BLUE = '#2E52B2';
+const SELLSI_BLUE_DARK = '#1a3a7a';
+const SELLSI_BLUE_DEEPER = '#0f2456';
 
 const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
@@ -56,7 +61,7 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
         zIndex: 2000,
       }}
     >
-      {/* Botón flotante principal */}
+      {/* Botón flotante principal — WhatsApp verde estándar */}
       <Box
         component="a"
         href="#"
@@ -65,7 +70,9 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
           setOpen(!open);
         }}
         sx={{
-          background: hover ? '#1ebe57' : '#25D366',
+          background: hover
+            ? `linear-gradient(135deg, #1ebe57 0%, ${SELLSI_BLUE} 100%)`
+            : '#25D366',
           borderRadius: '50%',
           width: 64,
           height: 64,
@@ -73,15 +80,12 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
           alignItems: 'center',
           justifyContent: 'center',
           boxShadow: hover
-            ? '0 8px 32px rgba(37, 211, 102, 0.4)'
-            : '0 4px 16px rgba(0,0,0,0.15)',
+            ? `0 8px 32px rgba(46, 82, 178, 0.45), 0 4px 16px rgba(37, 211, 102, 0.3)`
+            : '0 4px 20px rgba(0,0,0,0.18)',
           cursor: 'pointer',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
           textDecoration: 'none',
-          transform: hover ? 'scale(1.05)' : 'scale(1)',
-          '&:hover': {
-            transform: 'scale(1.05)',
-          }
+          transform: hover ? 'scale(1.08)' : 'scale(1)',
         }}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
@@ -94,7 +98,7 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
             height: 36,
             objectFit: 'contain',
             filter: hover
-              ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3)) brightness(1.1)'
+              ? 'drop-shadow(0 0 8px rgba(255,255,255,0.4)) brightness(1.1)'
               : 'drop-shadow(0 0 4px rgba(0,0,0,0.2))',
             transition: 'filter 0.3s ease',
           }}
@@ -104,109 +108,249 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
       {/* Widget flotante */}
       <Slide direction="up" in={open} mountOnEnter unmountOnExit>
         <Paper
-          elevation={24}
+          elevation={0}
           sx={{
             position: 'absolute',
             bottom: 80,
             right: 0,
-            width: 380,
-            maxWidth: '90vw',
-            background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-            borderRadius: 3,
+            width: 390,
+            maxWidth: '92vw',
+            background: '#ffffff',
+            borderRadius: '16px',
             overflow: 'hidden',
-            border: '1px solid rgba(37, 211, 102, 0.1)',
+            border: `1px solid rgba(46, 82, 178, 0.15)`,
+            boxShadow: `0 24px 64px rgba(46, 82, 178, 0.18), 0 8px 24px rgba(0,0,0,0.08)`,
           }}
         >
-          {/* Header */}
+          {/* ── Header con degradé Sellsi ── */}
           <Box
             sx={{
-              background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+              background: `linear-gradient(135deg, ${SELLSI_BLUE_DEEPER} 0%, ${SELLSI_BLUE_DARK} 45%, ${SELLSI_BLUE} 100%)`,
               color: 'white',
-              p: 2.5,
+              px: 2.5,
+              py: 2,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '-40%',
+                right: '-10%',
+                width: 180,
+                height: 180,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.06)',
+                pointerEvents: 'none',
+              },
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                bottom: '-60%',
+                left: '30%',
+                width: 120,
+                height: 120,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.04)',
+                pointerEvents: 'none',
+              },
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <WhatsAppIcon sx={{ fontSize: 24 }} />
-              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>
-                Contactar por WhatsApp
-              </Typography>
+            {/* Logo + Título */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, zIndex: 1 }}>
+              <Box
+                sx={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '8px',
+                  background: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(255,255,255,0.4)',
+                  flexShrink: 0,
+                }}
+              >
+                <img
+                  src="/Logos/sellsi_minilogo.webp"
+                  alt="Sellsi"
+                  style={{ width: 22, height: 22, objectFit: 'contain' }}
+                />
+              </Box>
+              <Box>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: 16,
+                    lineHeight: 1.1,
+                    letterSpacing: '0.01em',
+                  }}
+                >
+                  Contacto Sellsi
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  <Box
+                    sx={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      background: '#25D366',
+                      boxShadow: '0 0 6px rgba(37,211,102,0.8)',
+                      animation: 'pulse 2s infinite',
+                      '@keyframes pulse': {
+                        '0%, 100%': { opacity: 1 },
+                        '50%': { opacity: 0.5 },
+                      },
+                    }}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontSize: 11,
+                      opacity: 0.85,
+                      fontWeight: 500,
+                      letterSpacing: '0.02em',
+                    }}
+                  >
+                    En Línea
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
+
+            {/* Botón cerrar */}
             <IconButton
               onClick={handleClose}
+              size="small"
               sx={{
                 color: 'white',
-                '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' }
+                zIndex: 1,
+                width: 32,
+                height: 32,
+                borderRadius: '8px',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  background: 'rgba(255,255,255,0.2)',
+                  transform: 'scale(1.05)',
+                },
               }}
-              size="small"
             >
-              <CloseIcon />
+              <CloseIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Box>
 
+          {/* ── Thin accent bar ── */}
+          <Box
+            sx={{
+              height: 3,
+              background: `linear-gradient(90deg, ${SELLSI_BLUE_DEEPER} 0%, ${SELLSI_BLUE_DARK} 40%, ${SELLSI_BLUE} 70%, #25D366 100%)`,
+            }}
+          />
+
+          {/* ── Contenido ── */}
           <Box sx={{ p: 3 }}>
             {!selectedOption ? (
               <Fade in={!selectedOption}>
                 <Box>
                   <Typography
-                    variant="body1"
+                    variant="body2"
                     sx={{
-                      mb: 3,
-                      color: 'text.secondary',
-                      fontSize: 16,
-                      textAlign: 'center'
+                      mb: 2.5,
+                      color: '#64748b',
+                      fontSize: 14,
+                      textAlign: 'center',
+                      fontWeight: 500,
                     }}
                   >
                     ¿En qué podemos ayudarte?
                   </Typography>
-                  
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {/* Opción 1 — Atención comercial */}
                     <Button
-                      variant="contained"
+                      variant="outlined"
                       onClick={() => handleOptionSelect(1)}
                       sx={{
-                        background: 'linear-gradient(135deg, #25D366 0%, #1ebe57 100%)',
-                        color: 'white',
-                        py: 2,
-                        fontSize: 16,
+                        border: `1.5px solid rgba(46, 82, 178, 0.3)`,
+                        color: SELLSI_BLUE,
+                        py: 1.8,
+                        px: 2.5,
+                        fontSize: 15,
                         fontWeight: 600,
-                        borderRadius: 2,
+                        borderRadius: '10px',
                         textTransform: 'none',
-                        boxShadow: '0 4px 16px rgba(37, 211, 102, 0.3)',
+                        justifyContent: 'flex-start',
+                        gap: 1.5,
+                        background: 'rgba(46, 82, 178, 0.04)',
+                        transition: 'all 0.25s ease',
                         '&:hover': {
-                          background: 'linear-gradient(135deg, #1ebe57 0%, #128C7E 100%)',
-                          boxShadow: '0 6px 20px rgba(37, 211, 102, 0.4)',
+                          border: `1.5px solid ${SELLSI_BLUE}`,
+                          background: `rgba(46, 82, 178, 0.09)`,
                           transform: 'translateY(-1px)',
+                          boxShadow: `0 4px 14px rgba(46, 82, 178, 0.15)`,
                         },
-                        transition: 'all 0.3s ease',
                       }}
                     >
-                      💼 Atención comercial
+                      <Box
+                        component="span"
+                        sx={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}
+                      >
+                        💼
+                      </Box>
+                      <Box sx={{ textAlign: 'left' }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2, color: SELLSI_BLUE }}>
+                          Atención comercial
+                        </Typography>
+                        <Typography sx={{ fontSize: 11, opacity: 0.65, fontWeight: 400, lineHeight: 1.2, color: SELLSI_BLUE }}>
+                          Ventas, planes y cotizaciones
+                        </Typography>
+                      </Box>
                     </Button>
-                    
+
+                    {/* Opción 2 — Soporte */}
                     <Button
-                      variant="contained"
+                      variant="outlined"
                       onClick={() => handleOptionSelect(2)}
                       sx={{
-                        background: 'linear-gradient(135deg, #128C7E 0%, #075E54 100%)',
-                        color: 'white',
-                        py: 2,
-                        fontSize: 16,
+                        border: `1.5px solid rgba(46, 82, 178, 0.3)`,
+                        color: SELLSI_BLUE,
+                        py: 1.8,
+                        px: 2.5,
+                        fontSize: 15,
                         fontWeight: 600,
-                        borderRadius: 2,
+                        borderRadius: '10px',
                         textTransform: 'none',
-                        boxShadow: '0 4px 16px rgba(18, 140, 126, 0.3)',
+                        justifyContent: 'flex-start',
+                        gap: 1.5,
+                        background: 'rgba(46, 82, 178, 0.04)',
+                        transition: 'all 0.25s ease',
                         '&:hover': {
-                          background: 'linear-gradient(135deg, #075E54 0%, #054640 100%)',
-                          boxShadow: '0 6px 20px rgba(18, 140, 126, 0.4)',
+                          border: `1.5px solid ${SELLSI_BLUE}`,
+                          background: `rgba(46, 82, 178, 0.09)`,
                           transform: 'translateY(-1px)',
+                          boxShadow: `0 4px 14px rgba(46, 82, 178, 0.15)`,
                         },
-                        transition: 'all 0.3s ease',
                       }}
                     >
-                      🛠️ Soporte técnico y sugerencias
+                      <Box
+                        component="span"
+                        sx={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}
+                      >
+                        🛠️
+                      </Box>
+                      <Box sx={{ textAlign: 'left' }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2, color: SELLSI_BLUE }}>
+                          Soporte técnico
+                        </Typography>
+                        <Typography sx={{ fontSize: 11, opacity: 0.65, fontWeight: 400, lineHeight: 1.2, color: SELLSI_BLUE }}>
+                          Problemas, sugerencias y bugs
+                        </Typography>
+                      </Box>
                     </Button>
                   </Box>
                 </Box>
@@ -214,22 +358,35 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
             ) : (
               <Fade in={!!selectedOption}>
                 <Box>
-                  <Typography
-                    variant="h6"
+                  {/* Pill indicador de categoría */}
+                  <Box
                     sx={{
-                      mb: 2,
-                      color: 'text.primary',
-                      fontSize: 18,
-                      fontWeight: 600,
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 1,
+                      gap: 0.75,
+                      px: 1.5,
+                      py: 0.5,
+                      mb: 2,
+                      borderRadius: '20px',
+                      background: `linear-gradient(135deg, ${SELLSI_BLUE_DARK}18 0%, ${SELLSI_BLUE}18 100%)`,
+                      border: `1px solid ${SELLSI_BLUE}30`,
                     }}
                   >
-                    {selectedOption === 1 ? '💼' : '🛠️'}
-                    {selectedOption === 1 ? 'Atención comercial' : 'Soporte técnico y sugerencias'}
-                  </Typography>
-                  
+                    <span style={{ fontSize: 13 }}>
+                      {selectedOption === 1 ? '💼' : '🛠️'}
+                    </span>
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: SELLSI_BLUE,
+                        letterSpacing: '0.02em',
+                      }}
+                    >
+                      {selectedOption === 1 ? 'Atención comercial' : 'Soporte técnico y sugerencias'}
+                    </Typography>
+                  </Box>
+
                   <TextField
                     fullWidth
                     multiline
@@ -239,14 +396,19 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
                     placeholder="Escribe tu mensaje aquí..."
                     variant="outlined"
                     sx={{
-                      mb: 3,
+                      mb: 2.5,
                       '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
+                        borderRadius: '10px',
+                        fontSize: 14,
+                        '& fieldset': {
+                          borderColor: 'rgba(46, 82, 178, 0.2)',
+                        },
                         '&:hover fieldset': {
-                          borderColor: '#25D366',
+                          borderColor: `rgba(46, 82, 178, 0.5)`,
                         },
                         '&.Mui-focused fieldset': {
-                          borderColor: '#25D366',
+                          borderColor: SELLSI_BLUE,
+                          borderWidth: '1.5px',
                         },
                       },
                     }}
@@ -256,65 +418,79 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
                       }
                     }}
                   />
-                  
-                  <Box sx={{ display: 'flex', gap: 2 }}>
+
+                  <Box sx={{ display: 'flex', gap: 1.5 }}>
                     <Button
-                      variant="outlined"
+                      variant="text"
                       onClick={() => setSelectedOption(null)}
+                      startIcon={<ArrowBackIcon sx={{ fontSize: '16px !important' }} />}
                       sx={{
-                        flex: 1,
-                        py: 1.5,
-                        borderColor: '#ddd',
-                        color: 'text.secondary',
+                        flex: '0 0 auto',
+                        px: 1.5,
+                        py: 1.2,
+                        color: '#94a3b8',
                         textTransform: 'none',
                         fontWeight: 500,
-                        borderRadius: 2,
+                        fontSize: 13,
+                        borderRadius: '10px',
                         '&:hover': {
-                          borderColor: '#bbb',
-                          backgroundColor: 'rgba(0,0,0,0.04)',
+                          color: SELLSI_BLUE,
+                          background: `rgba(46, 82, 178, 0.06)`,
                         },
+                        transition: 'all 0.2s ease',
                       }}
                     >
                       Volver
                     </Button>
-                    
+
                     <Button
                       variant="contained"
                       onClick={handleSend}
                       disabled={!customMsg.trim()}
-                      startIcon={<SendIcon />}
+                      startIcon={<SendIcon sx={{ fontSize: '16px !important' }} />}
                       sx={{
-                        flex: 2,
-                        py: 1.5,
+                        flex: 1,
+                        py: 1.2,
                         background: customMsg.trim()
-                          ? 'linear-gradient(135deg, #25D366 0%, #1ebe57 100%)'
-                          : '#e0e0e0',
-                        color: customMsg.trim() ? 'white' : '#999',
+                          ? `linear-gradient(135deg, ${SELLSI_BLUE} 0%, ${SELLSI_BLUE_DARK} 100%)`
+                          : '#e2e8f0',
+                        color: customMsg.trim() ? 'white' : '#94a3b8',
                         textTransform: 'none',
-                        fontWeight: 600,
-                        borderRadius: 2,
-                        '&:hover': customMsg.trim() ? {
-                          background: 'linear-gradient(135deg, #1ebe57 0%, #128C7E 100%)',
-                          boxShadow: '0 4px 16px rgba(37, 211, 102, 0.3)',
-                        } : {},
-                        transition: 'all 0.3s ease',
+                        fontWeight: 700,
+                        fontSize: 14,
+                        borderRadius: '10px',
+                        boxShadow: customMsg.trim()
+                          ? `0 4px 14px rgba(46, 82, 178, 0.35)`
+                          : 'none',
+                        transition: 'all 0.25s ease',
+                        '&:hover': customMsg.trim()
+                          ? {
+                              background: `linear-gradient(135deg, ${SELLSI_BLUE_DARK} 0%, ${SELLSI_BLUE_DEEPER} 100%)`,
+                              boxShadow: `0 6px 20px rgba(46, 82, 178, 0.45)`,
+                              transform: 'translateY(-1px)',
+                            }
+                          : {},
+                        '&.Mui-disabled': {
+                          background: '#e2e8f0',
+                          color: '#94a3b8',
+                        },
                       }}
                     >
-                      Enviar mensaje
+                      Enviar por WhatsApp
                     </Button>
                   </Box>
-                  
+
                   <Typography
                     variant="caption"
                     sx={{
                       display: 'block',
-                      mt: 2,
-                      color: 'text.secondary',
+                      mt: 1.5,
+                      color: '#94a3b8',
                       textAlign: 'center',
-                      fontSize: 12,
+                      fontSize: 11,
                     }}
                   >
-                    Presiona Ctrl + Enter para enviar rápidamente
+                    Ctrl + Enter para enviar rápidamente
                   </Typography>
                 </Box>
               </Fade>

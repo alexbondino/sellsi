@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Box, Card, CardMedia, useTheme, useMediaQuery } from '@mui/material';
 import { ZoomIn } from '@mui/icons-material';
 import { getProductImageUrl } from '../../../../utils/getProductImageUrl';
@@ -15,11 +15,15 @@ const ProductImageGallery = ({
 }) => {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md')); // Solo en md y superiores
-  // Estados para el zoom con seguimiento del mouse
-  const [isHovering, setIsHovering] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
-  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
-  // Estado para el modal de zoom en mobile
+
+  // ─── Zoom sin estado React ─────────────────────────────────────────────────
+  // Usamos refs para manipular el DOM directamente en mousemove, evitando
+  // re-renders por cada pixel y eliminando el lag característico de setState.
+  const imgRef = useRef(null);
+  const cursorRef = useRef(null);
+  const isHoveringRef = useRef(false);
+
+  // Solo necesitamos estado para controlar el modal de mobile
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
 
   // Usar las imágenes reales del producto
@@ -27,50 +31,82 @@ const ProductImageGallery = ({
     images.length > 0
       ? images.map(getProductImageUrl)
       : ['/placeholder-product.jpg'];
-  // Diagnostic removed: gallery images debug logs eliminated
+
   // Precargar las primeras 3 imágenes para mejor UX
-  const { preloadedImages, isPreloading } = useImagePreloader(galleryImages);
-  // Diagnostic removed: preloadedImages debug logs eliminated
-  // Manejar el movimiento del mouse sobre la imagen
-  const handleMouseMove = e => {
-    if (!isDesktop) return;
+  useImagePreloader(galleryImages);
+
+  // ─── Handlers de mouse sin setState ───────────────────────────────────────
+  const handleMouseMove = useCallback(e => {
+    if (!isDesktop || !isHoveringRef.current) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    setMousePosition({ x, y });
-
-    // Posición absoluta del cursor para el icono de lupa
-    setCursorPosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
-
-  // Manejar cuando el mouse entra en la imagen
-  const handleMouseEnter = () => {
-    if (isDesktop) {
-      setIsHovering(true);
+    // Manipulamos el DOM directamente: cero re-renders
+    if (imgRef.current) {
+      imgRef.current.style.transformOrigin = `${x}% ${y}%`;
     }
-  };
 
-  // Manejar cuando el mouse sale de la imagen
-  const handleMouseLeave = () => {
-    setIsHovering(false);
-  };
+    // Mover el cursor personalizado (32px / 2 = 16 para centrar)
+    if (cursorRef.current) {
+      cursorRef.current.style.left = `${e.clientX - rect.left - 16}px`;
+      cursorRef.current.style.top = `${e.clientY - rect.top - 16}px`;
+    }
+  }, [isDesktop]);
+
+  const handleMouseEnter = useCallback(() => {
+    if (!isDesktop) return;
+    isHoveringRef.current = true;
+
+    if (imgRef.current) {
+      imgRef.current.style.transition = 'none';
+      imgRef.current.style.transform = 'scale(2.2)';
+      imgRef.current.style.willChange = 'transform'; // Activar GPU solo al necesitar
+    }
+    if (cursorRef.current) {
+      cursorRef.current.style.display = 'flex';
+    }
+  }, [isDesktop]);
+
+  const resetZoom = useCallback(() => {
+    isHoveringRef.current = false;
+    if (imgRef.current) {
+      imgRef.current.style.transition = 'transform 0.2s ease';
+      imgRef.current.style.transform = 'scale(1)';
+      imgRef.current.style.transformOrigin = 'center center';
+      imgRef.current.style.willChange = 'auto'; // Liberar GPU al terminar
+    }
+    if (cursorRef.current) {
+      cursorRef.current.style.display = 'none';
+    }
+  }, []);
+
+  const handleMouseLeave = resetZoom;
+
+  // Resetear zoom si el usuario cambia de imagen mientras hace hover
+  // (evita que scale(2.2) y transition:none queden pegados en el DOM)
+  React.useEffect(() => {
+    if (isHoveringRef.current) return; // Si sigue hovering, no tocar
+    if (imgRef.current) {
+      imgRef.current.style.transition = '';
+      imgRef.current.style.transform = '';
+      imgRef.current.style.transformOrigin = '';
+      imgRef.current.style.willChange = '';
+    }
+  }, [selectedIndex]);
 
   // Manejar click en la imagen para abrir modal (mobile)
-  const handleImageClick = () => {
+  const handleImageClick = useCallback(() => {
     if (!isDesktop) {
       setIsZoomModalOpen(true);
     }
-  };
+  }, [isDesktop]);
 
   // Cerrar modal de zoom
-  const handleCloseZoomModal = () => {
+  const handleCloseZoomModal = useCallback(() => {
     setIsZoomModalOpen(false);
-  };
+  }, []);
 
   return (
     <Box
@@ -100,10 +136,6 @@ const ProductImageGallery = ({
           position: 'relative',
           cursor: isDesktop ? 'none' : 'zoom-in',
           transition: 'box-shadow 0.3s ease',
-          ...(isHovering &&
-            isDesktop && {
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
-            }),
         }}
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
@@ -111,6 +143,7 @@ const ProductImageGallery = ({
         onClick={handleImageClick}
       >
         <CardMedia
+          ref={imgRef}
           component="img"
           image={galleryImages[selectedIndex]}
           alt={productName}
@@ -123,40 +156,36 @@ const ProductImageGallery = ({
             bgcolor: '#fff',
             // Remove mobile padding: let AppShell provide the gutter
             p: { xs: 0, md: 1.9 },
-            transition: 'transform 0.3s ease, transform-origin 0.1s ease',
-            transformOrigin:
-              isHovering && isDesktop
-                ? `${mousePosition.x}% ${mousePosition.y}%`
-                : 'center center',
-            transform: isHovering && isDesktop ? 'scale(1.8)' : 'scale(1)',
+            // Sin transición inicial: la añadimos/quitamos via ref en los handlers
+            transformOrigin: 'center center',
+            transform: 'scale(1)',
             position: 'relative',
             zIndex: 2,
+            // willChange se gestiona via ref (activar al hover, liberar al salir)
+            // No poner aquí: Emotion lo re-inyecta en reposo anulando el ref
           }}
         />
-        {/* Icono de lupa que sigue al cursor */}
-        {isHovering && isDesktop && (
+        {/* Icono de lupa que sigue al cursor — siempre en DOM, ocultado via ref */}
+        {isDesktop && (
           <Box
+            ref={cursorRef}
             sx={{
               position: 'absolute',
-              left: cursorPosition.x - 12, // Centrar el icono (24px / 2)
-              top: cursorPosition.y - 12, // Centrar el icono (24px / 2)
-              width: 24,
-              height: 24,
-              display: 'flex',
+              display: 'none', // Ocultado por defecto, se muestra via ref en handleMouseEnter
+              width: 32,
+              height: 32,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: 'rgba(255, 255, 255, 0.45)', // 50% transparencia (0.9 * 0.5)
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
               borderRadius: '50%',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', // Sombra más sutil
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
               zIndex: 10,
               pointerEvents: 'none', // No interferir con los eventos del mouse
-              transition: 'opacity 0.2s ease',
-              opacity: 0.5, // 50% de transparencia general
             }}
           >
             <ZoomIn
               sx={{
-                fontSize: 16,
+                fontSize: 18,
                 color: 'primary.main',
               }}
             />
