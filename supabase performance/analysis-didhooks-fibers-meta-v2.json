@@ -1,0 +1,279 @@
+{
+  "input": "c:/Users/klaus/OneDrive/Documentos/sellsi/supabase performance/profiling data minimizing v2.json",
+  "top_n": 60,
+  "section": "topFibersByDidHooksChange",
+  "fibers": [
+    {
+      "fiberId": 34,
+      "displayName": "tu",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 766,
+      "displayName": "Marketplace",
+      "key": null,
+      "hocDisplayNames": [
+        "Memo"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13491,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 12174,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13050,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13602,
+      "displayName": "ge",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 12609,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13197,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 12462,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 12315,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13344,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 12903,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 12285,
+      "displayName": "ge",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 12756,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13632,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13167,
+      "displayName": "ge",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 12726,
+      "displayName": "ge",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13314,
+      "displayName": "ge",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 12579,
+      "displayName": "ge",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13461,
+      "displayName": "ge",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 12432,
+      "displayName": "ge",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13020,
+      "displayName": "ge",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 12873,
+      "displayName": "ge",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 14949,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 16407,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 27507,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 19188,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 24732,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 21957,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 14073,
+      "displayName": "ProductCardBuyerContext",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    }
+  ]
+}

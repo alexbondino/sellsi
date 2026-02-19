@@ -1,0 +1,1365 @@
+{
+  "input": "c:/Users/klaus/OneDrive/Documentos/sellsi/supabase performance/profiling data minimizing.json",
+  "version": 5,
+  "commitCount": 1,
+  "sessionDurationMs": 0,
+  "largestGapMs": null,
+  "gapBeforeCommitIndex": null,
+  "gapAfterCommitIndex": null,
+  "restoreTimestamp": 4095.7000000029802,
+  "windowMs": 2500,
+  "restoreCommitCount": 1,
+  "restoreCommitIndices": [
+    0
+  ],
+  "restoreCommits": [
+    {
+      "index": 0,
+      "timestamp": 4095.7000000029802,
+      "duration_ms": 1147.1,
+      "priorityLevel": "Normal",
+      "renderedFibers": 18345,
+      "totalActualDurationMs": 66707.2,
+      "changeDescriptionsCount": 18017,
+      "reasons": {
+        "context": 445,
+        "didHooksChange": 139,
+        "props": 17426,
+        "state": 138,
+        "hooks": 139
+      }
+    }
+  ],
+  "topFibersAfterRestore": [
+    {
+      "fiberId": 450,
+      "name": "tu",
+      "renders": 1,
+      "totalActualMs": 1147.1,
+      "avgActualMs": 1147.1,
+      "reasonCounts": {
+        "context": 0,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 1,
+        "hooks": 1
+      }
+    },
+    {
+      "fiberId": 452,
+      "name": "au",
+      "renders": 1,
+      "totalActualMs": 1146.7,
+      "avgActualMs": 1146.7,
+      "reasonCounts": {
+        "context": 1,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 451,
+      "name": "Context.Provider",
+      "renders": 1,
+      "totalActualMs": 1146.7,
+      "avgActualMs": 1146.7,
+      "reasonCounts": {
+        "context": 0,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 454,
+      "name": "uu",
+      "renders": 1,
+      "totalActualMs": 1146.6,
+      "avgActualMs": 1146.6,
+      "reasonCounts": {
+        "context": 1,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 461,
+      "name": "Fm",
+      "renders": 1,
+      "totalActualMs": 1146.4,
+      "avgActualMs": 1146.4,
+      "reasonCounts": {
+        "context": 1,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 459,
+      "name": "Context.Provider",
+      "renders": 1,
+      "totalActualMs": 1146.4,
+      "avgActualMs": 1146.4,
+      "reasonCounts": {
+        "context": 0,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 458,
+      "name": "iu",
+      "renders": 1,
+      "totalActualMs": 1146.4,
+      "avgActualMs": 1146.4,
+      "reasonCounts": {
+        "context": 1,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 455,
+      "name": "Context.Provider",
+      "renders": 1,
+      "totalActualMs": 1146.4,
+      "avgActualMs": 1146.4,
+      "reasonCounts": {
+        "context": 0,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 462,
+      "name": "Lm",
+      "renders": 1,
+      "totalActualMs": 1146.2,
+      "avgActualMs": 1146.2,
+      "reasonCounts": {
+        "context": 1,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 546,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 1104.5,
+      "avgActualMs": 1104.5,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 547,
+      "name": "div",
+      "renders": 1,
+      "totalActualMs": 1104.4,
+      "avgActualMs": 1104.4,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 550,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 1095.4,
+      "avgActualMs": 1095.4,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 551,
+      "name": "div",
+      "renders": 1,
+      "totalActualMs": 1095.3,
+      "avgActualMs": 1095.3,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 553,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 1071.6,
+      "avgActualMs": 1071.6,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 554,
+      "name": "div",
+      "renders": 1,
+      "totalActualMs": 1071.5,
+      "avgActualMs": 1071.5,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 556,
+      "name": "Cd",
+      "renders": 1,
+      "totalActualMs": 1071.0,
+      "avgActualMs": 1071.0,
+      "reasonCounts": {
+        "context": 1,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 558,
+      "name": "Re",
+      "renders": 1,
+      "totalActualMs": 1063.6,
+      "avgActualMs": 1063.6,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 557,
+      "name": "Suspense",
+      "renders": 1,
+      "totalActualMs": 1063.6,
+      "avgActualMs": 1063.6,
+      "reasonCounts": {
+        "context": 0,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 559,
+      "name": "ye",
+      "renders": 1,
+      "totalActualMs": 1063.1,
+      "avgActualMs": 1063.1,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 1411,
+      "name": "Bu",
+      "renders": 1,
+      "totalActualMs": 1063.0,
+      "avgActualMs": 1063.0,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 560,
+      "name": "Route.Provider",
+      "renders": 1,
+      "totalActualMs": 1063.0,
+      "avgActualMs": 1063.0,
+      "reasonCounts": {
+        "context": 0,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 1412,
+      "name": "Marketplace",
+      "renders": 1,
+      "totalActualMs": 1062.9,
+      "avgActualMs": 1062.9,
+      "reasonCounts": {
+        "context": 1,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 1,
+        "hooks": 1
+      }
+    },
+    {
+      "fiberId": 1413,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 1062.5,
+      "avgActualMs": 1062.5,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 1414,
+      "name": "div",
+      "renders": 1,
+      "totalActualMs": 1062.4,
+      "avgActualMs": 1062.4,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 1416,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 1062.1,
+      "avgActualMs": 1062.1,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 1417,
+      "name": "div",
+      "renders": 1,
+      "totalActualMs": 1062.0,
+      "avgActualMs": 1062.0,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 1613,
+      "name": "ProductsSection",
+      "renders": 1,
+      "totalActualMs": 1061.6,
+      "avgActualMs": 1061.6,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 1614,
+      "name": "Gs",
+      "renders": 1,
+      "totalActualMs": 1060.3,
+      "avgActualMs": 1060.3,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 1615,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 1047.3,
+      "avgActualMs": 1047.3,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 1616,
+      "name": "div",
+      "renders": 1,
+      "totalActualMs": 1047.2,
+      "avgActualMs": 1047.2,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    }
+  ],
+  "topFibersByContextChanges": [
+    {
+      "fiberId": 452,
+      "name": "au",
+      "count": 1,
+      "totalActualMs": 1146.7
+    },
+    {
+      "fiberId": 454,
+      "name": "uu",
+      "count": 1,
+      "totalActualMs": 1146.6
+    },
+    {
+      "fiberId": 461,
+      "name": "Fm",
+      "count": 1,
+      "totalActualMs": 1146.4
+    },
+    {
+      "fiberId": 458,
+      "name": "iu",
+      "count": 1,
+      "totalActualMs": 1146.4
+    },
+    {
+      "fiberId": 462,
+      "name": "Lm",
+      "count": 1,
+      "totalActualMs": 1146.2
+    },
+    {
+      "fiberId": 556,
+      "name": "Cd",
+      "count": 1,
+      "totalActualMs": 1071.0
+    },
+    {
+      "fiberId": 1412,
+      "name": "Marketplace",
+      "count": 1,
+      "totalActualMs": 1062.9
+    },
+    {
+      "fiberId": 10623,
+      "name": "ProductCard",
+      "count": 1,
+      "totalActualMs": 55.6
+    },
+    {
+      "fiberId": 10638,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 54.1
+    },
+    {
+      "fiberId": 12522,
+      "name": "ProductCard",
+      "count": 1,
+      "totalActualMs": 49.4
+    },
+    {
+      "fiberId": 12537,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 48.2
+    },
+    {
+      "fiberId": 11646,
+      "name": "ProductCard",
+      "count": 1,
+      "totalActualMs": 47.7
+    },
+    {
+      "fiberId": 11661,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 45.7
+    },
+    {
+      "fiberId": 11499,
+      "name": "ProductCard",
+      "count": 1,
+      "totalActualMs": 42.9
+    },
+    {
+      "fiberId": 11940,
+      "name": "ProductCard",
+      "count": 1,
+      "totalActualMs": 42.3
+    },
+    {
+      "fiberId": 10735,
+      "name": "Ae",
+      "count": 1,
+      "totalActualMs": 42.2
+    },
+    {
+      "fiberId": 11514,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 41.8
+    },
+    {
+      "fiberId": 11955,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 41.2
+    },
+    {
+      "fiberId": 12810,
+      "name": "ProductCard",
+      "count": 1,
+      "totalActualMs": 41.0
+    },
+    {
+      "fiberId": 463,
+      "name": "hm",
+      "count": 1,
+      "totalActualMs": 40.9
+    },
+    {
+      "fiberId": 10764,
+      "name": "ProductCard",
+      "count": 1,
+      "totalActualMs": 40.5
+    },
+    {
+      "fiberId": 12825,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 39.8
+    },
+    {
+      "fiberId": 12663,
+      "name": "ProductCard",
+      "count": 1,
+      "totalActualMs": 39.2
+    },
+    {
+      "fiberId": 10779,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 39.0
+    },
+    {
+      "fiberId": 12678,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 38.0
+    },
+    {
+      "fiberId": 11793,
+      "name": "ProductCard",
+      "count": 1,
+      "totalActualMs": 37.3
+    },
+    {
+      "fiberId": 11808,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 36.2
+    },
+    {
+      "fiberId": 12634,
+      "name": "Ae",
+      "count": 1,
+      "totalActualMs": 34.2
+    },
+    {
+      "fiberId": 12957,
+      "name": "ProductCard",
+      "count": 1,
+      "totalActualMs": 31.4
+    },
+    {
+      "fiberId": 11617,
+      "name": "Ae",
+      "count": 1,
+      "totalActualMs": 30.3
+    }
+  ],
+  "topFibersByPropsChanges": [
+    {
+      "fiberId": 462,
+      "name": "Lm",
+      "count": 1,
+      "totalActualMs": 1146.2
+    },
+    {
+      "fiberId": 546,
+      "name": "Anonymous",
+      "count": 1,
+      "totalActualMs": 1104.5
+    },
+    {
+      "fiberId": 547,
+      "name": "div",
+      "count": 1,
+      "totalActualMs": 1104.4
+    },
+    {
+      "fiberId": 550,
+      "name": "Anonymous",
+      "count": 1,
+      "totalActualMs": 1095.4
+    },
+    {
+      "fiberId": 551,
+      "name": "div",
+      "count": 1,
+      "totalActualMs": 1095.3
+    },
+    {
+      "fiberId": 553,
+      "name": "Anonymous",
+      "count": 1,
+      "totalActualMs": 1071.6
+    },
+    {
+      "fiberId": 554,
+      "name": "div",
+      "count": 1,
+      "totalActualMs": 1071.5
+    },
+    {
+      "fiberId": 558,
+      "name": "Re",
+      "count": 1,
+      "totalActualMs": 1063.6
+    },
+    {
+      "fiberId": 559,
+      "name": "ye",
+      "count": 1,
+      "totalActualMs": 1063.1
+    },
+    {
+      "fiberId": 1411,
+      "name": "Bu",
+      "count": 1,
+      "totalActualMs": 1063.0
+    },
+    {
+      "fiberId": 1413,
+      "name": "Anonymous",
+      "count": 1,
+      "totalActualMs": 1062.5
+    },
+    {
+      "fiberId": 1414,
+      "name": "div",
+      "count": 1,
+      "totalActualMs": 1062.4
+    },
+    {
+      "fiberId": 1416,
+      "name": "Anonymous",
+      "count": 1,
+      "totalActualMs": 1062.1
+    },
+    {
+      "fiberId": 1417,
+      "name": "div",
+      "count": 1,
+      "totalActualMs": 1062.0
+    },
+    {
+      "fiberId": 1613,
+      "name": "ProductsSection",
+      "count": 1,
+      "totalActualMs": 1061.6
+    },
+    {
+      "fiberId": 1614,
+      "name": "Gs",
+      "count": 1,
+      "totalActualMs": 1060.3
+    },
+    {
+      "fiberId": 1615,
+      "name": "Anonymous",
+      "count": 1,
+      "totalActualMs": 1047.3
+    },
+    {
+      "fiberId": 1616,
+      "name": "div",
+      "count": 1,
+      "totalActualMs": 1047.2
+    },
+    {
+      "fiberId": 1618,
+      "name": "Anonymous",
+      "count": 1,
+      "totalActualMs": 1046.2
+    },
+    {
+      "fiberId": 1619,
+      "name": "div",
+      "count": 1,
+      "totalActualMs": 1045.9
+    },
+    {
+      "fiberId": 1651,
+      "name": "div",
+      "count": 1,
+      "totalActualMs": 1042.5
+    },
+    {
+      "fiberId": 1650,
+      "name": "Anonymous",
+      "count": 1,
+      "totalActualMs": 1042.5
+    },
+    {
+      "fiberId": 10617,
+      "name": "Anonymous",
+      "count": 1,
+      "totalActualMs": 1042.1
+    },
+    {
+      "fiberId": 10618,
+      "name": "div",
+      "count": 1,
+      "totalActualMs": 1042.0
+    },
+    {
+      "fiberId": 10620,
+      "name": "Anonymous",
+      "count": 1,
+      "totalActualMs": 55.9
+    },
+    {
+      "fiberId": 10621,
+      "name": "div",
+      "count": 1,
+      "totalActualMs": 55.8
+    },
+    {
+      "fiberId": 10623,
+      "name": "ProductCard",
+      "count": 1,
+      "totalActualMs": 55.6
+    },
+    {
+      "fiberId": 10624,
+      "name": "Anonymous",
+      "count": 1,
+      "totalActualMs": 55.3
+    },
+    {
+      "fiberId": 10625,
+      "name": "MuiCardRoot",
+      "count": 1,
+      "totalActualMs": 55.2
+    },
+    {
+      "fiberId": 10627,
+      "name": "Anonymous",
+      "count": 1,
+      "totalActualMs": 54.6
+    }
+  ],
+  "topFibersByStateChanges": [
+    {
+      "fiberId": 25288,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 25.1
+    },
+    {
+      "fiberId": 26899,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 22.0
+    },
+    {
+      "fiberId": 25834,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 21.7
+    },
+    {
+      "fiberId": 26599,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 21.7
+    },
+    {
+      "fiberId": 27430,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 20.3
+    },
+    {
+      "fiberId": 26089,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 20.0
+    },
+    {
+      "fiberId": 27175,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 15.7
+    },
+    {
+      "fiberId": 25579,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 14.8
+    },
+    {
+      "fiberId": 26344,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 13.9
+    },
+    {
+      "fiberId": 28486,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 12.4
+    },
+    {
+      "fiberId": 33304,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 10.3
+    },
+    {
+      "fiberId": 36208,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 9.7
+    },
+    {
+      "fiberId": 29206,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 9.4
+    },
+    {
+      "fiberId": 27685,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 8.4
+    },
+    {
+      "fiberId": 28726,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 6.8
+    },
+    {
+      "fiberId": 42568,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 6.8
+    },
+    {
+      "fiberId": 36943,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 6.6
+    },
+    {
+      "fiberId": 30256,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 6.0
+    },
+    {
+      "fiberId": 35422,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 6.0
+    },
+    {
+      "fiberId": 38464,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 6.0
+    },
+    {
+      "fiberId": 38740,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 6.0
+    },
+    {
+      "fiberId": 28195,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 5.9
+    },
+    {
+      "fiberId": 31285,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 5.8
+    },
+    {
+      "fiberId": 34054,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 5.8
+    },
+    {
+      "fiberId": 34891,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 5.8
+    },
+    {
+      "fiberId": 36463,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 5.8
+    },
+    {
+      "fiberId": 41065,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 5.8
+    },
+    {
+      "fiberId": 34345,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 5.7
+    },
+    {
+      "fiberId": 37234,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 5.5
+    },
+    {
+      "fiberId": 30766,
+      "name": "t",
+      "count": 1,
+      "totalActualMs": 5.4
+    }
+  ],
+  "topFibersByHooksChanges": [
+    {
+      "fiberId": 450,
+      "name": "tu",
+      "count": 1,
+      "totalActualMs": 1147.1
+    },
+    {
+      "fiberId": 1412,
+      "name": "Marketplace",
+      "count": 1,
+      "totalActualMs": 1062.9
+    },
+    {
+      "fiberId": 10638,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 54.1
+    },
+    {
+      "fiberId": 12537,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 48.2
+    },
+    {
+      "fiberId": 11661,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 45.7
+    },
+    {
+      "fiberId": 11514,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 41.8
+    },
+    {
+      "fiberId": 11955,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 41.2
+    },
+    {
+      "fiberId": 12825,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 39.8
+    },
+    {
+      "fiberId": 10779,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 39.0
+    },
+    {
+      "fiberId": 12678,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 38.0
+    },
+    {
+      "fiberId": 11808,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 36.2
+    },
+    {
+      "fiberId": 12972,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 30.1
+    },
+    {
+      "fiberId": 10749,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 29.0
+    },
+    {
+      "fiberId": 12648,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 28.3
+    },
+    {
+      "fiberId": 12066,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 25.7
+    },
+    {
+      "fiberId": 11631,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 25.5
+    },
+    {
+      "fiberId": 11778,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 24.2
+    },
+    {
+      "fiberId": 12942,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 24.1
+    },
+    {
+      "fiberId": 11925,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 20.3
+    },
+    {
+      "fiberId": 12795,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 19.5
+    },
+    {
+      "fiberId": 10896,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 19.4
+    },
+    {
+      "fiberId": 20568,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 16.9
+    },
+    {
+      "fiberId": 13554,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 16.6
+    },
+    {
+      "fiberId": 18093,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 14.3
+    },
+    {
+      "fiberId": 14436,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 13.7
+    },
+    {
+      "fiberId": 13671,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 13.2
+    },
+    {
+      "fiberId": 21738,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 13.1
+    },
+    {
+      "fiberId": 42172,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 12.9
+    },
+    {
+      "fiberId": 13848,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 12.6
+    },
+    {
+      "fiberId": 13089,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 12.2
+    }
+  ],
+  "topFibersByDidHooksChange": [
+    {
+      "fiberId": 450,
+      "name": "tu",
+      "count": 1,
+      "totalActualMs": 1147.1
+    },
+    {
+      "fiberId": 1412,
+      "name": "Marketplace",
+      "count": 1,
+      "totalActualMs": 1062.9
+    },
+    {
+      "fiberId": 10638,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 54.1
+    },
+    {
+      "fiberId": 12537,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 48.2
+    },
+    {
+      "fiberId": 11661,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 45.7
+    },
+    {
+      "fiberId": 11514,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 41.8
+    },
+    {
+      "fiberId": 11955,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 41.2
+    },
+    {
+      "fiberId": 12825,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 39.8
+    },
+    {
+      "fiberId": 10779,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 39.0
+    },
+    {
+      "fiberId": 12678,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 38.0
+    },
+    {
+      "fiberId": 11808,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 36.2
+    },
+    {
+      "fiberId": 12972,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 30.1
+    },
+    {
+      "fiberId": 10749,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 29.0
+    },
+    {
+      "fiberId": 12648,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 28.3
+    },
+    {
+      "fiberId": 12066,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 25.7
+    },
+    {
+      "fiberId": 11631,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 25.5
+    },
+    {
+      "fiberId": 11778,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 24.2
+    },
+    {
+      "fiberId": 12942,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 24.1
+    },
+    {
+      "fiberId": 11925,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 20.3
+    },
+    {
+      "fiberId": 12795,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 19.5
+    },
+    {
+      "fiberId": 10896,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 19.4
+    },
+    {
+      "fiberId": 20568,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 16.9
+    },
+    {
+      "fiberId": 13554,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 16.6
+    },
+    {
+      "fiberId": 18093,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 14.3
+    },
+    {
+      "fiberId": 14436,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 13.7
+    },
+    {
+      "fiberId": 13671,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 13.2
+    },
+    {
+      "fiberId": 21738,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 13.1
+    },
+    {
+      "fiberId": 42172,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 12.9
+    },
+    {
+      "fiberId": 13848,
+      "name": "ProductCardBuyerContext",
+      "count": 1,
+      "totalActualMs": 12.6
+    },
+    {
+      "fiberId": 13089,
+      "name": "ge",
+      "count": 1,
+      "totalActualMs": 12.2
+    }
+  ]
+}

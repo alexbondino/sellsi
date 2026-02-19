@@ -1,0 +1,216 @@
+{
+  "input": "c:/Users/klaus/OneDrive/Documentos/sellsi/supabase performance/profiling data minimizing.json",
+  "top_n": 30,
+  "summary": [
+    {
+      "name": "Anonymous",
+      "renders": 5367,
+      "total_ms": 20579.9,
+      "avg_ms": 3.835,
+      "impact": 110452323.3
+    },
+    {
+      "name": "div",
+      "renders": 1431,
+      "total_ms": 13223.1,
+      "avg_ms": 9.24,
+      "impact": 18922256.1
+    },
+    {
+      "name": "Context.Provider",
+      "renders": 208,
+      "total_ms": 4394.9,
+      "avg_ms": 21.129,
+      "impact": 914139.2
+    },
+    {
+      "name": "MuiPaperRoot",
+      "renders": 418,
+      "total_ms": 1614.6,
+      "avg_ms": 3.863,
+      "impact": 674902.8
+    },
+    {
+      "name": "ao",
+      "renders": 5694,
+      "total_ms": 117.6,
+      "avg_ms": 0.021,
+      "impact": 669614.4
+    },
+    {
+      "name": "MuiTypographyRoot",
+      "renders": 1341,
+      "total_ms": 162.6,
+      "avg_ms": 0.121,
+      "impact": 218046.6
+    },
+    {
+      "name": "MuiStackRoot",
+      "renders": 272,
+      "total_ms": 409.2,
+      "avg_ms": 1.504,
+      "impact": 111302.4
+    },
+    {
+      "name": "ProductCard",
+      "renders": 68,
+      "total_ms": 1029.9,
+      "avg_ms": 15.146,
+      "impact": 70033.2
+    },
+    {
+      "name": "MuiCardRoot",
+      "renders": 68,
+      "total_ms": 1021.3,
+      "avg_ms": 15.019,
+      "impact": 69448.4
+    },
+    {
+      "name": "t",
+      "renders": 138,
+      "total_ms": 502.4,
+      "avg_ms": 3.641,
+      "impact": 69331.2
+    },
+    {
+      "name": "ProductCardBuyerContext",
+      "renders": 68,
+      "total_ms": 991.9,
+      "avg_ms": 14.587,
+      "impact": 67449.2
+    },
+    {
+      "name": "MuiCardActionsRoot",
+      "renders": 68,
+      "total_ms": 704.3,
+      "avg_ms": 10.357,
+      "impact": 47892.4
+    },
+    {
+      "name": "Ae",
+      "renders": 68,
+      "total_ms": 694.1,
+      "avg_ms": 10.207,
+      "impact": 47198.8
+    },
+    {
+      "name": "ge",
+      "renders": 68,
+      "total_ms": 585.0,
+      "avg_ms": 8.603,
+      "impact": 39780.0
+    },
+    {
+      "name": "MuiDrawerRoot",
+      "renders": 68,
+      "total_ms": 552.3,
+      "avg_ms": 8.122,
+      "impact": 37556.4
+    },
+    {
+      "name": "MuiModalRoot",
+      "renders": 68,
+      "total_ms": 531.4,
+      "avg_ms": 7.815,
+      "impact": 36135.2
+    },
+    {
+      "name": "Lf",
+      "renders": 68,
+      "total_ms": 498.4,
+      "avg_ms": 7.329,
+      "impact": 33891.2
+    },
+    {
+      "name": "MuiDrawerPaper",
+      "renders": 68,
+      "total_ms": 487.7,
+      "avg_ms": 7.172,
+      "impact": 33163.6
+    },
+    {
+      "name": "motion.div",
+      "renders": 68,
+      "total_ms": 466.3,
+      "avg_ms": 6.857,
+      "impact": 31708.4
+    },
+    {
+      "name": "MuiButtonBaseRoot",
+      "renders": 285,
+      "total_ms": 80.9,
+      "avg_ms": 0.284,
+      "impact": 23056.5
+    },
+    {
+      "name": "MuiCardContentRoot",
+      "renders": 68,
+      "total_ms": 241.4,
+      "avg_ms": 3.55,
+      "impact": 16415.2
+    },
+    {
+      "name": "VerifiedIcon",
+      "renders": 272,
+      "total_ms": 49.9,
+      "avg_ms": 0.183,
+      "impact": 13572.8
+    },
+    {
+      "name": "MuiButtonRoot",
+      "renders": 137,
+      "total_ms": 66.6,
+      "avg_ms": 0.486,
+      "impact": 9124.2
+    },
+    {
+      "name": "de",
+      "renders": 68,
+      "total_ms": 119.3,
+      "avg_ms": 1.754,
+      "impact": 8112.4
+    },
+    {
+      "name": "le",
+      "renders": 68,
+      "total_ms": 82.2,
+      "avg_ms": 1.209,
+      "impact": 5589.6
+    },
+    {
+      "name": "MuiAlertRoot",
+      "renders": 112,
+      "total_ms": 48.6,
+      "avg_ms": 0.434,
+      "impact": 5443.2
+    },
+    {
+      "name": "FormControlContext.Provider",
+      "renders": 55,
+      "total_ms": 85.4,
+      "avg_ms": 1.553,
+      "impact": 4697.0
+    },
+    {
+      "name": "MuiFormControlRoot",
+      "renders": 52,
+      "total_ms": 83.3,
+      "avg_ms": 1.602,
+      "impact": 4331.6
+    },
+    {
+      "name": "ue",
+      "renders": 68,
+      "total_ms": 58.2,
+      "avg_ms": 0.856,
+      "impact": 3957.6
+    },
+    {
+      "name": "RadioGroupContext.Provider",
+      "renders": 51,
+      "total_ms": 71.2,
+      "avg_ms": 1.396,
+      "impact": 3631.2
+    }
+  ]
+}

@@ -341,6 +341,28 @@ export const useSupplierDashboard = () => {
           /* noop */
         }
 
+        // Contar financiamientos aprobados por Sellsi (status = 'approved_by_sellsi')
+        let approvedFinancingsCount = 0;
+        try {
+          // financing_requests.supplier_id = supplier.id (not user_id), need lookup
+          const { data: supplierEntity } = await supabase
+            .from('supplier')
+            .select('id')
+            .eq('user_id', supplierId)
+            .maybeSingle();
+
+          if (supplierEntity?.id) {
+            const { count } = await supabase
+              .from('financing_requests')
+              .select('id', { count: 'exact', head: true })
+              .eq('supplier_id', supplierEntity.id)
+              .eq('status', 'approved_by_sellsi');
+            approvedFinancingsCount = count || 0;
+          }
+        } catch (_) {
+          /* noop */
+        }
+
         // Obtener solicitudes que incluyen productos del proveedor
         // Usar join con request_products y products para filtrar por supplier_id
         const { data: quoteRequests, error: quoteError } = await supabase
@@ -378,6 +400,7 @@ export const useSupplierDashboard = () => {
           pendingReleaseAmount,
           pendingRequestsCount,
           pendingOffersCount,
+          approvedFinancingsCount,
         };
 
         // Datos para gráficos

@@ -1,0 +1,216 @@
+{
+  "input": "c:/Users/klaus/OneDrive/Documentos/sellsi/supabase performance/profiling data minimizing v3.json",
+  "top_n": 30,
+  "summary": [
+    {
+      "name": "Anonymous",
+      "renders": 4668,
+      "total_ms": 11186.7,
+      "avg_ms": 2.396,
+      "impact": 52219515.6
+    },
+    {
+      "name": "div",
+      "renders": 1678,
+      "total_ms": 7614.7,
+      "avg_ms": 4.538,
+      "impact": 12777466.6
+    },
+    {
+      "name": "ao",
+      "renders": 4523,
+      "total_ms": 94.0,
+      "avg_ms": 0.021,
+      "impact": 425162.0
+    },
+    {
+      "name": "MuiTypographyRoot",
+      "renders": 1381,
+      "total_ms": 240.4,
+      "avg_ms": 0.174,
+      "impact": 331992.4
+    },
+    {
+      "name": "ProductCardBuyerContext",
+      "renders": 136,
+      "total_ms": 1378.0,
+      "avg_ms": 10.132,
+      "impact": 187408.0
+    },
+    {
+      "name": "MuiCardContentRoot",
+      "renders": 136,
+      "total_ms": 744.1,
+      "avg_ms": 5.471,
+      "impact": 101197.6
+    },
+    {
+      "name": "VerifiedIcon",
+      "renders": 544,
+      "total_ms": 158.5,
+      "avg_ms": 0.291,
+      "impact": 86224.0
+    },
+    {
+      "name": "MuiCardActionsRoot",
+      "renders": 136,
+      "total_ms": 465.6,
+      "avg_ms": 3.424,
+      "impact": 63321.6
+    },
+    {
+      "name": "Ae",
+      "renders": 136,
+      "total_ms": 441.0,
+      "avg_ms": 3.243,
+      "impact": 59976.0
+    },
+    {
+      "name": "ProductCard",
+      "renders": 68,
+      "total_ms": 676.0,
+      "avg_ms": 9.941,
+      "impact": 45968.0
+    },
+    {
+      "name": "MuiCardRoot",
+      "renders": 68,
+      "total_ms": 665.6,
+      "avg_ms": 9.788,
+      "impact": 45260.8
+    },
+    {
+      "name": "MuiPaperRoot",
+      "renders": 68,
+      "total_ms": 639.1,
+      "avg_ms": 9.399,
+      "impact": 43458.8
+    },
+    {
+      "name": "ge",
+      "renders": 136,
+      "total_ms": 147.6,
+      "avg_ms": 1.085,
+      "impact": 20073.6
+    },
+    {
+      "name": "je",
+      "renders": 136,
+      "total_ms": 128.2,
+      "avg_ms": 0.943,
+      "impact": 17435.2
+    },
+    {
+      "name": "MuiButtonRoot",
+      "renders": 137,
+      "total_ms": 120.5,
+      "avg_ms": 0.88,
+      "impact": 16508.5
+    },
+    {
+      "name": "nm",
+      "renders": 136,
+      "total_ms": 114.7,
+      "avg_ms": 0.843,
+      "impact": 15599.2
+    },
+    {
+      "name": "MuiSvgIconRoot",
+      "renders": 279,
+      "total_ms": 49.7,
+      "avg_ms": 0.178,
+      "impact": 13866.3
+    },
+    {
+      "name": "MuiButtonBaseRoot",
+      "renders": 158,
+      "total_ms": 68.4,
+      "avg_ms": 0.433,
+      "impact": 10807.2
+    },
+    {
+      "name": "Context.Provider",
+      "renders": 3,
+      "total_ms": 2276.7,
+      "avg_ms": 758.9,
+      "impact": 6830.1
+    },
+    {
+      "name": "MuiDrawerRoot",
+      "renders": 136,
+      "total_ms": 37.4,
+      "avg_ms": 0.275,
+      "impact": 5086.4
+    },
+    {
+      "name": "MuiDialogRoot",
+      "renders": 137,
+      "total_ms": 34.6,
+      "avg_ms": 0.253,
+      "impact": 4740.2
+    },
+    {
+      "name": "MuiButtonStartIcon",
+      "renders": 137,
+      "total_ms": 23.9,
+      "avg_ms": 0.174,
+      "impact": 3274.3
+    },
+    {
+      "name": "Marketplace",
+      "renders": 2,
+      "total_ms": 1433.0,
+      "avg_ms": 716.5,
+      "impact": 2866.0
+    },
+    {
+      "name": "tu",
+      "renders": 1,
+      "total_ms": 759.6,
+      "avg_ms": 759.6,
+      "impact": 759.6
+    },
+    {
+      "name": "uu",
+      "renders": 1,
+      "total_ms": 759.1,
+      "avg_ms": 759.1,
+      "impact": 759.1
+    },
+    {
+      "name": "au",
+      "renders": 1,
+      "total_ms": 759.1,
+      "avg_ms": 759.1,
+      "impact": 759.1
+    },
+    {
+      "name": "iu",
+      "renders": 1,
+      "total_ms": 758.9,
+      "avg_ms": 758.9,
+      "impact": 758.9
+    },
+    {
+      "name": "Fm",
+      "renders": 1,
+      "total_ms": 758.7,
+      "avg_ms": 758.7,
+      "impact": 758.7
+    },
+    {
+      "name": "Lm",
+      "renders": 1,
+      "total_ms": 758.5,
+      "avg_ms": 758.5,
+      "impact": 758.5
+    },
+    {
+      "name": "Cd",
+      "renders": 1,
+      "total_ms": 684.1,
+      "avg_ms": 684.1,
+      "impact": 684.1
+    }
+  ]
+}

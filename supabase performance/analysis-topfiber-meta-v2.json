@@ -1,0 +1,303 @@
+{
+  "input": "c:/Users/klaus/OneDrive/Documentos/sellsi/supabase performance/profiling data minimizing v2.json",
+  "top_n": 40,
+  "section": "topFibersAfterRestore",
+  "fibers": [
+    {
+      "fiberId": 34,
+      "displayName": "tu",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 35,
+      "displayName": "Context.Provider",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 36,
+      "displayName": "au",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 38,
+      "displayName": "uu",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 42,
+      "displayName": "iu",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 39,
+      "displayName": "Context.Provider",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 45,
+      "displayName": "Fm",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 43,
+      "displayName": "Context.Provider",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 63,
+      "displayName": "Lm",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 316,
+      "displayName": "Anonymous",
+      "key": null,
+      "hocDisplayNames": [
+        "ForwardRef"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 317,
+      "displayName": "div",
+      "key": null,
+      "hocDisplayNames": [
+        "Styled"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 320,
+      "displayName": "Anonymous",
+      "key": null,
+      "hocDisplayNames": [
+        "ForwardRef"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 321,
+      "displayName": "div",
+      "key": null,
+      "hocDisplayNames": [
+        "Styled"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 486,
+      "displayName": "Anonymous",
+      "key": null,
+      "hocDisplayNames": [
+        "ForwardRef"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 487,
+      "displayName": "div",
+      "key": null,
+      "hocDisplayNames": [
+        "Styled"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 489,
+      "displayName": "Cd",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 762,
+      "displayName": "Re",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 490,
+      "displayName": "Suspense",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 763,
+      "displayName": "ye",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 765,
+      "displayName": "Bu",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 764,
+      "displayName": "Route.Provider",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 766,
+      "displayName": "Marketplace",
+      "key": null,
+      "hocDisplayNames": [
+        "Memo"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 767,
+      "displayName": "Anonymous",
+      "key": null,
+      "hocDisplayNames": [
+        "ForwardRef"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 768,
+      "displayName": "div",
+      "key": null,
+      "hocDisplayNames": [
+        "Styled"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 770,
+      "displayName": "Anonymous",
+      "key": null,
+      "hocDisplayNames": [
+        "ForwardRef"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 771,
+      "displayName": "div",
+      "key": null,
+      "hocDisplayNames": [
+        "Styled"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13476,
+      "displayName": "ProductCard",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13477,
+      "displayName": "Anonymous",
+      "key": null,
+      "hocDisplayNames": [
+        "ForwardRef"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13478,
+      "displayName": "MuiCardRoot",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 13480,
+      "displayName": "Anonymous",
+      "key": null,
+      "hocDisplayNames": [
+        "ForwardRef"
+      ],
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    }
+  ]
+}

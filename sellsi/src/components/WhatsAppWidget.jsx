@@ -70,9 +70,7 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
           setOpen(!open);
         }}
         sx={{
-          background: hover
-            ? `linear-gradient(135deg, #1ebe57 0%, ${SELLSI_BLUE} 100%)`
-            : '#25D366',
+          background: hover ? '#1ebe57' : '#25D366',
           borderRadius: '50%',
           width: 64,
           height: 64,
@@ -80,7 +78,7 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
           alignItems: 'center',
           justifyContent: 'center',
           boxShadow: hover
-            ? `0 8px 32px rgba(46, 82, 178, 0.45), 0 4px 16px rgba(37, 211, 102, 0.3)`
+            ? '0 8px 32px rgba(37, 211, 102, 0.45), 0 4px 16px rgba(0,0,0,0.18)'
             : '0 4px 20px rgba(0,0,0,0.18)',
           cursor: 'pointer',
           transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -97,10 +95,6 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
             width: 36,
             height: 36,
             objectFit: 'contain',
-            filter: hover
-              ? 'drop-shadow(0 0 8px rgba(255,255,255,0.4)) brightness(1.1)'
-              : 'drop-shadow(0 0 4px rgba(0,0,0,0.2))',
-            transition: 'filter 0.3s ease',
           }}
         />
       </Box>
@@ -215,7 +209,7 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
                       letterSpacing: '0.02em',
                     }}
                   >
-                    En Línea
+                    ¿En qué podemos ayudarte?
                   </Typography>
                 </Box>
               </Box>
@@ -257,20 +251,7 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
             {!selectedOption ? (
               <Fade in={!selectedOption}>
                 <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      mb: 2.5,
-                      color: '#64748b',
-                      fontSize: 14,
-                      textAlign: 'center',
-                      fontWeight: 500,
-                    }}
-                  >
-                    ¿En qué podemos ayudarte?
-                  </Typography>
-
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                     {/* Opción 1 — Atención comercial */}
                     <Button
                       variant="outlined"
@@ -305,9 +286,6 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
                       <Box sx={{ textAlign: 'left' }}>
                         <Typography sx={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2, color: SELLSI_BLUE }}>
                           Atención comercial
-                        </Typography>
-                        <Typography sx={{ fontSize: 11, opacity: 0.65, fontWeight: 400, lineHeight: 1.2, color: SELLSI_BLUE }}>
-                          Ventas, planes y cotizaciones
                         </Typography>
                       </Box>
                     </Button>
@@ -345,10 +323,7 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
                       </Box>
                       <Box sx={{ textAlign: 'left' }}>
                         <Typography sx={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2, color: SELLSI_BLUE }}>
-                          Soporte técnico
-                        </Typography>
-                        <Typography sx={{ fontSize: 11, opacity: 0.65, fontWeight: 400, lineHeight: 1.2, color: SELLSI_BLUE }}>
-                          Problemas, sugerencias y bugs
+                          Soporte técnico y sugerencias
                         </Typography>
                       </Box>
                     </Button>
