@@ -9,6 +9,7 @@ import {
   LocalOffer as LocalOfferIcon,
   AccountBalanceWallet as WalletIcon,
   PendingActions as PendingActionsIcon,
+  AccountBalance as AccountBalanceIcon,
 } from '@mui/icons-material';
 import { generateChartData } from '../utils/utils';
 import {
@@ -26,6 +27,7 @@ const SummaryCards = ({
   pendingReleaseAmount = 0,
   pendingRequestsCount = 0,
   pendingOffersCount = 0,
+  approvedFinancingsCount = 0,
 }) => {
   const chartData = {
     products: generateChartData(productsActive ?? products.length, 'up'),
@@ -36,6 +38,7 @@ const SummaryCards = ({
     pendingRelease: generateChartData(pendingReleaseAmount / 1000, 'neutral'),
     pendingRequests: generateChartData(pendingRequestsCount, 'neutral'),
     pendingOffers: generateChartData(pendingOffersCount, 'neutral'),
+    approvedFinancings: generateChartData(approvedFinancingsCount, 'neutral'),
   };
 
   // Tooltips informativos para cada KPI
@@ -50,6 +53,9 @@ const SummaryCards = ({
       'Pedidos recibidos que aún no has atendido. Requieren tu atención inmediata para gestionar su aprobación o rechazo',
     productosSinStock:
       'Productos con inventario en 0. Actualmente no están disponibles para los compradores hasta que repongas stock',
+    financiamientosOtorgados:
+      'Líneas de crédito aprobadas por Sellsi que otorgaste a tus compradores. Cada financiamiento activo permite a un comprador pagar sus pedidos a plazo usando el cupo disponible',
+
     ofertasPendientes:
       'Negociaciones iniciadas por potenciales compradores que esperan tu aprobación o rechazo',
     ofertasEsteMes:
@@ -98,6 +104,16 @@ const SummaryCards = ({
       linkTo: '/supplier/myproducts',
       linkLabel: 'Ir a Mis Productos',
       tooltip: tooltips.productosSinStock,
+    },
+    {
+      title: 'Financiamientos Otorgados',
+      value: Number(approvedFinancingsCount || 0).toString(),
+      trend: 'neutral',
+      data: chartData.approvedFinancings,
+      icon: AccountBalanceIcon,
+      linkTo: '/supplier/my-financing',
+      linkLabel: 'Ir a Mis Financiamientos',
+      tooltip: tooltips.financiamientosOtorgados,
     },
     {
       title: 'Solicitudes Pendientes',

@@ -1,0 +1,455 @@
+{
+  "input": "c:/Users/klaus/OneDrive/Documentos/sellsi/supabase performance/profiling data minimizing v3.json",
+  "version": 5,
+  "commitCount": 2,
+  "sessionDurationMs": 1019.7,
+  "largestGapMs": 1019.7,
+  "gapBeforeCommitIndex": 0,
+  "gapAfterCommitIndex": 1,
+  "restoreTimestamp": 3905.39999999851,
+  "windowMs": 2500,
+  "restoreCommitCount": 1,
+  "restoreCommitIndices": [
+    1
+  ],
+  "restoreCommits": [
+    {
+      "index": 1,
+      "timestamp": 3905.39999999851,
+      "duration_ms": 759.6,
+      "priorityLevel": "Normal",
+      "renderedFibers": 8062,
+      "totalActualDurationMs": 27806.7,
+      "changeDescriptionsCount": 8041,
+      "reasons": {
+        "context": 220,
+        "didHooksChange": 139,
+        "props": 7753,
+        "state": 1,
+        "hooks": 139
+      }
+    }
+  ],
+  "topFibersAfterRestore": [
+    {
+      "fiberId": 34,
+      "name": "tu",
+      "renders": 1,
+      "totalActualMs": 759.6,
+      "avgActualMs": 759.6,
+      "reasonCounts": {
+        "context": 0,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 1,
+        "hooks": 1
+      }
+    },
+    {
+      "fiberId": 38,
+      "name": "uu",
+      "renders": 1,
+      "totalActualMs": 759.1,
+      "avgActualMs": 759.1,
+      "reasonCounts": {
+        "context": 1,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 36,
+      "name": "au",
+      "renders": 1,
+      "totalActualMs": 759.1,
+      "avgActualMs": 759.1,
+      "reasonCounts": {
+        "context": 1,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 35,
+      "name": "Context.Provider",
+      "renders": 1,
+      "totalActualMs": 759.1,
+      "avgActualMs": 759.1,
+      "reasonCounts": {
+        "context": 0,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 42,
+      "name": "iu",
+      "renders": 1,
+      "totalActualMs": 758.9,
+      "avgActualMs": 758.9,
+      "reasonCounts": {
+        "context": 1,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 39,
+      "name": "Context.Provider",
+      "renders": 1,
+      "totalActualMs": 758.9,
+      "avgActualMs": 758.9,
+      "reasonCounts": {
+        "context": 0,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 45,
+      "name": "Fm",
+      "renders": 1,
+      "totalActualMs": 758.7,
+      "avgActualMs": 758.7,
+      "reasonCounts": {
+        "context": 1,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 43,
+      "name": "Context.Provider",
+      "renders": 1,
+      "totalActualMs": 758.7,
+      "avgActualMs": 758.7,
+      "reasonCounts": {
+        "context": 0,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 63,
+      "name": "Lm",
+      "renders": 1,
+      "totalActualMs": 758.5,
+      "avgActualMs": 758.5,
+      "reasonCounts": {
+        "context": 1,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 316,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 717.3,
+      "avgActualMs": 717.3,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 317,
+      "name": "div",
+      "renders": 1,
+      "totalActualMs": 717.2,
+      "avgActualMs": 717.2,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 320,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 708.2,
+      "avgActualMs": 708.2,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 321,
+      "name": "div",
+      "renders": 1,
+      "totalActualMs": 708.1,
+      "avgActualMs": 708.1,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 486,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 684.7,
+      "avgActualMs": 684.7,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 487,
+      "name": "div",
+      "renders": 1,
+      "totalActualMs": 684.6,
+      "avgActualMs": 684.6,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 489,
+      "name": "Cd",
+      "renders": 1,
+      "totalActualMs": 684.1,
+      "avgActualMs": 684.1,
+      "reasonCounts": {
+        "context": 1,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 762,
+      "name": "Re",
+      "renders": 1,
+      "totalActualMs": 678.5,
+      "avgActualMs": 678.5,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 490,
+      "name": "Suspense",
+      "renders": 1,
+      "totalActualMs": 678.5,
+      "avgActualMs": 678.5,
+      "reasonCounts": {
+        "context": 0,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 763,
+      "name": "ye",
+      "renders": 1,
+      "totalActualMs": 677.9,
+      "avgActualMs": 677.9,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 766,
+      "name": "Marketplace",
+      "renders": 1,
+      "totalActualMs": 677.8,
+      "avgActualMs": 677.8,
+      "reasonCounts": {
+        "context": 1,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 1,
+        "hooks": 1
+      }
+    },
+    {
+      "fiberId": 765,
+      "name": "Bu",
+      "renders": 1,
+      "totalActualMs": 677.8,
+      "avgActualMs": 677.8,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 764,
+      "name": "Route.Provider",
+      "renders": 1,
+      "totalActualMs": 677.8,
+      "avgActualMs": 677.8,
+      "reasonCounts": {
+        "context": 0,
+        "props": 0,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 768,
+      "name": "div",
+      "renders": 1,
+      "totalActualMs": 677.3,
+      "avgActualMs": 677.3,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 767,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 677.3,
+      "avgActualMs": 677.3,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 771,
+      "name": "div",
+      "renders": 1,
+      "totalActualMs": 676.9,
+      "avgActualMs": 676.9,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 770,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 676.9,
+      "avgActualMs": 676.9,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 64,
+      "name": "hm",
+      "renders": 1,
+      "totalActualMs": 40.5,
+      "avgActualMs": 40.5,
+      "reasonCounts": {
+        "context": 1,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 65,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 38.6,
+      "avgActualMs": 38.6,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 66,
+      "name": "Anonymous",
+      "renders": 1,
+      "totalActualMs": 33.5,
+      "avgActualMs": 33.5,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    },
+    {
+      "fiberId": 67,
+      "name": "div",
+      "renders": 1,
+      "totalActualMs": 33.3,
+      "avgActualMs": 33.3,
+      "reasonCounts": {
+        "context": 0,
+        "props": 1,
+        "state": 0,
+        "didHooksChange": 0,
+        "hooks": 0
+      }
+    }
+  ]
+}

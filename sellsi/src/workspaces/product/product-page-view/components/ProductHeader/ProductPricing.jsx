@@ -358,6 +358,7 @@ const ProductPricing = ({
           onOpenQuotationModal={onOpenQuotationModal}
           onOpenFinancingModal={onOpenFinancingModal}
           financingEnabled={financingEnabled}
+          sx={{ maxWidth: '100%' }}
         />
       )}
     </Box>

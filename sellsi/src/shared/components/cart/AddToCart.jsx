@@ -60,6 +60,8 @@ const AddToCart = ({
   const navigate = useNavigate();
   const { isBuyer } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
+  const [shouldRenderCartModal, setShouldRenderCartModal] = useState(false);
+  const [shouldRenderShippingModal, setShouldRenderShippingModal] = useState(false);
   const openingRef = React.useRef(false); // reentrancy guard
   const [currentUserId, setCurrentUserId] = useState(null);
   const addItem = useCartStore(state => state.addItem);
@@ -167,24 +169,15 @@ const AddToCart = ({
         }
 
         // ✅ Solo si hay sesión válida, validar shipping
-        // 🔄 PRIMERO: Esperar a que el estado de auth sea estable (caches refrescados post-login)
-        await waitForAuthStable(3000);
-        
-        // Antes de abrir el modal de selección, forzar/esperar resolución de validación shipping
-        // 1) Intento inmediato
-        let didOpenShipping = openIfIncomplete();
-        if (!didOpenShipping) {
-          // 2) Forzar refresh y esperar resolución determinística
-          try {
-            refreshShippingValidation?.();
-          } catch (_) {}
-          const res = await awaitValidation?.(3500, 120);
-          // Si al terminar sigue incompleto, abrir modal shipping; si está completo, seguimos al AddToCart
-          const stillIncomplete = !shippingIsOpen && !res?.complete;
-          if (stillIncomplete) {
-            didOpenShipping = openIfIncomplete();
-          }
-        }
+        // ⚡ PERF/UX: NO bloquear el click esperando "auth estable" o validaciones determinísticas.
+        // Ese await generaba exactamente el síntoma reportado: click → 2-3s de espera → recién abre Drawer.
+        // Disparamos estabilización en background (best-effort) y hacemos un gate rápido.
+        try {
+          waitForAuthStable(3000);
+        } catch (_) {}
+
+        // Gate rápido: si falta shipping info, abrir modal de configuración y salir.
+        const didOpenShipping = openIfIncomplete();
         if (didOpenShipping || shippingIsOpen) {
           if (onModalStateChange) onModalStateChange(true);
           openingRef.current = false;
@@ -208,10 +201,7 @@ const AddToCart = ({
     disabled,
     product,
     onModalStateChange,
-    shippingIsLoading,
     openIfIncomplete,
-    refreshShippingValidation,
-    awaitValidation,
     shippingIsOpen,
     offerId,
     isOfferInCart,
@@ -258,6 +248,29 @@ const AddToCart = ({
     onModalStateChange(Boolean(shippingIsOpen || modalOpen));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shippingIsOpen, modalOpen]);
+
+  // ⚡ PERF + BUGFIX: Lazy-mount sin romper el scroll-lock de MUI.
+  // Si desmontamos el Drawer inmediatamente al cerrar, MUI puede no alcanzar a restaurar
+  // el `overflow` del body (especialmente con transiciones).
+  useEffect(() => {
+    if (modalOpen) {
+      setShouldRenderCartModal(true);
+      return;
+    }
+    if (!shouldRenderCartModal) return;
+    const t = setTimeout(() => setShouldRenderCartModal(false), 450);
+    return () => clearTimeout(t);
+  }, [modalOpen, shouldRenderCartModal]);
+
+  useEffect(() => {
+    if (shippingIsOpen) {
+      setShouldRenderShippingModal(true);
+      return;
+    }
+    if (!shouldRenderShippingModal) return;
+    const t = setTimeout(() => setShouldRenderShippingModal(false), 450);
+    return () => clearTimeout(t);
+  }, [shippingIsOpen, shouldRenderShippingModal]);
 
   const handleAddToCart = useCallback(
     async cartItem => {
@@ -484,25 +497,33 @@ const AddToCart = ({
     <>
       {renderButton()}
 
-      <AddToCartModal
-        open={modalOpen}
-        onClose={handleCloseModal}
-        onAddToCart={handleAddToCart}
-        product={product}
-        offer={offer}
-        initialQuantity={initialQuantity}
-        userRegion={userRegion}
-        isLoadingUserProfile={isLoadingUserProfile}
-        isOwnProduct={isOwnProduct}
-        onRequireBillingInfo={handleRequireBillingInfo}
-      />
-      <ShippingInfoValidationModal
-        isOpen={shippingIsOpen}
-        onClose={handleCloseShippingWrapped}
-        onGoToShipping={handleConfigureShippingWrapped}
-        loading={shippingIsLoading}
-        missingFieldLabels={missingFieldLabels}
-      />
+      {/* ⚡ PERF: No montar modales pesados cuando están cerrados.
+          AddToCart se renderiza dentro de muchas ProductCards; si montamos 100+
+          Drawers/Modals ocultos, cualquier re-render/focus/restore dispara paint global. */}
+      {shouldRenderCartModal ? (
+        <AddToCartModal
+          open={modalOpen}
+          onClose={handleCloseModal}
+          onAddToCart={handleAddToCart}
+          product={product}
+          offer={offer}
+          initialQuantity={initialQuantity}
+          userRegion={userRegion}
+          isLoadingUserProfile={isLoadingUserProfile}
+          isOwnProduct={isOwnProduct}
+          onRequireBillingInfo={handleRequireBillingInfo}
+        />
+      ) : null}
+
+      {shouldRenderShippingModal ? (
+        <ShippingInfoValidationModal
+          isOpen={shippingIsOpen}
+          onClose={handleCloseShippingWrapped}
+          onGoToShipping={handleConfigureShippingWrapped}
+          loading={shippingIsLoading}
+          missingFieldLabels={missingFieldLabels}
+        />
+      ) : null}
     </>
   );
 };

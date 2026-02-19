@@ -1,0 +1,277 @@
+{
+  "input": "c:/Users/klaus/OneDrive/Documentos/sellsi/supabase performance/profiling data minimizing.json",
+  "top_n": 40,
+  "section": "topFibersByStateChanges",
+  "fibers": [
+    {
+      "fiberId": 25288,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 26899,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 25834,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 26599,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 27430,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 26089,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 27175,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 25579,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 26344,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 28486,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 33304,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 36208,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 29206,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 27685,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 28726,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 42568,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 36943,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 30256,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 35422,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 38464,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 38740,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 28195,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 31285,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 34054,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 34891,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 36463,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 41065,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 34345,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 37234,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    },
+    {
+      "fiberId": 30766,
+      "displayName": "t",
+      "key": null,
+      "hocDisplayNames": null,
+      "environmentName": null,
+      "compiledWithForget": false,
+      "props": null
+    }
+  ]
+}

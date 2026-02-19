@@ -86,6 +86,7 @@ const ProviderHome = () => {
   const totalSales = metrics?.totalRevenue || 0;
   const monthlyOffersCount = metrics?.monthlyOffersCount ?? 0;
   const pendingReleaseAmount = metrics?.pendingReleaseAmount ?? 0;
+  const approvedFinancingsCount = metrics?.approvedFinancingsCount ?? 0;
   const pendingRequestsCount = metrics?.pendingRequestsCount ?? 0;
   const pendingOffersCount = metrics?.pendingOffersCount ?? 0;
 
@@ -188,6 +189,7 @@ const ProviderHome = () => {
                       pendingReleaseAmount={pendingReleaseAmount}
                       pendingRequestsCount={pendingRequestsCount}
                       pendingOffersCount={pendingOffersCount}
+                      approvedFinancingsCount={approvedFinancingsCount}
                     />
                   </Suspense>
                 </Box>

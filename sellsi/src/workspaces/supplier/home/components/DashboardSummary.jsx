@@ -16,6 +16,7 @@ const DashboardSummary = ({
   pendingReleaseAmount,
   pendingRequestsCount,
   pendingOffersCount,
+  approvedFinancingsCount,
 }) => (
   <Box sx={{ width: '100%' }}>
     <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
@@ -42,6 +43,7 @@ const DashboardSummary = ({
         pendingReleaseAmount={pendingReleaseAmount}
         pendingRequestsCount={pendingRequestsCount}
         pendingOffersCount={pendingOffersCount}
+        approvedFinancingsCount={approvedFinancingsCount}
       />
 
       {/* Gráficos: Ventas diarias (1/2), Ventas por producto (1/4), Ventas por cliente (1/4) */}

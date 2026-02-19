@@ -7,6 +7,8 @@
 
 import React, { memo } from 'react'
 import { Box, Chip, Tooltip } from '@mui/material'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import CancelIcon from '@mui/icons-material/Cancel'
 import { getStatusChips } from '../utils/orderStatusUtils'
 
 /**
@@ -102,7 +104,24 @@ function calculateChipProps(chip, order, recentlyPaid) {
     
   const glowClass = shouldGlow ? `chip-glow chip-glow-${chip.key}` : ''
 
-  return { tooltip: computedTooltip, highlight, glowClass }
+  // Determine icon to show to the left of the chip
+  let iconType = null
+  if (chip.key === 'pago') {
+    if (pagoConfirmadoReached && paymentStatus !== 'expired') iconType = 'check'
+    else if (paymentStatus === 'expired') iconType = 'error'
+  } else if (chip.key === 'pago_rechazado') {
+    iconType = 'error'
+  } else if (chip.key === 'aceptado') {
+    if (aceptadoReached) iconType = 'check'
+  } else if (chip.key === 'en_transito') {
+    if (enTransitoReached) iconType = 'check'
+  } else if (chip.key === 'entregado') {
+    if (entregadoReached) iconType = 'check'
+  } else if (chip.key === 'rechazado') {
+    if (rechazadoReached) iconType = 'error'
+  }
+
+  return { tooltip: computedTooltip, highlight, glowClass, iconType }
 }
 
 const StatusChipsDisplay = memo(function StatusChipsDisplay({
@@ -125,42 +144,77 @@ const StatusChipsDisplay = memo(function StatusChipsDisplay({
     ? [allChips.find((c) => c.active) || allChips[allChips.length - 1]]
     : allChips
 
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: { xs: 'row', md: 'column' },
-        gap: 1,
-        minWidth: { xs: '100%', md: 140 },
-        width: { xs: '100%', md: 'auto' },
-        flexWrap: 'wrap',
-        mt: { xs: 1, md: 0 },
-      }}
-    >
-      {chipsToRender.map((chip) => {
-        const { tooltip, highlight, glowClass } = calculateChipProps(
-          chip,
-          orderWithEffectivePayment,
-          recentlyPaid
-        )
+  // Pre-calcular props de cada chip una sola vez
+  const chipsWithProps = chipsToRender.map((chip) => ({
+    chip,
+    ...calculateChipProps(chip, orderWithEffectivePayment, recentlyPaid),
+  }))
 
-        return (
-          <Tooltip key={chip.key} title={tooltip} arrow placement="left">
-            <Chip
-              label={chip.label}
-              color={chip.active || highlight ? chip.color || 'default' : 'default'}
-              variant={chip.active || highlight ? 'filled' : 'outlined'}
-              size="small"
-              className={glowClass}
-              sx={{
-                fontSize: '0.70rem',
-                opacity: chip.active || highlight ? 1 : 0.45,
-              }}
-            />
-          </Tooltip>
-        )
-      })}
-    </Box>
+  const renderChip = ({ chip, tooltip, highlight, glowClass }) => (
+    <Tooltip key={chip.key} title={tooltip} arrow placement="left">
+      <Chip
+        label={chip.label}
+        color={chip.active || highlight ? chip.color || 'default' : 'default'}
+        variant={chip.active || highlight ? 'filled' : 'outlined'}
+        size="small"
+        className={glowClass}
+        sx={{
+          fontSize: '0.70rem',
+          opacity: chip.active || highlight ? 1 : 0.45,
+        }}
+      />
+    </Tooltip>
+  )
+
+  return (
+    <>
+      {/* ── Desktop: 2 columnas (íconos | chips) ── */}
+      <Box
+        sx={{
+          display: { xs: 'none', md: 'flex' },
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          gap: 0.75,
+          mt: 0,
+        }}
+      >
+        {/* Columna izquierda — íconos, ancho fijo */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: 18, flexShrink: 0 }}>
+          {chipsWithProps.map(({ chip, iconType }) => (
+            <Box
+              key={chip.key}
+              sx={{ height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              {iconType === 'check' && (
+                <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main', opacity: 0.85 }} />
+              )}
+              {iconType === 'error' && (
+                <CancelIcon sx={{ fontSize: 16, color: 'error.main', opacity: 0.85 }} />
+              )}
+            </Box>
+          ))}
+        </Box>
+
+        {/* Columna derecha — chips, mismo minWidth que antes */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 140 }}>
+          {chipsWithProps.map(renderChip)}
+        </Box>
+      </Box>
+
+      {/* ── Mobile: fila de chips, igual que antes ── */}
+      <Box
+        sx={{
+          display: { xs: 'flex', md: 'none' },
+          flexDirection: 'row',
+          gap: 1,
+          minWidth: '100%',
+          flexWrap: 'wrap',
+          mt: 1,
+        }}
+      >
+        {chipsWithProps.map(renderChip)}
+      </Box>
+    </>
   )
 })
 

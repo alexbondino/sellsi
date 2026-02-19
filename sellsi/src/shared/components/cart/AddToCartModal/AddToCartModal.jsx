@@ -385,6 +385,78 @@ const ProductSummary = React.memo(function ProductSummary({
   );
 });
 
+// ============================================================================
+// Scroll lock helper (module-level stable)
+// ============================================================================
+// Guardamos estado previo para poder restaurar sin saltos.
+const useBodyScrollLockNoJump = (open) => {
+  const lockRef = React.useRef({
+    active: false,
+    scrollY: 0,
+    prevBody: {},
+    prevHtmlOverflow: '',
+  });
+
+  useEffect(() => {
+    const body = document?.body;
+    const html = document?.documentElement;
+    if (!body || !html) return;
+
+    const lock = () => {
+      if (lockRef.current.active) return;
+
+      const scrollY = window.scrollY || 0;
+      const scrollbarWidth = window.innerWidth - html.clientWidth;
+
+      lockRef.current.scrollY = scrollY;
+      lockRef.current.prevBody = {
+        position: body.style.position,
+        top: body.style.top,
+        width: body.style.width,
+        overflow: body.style.overflow,
+        paddingRight: body.style.paddingRight,
+      };
+      lockRef.current.prevHtmlOverflow = html.style.overflow;
+
+      body.style.position = 'fixed';
+      body.style.top = `-${scrollY}px`;
+      body.style.width = '100%';
+      body.style.overflow = 'hidden';
+      if (scrollbarWidth > 0) body.style.paddingRight = `${scrollbarWidth}px`;
+
+      // Extra: algunos navegadores siguen permitiendo scroll si html no se bloquea.
+      html.style.overflow = 'hidden';
+
+      lockRef.current.active = true;
+    };
+
+    const unlock = () => {
+      if (!lockRef.current.active) return;
+
+      const prev = lockRef.current.prevBody || {};
+      body.style.position = prev.position || '';
+      body.style.top = prev.top || '';
+      body.style.width = prev.width || '';
+      body.style.overflow = prev.overflow || '';
+      body.style.paddingRight = prev.paddingRight || '';
+      html.style.overflow = lockRef.current.prevHtmlOverflow || '';
+
+      const restoreY = lockRef.current.scrollY || 0;
+      lockRef.current.active = false;
+      // Restaurar scroll al mismo punto (sin fallback a 0)
+      window.scrollTo(0, restoreY);
+    };
+
+    if (open) lock();
+    else unlock();
+
+    // Cleanup seguro si el componente se desmonta mientras está abierto
+    return () => {
+      unlock();
+    };
+  }, [open]);
+};
+
 /**
  * ============================================================================
  * MODAL AGREGAR AL CARRITO - COMPONENTE UNIVERSAL
@@ -568,41 +640,7 @@ const AddToCartModal = ({
   // SCROLL LOCK MEJORADO - Previene scroll del body cuando modal está abierto
   // ============================================================================
 
-  useEffect(() => {
-    if (open) {
-      // Guardar posición actual y dimensiones
-      const scrollY = window.scrollY;
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-      
-      // Aplicar scroll lock con compensación de scrollbar
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      document.body.style.overflow = 'hidden';
-      
-      // Compensar el ancho de la scrollbar para evitar "salto" de contenido
-      if (scrollbarWidth > 0) {
-        document.body.style.paddingRight = `${scrollbarWidth}px`;
-      }
-      
-      // Guardar scrollY para restaurar después
-      document.body.dataset.scrollY = String(scrollY);
-    } else {
-      // Restaurar estado original
-      const scrollY = parseInt(document.body.dataset.scrollY || '0', 10);
-      
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
-      
-      // Restaurar posición de scroll
-      window.scrollTo(0, scrollY);
-      
-      delete document.body.dataset.scrollY;
-    }
-  }, [open]);
+  useBodyScrollLockNoJump(open);
 
   // (inicialización de cantidad movida al hook useQuantityManagement)
 

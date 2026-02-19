@@ -300,6 +300,23 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
         width: currentWidth,
         height: '100vh',
         backgroundColor: sidebarBackgroundColor,
+        backgroundImage: `
+          repeating-linear-gradient(
+            45deg,
+            rgba(255,255,255,0.028) 0px,
+            rgba(255,255,255,0.028) 2px,
+            transparent 2px,
+            transparent 50%
+          ),
+          repeating-linear-gradient(
+            -45deg,
+            rgba(255,255,255,0.028) 0px,
+            rgba(255,255,255,0.028) 2px,
+            transparent 2px,
+            transparent 50%
+          )
+        `,
+        backgroundSize: '10px 10px',
         color: '#FFFFFF',
         display: { xs: 'none', md: 'flex' },
         flexDirection: 'column',
