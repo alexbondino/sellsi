@@ -281,6 +281,7 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
         );
         menuItemsToDisplay = [...menuItemsToDisplay, ...financingItems];
       }
+
     }
   } catch (e) {
     // useMediaQuery puede fallar durante SSR; en ese caso no reordenamos y dejamos la lista como está.

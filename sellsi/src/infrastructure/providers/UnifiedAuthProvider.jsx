@@ -215,9 +215,20 @@ export const UnifiedAuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const lastSessionIdRef = useRef(null);
+  const sessionRef = useRef(null);
+  const lastHandledSignInRef = useRef({
+    userId: null,
+    at: 0,
+    accessToken: null,
+  });
   const fetchingUsersRef = useRef(new Set());
   const [isRoleSwitching, setIsRoleSwitching] = useState(false);
   const [lastMainSupplier, setLastMainSupplier] = useState(null);
+
+  // Mantener referencia estable a la sesión para usar dentro de callbacks
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   // Fetch + profile logic
   const fetchProfile = async currentSession => {
@@ -407,6 +418,70 @@ export const UnifiedAuthProvider = ({ children }) => {
       (event, newSession) => {
         if (!mounted) return;
         if (event === 'SIGNED_IN') {
+          let prevUserId = sessionRef.current?.user?.id || null;
+          // Fallback para carreras de timing: en algunos casos SIGNED_IN puede
+          // llegar antes de que `sessionRef` se actualice, pero localStorage ya
+          // contiene el user_id restaurado.
+          if (!prevUserId) {
+            try {
+              prevUserId = localStorage.getItem('user_id') || null;
+            } catch (e) {}
+          }
+          const nextUserId = newSession?.user?.id || null;
+
+          // ✅ EXTRA ROBUSTEZ: Debounce local de SIGNED_IN por userId.
+          // En algunos browsers/tab lifecycle, Supabase emite SIGNED_IN duplicado
+          // (p. ej. al minimizar/restaurar) incluso antes de que React actualice
+          // `sessionRef`. Si hacemos el flujo completo, invalidamos caches y el UI
+          // vuelve a LOADING sin que haya un login real.
+          const now = Date.now();
+          const last = lastHandledSignInRef.current;
+          const withinWindow = now - (last.at || 0) < 10_000;
+          const sameUserAsLast = Boolean(nextUserId && last.userId === nextUserId);
+
+          if (sameUserAsLast && withinWindow) {
+            // Si además el token es idéntico, es casi seguro un evento duplicado.
+            // Si el token cambió pero el user es el mismo, seguimos tratándolo como
+            // no-destructivo (equivalente a TOKEN_REFRESHED para UX).
+            // Blindaje conservador: mantener localStorage.user_id consistente sin sobrescribir
+            // identidades distintas (multi-tab / estados raros).
+            if (nextUserId) {
+              try {
+                const stored = localStorage.getItem('user_id');
+                if (!stored || stored === nextUserId) {
+                  localStorage.setItem('user_id', nextUserId);
+                }
+              } catch (e) {}
+            }
+            setSession(newSession);
+            lastHandledSignInRef.current = {
+              userId: nextUserId,
+              at: now,
+              accessToken: newSession?.access_token || last.accessToken || null,
+            };
+            return;
+          }
+
+          // ✅ FIX: Supabase puede emitir SIGNED_IN espurio al minimizar/restaurar.
+          // Si el userId NO cambió, NO resetear caches (billing/shipping/region),
+          // porque eso provoca flashes de LOADING en UI (ej. AddToCartModal).
+          if (prevUserId && nextUserId && prevUserId === nextUserId) {
+            setSession(newSession);
+            lastHandledSignInRef.current = {
+              userId: nextUserId,
+              at: now,
+              accessToken: newSession?.access_token || null,
+            };
+            return;
+          }
+
+          // Registrar este SIGNED_IN como manejado (antes de invalidaciones)
+          lastHandledSignInRef.current = {
+            userId: nextUserId,
+            at: now,
+            accessToken: newSession?.access_token || null,
+          };
+
           // ⚠️ RECOVERY MODE: Detectar tokens de recovery en URL o localStorage
           const currentUrl = window.location.href;
           const hashMatch =
@@ -468,6 +543,7 @@ export const UnifiedAuthProvider = ({ children }) => {
         } else if (event === 'SIGNED_OUT') {
           // 🧹 SIGNED_OUT real: Limpieza total con Nuclear Cleanup
           performNuclearCleanup();
+          lastHandledSignInRef.current = { userId: null, at: 0, accessToken: null };
           setSession(null);
           setManualRoleOverride(null);
           window.dispatchEvent(
