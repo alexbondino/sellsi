@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import FeedbackIcon from '@mui/icons-material/Feedback';
+import DescriptionIcon from '@mui/icons-material/Description';
 import { supabase } from '../../../services/supabase';
 import useCartStore from '../../../stores/cart/cartStore';
 import { useRole } from '../../../../infrastructure/providers';
@@ -305,6 +306,17 @@ export default function TopBarContainer({
         >
           Ayúdanos a mejorar
         </Button>
+        <Tooltip title="Mis Documentos" arrow>
+          <IconButton
+            onClick={() => navigate(currentRole === 'supplier' ? '/supplier/my-documents' : '/buyer/my-documents')}
+            sx={{ ...iconButtonBase, color: 'white' }}
+            aria-label="Mis Documentos"
+            disableRipple
+            disableFocusRipple
+          >
+            <DescriptionIcon sx={{ fontSize: '1.5rem' }} />
+          </IconButton>
+        </Tooltip>
         <NotificationsMenu
           showBell
           unreadCount={unreadCount}
@@ -433,6 +445,16 @@ export default function TopBarContainer({
         Ayúdanos a mejorar
       </MenuItem>,
       <MenuItem
+        key="my-documents"
+        onClick={() => {
+          navigate(currentRole === 'supplier' ? '/supplier/my-documents' : '/buyer/my-documents');
+          handleCloseMobileMenu();
+        }}
+      >
+        <DescriptionIcon sx={{ mr: 1, fontSize: '1.2rem' }} />
+        Mis Documentos
+      </MenuItem>,
+      <MenuItem
         key="profile"
         onClick={() => {
           goToProfile();
@@ -456,6 +478,7 @@ export default function TopBarContainer({
     handleRoleToggleChange,
     goToProfile,
     handleLogout,
+    navigate,
   ]);
 
   const handleMobileSearchButton = useCallback(() => submitMobileSearch(), [submitMobileSearch]);

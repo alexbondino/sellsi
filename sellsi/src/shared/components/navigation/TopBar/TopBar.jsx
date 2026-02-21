@@ -31,6 +31,7 @@ import { NotificationBell } from '../../../../domains/notifications';
 // Consolidated MUI imports
 import SearchIcon from '@mui/icons-material/Search';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import DescriptionIcon from '@mui/icons-material/Description';
 import { ProfileAvatarButton } from './components/ProfileAvatarButton';
 import { AuthModals } from './components/AuthModals';
 import { NotificationsMenu } from './components/NotificationsMenu';
@@ -406,6 +407,21 @@ export default function TopBar({
           />
         )}
 
+        {/* Mis Documentos - ocultar en onboarding */}
+        {!isOnboarding && (
+          <Tooltip title="Mis Documentos" arrow>
+            <IconButton
+              onClick={() => navigate(currentRole === 'supplier' ? '/supplier/my-documents' : '/buyer/my-documents')}
+              sx={{ ...iconButtonBase, color: 'white' }}
+              aria-label="Mis Documentos"
+              disableFocusRipple
+              disableRipple
+            >
+              <DescriptionIcon sx={{ fontSize: '1.5rem' }} />
+            </IconButton>
+          </Tooltip>
+        )}
+
         {/* Notificaciones - ocultar en onboarding */}
         {!isOnboarding && (
           <NotificationsMenu
@@ -441,9 +457,9 @@ export default function TopBar({
         )}
         {profileMenuButton}
       </>
-    ), [isOnboarding, currentRole, isRoleLoading, handleRoleToggleChange, notifCtx, 
-        handleNotifItemClick, handleViewAllNotif, handleCloseNotifModal, notifAnchor, 
-        handleOpenNotif, handleCloseNotif, notifModalOpen, navigate, itemsInCart, 
+    ), [isOnboarding, currentRole, isRoleLoading, handleRoleToggleChange, notifCtx,
+        handleNotifItemClick, handleViewAllNotif, handleCloseNotifModal, notifAnchor,
+        handleOpenNotif, handleCloseNotif, notifModalOpen, navigate, itemsInCart,
         CustomShoppingCartIcon, profileMenuButton]);
 
     mobileMenuItems = useMemo(() => [
@@ -465,6 +481,15 @@ export default function TopBar({
             <Divider key="dividerMobileRole" />,
           ]
         : []),
+      <MenuItem
+        key="my-documents"
+        onClick={() => {
+          navigate(currentRole === 'supplier' ? '/supplier/my-documents' : '/buyer/my-documents');
+          handleCloseMobileMenu();
+        }}
+      >
+        Mis Documentos
+      </MenuItem>,
       <MenuItem
         key="profile"
         onClick={() => {
