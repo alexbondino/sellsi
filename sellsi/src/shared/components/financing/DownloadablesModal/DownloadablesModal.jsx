@@ -50,6 +50,7 @@ import {
   MODAL_SUBMIT_BUTTON_STYLES,
 } from '../../feedback/Modal/Modal';
 import { getFinancingDocuments, downloadFinancingDocument } from '../../../services/financingDocumentsService';
+import { downloadBlobWithRateLimit } from '../../../utils/downloads/download';
 
 const SELLSI_BLUE = '#2E52B2';
 
@@ -169,25 +170,22 @@ const DownloadablesModal = ({ open, onClose, financing, onDownloadFile, onExited
       
       console.log('[DownloadablesModal] Descargando desde:', storagePath);
       const blob = await downloadFinancingDocument(storagePath);
-      
-      // Crear URL local del blob y forzar descarga sin cambiar de página
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = doc.document_name || doc.name || 'documento.pdf';
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      
-      // Cleanup
-      setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }, 100);
+
+      await downloadBlobWithRateLimit({
+        blob,
+        filename: doc.document_name || doc.name || 'documento.pdf',
+        rateKey: `fin_doc:${storagePath}`,
+      });
       
       console.log('✅ Documento descargado exitosamente:', doc.document_name || doc.name);
     } catch (error) {
       console.error('❌ Error descargando archivo:', error);
+      const msg = String(error?.message || error || '');
+      if (msg.startsWith('RATE_LIMITED:')) {
+        const seconds = msg.split(':')[1] || '';
+        alert(`Límite de descargas alcanzado. Intenta nuevamente en ${seconds}s.`);
+        return;
+      }
       alert(`Error al descargar: ${error.message}`);
     } finally {
       setDownloading(false);

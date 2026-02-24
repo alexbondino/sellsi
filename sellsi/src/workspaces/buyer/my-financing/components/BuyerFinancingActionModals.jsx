@@ -40,6 +40,7 @@ import {
   MODAL_CANCEL_BUTTON_STYLES,
   MODAL_SUBMIT_BUTTON_STYLES,
 } from '../../../../shared/components/feedback/Modal/Modal';
+import { downloadBlobWithRateLimit } from '../../../../shared/utils/downloads/download';
 
 /**
  * Modal de confirmación para firmar
@@ -97,24 +98,23 @@ const SignModal = ({ open, financing, onConfirm, onClose, onExited }) => {
       }
 
       // Crear URL local del blob y forzar descarga sin cambiar de página
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `contrato_marco_${financing.id.slice(0, 8)}.pdf`;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      
-      // Cleanup
-      setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }, 100);
+      await downloadBlobWithRateLimit({
+        blob,
+        filename: `contrato_marco_${financing.id.slice(0, 8)}.pdf`,
+        rateKey: `fin_contract:${financing.id}`,
+      });
       
       console.log('[SignModal] Contrato descargado');
       setIsGeneratingPdf(false);
     } catch (err) {
       console.error('[SignModal] Error descargando contrato:', err);
+      const msg = String(err?.message || err || '');
+      if (msg.startsWith('RATE_LIMITED:')) {
+        const seconds = msg.split(':')[1] || '';
+        alert(`Límite de descargas alcanzado. Intenta nuevamente en ${seconds}s.`);
+        setIsGeneratingPdf(false);
+        return;
+      }
       alert(`Error al descargar contrato: ${err.message || 'Error desconocido'}`);
       setIsGeneratingPdf(false);
     }

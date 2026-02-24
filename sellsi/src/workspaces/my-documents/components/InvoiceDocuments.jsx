@@ -3,6 +3,7 @@ import {
   Box, Typography, Paper, Button, FormControl, InputLabel, Select, MenuItem,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Chip, Tooltip, IconButton, Popover, TextField, Stack, Divider,
+  Skeleton,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
@@ -11,10 +12,14 @@ import FileUploadIcon from '@mui/icons-material/FileUpload';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DownloadIcon from '@mui/icons-material/Download';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { USE_MOCKS, MOCK_INVOICES } from '../mocks/mockDocumentsData';
+import { supabase } from '../../../services/supabase';
 import { formatPrice } from '../../../shared/utils/formatters/priceFormatters';
 import FinancingIdCell from '../../../shared/components/financing/FinancingIdCell';
 import OrdersPagination from '../../buyer/my-orders/components/OrdersPagination';
+import {
+  downloadSupabaseStoragePathWithRateLimit,
+  downloadUrlAsBlobWithRateLimit,
+} from '../../../shared/utils/downloads/download';
 
 const FILTER_OPTIONS = [
   { value: 'all', label: 'Todas' },
@@ -125,11 +130,136 @@ export default function InvoiceDocuments({ role }) {
   const navigate = useNavigate();
   const [category, setCategory] = useState('all');
   const [page, setPage] = useState(1);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(null);
 
   const ITEMS_PER_PAGE = 50;
 
 
-  const allInvoices = USE_MOCKS ? MOCK_INVOICES : [];
+  useEffect(() => {
+    let alive = true;
+
+    const fetchData = async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const sessionRes = await supabase.auth.getSession();
+        const userId = sessionRes?.data?.session?.user?.id;
+        if (!userId) {
+          if (alive) setInvoices([]);
+          return;
+        }
+
+        let invoiceRows = [];
+        let orderIds = [];
+        let supplierUserIds = [];
+
+        if (role === 'supplier') {
+          const { data: rows, error: invErr } = await supabase
+            .from('invoices_meta')
+            .select('id, order_id, supplier_id, path, filename, size, created_at')
+            .eq('supplier_id', userId)
+            .order('created_at', { ascending: false });
+          if (invErr) throw invErr;
+          invoiceRows = Array.isArray(rows) ? rows : [];
+          orderIds = [...new Set(invoiceRows.map((r) => r.order_id).filter(Boolean))];
+          supplierUserIds = [...new Set(invoiceRows.map((r) => r.supplier_id).filter(Boolean))];
+        } else {
+          const { data: oRows, error: oErr } = await supabase
+            .from('orders')
+            .select('id, user_id, total')
+            .eq('user_id', userId);
+          if (oErr) throw oErr;
+
+          const myOrders = Array.isArray(oRows) ? oRows : [];
+          orderIds = [...new Set(myOrders.map((o) => o.id).filter(Boolean))];
+
+          if (orderIds.length === 0) {
+            if (alive) setInvoices([]);
+            return;
+          }
+
+          const { data: rows, error: invErr } = await supabase
+            .from('invoices_meta')
+            .select('id, order_id, supplier_id, path, filename, size, created_at')
+            .in('order_id', orderIds)
+            .order('created_at', { ascending: false });
+          if (invErr) throw invErr;
+
+          invoiceRows = Array.isArray(rows) ? rows : [];
+          supplierUserIds = [...new Set(invoiceRows.map((r) => r.supplier_id).filter(Boolean))];
+        }
+
+        const ordersById = Object.create(null);
+        if (orderIds.length) {
+          try {
+            const { data: oRows, error: oErr } = await supabase
+              .from('orders')
+              .select('id, user_id, total')
+              .in('id', orderIds);
+            if (!oErr && Array.isArray(oRows)) {
+              for (const o of oRows) ordersById[o.id] = o;
+            }
+          } catch (_) {
+            // supplier puede no tener acceso a orders; tolerar
+          }
+        }
+
+        const namesByUserId = Object.create(null);
+        const buyerUserIds = [...new Set(Object.values(ordersById).map((o) => o?.user_id).filter(Boolean))];
+        const idsToFetch = role === 'supplier' ? buyerUserIds : supplierUserIds;
+
+        if (idsToFetch.length) {
+          try {
+            const { data: uRows, error: uErr } = await supabase
+              .from('users')
+              .select('user_id, user_nm')
+              .in('user_id', idsToFetch);
+            if (!uErr && Array.isArray(uRows)) {
+              for (const u of uRows) namesByUserId[u.user_id] = u.user_nm;
+            }
+          } catch (_) {}
+        }
+
+        const mapped = invoiceRows.map((r) => {
+          const order = ordersById[r.order_id] || null;
+          const amount = order?.total != null ? Number(order.total) : null;
+          const counterpart = role === 'supplier'
+            ? (namesByUserId[order?.user_id] || '—')
+            : (namesByUserId[r.supplier_id] || '—');
+
+          return {
+            id: r.id,
+            category: role === 'supplier' ? 'emitidas' : 'recibidas',
+            order_id: r.order_id,
+            supplier_id: r.supplier_id,
+            path: r.path,
+            document_name: r.filename || (r.path ? r.path.split('/').pop() : 'factura.pdf'),
+            file_size: r.size || 0,
+            amount,
+            uploaded_at: r.created_at,
+            counterpart,
+          };
+        });
+
+        if (alive) setInvoices(mapped);
+      } catch (e) {
+        if (!alive) return;
+        setLoadError(e?.message || 'Error cargando facturas');
+        setInvoices([]);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => {
+      alive = false;
+    };
+  }, [role]);
+
+  const allInvoices = invoices;
 
   const counts = useMemo(() => {
     const acc = { all: 0, emitidas: 0, recibidas: 0 };
@@ -165,6 +295,89 @@ export default function InvoiceDocuments({ role }) {
 
   const empty = EMPTY_STATE[category];
 
+  const LoadingSkeleton = () => (
+    <>
+      <Stack spacing={1.5} sx={{ display: { xs: 'flex', md: 'none' } }}>
+        {Array.from({ length: 5 }).map((_, idx) => (
+          <Paper key={idx} elevation={1} sx={{ borderRadius: 2, p: 2 }}>
+            <Skeleton variant="rounded" height={22} width={120} />
+            <Skeleton variant="text" height={20} sx={{ mt: 1, maxWidth: 260 }} />
+            <Skeleton variant="text" height={18} sx={{ maxWidth: 220 }} />
+            <Divider sx={{ my: 1 }} />
+            <Skeleton variant="text" height={18} sx={{ maxWidth: 300 }} />
+          </Paper>
+        ))}
+      </Stack>
+
+      <TableContainer component={Paper} elevation={1} sx={{ borderRadius: 2, display: { xs: 'none', md: 'block' } }}>
+        <Table sx={{ minWidth: 700 }} size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell sx={headerCellSx}>Nº Pedido</TableCell>
+              <TableCell sx={headerCellSx}>Tipo</TableCell>
+              <TableCell sx={headerCellSx}>{role === 'supplier' ? 'Comprador' : 'Proveedor'}</TableCell>
+              <TableCell sx={headerCellSx}>Documento</TableCell>
+              <TableCell sx={{ ...headerCellSx, textAlign: 'right' }}>Monto</TableCell>
+              <TableCell sx={headerCellSx}>Fecha</TableCell>
+              <TableCell sx={headerCellSx}>Tamaño</TableCell>
+              <TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>Acción</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <TableRow key={idx}>
+                <TableCell><Skeleton variant="rounded" height={18} width={90} /></TableCell>
+                <TableCell><Skeleton variant="rounded" height={22} width={72} /></TableCell>
+                <TableCell><Skeleton variant="text" height={20} width={180} /></TableCell>
+                <TableCell><Skeleton variant="text" height={20} width={220} /></TableCell>
+                <TableCell align="right"><Skeleton variant="text" height={20} width={90} sx={{ ml: 'auto' }} /></TableCell>
+                <TableCell><Skeleton variant="text" height={20} width={110} /></TableCell>
+                <TableCell><Skeleton variant="text" height={20} width={70} /></TableCell>
+                <TableCell align="center"><Skeleton variant="circular" width={28} height={28} /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </>
+  );
+
+  const downloadInvoice = async (inv) => {
+    if (!inv?.path) return;
+    try {
+      if (role === 'supplier') {
+        await downloadSupabaseStoragePathWithRateLimit({
+          supabase,
+          bucket: 'invoices',
+          path: inv.path,
+          filename: inv.document_name,
+          rateKey: `invoice:${inv.path}`,
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('get-invoice-url', {
+        body: { path: inv.path },
+      });
+      if (error) throw error;
+      if (!data?.url) throw new Error('URL inválida');
+
+      await downloadUrlAsBlobWithRateLimit({
+        url: data.url,
+        filename: inv.document_name,
+        rateKey: `invoice:${inv.path}`,
+      });
+    } catch (e) {
+      const msg = String(e?.message || e || '');
+      const status = e?.status || e?.statusCode || null;
+      if (msg.startsWith('RATE_LIMITED:') || status === 429) {
+        const seconds = msg.startsWith('RATE_LIMITED:') ? (msg.split(':')[1] || '') : '';
+        alert(`Límite de descargas alcanzado. Intenta de nuevo en unos segundos.${seconds ? ` (${seconds}s)` : ''}`);
+      }
+      console.warn('[my-documents][invoices] download failed', e?.message || e);
+    }
+  };
+
   return (
     <Box>
       {/* Descripción */}
@@ -195,7 +408,23 @@ export default function InvoiceDocuments({ role }) {
         </FormControl>
       </Box>
 
-      {filtered.length === 0 ? (
+      {loadError ? (
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 3, md: 4 },
+            borderRadius: 2,
+            border: '1px dashed',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Typography variant="body2" fontWeight={600} color="error.main">Error cargando facturas</Typography>
+          <Typography variant="caption" color="text.secondary">{loadError}</Typography>
+        </Paper>
+      ) : loading ? (
+        <LoadingSkeleton />
+      ) : filtered.length === 0 ? (
         <Paper
           elevation={0}
           sx={{
@@ -251,7 +480,9 @@ export default function InvoiceDocuments({ role }) {
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 0.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Typography variant="caption" sx={{ color: '#566481' }}>Monto:</Typography>
-                  <Typography variant="caption" fontWeight={600} color="text.primary">{formatPrice(inv.amount)}</Typography>
+                  <Typography variant="caption" fontWeight={600} color="text.primary">
+                    {inv.amount != null ? formatPrice(inv.amount) : '—'}
+                  </Typography>
                 </Box>
                 <Typography variant="caption" color="text.secondary">
                   <span style={{ color: '#566481' }}>Fecha: </span>{formatDate(inv.uploaded_at)}
@@ -269,7 +500,7 @@ export default function InvoiceDocuments({ role }) {
                   </Typography>
                 </Box>
                 <Tooltip title="Descargar" arrow>
-                  <IconButton size="small" color="primary" aria-label="descargar">
+                  <IconButton size="small" color="primary" aria-label="descargar" onClick={() => downloadInvoice(inv)}>
                     <DownloadIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
@@ -327,7 +558,7 @@ export default function InvoiceDocuments({ role }) {
                   </TableCell>
                   <TableCell align="right">
                     <Typography variant="body2" fontWeight={600} color="text.primary">
-                      {formatPrice(inv.amount)}
+                      {inv.amount != null ? formatPrice(inv.amount) : '—'}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -342,7 +573,7 @@ export default function InvoiceDocuments({ role }) {
                   </TableCell>
                   <TableCell align="center">
                     <Tooltip title="Descargar" arrow>
-                      <IconButton size="small" color="primary" aria-label="descargar">
+                      <IconButton size="small" color="primary" aria-label="descargar" onClick={() => downloadInvoice(inv)}>
                         <DownloadIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>

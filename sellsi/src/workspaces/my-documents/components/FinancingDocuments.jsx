@@ -3,6 +3,7 @@ import {
   Box, Typography, Paper, Button, Chip, Stack, Divider,
   Accordion, AccordionSummary, AccordionDetails, Tooltip, IconButton,
   FormControl, InputLabel, Select, MenuItem,
+  Skeleton,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { formatPrice } from '../../../shared/utils/formatters/priceFormatters';
@@ -13,13 +14,13 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DownloadIcon from '@mui/icons-material/Download';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { supabase } from '../../../services/supabase';
 import {
-  USE_MOCKS,
-  MOCK_FINANCING_GROUPS,
   FINANCING_STATUS_LABELS,
   FINANCING_TYPE_LABELS,
   DOC_TYPE_LABELS,
-} from '../mocks/mockDocumentsData';
+} from '../constants/documentsConstants';
+import { downloadSupabaseStoragePathWithRateLimit } from '../../../shared/utils/downloads/download';
 
 /* formatPrice imported from shared utils */
 const formatFileSize = (bytes) => {
@@ -31,6 +32,31 @@ const formatDate = (iso) =>
   new Date(iso).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
 
 function DocumentRow({ doc }) {
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    if (!doc?.storage_path || downloading) return;
+    setDownloading(true);
+    try {
+      await downloadSupabaseStoragePathWithRateLimit({
+        supabase,
+        bucket: 'financing-documents',
+        path: doc.storage_path,
+        filename: doc.document_name,
+        rateKey: `fin_doc:${doc.storage_path}`,
+      });
+    } catch (e) {
+      const msg = String(e?.message || e || '');
+      if (msg.startsWith('RATE_LIMITED:')) {
+        const seconds = msg.split(':')[1] || '';
+        alert(`Límite de descargas alcanzado. Intenta nuevamente en ${seconds}s.`);
+      }
+      console.warn('[my-documents][financing] download failed', e?.message || e);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -61,7 +87,13 @@ function DocumentRow({ doc }) {
         </Typography>
       </Box>
       <Tooltip title="Descargar" arrow>
-        <IconButton size="small" color="primary" aria-label="descargar">
+        <IconButton
+          size="small"
+          color="primary"
+          aria-label="descargar"
+          onClick={handleDownload}
+          disabled={downloading}
+        >
           <DownloadIcon fontSize="small" />
         </IconButton>
       </Tooltip>
@@ -221,6 +253,9 @@ export default function FinancingDocuments({ role }) {
   const financingPath = isBuyer ? '/buyer/my-financing' : '/supplier/my-financing';
   const [filter, setFilter] = useState('vigentes');
   const [page, setPage] = useState(1);
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(null);
 
   const ITEMS_PER_PAGE = 25;
 
@@ -237,7 +272,171 @@ export default function FinancingDocuments({ role }) {
     { value: 'pagados',  label: 'Pagados'  },
   ];
 
-  const allGroups = USE_MOCKS ? MOCK_FINANCING_GROUPS : [];
+  useEffect(() => {
+    let alive = true;
+
+    const fetchData = async () => {
+      setLoading(true);
+      setLoadError(null);
+
+      try {
+        const sessionRes = await supabase.auth.getSession();
+        const userId = sessionRes?.data?.session?.user?.id;
+        if (!userId) {
+          if (alive) setGroups([]);
+          return;
+        }
+
+        const ownerTable = isBuyer ? 'buyer' : 'supplier';
+        const { data: ownerRow, error: ownerErr } = await supabase
+          .from(ownerTable)
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (ownerErr || !ownerRow?.id) {
+          if (alive) setGroups([]);
+          return;
+        }
+
+        const ownerId = ownerRow.id;
+        const ownerField = isBuyer ? 'buyer_id' : 'supplier_id';
+
+        const { data: frRows, error: frErr } = await supabase
+          .from('financing_requests')
+          .select('id, buyer_id, supplier_id, amount, status, created_at, activated_at, expires_at, term_days, legal_name, metadata')
+          .eq(ownerField, ownerId)
+          .order('created_at', { ascending: false });
+        if (frErr) throw frErr;
+
+        const requestRows = Array.isArray(frRows) ? frRows : [];
+        const financingIds = requestRows.map((r) => r.id).filter(Boolean);
+
+        const counterpartBySupplierId = Object.create(null);
+        if (isBuyer) {
+          const supplierIds = [...new Set(requestRows.map((r) => r.supplier_id).filter(Boolean))];
+          await Promise.all(
+            supplierIds.map(async (supplierId) => {
+              try {
+                const { data: name, error: nameErr } = await supabase.rpc('get_supplier_name_for_buyer', {
+                  p_supplier_id: supplierId,
+                });
+                if (!nameErr && name) counterpartBySupplierId[supplierId] = name;
+              } catch (_) {}
+            })
+          );
+        }
+
+        let docsRows = [];
+        if (financingIds.length) {
+          const { data: d, error: dErr } = await supabase
+            .from('financing_documents')
+            .select('id, financing_request_id, document_type, document_name, storage_path, file_size, uploaded_at')
+            .in('financing_request_id', financingIds)
+            .order('uploaded_at', { ascending: false });
+          if (dErr) throw dErr;
+          docsRows = Array.isArray(d) ? d : [];
+        }
+
+        const docsByFinancing = new Map();
+        for (const doc of docsRows) {
+          const fid = doc.financing_request_id;
+          if (!fid) continue;
+          if (!docsByFinancing.has(fid)) docsByFinancing.set(fid, []);
+          docsByFinancing.get(fid).push({
+            id: doc.id,
+            document_type: doc.document_type,
+            document_name: doc.document_name,
+            storage_path: doc.storage_path,
+            file_size: doc.file_size || 0,
+            uploaded_at: doc.uploaded_at || new Date().toISOString(),
+          });
+        }
+
+        const mapped = requestRows.map((f) => {
+          let requestType = 'express';
+          try {
+            const md = typeof f.metadata === 'string' ? JSON.parse(f.metadata) : f.metadata || {};
+            if (md.has_powers_certificate || md.has_tax_folder || md.document_count > 0) requestType = 'extended';
+          } catch (_) {}
+
+          return {
+            id: f.id,
+            counterpart: isBuyer
+              ? counterpartBySupplierId[f.supplier_id] || ''
+              : f.legal_name || 'Comprador',
+            type: requestType,
+            status: f.status,
+            amount: Number(f.amount || 0),
+            created_at: f.created_at,
+            activated_at: f.activated_at,
+            term_days: f.term_days,
+            expires_at: f.expires_at,
+            documents: docsByFinancing.get(f.id) || [],
+          };
+        });
+
+        if (alive) setGroups(mapped);
+      } catch (e) {
+        if (!alive) return;
+        setLoadError(e?.message || 'Error cargando financiamientos');
+        setGroups([]);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => {
+      alive = false;
+    };
+  }, [isBuyer]);
+
+  const allGroups = groups;
+
+  const LoadingSkeleton = () => (
+    <Box>
+      {Array.from({ length: 3 }).map((_, idx) => (
+        <Paper
+          key={idx}
+          elevation={0}
+          sx={{
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            mb: 1.5,
+            overflow: 'hidden',
+          }}
+        >
+          <Box sx={{ px: { xs: 2, md: 2.5 }, py: 2 }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '110px 1fr 110px 140px 130px 110px 150px' },
+                gap: 2,
+                alignItems: 'center',
+              }}
+            >
+              <Skeleton variant="rounded" height={22} width={90} />
+              <Skeleton variant="text" height={24} sx={{ maxWidth: 360 }} />
+              <Skeleton variant="text" height={24} width={90} />
+              <Skeleton variant="text" height={24} width={120} />
+              <Skeleton variant="text" height={24} width={120} />
+              <Skeleton variant="text" height={24} width={80} />
+              <Skeleton variant="rounded" height={22} width={110} />
+            </Box>
+          </Box>
+          <Divider />
+          <Box sx={{ px: { xs: 2, md: 2.5 }, py: 1.5 }}>
+            <Skeleton variant="text" height={18} sx={{ maxWidth: 260 }} />
+            <Skeleton variant="text" height={18} sx={{ maxWidth: 420 }} />
+            <Skeleton variant="text" height={18} sx={{ maxWidth: 380 }} />
+          </Box>
+        </Paper>
+      ))}
+    </Box>
+  );
 
   const counts = useMemo(() => {
     const acc = { vigentes: 0, vencidos: 0, pagados: 0 };
@@ -300,7 +499,27 @@ export default function FinancingDocuments({ role }) {
         </FormControl>
       </Box>
 
-      {filteredGroups.length === 0 ? (
+      {loadError ? (
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 3, md: 4 },
+            borderRadius: 2,
+            border: '1px dashed',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Typography variant="body2" fontWeight={600} color="error.main">
+            Error cargando documentos
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {loadError}
+          </Typography>
+        </Paper>
+      ) : loading ? (
+        <LoadingSkeleton />
+      ) : filteredGroups.length === 0 ? (
         <Paper
           elevation={0}
           sx={{

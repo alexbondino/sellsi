@@ -338,3 +338,6 @@ verify_jwt = false
 
 [functions.retry-thumbnail-jobs]
 verify_jwt = false
+
+[functions.purge-expired-quotations]
+verify_jwt = false

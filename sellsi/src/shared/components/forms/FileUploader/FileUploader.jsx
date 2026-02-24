@@ -24,6 +24,7 @@ import {
   Image as ImageIcon,
   FileDownload as DownloadIcon,
 } from '@mui/icons-material';
+import { openUrlWithRateLimit } from '../../../utils/downloads/download';
 
 /**
  * FileUploader - Componente UI reutilizable para subir múltiples archivos
@@ -198,7 +199,12 @@ const FileUploader = ({
 
   const downloadFile = file => {
     if (file.publicUrl) {
-      window.open(file.publicUrl, '_blank');
+      openUrlWithRateLimit({
+        url: file.publicUrl,
+        rateKey: `public_url:${file.publicUrl}`,
+      }).catch(() => {
+        alert('Límite de descargas alcanzado. Intenta de nuevo en un momento.');
+      });
     } else if (file.file) {
       // Para archivos locales, crear URL temporal
       const url = URL.createObjectURL(file.file);
