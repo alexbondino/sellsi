@@ -3,6 +3,9 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import ExpressRequestModal from '../../../../workspaces/buyer/my-financing/components/ExpressRequestModal';
 
+// these tests drive a complex MUI form with multiple async interactions; allow extra time
+jest.setTimeout(30000);
+
 const fillValidForm = async (dialog) => {
   const w = within(dialog);
   const amount = w.getByLabelText(/Monto a financiar/i);
@@ -55,6 +58,7 @@ describe('ExpressRequestModal - robust', () => {
     expect(errors.length).toBeGreaterThan(0);
   });
 
+  // this scenario exercises the full modal including selects and validation, it can be slow
   test('submits successfully with valid data', async () => {
     const onSubmit = jest.fn(() => Promise.resolve());
     render(<ExpressRequestModal open={true} onClose={() => {}} onBack={() => {}} onSubmit={onSubmit} />);

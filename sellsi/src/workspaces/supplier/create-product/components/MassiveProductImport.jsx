@@ -124,9 +124,19 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
       >
         <Button
           variant="outlined"
-          onClick={() =>
-            downloadExcelTemplate(fieldKeys, 'productos_template.xlsx')
-          }
+          onClick={() => {
+            try {
+              downloadExcelTemplate(fieldKeys, 'productos_template.xlsx');
+            } catch (e) {
+              const msg = String(e?.message || e || '');
+              if (msg.startsWith('RATE_LIMITED:')) {
+                const seconds = msg.split(':')[1] || '';
+                alert(`Límite de descargas alcanzado. Intenta nuevamente en ${seconds}s.`);
+                return;
+              }
+              alert('No se pudo descargar el template.');
+            }
+          }}
           fullWidth={isMobile}
           sx={{
             textTransform: 'none',

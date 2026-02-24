@@ -108,6 +108,7 @@ const InfoPopover = ({
         onClose={handleClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        sx={{ zIndex: 1500 }}
         PaperProps={{ sx: { p: 2, width: popoverWidth, maxWidth: '95vw' } }}
         disableScrollLock
       >

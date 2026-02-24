@@ -2,7 +2,7 @@
 import {
   Box, Typography, Paper, Button, Tooltip, IconButton, LinearProgress,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Stack, Divider, Popover, TextField,
+  Stack, Divider, Popover, TextField, Skeleton,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
@@ -10,9 +10,10 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DownloadIcon from '@mui/icons-material/Download';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { USE_MOCKS, MOCK_QUOTATIONS } from '../mocks/mockDocumentsData';
+import { supabase } from '../../../services/supabase';
 import { formatPrice } from '../../../shared/utils/formatters/priceFormatters';
 import OrdersPagination from '../../buyer/my-orders/components/OrdersPagination';
+import { downloadSupabaseStoragePathWithRateLimit } from '../../../shared/utils/downloads/download';
 
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -105,15 +106,73 @@ export default function QuotationDocuments({ role }) {
   const navigate = useNavigate();
   const isBuyer = role === 'buyer';
   const [page, setPage] = useState(1);
+  const [quotations, setQuotations] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(null);
 
   const ITEMS_PER_PAGE = 50;
 
 
-  const quotations = useMemo(() => {
-    const source = USE_MOCKS ? MOCK_QUOTATIONS : [];
-    const now = Date.now();
-    return source.filter((q) => new Date(q.expires_at).getTime() > now);
-  }, []);
+  useEffect(() => {
+    let alive = true;
+
+    const fetchData = async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        if (!isBuyer) {
+          if (alive) setQuotations([]);
+          return;
+        }
+
+        const sessionRes = await supabase.auth.getSession();
+        const userId = sessionRes?.data?.session?.user?.id;
+        if (!userId) {
+          if (alive) setQuotations([]);
+          return;
+        }
+
+        const { data: rows, error } = await supabase
+          .from('quotation_documents')
+          .select('id, product_id, storage_path, created_at, expires_at, metadata')
+          .eq('buyer_user_id', userId)
+          .gt('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const mapped = (rows || []).map((r) => {
+          const md = (r.metadata && typeof r.metadata === 'object') ? r.metadata : {};
+          const basename = r.storage_path ? r.storage_path.split('/').pop() : null;
+          return {
+            id: r.id,
+            product_id: r.product_id,
+            storage_path: r.storage_path,
+            created_at: r.created_at,
+            expires_at: r.expires_at,
+            product_name: md.product_name || r.product_id,
+            supplier_name: md.supplier_name || '—',
+            amount: typeof md.amount === 'number' ? md.amount : null,
+            document_name: md.document_name || basename || 'cotizacion.pdf',
+            file_size: typeof md.file_size === 'number' ? md.file_size : 0,
+          };
+        });
+
+        if (alive) setQuotations(mapped);
+      } catch (e) {
+        if (!alive) return;
+        setLoadError(e?.message || 'Error cargando cotizaciones');
+        setQuotations([]);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => {
+      alive = false;
+    };
+  }, [isBuyer]);
 
   const totalPages = Math.ceil(quotations.length / ITEMS_PER_PAGE);
   const totalItemsForPagination = quotations.length;
@@ -128,6 +187,86 @@ export default function QuotationDocuments({ role }) {
     return quotations.slice(start, start + ITEMS_PER_PAGE);
   }, [quotations, page]);
 
+  const LoadingSkeleton = () => (
+    <>
+      <Stack spacing={1.5} sx={{ display: { xs: 'flex', md: 'none' } }}>
+        {Array.from({ length: 5 }).map((_, idx) => (
+          <Paper key={idx} elevation={1} sx={{ borderRadius: 2, p: 2 }}>
+            <Skeleton variant="text" height={22} sx={{ maxWidth: 240 }} />
+            <Skeleton variant="text" height={18} sx={{ maxWidth: 200 }} />
+            <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.75 }}>
+              <Skeleton variant="text" height={18} width={120} />
+              <Skeleton variant="text" height={18} width={110} />
+            </Stack>
+            <Divider sx={{ my: 1 }} />
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Skeleton variant="text" height={18} sx={{ maxWidth: 220, flex: 1, mr: 2 }} />
+              <Skeleton variant="circular" width={28} height={28} />
+            </Stack>
+            <Box sx={{ mt: 1 }}>
+              <Skeleton variant="text" height={18} width={120} />
+              <Skeleton variant="rounded" height={6} sx={{ borderRadius: 4, mt: 0.6 }} />
+            </Box>
+          </Paper>
+        ))}
+      </Stack>
+
+      <TableContainer component={Paper} elevation={1} sx={{ borderRadius: 2, display: { xs: 'none', md: 'block' } }}>
+        <Table sx={{ minWidth: 700 }} size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell sx={headerCellSx}>Producto</TableCell>
+              <TableCell sx={headerCellSx}>Proveedor</TableCell>
+              <TableCell sx={headerCellSx}>Documento</TableCell>
+              <TableCell sx={{ ...headerCellSx, textAlign: 'right' }}>Monto</TableCell>
+              <TableCell sx={headerCellSx}>Fecha emisión</TableCell>
+              <TableCell sx={{ ...headerCellSx, minWidth: 140 }}>Vence en</TableCell>
+              <TableCell sx={headerCellSx}>Tamaño</TableCell>
+              <TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>Acción</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <TableRow key={idx}>
+                <TableCell><Skeleton variant="text" height={20} width={220} /></TableCell>
+                <TableCell><Skeleton variant="text" height={20} width={180} /></TableCell>
+                <TableCell><Skeleton variant="text" height={20} width={200} /></TableCell>
+                <TableCell align="right"><Skeleton variant="text" height={20} width={90} sx={{ ml: 'auto' }} /></TableCell>
+                <TableCell><Skeleton variant="text" height={20} width={110} /></TableCell>
+                <TableCell>
+                  <Skeleton variant="text" height={18} width={90} />
+                  <Skeleton variant="rounded" height={6} width={100} sx={{ borderRadius: 4, mt: 0.6 }} />
+                </TableCell>
+                <TableCell><Skeleton variant="text" height={20} width={70} /></TableCell>
+                <TableCell align="center"><Skeleton variant="circular" width={28} height={28} /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </>
+  );
+
+  const downloadQuotation = async (quot) => {
+    if (!quot?.storage_path) return;
+    try {
+      await downloadSupabaseStoragePathWithRateLimit({
+        supabase,
+        bucket: 'quotations',
+        path: quot.storage_path,
+        filename: quot.document_name,
+        rateKey: `quotation:${quot.storage_path}`,
+      });
+    } catch (e) {
+      const msg = String(e?.message || e || '');
+      if (msg.startsWith('RATE_LIMITED:')) {
+        const seconds = msg.split(':')[1] || '';
+        alert(`Límite de descargas alcanzado. Intenta nuevamente en ${seconds}s.`);
+      }
+      console.warn('[my-documents][quotations] download failed', e?.message || e);
+    }
+  };
+
   return (
     <Box>
       {/* Descripción */}
@@ -137,7 +276,14 @@ export default function QuotationDocuments({ role }) {
         automáticamente.
       </Typography>
 
-      {quotations.length === 0 ? (
+      {loadError ? (
+        <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, borderRadius: 2, border: '1px dashed', borderColor: 'divider', bgcolor: 'background.paper' }}>
+          <Typography variant="body2" fontWeight={600} color="error.main">Error cargando cotizaciones</Typography>
+          <Typography variant="caption" color="text.secondary">{loadError}</Typography>
+        </Paper>
+      ) : loading ? (
+        <LoadingSkeleton />
+      ) : quotations.length === 0 ? (
         <Paper
           elevation={0}
           sx={{
@@ -194,7 +340,9 @@ export default function QuotationDocuments({ role }) {
                 <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.75 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <Typography variant="caption" sx={{ color: '#566481' }}>Monto:</Typography>
-                    <Typography variant="caption" fontWeight={600} color="text.primary">{formatPrice(quot.amount)}</Typography>
+                    <Typography variant="caption" fontWeight={600} color="text.primary">
+                      {quot.amount != null ? formatPrice(quot.amount) : '—'}
+                    </Typography>
                   </Box>
                   <Typography variant="caption" color="text.secondary">
                     <span style={{ color: '#566481' }}>Emitida: </span>{formatDate(quot.created_at)}
@@ -212,7 +360,7 @@ export default function QuotationDocuments({ role }) {
                     </Typography>
                   </Box>
                   <Tooltip title="Descargar" arrow>
-                    <IconButton size="small" color="primary" aria-label="descargar">
+                    <IconButton size="small" color="primary" aria-label="descargar" onClick={() => downloadQuotation(quot)}>
                       <DownloadIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
@@ -281,7 +429,7 @@ export default function QuotationDocuments({ role }) {
 
                     <TableCell align="right">
                       <Typography variant="body2" fontWeight={600} color="text.primary">
-                        {formatPrice(quot.amount)}
+                        {quot.amount != null ? formatPrice(quot.amount) : '—'}
                       </Typography>
                     </TableCell>
 
@@ -311,7 +459,7 @@ export default function QuotationDocuments({ role }) {
 
                     <TableCell align="center">
                       <Tooltip title="Descargar" arrow>
-                        <IconButton size="small" color="primary" aria-label="descargar">
+                        <IconButton size="small" color="primary" aria-label="descargar" onClick={() => downloadQuotation(quot)}>
                           <DownloadIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>

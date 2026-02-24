@@ -37,6 +37,7 @@ import BlockIcon from '@mui/icons-material/Block';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
 import { formatPrice } from '../../../../shared/utils/formatters/priceFormatters';
+import { downloadBlobWithRateLimit } from '../../../../shared/utils/downloads/download';
 import {
   MODAL_DIALOG_ACTIONS_STYLES,
   MODAL_DIALOG_CONTENT_STYLES,
@@ -296,19 +297,12 @@ const SignModal = ({ open, financing, onConfirm, onClose, onExited }) => {
       if (!existingError && existingBlob) {
         // El archivo ya existe (firmado por buyer), descargarlo
         console.log('[SignModal Supplier] ✅ Archivo existente encontrado (firmado por buyer)');
-        
-        const url = URL.createObjectURL(existingBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `contrato_marco_${financing.id.slice(0, 8)}.pdf`;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        
-        setTimeout(() => {
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        }, 100);
+
+        await downloadBlobWithRateLimit({
+          blob: existingBlob,
+          filename: `contrato_marco_${financing.id.slice(0, 8)}.pdf`,
+          rateKey: `fin_contract:${financing.id}`,
+        });
         
         console.log('[SignModal Supplier] Contrato existente descargado');
         setIsGeneratingPdf(false);
@@ -348,24 +342,24 @@ const SignModal = ({ open, financing, onConfirm, onClose, onExited }) => {
       }
 
       // Crear URL local del blob y forzar descarga sin cambiar de página
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `contrato_marco_${financing.id.slice(0, 8)}.pdf`;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      
-      // Cleanup
-      setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }, 100);
+
+      await downloadBlobWithRateLimit({
+        blob,
+        filename: `contrato_marco_${financing.id.slice(0, 8)}.pdf`,
+        rateKey: `fin_contract:${financing.id}`,
+      });
       
       console.log('[SignModal] Contrato nuevo descargado');
       setIsGeneratingPdf(false);
     } catch (err) {
       console.error('[SignModal] Error descargando contrato:', err);
+      const msg = String(err?.message || err || '');
+      if (msg.startsWith('RATE_LIMITED:')) {
+        const seconds = msg.split(':')[1] || '';
+        alert(`Límite de descargas alcanzado. Intenta nuevamente en ${seconds}s.`);
+        setIsGeneratingPdf(false);
+        return;
+      }
       alert(`Error al descargar contrato: ${err.message || 'Error desconocido'}`);
       setIsGeneratingPdf(false);
     }

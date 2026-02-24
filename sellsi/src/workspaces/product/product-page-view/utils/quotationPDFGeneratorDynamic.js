@@ -20,6 +20,7 @@ export const generateQuotationPDF = async ({
     );
     const React = await import('react');
     const { supabase } = await import('../../../../services/supabase');
+    const { downloadBlobWithRateLimit } = await import('../../../../shared/utils/downloads/download');
 
     // Definir estilos - ACTUALIZADOS PARA COINCIDIR CON HTML
     const styles = StyleSheet.create({
@@ -126,11 +127,13 @@ export const generateQuotationPDF = async ({
 
     // Obtener información del usuario actual
     let currentUserName = 'Usuario';
+    let currentUserId = null;
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
+        currentUserId = user.id;
         const { data: profile } = await supabase
           .from('users')
           .select('user_nm')
@@ -416,18 +419,72 @@ export const generateQuotationPDF = async ({
 
     // Generar y descargar el PDF
     const blob = await pdf(React.createElement(QuotationDocument)).toBlob();
-
-    // Crear un enlace de descarga
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `cotizacion-${productName
+    const friendlyFilename = `cotizacion-${productName
       .replace(/\s+/g, '-')
       .toLowerCase()}-${Date.now()}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+
+    try {
+      await downloadBlobWithRateLimit({
+        blob,
+        filename: friendlyFilename,
+        rateKey: `quotation_pdf:${product?.id || product?.productid || product?.product_id || productName}`,
+      });
+    } catch (e) {
+      const msg = String(e?.message || e || '');
+      if (msg.startsWith('RATE_LIMITED:')) {
+        const seconds = msg.split(':')[1] || '';
+        alert(`Límite de descargas alcanzado. Intenta nuevamente en ${seconds}s.`);
+        return;
+      }
+      throw e;
+    }
+
+    // Persistir en Supabase (no bloquear descarga)
+    try {
+      const productId = product?.id || product?.productid || product?.product_id;
+      if (productId && blob && currentUserId) {
+        void (async () => {
+          const quotationId = crypto.randomUUID();
+          const storagePath = `${currentUserId}/${productId}/${quotationId}.pdf`;
+
+          const totalAmount = Math.round(Number(quantity) * Number(unitPrice));
+
+          const { error: uploadErr } = await supabase.storage
+            .from('quotations')
+            .upload(storagePath, blob, {
+              contentType: 'application/pdf',
+              upsert: false,
+            });
+
+          if (uploadErr) {
+            console.warn('[quotation] upload failed', uploadErr);
+            return;
+          }
+
+          const { data, error } = await supabase.functions.invoke('save-quotation', {
+            body: {
+              productId,
+              storagePath,
+              metadata: {
+                product_name: productName,
+                supplier_name: supplier,
+                amount: totalAmount,
+                document_name: friendlyFilename,
+                file_size: blob.size,
+              },
+            },
+          });
+          if (error) {
+            console.warn('[quotation] save-quotation failed', error);
+            return;
+          }
+          if (import.meta.env.DEV) console.debug('[quotation] saved', data);
+        })().catch((e) => console.warn('[quotation] persist exception', e));
+      }
+    } catch (e) {
+      // Nunca romper la descarga por falla de persistencia
+      console.warn('[quotation] persist skipped', e);
+    }
 
     console.log('PDF generado y descargado exitosamente');
     return true;

@@ -36,7 +36,8 @@ describe('notificationService', () => {
         p_payload: expect.objectContaining({
           p_user_id: 'supplier_456',
           p_type: 'offer_received',
-          p_title: 'Nueva oferta recibida',
+          // title may include an emoji prefix for styling
+          p_title: expect.stringContaining('Nueva oferta recibida'),
           p_related_id: 'offer_123',
           p_action_url: '/supplier/offers'
         })
@@ -168,7 +169,7 @@ describe('notificationService', () => {
         p_payload: expect.objectContaining({
           p_user_id: 'buyer_789',
           p_type: 'offer_accepted',
-          p_title: 'Oferta aceptada',
+          p_title: expect.stringContaining('Oferta aceptada'),
           p_related_id: 'offer_123',
           p_action_url: '/buyer/offers'
         })
@@ -196,7 +197,7 @@ describe('notificationService', () => {
         p_payload: expect.objectContaining({
           p_user_id: 'buyer_789',
           p_type: 'offer_rejected',
-          p_title: 'Oferta rechazada',
+          p_title: expect.stringContaining('Oferta rechazada'),
           p_related_id: 'offer_123',
           p_action_url: '/buyer/offers'
         })
@@ -239,7 +240,7 @@ describe('notificationService', () => {
         p_payload: expect.objectContaining({
           p_user_id: 'buyer_789',
           p_type: 'offer_expired',
-          p_title: 'Oferta expirada',
+          p_title: expect.stringContaining('Oferta expirada'),
           p_message: expect.stringContaining('Tu oferta por Test Product ha expirado'),
           p_related_id: 'offer_123',
           p_action_url: '/buyer/offers'

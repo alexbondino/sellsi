@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.42.0';
 import { withMetrics } from '../_shared/metrics.ts';
+import { enforceRateLimit } from '../_shared/rateLimit.ts';
 
 /* QUICK WIN: get-invoice-url
    Minimal endpoint que:
@@ -66,6 +67,20 @@ serve(req => withMetrics('get-invoice-url', req, async () => {
       return new Response(JSON.stringify({ error: 'Sesión inválida' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     const userId = userData.user.id;
+
+    // Rate limit (server-side): 5 requests / 60s por usuario/path
+    const rl = await enforceRateLimit({
+      identifier: userId,
+      key: `get-invoice-url:${path}`,
+      limit: 5,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return new Response(JSON.stringify({ error: 'RATE_LIMITED', retryInMs: rl.retryInMs }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Consultar order para confirmar que userId es buyer
     const { data: orderRow, error: orderErr } = await supabase

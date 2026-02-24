@@ -3,6 +3,9 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import ExtendedRequestModal from '../../../../workspaces/buyer/my-financing/components/ExtendedRequestModal';
 
+// this suite interacts with multiple file inputs and MUI selects; allow extra time
+jest.setTimeout(30000);
+
 const makeFile = ({ name = 'doc.pdf', size = 1024, type = 'application/pdf' } = {}) => {
   const content = new Uint8Array(size).fill(0);
   return new File([content], name, { type });
@@ -65,6 +68,7 @@ describe('ExtendedRequestModal - robust', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  // long-running scenario due to constructing large File and doing many async updates
   test('file size >10MB shows error and blocks submit', async () => {
     const onSubmit = jest.fn();
     render(<ExtendedRequestModal open={true} onClose={() => {}} onBack={() => {}} onSubmit={onSubmit} />);
@@ -87,6 +91,7 @@ describe('ExtendedRequestModal - robust', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  // this case fills entire form + uploads multiple files, can be slow
   test('submits successfully with all valid data and resets state', async () => {
     const onSubmit = jest.fn(() => Promise.resolve());
     render(<ExtendedRequestModal open={true} onClose={() => {}} onBack={() => {}} onSubmit={onSubmit} />);

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.201.0/http/server.ts";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 import { PDFDocument, StandardFonts } from "https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.esm.js";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const storageBucket = "financing-documents";
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -134,6 +136,47 @@ serve(async (req) => {
       });
     }
 
+    // AuthN (JWT) + userId
+    const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'No autenticado' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const jwt = authHeader.replace('Bearer ', '').trim();
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      return new Response(JSON.stringify({ error: 'Config faltante' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const authed = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+    });
+    const { data: userData, error: userErr } = await authed.auth.getUser();
+    if (userErr || !userData?.user?.id) {
+      return new Response(JSON.stringify({ error: 'Sesión inválida' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const userId = userData.user.id;
+
+    // Rate limit (server-side): 5 requests / 60s por usuario/financing
+    const rl = await enforceRateLimit({
+      identifier: userId,
+      key: `generate-financing-contract:${financing_id}`,
+      limit: 5,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return new Response(JSON.stringify({ error: 'RATE_LIMITED', retryInMs: rl.retryInMs }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Fetch financing snapshot
     const { data: fr, error: frError } = await supabase
       .from('financing_requests')
@@ -154,6 +197,25 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Missing supplier_id or buyer_id in financing_requests' }), { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // AuthZ: financing_requests.buyer_id/supplier_id referencian buyer(id)/supplier(id), no auth.users.id.
+    // Resolver buyer/supplier id desde user_id para validar permisos.
+    const [{ data: buyerRow }, { data: supplierRow }] = await Promise.all([
+      supabase.from('buyer').select('id').eq('user_id', userId).maybeSingle(),
+      supabase.from('supplier').select('id').eq('user_id', userId).maybeSingle(),
+    ]);
+
+    const buyerId = buyerRow?.id || null;
+    const supplierId = supplierRow?.id || null;
+    const isBuyer = buyerId != null && buyerId === fr.buyer_id;
+    const isSupplier = supplierId != null && supplierId === fr.supplier_id;
+
+    if (!isBuyer && !isSupplier) {
+      return new Response(JSON.stringify({ error: 'Sin permisos para este financiamiento' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 

@@ -21,6 +21,7 @@ import {
   HelpOutline as HelpOutlineIcon,
   LocalShipping as LocalShippingIcon,
   AssignmentTurnedIn as AssignmentTurnedInIcon,
+  FileDownload as DownloadIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
@@ -30,6 +31,8 @@ import { getRegionDisplay } from '../../../../utils/regionNames';
 import { getCommuneDisplay } from '../../../../utils/communeNames';
 import ContactModal from '../../modals/ContactModal';
 import InfoPopover from '../InfoPopover';
+import { supabase } from '../../../../services/supabase';
+import { downloadSupabaseStoragePathWithRateLimit } from '../../../utils/downloads/download';
 
 const Rows = ({ order, onActionClick }) => {
   const [expandedProducts, setExpandedProducts] = useState(false);
@@ -43,9 +46,111 @@ const Rows = ({ order, onActionClick }) => {
   const [addrCopied, setAddrCopied] = useState(false);
   const addrCopyTimerRef = useRef(null);
   const [isContactOpen, setIsContactOpen] = useState(false);
+  const [downloadingTaxDoc, setDownloadingTaxDoc] = useState(false);
 
   const openContact = () => setIsContactOpen(true);
   const closeContact = () => setIsContactOpen(false);
+
+  const normalizeBackendStatus = (value) => {
+    const statusMap = {
+      Pendiente: 'pending',
+      Aceptado: 'accepted',
+      Rechazado: 'rejected',
+      Cancelado: 'cancelled',
+      'En Transito': 'in_transit',
+      'En Tránsito': 'in_transit',
+      Entregado: 'delivered',
+      Pagado: 'paid',
+    };
+    if (!value) return '';
+    if (statusMap[value]) return statusMap[value];
+    return String(value).toLowerCase();
+  };
+
+  const canDownloadTaxDocument = (() => {
+    const normalized = normalizeBackendStatus(order?.status);
+    return normalized === 'in_transit' || normalized === 'delivered';
+  })();
+
+  const handleDownloadTaxDocument = async () => {
+    if (!canDownloadTaxDocument || downloadingTaxDoc) return;
+
+    setDownloadingTaxDoc(true);
+    try {
+      if (!order?.order_id) {
+        alert('Pedido inválido.');
+        return;
+      }
+
+      let supplierId = order?.supplier_id || null;
+      if (!supplierId) {
+        try {
+          const { data } = await supabase.auth.getUser();
+          supplierId = data?.user?.id || null;
+        } catch (_) {}
+      }
+
+      let query = supabase
+        .from('invoices_meta')
+        .select('path, filename, created_at')
+        .eq('order_id', order.order_id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (supplierId) {
+        query = query.eq('supplier_id', supplierId);
+      }
+
+      const { data, error } = await query.maybeSingle();
+      if (error) throw error;
+
+      let path = data?.path || null;
+      let filename = data?.filename || null;
+
+      // Fallback: si invoices_meta no tiene row (o insert fue bloqueado por RLS), intentar encontrar el archivo en Storage.
+      if (!path && supplierId) {
+        const folder = `${supplierId}/${order.order_id}`;
+        const { data: list, error: listErr } = await supabase.storage
+          .from('invoices')
+          .list(folder, {
+            limit: 1,
+            offset: 0,
+            sortBy: { column: 'created_at', order: 'desc' },
+          });
+
+        if (!listErr && Array.isArray(list) && list.length > 0) {
+          const file = list[0];
+          path = `${folder}/${file.name}`;
+          filename = filename || file.name;
+        }
+      }
+
+      if (!path) {
+        alert('No hay documento tributario subido para este pedido.');
+        return;
+      }
+
+      const finalFilename = filename || path.split('/')?.pop() || 'documento.pdf';
+      await downloadSupabaseStoragePathWithRateLimit({
+        supabase,
+        bucket: 'invoices',
+        path,
+        filename: finalFilename,
+        rateKey: `invoice:${path}`,
+      });
+    } catch (e) {
+      const msg = String(e?.message || e || '');
+      if (msg.startsWith('RATE_LIMITED:')) {
+        const seconds = msg.split(':')[1] || '';
+        alert(`Límite de descargas alcanzado. Intenta nuevamente en ${seconds}s.`);
+        return;
+      }
+      console.warn('[supplier][my-orders] download tax document failed', e?.message || e);
+      alert('No se pudo descargar el documento.');
+    } finally {
+      setDownloadingTaxDoc(false);
+    }
+  };
   
   // Preparar contexto para ContactModal
   const contactContext = {
@@ -731,7 +836,29 @@ const Rows = ({ order, onActionClick }) => {
           // document type may come at order level or per-item; prefer order.document_type
           const doc = (order?.document_type || order?.documentType || docTypeSummary) || null;
           if (!doc || doc === 'ninguno') return (<Typography variant="body2">—</Typography>);
-          if (doc === 'boleta') return (<Typography variant="body2">Boleta</Typography>);
+          if (doc === 'boleta') {
+            return (
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                <Typography variant="body2">Boleta</Typography>
+                <Tooltip
+                  title={canDownloadTaxDocument ? 'Descargar' : 'Descargar Factura: Disponible una vez cargues la factura al despachar'}
+                  arrow
+                >
+                  <span>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      aria-label="descargar documento tributario"
+                      onClick={handleDownloadTaxDocument}
+                      disabled={!canDownloadTaxDocument || downloadingTaxDoc}
+                    >
+                      <DownloadIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </Box>
+            );
+          }
           if (doc === 'factura') {
             const billingObj = getBillingObject();
             const billingFields = [
@@ -755,13 +882,31 @@ const Rows = ({ order, onActionClick }) => {
             ];
 
             return (
-              <InfoPopover
-                label="Factura"
-                linkText="Ver detalle"
-                title="Información de Facturación"
-                fields={billingFields}
-                popoverWidth={460}
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                <InfoPopover
+                  label="Factura"
+                  linkText="Ver detalle"
+                  title="Información de Facturación"
+                  fields={billingFields}
+                  popoverWidth={460}
+                />
+                <Tooltip
+                  title={canDownloadTaxDocument ? 'Descargar' : 'Descargar Factura: Disponible una vez cargues la factura al despachar'}
+                  arrow
+                >
+                  <span>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      aria-label="descargar documento tributario"
+                      onClick={handleDownloadTaxDocument}
+                      disabled={!canDownloadTaxDocument || downloadingTaxDoc}
+                    >
+                      <DownloadIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </Box>
             );
           }
           return (<Typography variant="body2">—</Typography>);
