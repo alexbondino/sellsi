@@ -37,7 +37,7 @@ export const CHECKOUT_STEPS = {
   SUCCESS: {
     id: 'success',
     name: 'Completado',
-    path: '/buyer/checkout/success',
+    path: '/checkout/success',
     order: 5,
     icon: 'CheckCircle',
     completed: false

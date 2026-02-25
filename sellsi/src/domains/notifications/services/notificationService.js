@@ -316,6 +316,61 @@ class NotificationService {
       return { error };
     }
   }
+
+  async notifyOfferCounterOffer(offerData, actor = 'supplier') {
+    try {
+      const normalizedActor = actor === 'buyer' ? 'buyer' : 'supplier';
+      const isFromBuyer = normalizedActor === 'buyer';
+      const targetUserId = isFromBuyer ? offerData.supplier_id : offerData.buyer_id;
+      const roleContext = isFromBuyer ? 'supplier' : 'buyer';
+      const contextSection = isFromBuyer ? 'supplier_offers' : 'buyer_offers';
+      const actorName = isFromBuyer
+        ? (offerData.buyer_name || offerData.buyer?.name || 'Comprador')
+        : (offerData.supplier_name || offerData.supplier?.name || 'Proveedor');
+      const productName = offerData.product_name || offerData.product?.name || 'Producto';
+      const offerId = offerData.offer_id || offerData.id;
+      const offeredPrice = offerData.offered_price || offerData.price;
+      const offeredQuantity = offerData.offered_quantity || offerData.quantity;
+
+      if (!targetUserId) return;
+
+      const result = await supabase.rpc('create_notification', {
+        p_payload: {
+          p_user_id: targetUserId,
+          p_supplier_id: offerData.supplier_id,
+          p_order_id: null,
+          p_product_id: offerData.product_id,
+          p_type: 'offer_countered',
+          p_order_status: null,
+          p_role_context: roleContext,
+          p_context_section: contextSection,
+          p_title: '🔁 Nueva contraoferta',
+          p_body: `${actorName} envió una contraoferta por ${productName}`,
+          p_message: `${actorName} envió una contraoferta`,
+          p_related_id: offerId,
+          p_action_url: roleContext === 'buyer' ? '/buyer/offers' : '/supplier/offers',
+          p_metadata: {
+            offer_id: offerId,
+            offered_price: offeredPrice,
+            offered_quantity: offeredQuantity,
+            next_turn: offerData.next_turn || null,
+            expires_at: offerData.expires_at || null,
+            actor: normalizedActor
+          }
+        }
+      });
+
+      if (result.error) {
+        console.error('[NotificationService] ERROR creating counteroffer notification:', result.error);
+        return { error: result.error };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('[NotificationService] ERROR creating counteroffer notification:', error);
+      return { error };
+    }
+  }
 }
 
 export const notificationService = new NotificationService();
@@ -325,3 +380,4 @@ export default notificationService;
 export const notifyOfferReceived = (offerData) => notificationService.notifyOfferReceived(offerData);
 export const notifyOfferResponse = (offerData, accepted) => notificationService.notifyOfferResponse(offerData, accepted);
 export const notifyOfferExpired = (offerData, role) => notificationService.notifyOfferExpired(offerData, role);
+export const notifyOfferCounterOffer = (offerData, actor) => notificationService.notifyOfferCounterOffer(offerData, actor);

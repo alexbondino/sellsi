@@ -231,6 +231,57 @@ describe('SupplierOffersList filtered empty vs global empty', () => {
     expect(within(rowExpired).getByText('Caducada')).toBeInTheDocument();
   });
 
+  it('muestra tiempo restante en pendientes incluso si faltan más de 48h', () => {
+    const future72h = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+    const offers = [
+      {
+        id: 'p-72h',
+        status: 'pending',
+        quantity: 1,
+        price: 1000,
+        product: { name: 'P-72h' },
+        buyer: { name: 'B' },
+        expires_at: future72h,
+      },
+    ];
+
+    render(
+      <Wrapper>
+        <SupplierOffersList offers={offers} setOffers={() => {}} />
+      </Wrapper>
+    );
+
+    const row = screen.getByText('P-72h').closest('tr');
+    const timeCell = within(row).getAllByRole('cell')[3];
+    expect(timeCell).toHaveTextContent(/\d+\s*h\s*\d*\s*m?/);
+    expect(timeCell).not.toHaveTextContent(/^\s*-\s*$/);
+  });
+
+  it('usa fallback con created_at cuando expires_at no viene informado', () => {
+    const createdNow = new Date().toISOString();
+    const offers = [
+      {
+        id: 'p-fallback-created',
+        status: 'pending',
+        quantity: 1,
+        price: 1000,
+        product: { name: 'P-Fallback' },
+        buyer: { name: 'B' },
+        created_at: createdNow,
+        expires_at: null,
+      },
+    ];
+
+    render(
+      <Wrapper>
+        <SupplierOffersList offers={offers} setOffers={() => {}} />
+      </Wrapper>
+    );
+
+    const row = screen.getByText('P-Fallback').closest('tr');
+    expect(within(row).getByText(/\d+\s*h/)).toBeInTheDocument();
+  });
+
   it('al hacer click en Aceptar abre la modal de acciones', async () => {
     const offers = [
       {
@@ -255,5 +306,42 @@ describe('SupplierOffersList filtered empty vs global empty', () => {
     // The SupplierOfferActionModals should open a dialog
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeInTheDocument();
+  });
+
+  it('muestra botón Contraoferta y abre su modal al hacer click', async () => {
+    const offers = [
+      {
+        id: 'o-counter',
+        status: 'pending',
+        quantity: 1,
+        price: 1000,
+        product: { name: 'CounterModal' },
+        buyer: { name: 'B' },
+      },
+    ];
+
+    render(
+      <Wrapper>
+        <SupplierOffersList offers={offers} setOffers={() => {}} />
+      </Wrapper>
+    );
+
+    const counterButton = screen.getByLabelText('Contraoferta');
+    fireEvent.click(counterButton);
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByText('Contraoferta')).toBeInTheDocument();
+    expect(screen.getByText(/Precio Unitario Original:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Intento de contraoferta:/i)).toBeInTheDocument();
+    expect(screen.getByText(/1\s+de\s+2/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Precio por unidad')).toBeInTheDocument();
+    expect(screen.getByLabelText('Cantidad')).toBeInTheDocument();
+
+    const quantityInput = screen.getByLabelText('Cantidad');
+    fireEvent.change(quantityInput, { target: { value: '0' } });
+    expect(
+      screen.getByRole('button', { name: 'Enviar Oferta' })
+    ).toBeDisabled();
   });
 });

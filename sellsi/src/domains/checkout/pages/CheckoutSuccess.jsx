@@ -10,7 +10,6 @@ import {
   Typography,
   Button,
   Stack,
-  Alert,
   CircularProgress,
   Chip,
 } from '@mui/material';
@@ -44,6 +43,18 @@ const CheckoutSuccess = () => {
   const [paymentData, setPaymentData] = useState(null);
   const [redirectTimeout, setRedirectTimeout] = useState(null);
 
+  const completedStatuses = new Set(['done', 'paid', 'completed', 'success']);
+  const pendingStatuses = new Set([
+    'pending',
+    'processing',
+    'in_progress',
+    'authorized',
+    'warning',
+    'continue',
+    'unknown',
+  ]);
+  const failedStatuses = new Set(['failed', 'rejected', 'cancelled', 'canceled', 'error']);
+
   // Obtener parámetros de la URL de retorno de Khipu
   const paymentId = searchParams.get('payment_id');
   const transactionId = searchParams.get('transaction_id');
@@ -65,11 +76,9 @@ const CheckoutSuccess = () => {
           paymentId
         );
 
-        if (!verification.success) {
-          throw new Error('Error al verificar el pago');
-        }
+        const normalizedStatus = String(verification.status || '').toLowerCase().trim() || 'unknown';
 
-        if (verification.status === 'done') {
+        if (completedStatuses.has(normalizedStatus)) {
           // Pago completado exitosamente
           setPaymentData({
             paymentId: verification.paymentId,
@@ -103,7 +112,7 @@ const CheckoutSuccess = () => {
             navigate('/buyer/orders');
           }, 3000);
           setRedirectTimeout(timeout);
-        } else if (verification.status === 'pending') {
+        } else if (pendingStatuses.has(normalizedStatus) || !verification.success) {
           // Pago aún pendiente - TAMBIÉN limpiar carrito para prevenir compras duplicadas
           // El webhook ya habrá procesado el pago cuando cambie a 'paid'
           setPaymentData({
@@ -128,9 +137,21 @@ const CheckoutSuccess = () => {
             console.warn('Error limpiando ofertas del carrito:', e);
           }
 
-          toast.info('Tu pago está siendo procesado...');
+          toast('Tu pago fue recibido y está siendo confirmado. Esto puede tardar unos minutos.', {
+            icon: '⏳',
+          });
+        } else if (failedStatuses.has(normalizedStatus)) {
+          throw new Error('El pago fue rechazado o cancelado');
         } else {
-          throw new Error('El pago no fue completado');
+          // Cualquier estado inesperado se trata como pendiente para evitar falsos negativos.
+          setPaymentData({
+            paymentId: verification.paymentId,
+            transactionId: verification.transactionId,
+            status: 'pending',
+          });
+          toast('Estamos validando tu pago. Revisa Mis Pedidos en unos minutos.', {
+            icon: '⏳',
+          });
         }
       } catch (error) {
         console.error('[CheckoutSuccess] Error verificando pago:', error);
@@ -172,7 +193,7 @@ const CheckoutSuccess = () => {
             p: 4,
             borderRadius: 3,
             textAlign: 'center',
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
+            background: '#ffffff',
           }}
         >
           <CircularProgress size={60} sx={{ mb: 3, color: 'primary.main' }} />
@@ -196,31 +217,31 @@ const CheckoutSuccess = () => {
             p: 4,
             borderRadius: 3,
             textAlign: 'center',
-            background: 'linear-gradient(135deg, #ffffff 0%, #ffebee 100%)',
+            background: '#ffffff',
           }}
         >
-          <Alert severity="error" sx={{ mb: 3 }}>
-            <Typography variant="body1" fontWeight="bold">
-              Error al verificar el pago
-            </Typography>
-            <Typography variant="body2">{verificationError}</Typography>
-          </Alert>
+          <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
+            No pudimos confirmar el pago inmediatamente
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            {verificationError || 'La confirmación puede tardar algunos minutos. Tu pago puede estar en proceso de validación.'}
+          </Typography>
 
           <Stack spacing={2}>
             <Button
               variant="contained"
-              onClick={handleGoHome}
+              onClick={handleViewOrders}
               sx={{ borderRadius: 2 }}
             >
-              Volver al Inicio
+              Ver Mis Pedidos
             </Button>
 
             <Button
               variant="outlined"
-              onClick={() => navigate('/buyer/cart')}
+              onClick={() => window.location.reload()}
               sx={{ borderRadius: 2 }}
             >
-              Volver al Carrito
+              Reintentar verificación
             </Button>
           </Stack>
         </Paper>
@@ -241,10 +262,7 @@ const CheckoutSuccess = () => {
             p: 4,
             borderRadius: 3,
             textAlign: 'center',
-            background:
-              paymentData?.status === 'completed'
-                ? 'linear-gradient(135deg, #ffffff 0%, #e8f5e8 100%)'
-                : 'linear-gradient(135deg, #ffffff 0%, #fff3e0 100%)',
+            background: '#ffffff',
           }}
         >
           {/* Icono de estado */}
@@ -252,7 +270,7 @@ const CheckoutSuccess = () => {
             {paymentData?.status === 'completed' ? (
               <CheckCircleIcon sx={{ fontSize: 80, color: 'success.main' }} />
             ) : (
-              <CircularProgress size={60} sx={{ color: 'warning.main' }} />
+              <CircularProgress size={60} sx={{ color: 'primary.main' }} />
             )}
           </Box>
 
@@ -260,14 +278,14 @@ const CheckoutSuccess = () => {
           <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>
             {paymentData?.status === 'completed'
               ? '¡Pago Completado!'
-              : 'Pago en Proceso'}
+              : 'Pago en Validación'}
           </Typography>
 
           {/* Descripción */}
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
             {paymentData?.status === 'completed'
               ? 'Tu pago ha sido procesado exitosamente. Recibirás un email de confirmación en breve.'
-              : 'Tu pago está siendo procesado. Te notificaremos cuando se complete.'}
+              : 'Tu transferencia fue recibida y está siendo validada por Khipu. Puedes revisar el estado en Mis Pedidos.'}
           </Typography>
 
           {/* Información del pago */}
@@ -320,14 +338,23 @@ const CheckoutSuccess = () => {
                       label={
                         paymentData.status === 'completed'
                           ? 'Completado'
-                          : 'Pendiente'
+                          : 'En validación'
                       }
                       color={
                         paymentData.status === 'completed'
                           ? 'success'
-                          : 'warning'
+                          : 'primary'
                       }
-                      size="small"
+                      variant="filled"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        letterSpacing: '0.03em',
+                        px: 1.5,
+                        height: 32,
+                        minWidth: 120,
+                        borderRadius: '8px',
+                      }}
                     />
                   </Box>
                 </Box>
@@ -337,21 +364,19 @@ const CheckoutSuccess = () => {
 
           {/* Botones de acción */}
           <Stack spacing={2}>
-            {paymentData?.status === 'completed' && (
-              <Button
-                variant="contained"
-                onClick={handleViewOrders}
-                startIcon={<ReceiptIcon />}
-                sx={{
-                  py: 1.5,
-                  borderRadius: 2,
-                  fontWeight: 'bold',
-                  textTransform: 'none',
-                }}
-              >
-                Ver Mis Pedidos
-              </Button>
-            )}
+            <Button
+              variant="contained"
+              onClick={handleViewOrders}
+              startIcon={<ReceiptIcon />}
+              sx={{
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: 'bold',
+                textTransform: 'none',
+              }}
+            >
+              Ver Mis Pedidos
+            </Button>
 
             <Button
               variant="outlined"

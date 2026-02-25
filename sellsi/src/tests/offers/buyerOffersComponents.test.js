@@ -283,7 +283,13 @@ describe('OffersList Component', () => {
 
   it('debería mostrar acciones correctas según el estado de la oferta', () => {
     const offers = [
-      { ...mockOfferData.validOffer, id: '1', status: 'pending', product: { name: 'Pending Product' } },
+      {
+        ...mockOfferData.validOffer,
+        id: '1',
+        status: 'pending',
+        current_turn: 'buyer',
+        product: { name: 'Pending Product' }
+      },
       { ...mockOfferData.validOffer, id: '2', status: 'approved', product: { name: 'Approved Product' } },
       { ...mockOfferData.validOffer, id: '3', status: 'rejected', product: { name: 'Rejected Product' } },
       { ...mockOfferData.validOffer, id: '4', status: 'paid', product: { name: 'Paid Product' } }
@@ -291,9 +297,13 @@ describe('OffersList Component', () => {
     
     renderWith(React.createElement(OffersList, { ...defaultProps, offers }));
     
-    // Ofertas pendientes deberían tener botón de cancelar
+    // Solo approved debería exponer botón cancelar (pending con turno buyer no)
     const cancelButtons = screen.getAllByLabelText('Cancelar Oferta');
-    expect(cancelButtons).toHaveLength(2); // pending y approved
+    expect(cancelButtons).toHaveLength(1);
+
+    // Ofertas pendientes deberían tener botón de contraoferta
+    const counterButtons = screen.getAllByLabelText('Contraoferta');
+    expect(counterButtons).toHaveLength(1); // solo pending
     
     // Ofertas aprobadas deberían tener botón de agregar al carrito
     const cartButtons = screen.getAllByLabelText('Agregar al carrito');
@@ -302,6 +312,29 @@ describe('OffersList Component', () => {
     // Ofertas rechazadas y pagadas deberían tener botón de limpiar
     const deleteButtons = screen.getAllByLabelText('Limpiar esta oferta');
     expect(deleteButtons).toHaveLength(2); // rejected y paid
+  });
+
+  it('debería abrir modal de contraoferta desde acción en oferta pendiente', async () => {
+    const offers = [
+      {
+        ...mockOfferData.validOffer,
+        id: 'counter-1',
+        status: 'pending',
+        current_turn: 'buyer',
+        product: { name: 'Counter Buyer Product', stock: 3000, previousPrice: 1200 },
+        quantity: 2,
+        price: 1000,
+      },
+    ];
+
+    renderWith(React.createElement(OffersList, { ...defaultProps, offers }));
+
+    fireEvent.click(screen.getByLabelText('Contraoferta'));
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Contraoferta')).toBeInTheDocument();
+    expect(screen.getByLabelText('Precio por unidad')).toBeInTheDocument();
+    expect(screen.getByLabelText('Cantidad')).toBeInTheDocument();
   });
 
   it('debería llamar función correcta al confirmar la cancelación desde el diálogo', async () => {

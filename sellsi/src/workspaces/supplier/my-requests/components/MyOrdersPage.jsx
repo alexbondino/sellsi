@@ -30,6 +30,7 @@ import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing'
 import { SupplierErrorBoundary } from '../../error-boundary'
 import { supabase } from '../../../../services/supabase'
 import { uploadInvoicePDF } from '../../../../services/storage/invoiceStorageService'
+import { downloadSupabaseStoragePathWithRateLimit } from '../../../../shared/utils/downloads/download'
 import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton'
 import { validateTaxPdf } from '../utils/pdfValidation'
 
@@ -303,7 +304,120 @@ const MyOrdersPage = () => {
   }, [authResolved, supplierId, initializeWithSupplier, showBanner])
 
   // Maneja la apertura del modal para una acción específica de un pedido
+  const handleDownloadTaxDocument = async (order) => {
+    const statusMap = {
+      Pendiente: 'pending',
+      Aceptado: 'accepted',
+      Rechazado: 'rejected',
+      Cancelado: 'cancelled',
+      'En Transito': 'in_transit',
+      'En Tránsito': 'in_transit',
+      Entregado: 'delivered',
+      Pagado: 'paid',
+    }
+
+    const normalizedStatus = statusMap[order?.status] || String(order?.status || '').toLowerCase()
+    if (!(normalizedStatus === 'in_transit' || normalizedStatus === 'delivered')) {
+      showBanner({
+        message: 'La factura está disponible desde “En Tránsito” o “Entregado”.',
+        severity: 'info',
+        duration: 3500,
+      })
+      return
+    }
+
+    try {
+      if (!order?.order_id) {
+        showBanner({ message: 'Pedido inválido.', severity: 'error', duration: 4000 })
+        return
+      }
+
+      let resolvedSupplierId = order?.supplier_id || supplierId || null
+      if (!resolvedSupplierId) {
+        try {
+          const { data } = await supabase.auth.getUser()
+          resolvedSupplierId = data?.user?.id || null
+        } catch (_) {}
+      }
+
+      let query = supabase
+        .from('invoices_meta')
+        .select('path, filename, created_at')
+        .eq('order_id', order.order_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (resolvedSupplierId) {
+        query = query.eq('supplier_id', resolvedSupplierId)
+      }
+
+      const { data, error } = await query.maybeSingle()
+      if (error) throw error
+
+      let path = data?.path || null
+      let filename = data?.filename || null
+
+      if (!path && resolvedSupplierId) {
+        const folder = `${resolvedSupplierId}/${order.order_id}`
+        const { data: list, error: listErr } = await supabase.storage
+          .from('invoices')
+          .list(folder, {
+            limit: 1,
+            offset: 0,
+            sortBy: { column: 'created_at', order: 'desc' },
+          })
+
+        if (!listErr && Array.isArray(list) && list.length > 0) {
+          const file = list[0]
+          path = `${folder}/${file.name}`
+          filename = filename || file.name
+        }
+      }
+
+      if (!path) {
+        showBanner({
+          message: 'No hay documento tributario subido para este pedido.',
+          severity: 'warning',
+          duration: 4500,
+        })
+        return
+      }
+
+      const finalFilename = filename || path.split('/')?.pop() || 'documento.pdf'
+      await downloadSupabaseStoragePathWithRateLimit({
+        supabase,
+        bucket: 'invoices',
+        path,
+        filename: finalFilename,
+        rateKey: `invoice:${path}`,
+      })
+    } catch (e) {
+      const msg = String(e?.message || e || '')
+      if (msg.startsWith('RATE_LIMITED:')) {
+        const seconds = msg.split(':')[1] || ''
+        showBanner({
+          message: `Límite de descargas alcanzado. Intenta nuevamente en ${seconds}s.`,
+          severity: 'warning',
+          duration: 4500,
+        })
+        return
+      }
+
+      console.warn('[supplier][my-orders][mobile] download tax document failed', e?.message || e)
+      showBanner({
+        message: 'No se pudo descargar el documento.',
+        severity: 'error',
+        duration: 4500,
+      })
+    }
+  }
+
   const handleActionClick = (order, actionType) => {
+    if (actionType === 'download_tax_document') {
+      handleDownloadTaxDocument(order)
+      return
+    }
+
     setModalState({
       isOpen: true,
       type: actionType,

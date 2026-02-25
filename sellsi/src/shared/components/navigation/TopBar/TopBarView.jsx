@@ -12,6 +12,8 @@ import {
   MenuItem,
   Menu,
   ListItemIcon,
+  Avatar,
+  Typography,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
@@ -21,6 +23,136 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import { NotificationBell } from '../../../../domains/notifications';
 import { MobileMenu } from './components/MobileMenu';
 import { AuthModals } from './components/AuthModals';
+import { ProfileAvatarButton } from './components/ProfileAvatarButton';
+
+// Constantes de módulo: evitan nuevos objetos en cada render
+const PROFILE_MENU_PAPER_PROPS = {
+  elevation: 4,
+  sx: {
+    minWidth: 240,
+    borderRadius: 2,
+    overflow: 'hidden',
+    backgroundColor: '#1E1E1E',
+    color: '#FFFFFF',
+    border: '1px solid rgba(255,255,255,0.1)',
+    '& .MuiMenuItem-root': {
+      color: '#FFFFFF',
+      px: 2,
+      py: 1.25,
+      gap: 1.5,
+      '&:hover': { backgroundColor: 'rgba(255,255,255,0.08)' },
+    },
+    '& .MuiSvgIcon-root': { color: 'rgba(255,255,255,0.7)' },
+    '& .MuiListItemIcon-root': { minWidth: 'unset' },
+  },
+};
+
+const PROFILE_MENU_LIST_PROPS = {
+  'aria-label': 'Opciones de perfil',
+  'aria-labelledby': 'topbar-profile-button',
+  disablePadding: true,
+};
+
+const PROFILE_HEADER_SX = {
+  px: 2,
+  py: 1.75,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 1.5,
+  borderBottom: '1px solid rgba(255,255,255,0.1)',
+  backgroundColor: 'rgba(255,255,255,0.04)',
+};
+
+const PROFILE_AVATAR_SX = {
+  width: 40,
+  height: 40,
+  bgcolor: '#2E52B2',
+  fontSize: '1rem',
+  fontWeight: 700,
+  flexShrink: 0,
+};
+
+const PROFILE_NAME_SX = {
+  color: '#FFFFFF',
+  fontWeight: 600,
+  lineHeight: 1.3,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  maxWidth: 170,
+};
+
+const PROFILE_EMAIL_SX = {
+  color: 'rgba(255,255,255,0.55)',
+  lineHeight: 1.3,
+  display: 'block',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  maxWidth: 170,
+};
+
+const PROFILE_OPTIONS_BOX_SX = { py: 0.5 };
+
+const ProfileMenuPopover = memo(function ProfileMenuPopover({
+  profileAnchor,
+  onCloseProfileMenu,
+  onGoToProfile,
+  onLogout,
+  userName,
+  userEmail,
+  userLogoUrl,
+}) {
+  return (
+    <Menu
+      anchorEl={profileAnchor}
+      open={Boolean(profileAnchor)}
+      onClose={onCloseProfileMenu}
+      disableScrollLock
+      aria-label="Menú de perfil"
+      MenuListProps={PROFILE_MENU_LIST_PROPS}
+      PaperProps={PROFILE_MENU_PAPER_PROPS}
+    >
+      <Box sx={PROFILE_HEADER_SX}>
+        <Avatar src={userLogoUrl || undefined} sx={PROFILE_AVATAR_SX}>
+          {userName?.charAt(0)?.toUpperCase() || '?'}
+        </Avatar>
+        <Box sx={{ minWidth: 0 }}>
+          {userName && (
+            <Typography variant="body2" sx={PROFILE_NAME_SX}>
+              {userName}
+            </Typography>
+          )}
+          {userEmail && (
+            <Typography variant="caption" sx={PROFILE_EMAIL_SX}>
+              {userEmail}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+
+      <Box sx={PROFILE_OPTIONS_BOX_SX}>
+        <MenuItem
+          onClick={() => {
+            onGoToProfile();
+            onCloseProfileMenu();
+          }}
+        >
+          <ListItemIcon>
+            <PersonIcon fontSize="small" />
+          </ListItemIcon>
+          Mi Perfil
+        </MenuItem>
+        <MenuItem onClick={onLogout}>
+          <ListItemIcon>
+            <LogoutIcon fontSize="small" />
+          </ListItemIcon>
+          Cerrar sesión
+        </MenuItem>
+      </Box>
+    </Menu>
+  );
+});
 
 export const TopBarView = memo(function TopBarView({
   isLoggedIn,
@@ -34,6 +166,7 @@ export const TopBarView = memo(function TopBarView({
   profileAnchor,
   onOpenProfileMenu,
   onCloseProfileMenu,
+  isProfileMenuOpen,
   paddingX,
   // Search
   mobileSearchInputProps,
@@ -47,6 +180,9 @@ export const TopBarView = memo(function TopBarView({
   onLogoClick,
   onGoToProfile,
   onLogout,
+  userName,
+  userEmail,
+  userLogoUrl,
   // Auth modals state/handlers
   openLoginModal,
   openRegisterModal,
@@ -54,7 +190,8 @@ export const TopBarView = memo(function TopBarView({
   onCloseRegisterModal,
   onLoginToRegister,
   // Children nodes pre-built
-  profileMenuButton,
+  desktopNotifNode,
+  cartButtonNode,
 }) {
   return (
     <>
@@ -197,6 +334,16 @@ export const TopBarView = memo(function TopBarView({
             role="group"
           >
             {desktopRightContent}
+            {isLoggedIn && desktopNotifNode}
+            {isLoggedIn && cartButtonNode}
+            {isLoggedIn && (
+              <ProfileAvatarButton
+                id="topbar-profile-button"
+                logoUrl={userLogoUrl}
+                onClick={onOpenProfileMenu}
+                expanded={isProfileMenuOpen}
+              />
+            )}
           </Box>
 
           <Box
@@ -260,49 +407,15 @@ export const TopBarView = memo(function TopBarView({
         labelledBy="topbar-mobile-menu-button"
       />
 
-      <Menu
-        anchorEl={profileAnchor}
-        open={Boolean(profileAnchor)}
-        onClose={onCloseProfileMenu}
-        disableScrollLock
-        aria-label="Menú de perfil"
-        MenuListProps={{
-          'aria-label': 'Opciones de perfil',
-          'aria-labelledby': 'topbar-profile-button',
-        }}
-        PaperProps={{
-          sx: {
-            backgroundColor: '#2C2C2C',
-            color: '#FFFFFF',
-            '& .MuiMenuItem-root': {
-              color: '#FFFFFF',
-              '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
-            },
-            '& .MuiSvgIcon-root': { color: '#FFFFFF' },
-            '& .MuiListItemIcon-root': {
-              minWidth: 36,
-            },
-          },
-        }}
-      >
-        <MenuItem
-          onClick={() => {
-            onGoToProfile();
-            onCloseProfileMenu();
-          }}
-        >
-          <ListItemIcon>
-            <PersonIcon fontSize="small" />
-          </ListItemIcon>
-          Mi Perfil
-        </MenuItem>
-        <MenuItem onClick={onLogout}>
-          <ListItemIcon>
-            <LogoutIcon fontSize="small" />
-          </ListItemIcon>
-          Cerrar sesión
-        </MenuItem>
-      </Menu>
+      <ProfileMenuPopover
+        profileAnchor={profileAnchor}
+        onCloseProfileMenu={onCloseProfileMenu}
+        onGoToProfile={onGoToProfile}
+        onLogout={onLogout}
+        userName={userName}
+        userEmail={userEmail}
+        userLogoUrl={userLogoUrl}
+      />
 
       <AuthModals
         openLogin={openLoginModal}

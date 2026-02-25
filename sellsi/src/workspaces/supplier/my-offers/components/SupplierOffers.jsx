@@ -17,6 +17,7 @@ const SupplierOffers = () => {
     acceptOffer,
     rejectOffer,
     deleteOffer,
+    submitCounterOffer,
     loading,
     initializing,
   } = useSupplierOffers();
@@ -58,6 +59,7 @@ const SupplierOffers = () => {
             acceptOffer={acceptOffer}
             rejectOffer={rejectOffer}
             deleteOffer={deleteOffer}
+            submitCounterOffer={submitCounterOffer}
             loading={loading}
             initializing={initializing}
           />

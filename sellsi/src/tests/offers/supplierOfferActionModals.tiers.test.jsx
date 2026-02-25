@@ -49,7 +49,7 @@ describe('SupplierOfferActionModals - Price Tier Logic', () => {
     expect(within(modal).queryByTestId('warning-amber-icon')).toBeNull();
     const stockLine = within(modal).getByTestId('stock-line');
     expect(stockLine).toHaveTextContent('Stock disponible:');
-    expect(stockLine).toHaveTextContent('7000');
+    expect(stockLine).toHaveTextContent('7.000');
   });
 
   test('cantidad cae en un tier intermedio (>=50 <150) usa precio de ese tier', () => {
@@ -66,7 +66,7 @@ describe('SupplierOfferActionModals - Price Tier Logic', () => {
     expect(modal).toBeInTheDocument();
     // Verify stock is present (regression check)
     const stockLine = within(modal).getByTestId('stock-line');
-    expect(stockLine).toHaveTextContent('7000');
+    expect(stockLine).toHaveTextContent('7.000');
     const line = within(modal).getByTestId('original-unit-price-line');
     expect(line).toHaveTextContent('$900');
     expect(within(modal).queryByTestId('warning-amber-icon')).toBeNull();
@@ -86,7 +86,7 @@ describe('SupplierOfferActionModals - Price Tier Logic', () => {
     expect(modal).toBeInTheDocument();
     // Verify stock is present (regression check)
     const stockLine = within(modal).getByTestId('stock-line');
-    expect(stockLine).toHaveTextContent('7000');
+    expect(stockLine).toHaveTextContent('7.000');
     const line = within(modal).getByTestId('original-unit-price-line');
     expect(line).toHaveTextContent('$800');
     expect(within(modal).queryByTestId('warning-amber-icon')).toBeNull();

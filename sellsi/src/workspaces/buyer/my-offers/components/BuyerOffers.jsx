@@ -9,7 +9,7 @@ import { useBuyerOffers } from '../hooks/useBuyerOffers';
 
 const BuyerOffers = () => {
   const isMobile = useMediaQuery(dashboardThemeCore.breakpoints.down('md'));
-  const { offers, loading, error, cancelOffer, deleteOffer } = useBuyerOffers();
+  const { offers, loading, error, cancelOffer, deleteOffer, submitCounterOffer } = useBuyerOffers();
 
   return (
     <ThemeProvider theme={dashboardThemeCore}>
@@ -48,6 +48,7 @@ const BuyerOffers = () => {
             error={error}
             cancelOffer={cancelOffer}
             deleteOffer={deleteOffer}
+            submitCounterOffer={submitCounterOffer}
           />
         </Container>
       </Box>

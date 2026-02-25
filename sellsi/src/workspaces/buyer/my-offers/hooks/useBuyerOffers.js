@@ -8,7 +8,8 @@ export const useBuyerOffers = () => {
     error, 
     fetchBuyerOffers,
     cancelOffer,
-    deleteOffer 
+    deleteOffer,
+    submitCounterOffer
   } = useOfferStore();
 
   React.useEffect(() => {
@@ -90,7 +91,8 @@ export const useBuyerOffers = () => {
     loading, 
     error,
     cancelOffer,
-    deleteOffer
+    deleteOffer,
+    submitCounterOffer
   };
 };
 
