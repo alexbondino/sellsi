@@ -84,6 +84,8 @@ const MobileOrderCard = ({ order, onAction }) => {
 
   const status = normalizeStatus(order.status)
   const statusInfo = getStatusConfig(status)
+  const canDownloadTaxDocument =
+    status === 'in_transit' || status === 'delivered'
 
   // Normalizar billing (puede venir como billing_info, billingAddress, billing_address, billing)
   const getBillingInfo = () => {
@@ -445,6 +447,17 @@ const MobileOrderCard = ({ order, onAction }) => {
         )}
         {(status === 'dispatched' || status === 'in_transit') && (
           <>
+            {canDownloadTaxDocument && (
+              <Button
+                variant="outlined"
+                color="primary"
+                fullWidth
+                size="large"
+                onClick={() => onAction('download_tax_document', order)}
+              >
+                Descargar Factura
+              </Button>
+            )}
             <Button
               variant="contained"
               color="success"
@@ -475,7 +488,32 @@ const MobileOrderCard = ({ order, onAction }) => {
             </Box>
           </>
         )}
-        {(status === 'delivered' || status === 'paid') && (
+        {status === 'delivered' && (
+          <>
+            {canDownloadTaxDocument && (
+              <Button
+                variant="outlined"
+                color="primary"
+                fullWidth
+                size="large"
+                onClick={() => onAction('download_tax_document', order)}
+              >
+                Descargar Factura
+              </Button>
+            )}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
+              <IconButton
+                color="primary"
+                onClick={() => setContactModalOpen(true)}
+                aria-label="Ayuda"
+              >
+                <HelpOutlineIcon />
+              </IconButton>
+            </Box>
+          </>
+        )}
+
+        {status === 'paid' && (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
             <IconButton
               color="primary"

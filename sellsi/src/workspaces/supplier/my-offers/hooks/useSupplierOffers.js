@@ -11,6 +11,7 @@ export const useSupplierOffers = () => {
     acceptOffer,
     rejectOffer,
     deleteOffer,
+    submitCounterOffer,
   } = useOfferStore();
 
   const [localOffers, setLocalOffers] = useState([]);
@@ -228,6 +229,7 @@ export const useSupplierOffers = () => {
     acceptOffer,
     rejectOffer,
     deleteOffer,
+    submitCounterOffer,
     initializing,
   };
 };

@@ -9,6 +9,7 @@ const TYPE_ICON_MAP = {
   supplier_part_status: '🔄',
   order_status: '🔄',
   offer_received: '💬',
+  offer_countered: '🔁',
   offer_accepted: '✅',
   offer_rejected: '❌',
   offer_expired: '⏰',

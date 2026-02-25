@@ -55,6 +55,25 @@ const formatCLP = num => {
   return '$' + new Intl.NumberFormat('es-CL').format(Math.round(num));
 };
 
+const parseDateToMs = value => {
+  if (!value) return null;
+  const ms = new Date(value).getTime();
+  return Number.isNaN(ms) ? null : ms;
+};
+
+const getPendingRemainingMs = offer => {
+  const nowMs = Date.now();
+  const expiresMs = parseDateToMs(offer?.expires_at);
+  if (expiresMs != null) return expiresMs - nowMs;
+
+  const createdMs = parseDateToMs(offer?.created_at);
+  if (createdMs != null) {
+    return createdMs + 48 * 60 * 60 * 1000 - nowMs;
+  }
+
+  return null;
+};
+
 const SafeChip = ({ onClick, ...rest }) => (
   <Chip
     {...rest}
@@ -68,6 +87,7 @@ const SupplierOffersList = ({
   acceptOffer,
   rejectOffer,
   deleteOffer,
+  submitCounterOffer,
   loading,
   initializing = false,
 }) => {
@@ -102,6 +122,13 @@ const SupplierOffersList = ({
       prev.map(o => (o.id === id ? { ...o, status: nextStatus } : o))
     );
   const removeOffer = id => setOffers(prev => prev.filter(o => o.id !== id));
+  const getCurrentTurn = offer => offer?.current_turn || 'supplier';
+  const getSupplierCounterCount = offer =>
+    Number(offer?.supplier_counteroffers_count || 0);
+  const canSupplierAct = offer =>
+    offer?.status === 'pending' && getCurrentTurn(offer) === 'supplier';
+  const canSupplierCounterOffer = offer =>
+    canSupplierAct(offer) && getSupplierCounterCount(offer) < 2;
 
   const openModal = (mode, offer) => {
     // 1. Enriquecimiento rápido sin llamadas externas (sin capturar offered price como original)
@@ -231,11 +258,38 @@ const SupplierOffersList = ({
     }
   };
 
+  const handleCounterOffer = async (offer, counterOfferData) => {
+    try {
+      await submitCounterOffer?.({
+        offerId: offer.id,
+        actor: 'supplier',
+        offeredPrice: counterOfferData?.offered_price,
+        offeredQuantity: counterOfferData?.offered_quantity,
+        message: counterOfferData?.message || null,
+      });
+      closeModal();
+      showBanner({
+        message: `Contraoferta enviada para ${offer.product?.name || 'el producto'}.`,
+        severity: 'success',
+        duration: 3200,
+      });
+    } catch (error) {
+      showBanner({
+        message: error?.message || 'No fue posible enviar la contraoferta',
+        severity: 'error',
+        duration: 4000,
+      });
+    }
+  };
+
   // Handler para acciones desde MobileOfferCard
   const handleMobileAction = (action, fullOffer) => {
     switch (action) {
       case 'accept':
         openModal('accept', fullOffer);
+        break;
+      case 'counteroffer':
+        openModal('counteroffer', fullOffer);
         break;
       case 'reject':
         openModal('reject', fullOffer);
@@ -429,6 +483,8 @@ const SupplierOffersList = ({
                     buyer_name: buyerName,
                     purchase_deadline: o.purchase_deadline,
                     expires_at: o.expires_at,
+                    current_turn: o.current_turn,
+                    supplier_counteroffers_count: o.supplier_counteroffers_count,
                   }}
                   onAction={handleMobileAction}
                 />
@@ -525,7 +581,7 @@ const SupplierOffersList = ({
                             sx={{ color: 'common.white' }}
                             display="block"
                           >
-                            Acepta o rechaza ofertas pendientes. <br></br>Cuando
+                            Acepta, contraoferta o rechaza ofertas pendientes. <br></br>Cuando
                             una oferta queda aceptada o rechazada puedes limpiarla
                             (eliminarla) con el basurero.
                           </Typography>
@@ -557,15 +613,9 @@ const SupplierOffersList = ({
             <TableBody>
               {filtered.map(o => {
               const total = o.quantity * o.price;
-              // calcular tiempo restante si existe expires_at
-              const remainingMs = o.expires_at
-                ? new Date(o.expires_at).getTime() - Date.now()
-                : null;
-              const remainingHours = remainingMs
-                ? remainingMs / (1000 * 60 * 60)
-                : null;
+              const remainingMs = o.status === 'pending' ? getPendingRemainingMs(o) : null;
               const formatRemaining = () => {
-                if (!remainingMs) return null;
+                if (remainingMs == null) return null;
                 if (remainingMs <= 0) return 'Caducada';
                 const hrs = Math.floor(remainingMs / (1000 * 60 * 60));
                 const mins = Math.floor(
@@ -594,10 +644,8 @@ const SupplierOffersList = ({
                     <Typography variant="body2">{o.buyer?.name}</Typography>
                   </TableCell>
                   <TableCell>
-                    {o.status === 'pending' &&
-                    remainingHours != null &&
-                    remainingHours < 48 ? (
-                      <Typography>{formatRemaining()}</Typography>
+                    {o.status === 'pending' ? (
+                      <Typography>{formatRemaining() || '-'}</Typography>
                     ) : (
                       <Typography color="text.secondary">-</Typography>
                     )}
@@ -629,7 +677,7 @@ const SupplierOffersList = ({
                     })()}
                   </TableCell>
                   <TableCell>
-                    {o.status === 'pending' && (
+                    {canSupplierAct(o) && (
                       <ActionIconButton
                         tooltip="Aceptar Oferta"
                         variant="success"
@@ -639,7 +687,17 @@ const SupplierOffersList = ({
                         <CheckIcon fontSize="small" />
                       </ActionIconButton>
                     )}
-                    {o.status === 'pending' && (
+                    {canSupplierCounterOffer(o) && (
+                      <ActionIconButton
+                        tooltip="Contraoferta"
+                        variant="primary"
+                        onClick={() => openModal('counteroffer', o)}
+                        ariaLabel="Contraoferta"
+                      >
+                        <LocalOfferIcon fontSize="small" />
+                      </ActionIconButton>
+                    )}
+                    {canSupplierAct(o) && (
                       <ActionIconButton
                         tooltip="Rechazar Oferta"
                         variant="error"
@@ -678,6 +736,7 @@ const SupplierOffersList = ({
         offer={modalState.offer}
         onClose={closeModal}
         onAccept={handleAccept}
+        onCounterOffer={handleCounterOffer}
         onReject={handleReject}
         onCleanup={handleCleanup}
         isMobile={isMobile}

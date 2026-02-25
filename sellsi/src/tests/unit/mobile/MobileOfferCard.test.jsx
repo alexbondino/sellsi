@@ -258,6 +258,64 @@ describe('MobileOfferCard Component', () => {
       );
 
       expect(screen.getByText('Rechazar')).toBeInTheDocument();
+      expect(screen.getByText('Contraoferta')).toBeInTheDocument();
+    });
+
+    it('debería mostrar tiempo restante para pending con más de 48h', () => {
+      jest.useFakeTimers();
+      try {
+        jest.setSystemTime(new Date('2026-01-01T12:00:00.000Z'));
+        const pendingSupplierOffer = {
+          ...mockSupplierOffer,
+          status: 'pending',
+          expires_at: '2026-01-04T12:00:00.000Z',
+        };
+
+        render(
+          <TestWrapper>
+            <MobileOfferCard
+              variant="supplier"
+              data={pendingSupplierOffer}
+              fullOffer={pendingSupplierOffer}
+              onAction={mockOnAction}
+              isMobile={true}
+            />
+          </TestWrapper>
+        );
+
+        expect(screen.getByText(/72h\s*0m/)).toBeInTheDocument();
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('debería usar fallback de created_at cuando expires_at no existe en pending', () => {
+      jest.useFakeTimers();
+      try {
+        jest.setSystemTime(new Date('2026-01-01T12:00:00.000Z'));
+        const pendingSupplierOffer = {
+          ...mockSupplierOffer,
+          status: 'pending',
+          expires_at: null,
+          created_at: '2026-01-01T11:00:00.000Z',
+        };
+
+        render(
+          <TestWrapper>
+            <MobileOfferCard
+              variant="supplier"
+              data={pendingSupplierOffer}
+              fullOffer={pendingSupplierOffer}
+              onAction={mockOnAction}
+              isMobile={true}
+            />
+          </TestWrapper>
+        );
+
+        expect(screen.getByText(/47h\s*0m/)).toBeInTheDocument();
+      } finally {
+        jest.useRealTimers();
+      }
     });
   });
 

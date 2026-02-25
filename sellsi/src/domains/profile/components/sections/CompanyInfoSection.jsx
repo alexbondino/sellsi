@@ -148,17 +148,19 @@ const CompanyInfoSection = ({
             />
           </Box>
 
-          {/* Tipo de Documento */}
-          <Box>
-            <TaxDocumentSelector
-              documentTypes={formData.documentTypes || []}
-              onDocumentTypesChange={value =>
-                onFieldChange('documentTypes', value)
-              }
-              showTitle={false}
-              size="small"
-            />
-          </Box>
+          {/* Tipo de Documento - Solo suppliers */}
+          {formData.role === 'supplier' && (
+            <Box>
+              <TaxDocumentSelector
+                documentTypes={formData.documentTypes || []}
+                onDocumentTypesChange={value =>
+                  onFieldChange('documentTypes', value)
+                }
+                showTitle={false}
+                size="small"
+              />
+            </Box>
+          )}
 
           {/* Compra Mínima - Solo suppliers */}
           {formData.role === 'supplier' && (
@@ -302,19 +304,21 @@ const CompanyInfoSection = ({
             </Typography>
           </Box>
 
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              Documentos Tributarios
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
-            >
-              Selecciona el tipo de documento que emitirás en tus ventas. Esta
-              configuración no limita tu operación y puede modificarse en
-              cualquier momento.
-            </Typography>
-          </Box>
+          {formData.role === 'supplier' && (
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                Documentos Tributarios
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+              >
+                Selecciona el tipo de documento que emitirás en tus ventas. Esta
+                configuración no limita tu operación y puede modificarse en
+                cualquier momento.
+              </Typography>
+            </Box>
+          )}
 
           {formData.role === 'supplier' && (
             <>

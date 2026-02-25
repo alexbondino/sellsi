@@ -18,6 +18,7 @@ import {
   runValidateOfferPrice,
   notifyOfferReceivedSafe,
   notifyOfferResponseSafe,
+  notifyOfferCounterOfferSafe,
   pruneInvalidOfferCartItems
 } from './offers';
 
@@ -445,6 +446,88 @@ export const useOfferStore = create((set, get) => ({
     } catch (error) {
       set({ error: reason ? ('Error al rechazar oferta: ' + error.message) : null, loading: false });
       if (reason) throw error; // Sólo propagar si había razón explícita
+    }
+  },
+
+  submitCounterOffer: async ({ offerId, actor, offeredPrice, offeredQuantity, message = null }) => {
+    set({ loading: true, error: null });
+
+    try {
+      const normalizedActor = actor === 'buyer' ? 'buyer' : 'supplier';
+      const currentState = get();
+      const offerToCounter =
+        currentState.buyerOffers.find(offer => offer.id === offerId) ||
+        currentState.supplierOffers.find(offer => offer.id === offerId) ||
+        null;
+      const normalizedPrice = Math.round(Number(offeredPrice || 0));
+      const normalizedQuantity = Math.round(Number(offeredQuantity || 0));
+
+      if (!offerId || normalizedPrice <= 0 || normalizedQuantity <= 0) {
+        throw new Error('Datos inválidos para contraoferta');
+      }
+
+      const { data, error } = await supabase.rpc('submit_counter_offer', {
+        p_offer_id: offerId,
+        p_actor: normalizedActor,
+        p_offered_price: normalizedPrice,
+        p_offered_quantity: normalizedQuantity,
+        p_message: sanitizePotentiallyUnsafe(message || null)
+      });
+
+      if (error) throw error;
+      if (data && data.success === false) {
+        throw new Error(data.error || 'No fue posible enviar la contraoferta');
+      }
+
+      if (offerToCounter) {
+        await notifyOfferCounterOfferSafe(notificationService, {
+          offer_id: offerId,
+          buyer_id: offerToCounter.buyer_id,
+          supplier_id: offerToCounter.supplier_id,
+          supplier_name: offerToCounter.supplier_name || offerToCounter.supplier?.name || 'Proveedor',
+          buyer_name: offerToCounter.buyer_name || offerToCounter.buyer?.name || 'Comprador',
+          product_id: offerToCounter.product_id,
+          product_name: offerToCounter.product_name || offerToCounter.product?.name || 'Producto',
+          offered_price: normalizedPrice,
+          offered_quantity: normalizedQuantity,
+          expires_at: data?.expires_at,
+          next_turn: data?.next_turn,
+          message: message || null
+        }, normalizedActor, __logOfferDebug);
+      }
+
+      const patch = {
+        offered_price: normalizedPrice,
+        offered_quantity: normalizedQuantity,
+        price: normalizedPrice,
+        quantity: normalizedQuantity,
+        message: message || null,
+        status: 'pending',
+        current_turn: data?.next_turn,
+        expires_at: data?.expires_at,
+        supplier_counteroffers_count: data?.supplier_counteroffers_count,
+        buyer_counteroffers_count: data?.buyer_counteroffers_count,
+        counteroffer_cycle: data?.counteroffer_cycle,
+        counteroffer_updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      set(state => ({
+        buyerOffers: state.buyerOffers.map(offer =>
+          offer.id === offerId ? { ...offer, ...patch } : offer
+        ),
+        supplierOffers: state.supplierOffers.map(offer =>
+          offer.id === offerId ? { ...offer, ...patch } : offer
+        ),
+        loading: false,
+        error: null
+      }));
+
+      return data;
+    } catch (err) {
+      const msg = err?.message || 'Error al enviar contraoferta';
+      set({ loading: false, error: msg });
+      throw err;
     }
   },
   

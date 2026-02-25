@@ -27,15 +27,18 @@ import ActionIconButton from '../../../../shared/components/buttons/ActionIconBu
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import {
   InfoOutlined as InfoOutlinedIcon,
-  LocalOffer as LocalOfferIcon,
+  LocalOffer as HeaderLocalOfferIcon,
 } from '@mui/icons-material';
 import MobileOfferCard from '../../../../shared/components/mobile/MobileOfferCard';
 import MobileOffersSkeleton from '../../../../shared/components/display/skeletons/MobileOffersSkeleton';
 import MobileFilterAccordion from '../../../../shared/components/mobile/MobileFilterAccordion';
 import ConfirmDialog from '../../../../shared/components/modals/ConfirmDialog';
+import SupplierOfferActionModals from '../../../supplier/my-offers/components/SupplierOfferActionModals';
 import { toTitleCase } from '../../../../utils/textFormatters';
+import { toast } from 'react-hot-toast';
 
 // Mapa canónico de estados visuales
 const STATUS_MAP = {
@@ -127,6 +130,7 @@ const OffersList = ({
   error = null,
   cancelOffer,
   deleteOffer,
+  submitCounterOffer,
   onCancelOffer,
   onDeleteOffer,
   onAddToCart,
@@ -139,6 +143,10 @@ const OffersList = ({
   const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
   const [offerToCancel, setOfferToCancel] = React.useState(null);
   const [cancelLoading, setCancelLoading] = React.useState(false);
+  const [counterOfferModalState, setCounterOfferModalState] = React.useState({
+    open: false,
+    offer: null,
+  });
 
   // Preparar petición batch de thumbnails para los productos mostrados
   const productIds = React.useMemo(
@@ -187,6 +195,15 @@ const OffersList = ({
 
   // Debugging: limit noisy logs by counting a few rows only
   const debugCounterRef = React.useRef(0);
+  const getCurrentTurn = offer => offer?.current_turn || 'supplier';
+  const getBuyerCounterCount = offer => Number(offer?.buyer_counteroffers_count || 0);
+  const canBuyerCounterOffer = offer =>
+    offer?.status === 'pending' &&
+    getCurrentTurn(offer) === 'buyer' &&
+    getBuyerCounterCount(offer) < 2;
+  const canBuyerCancel = offer =>
+    offer?.status === 'approved' ||
+    (offer?.status === 'pending' && getCurrentTurn(offer) !== 'buyer');
 
   const handleCancelOffer = offerId => {
     const offer = offers.find(o => o.id === offerId);
@@ -230,6 +247,77 @@ const OffersList = ({
     }
   };
 
+  const enrichCounterOfferForModal = offer => {
+    const product = offer?.product || {};
+    const tiers = Array.isArray(product.price_tiers) ? product.price_tiers : [];
+    const baseFromOffer =
+      offer?.base_price_at_offer ??
+      offer?.tier_price_at_offer ??
+      offer?.current_product_price ??
+      null;
+    const baseLocal =
+      baseFromOffer ??
+      product.base_price ??
+      product.price ??
+      product.precio ??
+      (tiers[0]?.price || tiers[0]?.precio) ??
+      null;
+    const stockFromOffer = offer?.current_stock ?? null;
+    const stockLocal =
+      stockFromOffer ??
+      (product.stock != null
+        ? product.stock
+        : product.productqty != null
+        ? product.productqty
+        : null);
+
+    return {
+      ...offer,
+      buyer: {
+        name:
+          offer?.supplier?.name ||
+          offer?.supplier_name ||
+          offer?.supplierName ||
+          'Proveedor',
+      },
+      product: {
+        ...product,
+        name:
+          product.name || product.nombre || offer?.product_name || 'Producto',
+        previousPrice: product.previousPrice ?? baseLocal,
+        stock: stockLocal,
+      },
+    };
+  };
+
+  const openCounterOfferModal = offer => {
+    setCounterOfferModalState({
+      open: true,
+      offer: enrichCounterOfferForModal(offer),
+    });
+  };
+
+  const closeCounterOfferModal = () => {
+    setCounterOfferModalState({ open: false, offer: null });
+  };
+
+  const handleCounterOffer = async (offer, counterOfferData) => {
+    try {
+      await submitCounterOffer?.({
+        offerId: offer?.id,
+        actor: 'buyer',
+        offeredPrice: counterOfferData?.offered_price,
+        offeredQuantity: counterOfferData?.offered_quantity,
+        message: counterOfferData?.message || null,
+      });
+      closeCounterOfferModal();
+      toast.success('Contraoferta enviada correctamente');
+    } catch (error) {
+      console.error('Error sending counteroffer:', error);
+      toast.error(error?.message || 'No fue posible enviar la contraoferta');
+    }
+  };
+
   const handleAddToCart = offer => {
     if (onAddToCart) return onAddToCart(offer);
     console.log('Add to cart:', offer);
@@ -243,6 +331,9 @@ const OffersList = ({
         break;
       case 'cancel':
         handleCancelOffer(fullOffer.id);
+        break;
+      case 'counteroffer':
+        openCounterOfferModal(fullOffer);
         break;
       case 'delete':
         handleDeleteOffer(fullOffer.id);
@@ -296,7 +387,7 @@ const OffersList = ({
   const EmptyStateGlobal = () => (
     <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-        <LocalOfferIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+        <HeaderLocalOfferIcon sx={{ fontSize: 48, color: 'primary.main' }} />
       </Box>
       <Typography
         variant="h6"
@@ -328,7 +419,7 @@ const OffersList = ({
   const EmptyStateFiltered = () => (
     <Paper sx={{ p: { xs: 3, md: 4 }, textAlign: 'center' }}>
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-        <LocalOfferIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
+        <HeaderLocalOfferIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
       </Box>
       <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
         No hay ofertas con este estado
@@ -417,6 +508,8 @@ const OffersList = ({
                       offered_price: o.price,
                       purchase_deadline: o.purchase_deadline,
                       expires_at: o.expires_at,
+                      current_turn: o.current_turn,
+                      buyer_counteroffers_count: o.buyer_counteroffers_count,
                       product: {
                         id: o.product_id,
                         productid: o.product_id,
@@ -564,6 +657,14 @@ const OffersList = ({
                             sx={{ color: 'common.white', mt: 1 }}
                             display="block"
                           >
+                                En ofertas pendientes también puedes enviar una
+                                contraoferta para continuar la negociación.
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                sx={{ color: 'common.white', mt: 1 }}
+                                display="block"
+                              >
                             Para cancelar una oferta (Pendiente o Aprobada),
                             utiliza la acción "Cancelar Oferta". Una vez
                             cancelada, la oferta se marcará como "Cancelada" y
@@ -759,7 +860,18 @@ const OffersList = ({
                       )}
 
                       {/* Cancel action for pending or approved offers (next to add-to-cart) */}
-                      {(o.status === 'pending' || o.status === 'approved') && (
+                      {canBuyerCounterOffer(o) && (
+                        <ActionIconButton
+                          tooltip="Contraoferta"
+                          variant="primary"
+                          onClick={() => openCounterOfferModal(o)}
+                          ariaLabel="Contraoferta"
+                        >
+                          <LocalOfferIcon fontSize="small" />
+                        </ActionIconButton>
+                      )}
+
+                      {canBuyerCancel(o) && (
                         <ActionIconButton
                           tooltip="Cancelar Oferta"
                           variant="error"
@@ -809,6 +921,18 @@ const OffersList = ({
         onConfirm={handleConfirmCancel}
         onCancel={handleCloseCancelDialog}
         disabled={cancelLoading}
+      />
+
+      <SupplierOfferActionModals
+        open={counterOfferModalState.open}
+        mode="counteroffer"
+        offer={counterOfferModalState.offer}
+        onClose={closeCounterOfferModal}
+        onAccept={() => {}}
+        onCounterOffer={handleCounterOffer}
+        onReject={() => {}}
+        onCleanup={() => {}}
+        isMobile={isMobile}
       />
     </>
   );

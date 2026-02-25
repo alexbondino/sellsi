@@ -21,6 +21,15 @@ export async function notifyOfferResponseSafe(notificationService, payload, acce
   }
 }
 
+export async function notifyOfferCounterOfferSafe(notificationService, payload, actor, log = () => {}) {
+  if (!notificationService?.notifyOfferCounterOffer) return;
+  try {
+    await notificationService.notifyOfferCounterOffer(payload, actor);
+  } catch (e) {
+    log('notifyOfferCounterOffer error', e?.message);
+  }
+}
+
 // Limpia del carrito items cuyos offer_id correspondan a ofertas finalizadas/invalidas
 export function pruneInvalidOfferCartItems({ cartStore, offers, log = () => {} }) {
   try {

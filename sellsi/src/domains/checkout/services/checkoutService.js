@@ -89,15 +89,14 @@ class CheckoutService {
       }
       
       if (isExpired) {
-        console.log('[CheckoutService] Orden existente expirada/zombie, marcando expired:', existing.id, reason);
-        try {
-          await supabase.from('orders')
-            .update({ payment_status: 'expired', status: 'cancelled', cancellation_reason: reason })
-            .eq('id', existing.id);
-        } catch (expireErr) {
-          console.warn('[CheckoutService] Error marcando orden expired (ignorando):', expireErr.message);
-        }
-        return null;
+        // 🐛 BUG #37 FIX:
+        // En producción esta actualización suele fallar por trigger/RLS
+        // ("No permission to modify this order"), lo que luego provoca
+        // conflicto uniq_orders_cart_pending al intentar crear una orden nueva.
+        // Reutilizamos la orden existente y dejamos que el flujo de pago genere
+        // una nueva sesión Khipu/Flow sobre la misma orden.
+        console.log('[CheckoutService] Orden existente expirada/zombie, reusando orden para regenerar sesión de pago:', existing.id, reason);
+        return existing;
       }
 
       // Verificar que items coincidan
@@ -531,30 +530,9 @@ class CheckoutService {
         throw new Error('Error al crear orden de pago en Khipu');
       }
 
-      // Actualizar orden con datos de Khipu
-      const khipuUpdatePayload = {
-        khipu_payment_id: khipuResponse.paymentId,
-        khipu_transaction_id: khipuResponse.transactionId,
-        khipu_payment_url: khipuResponse.paymentUrl,
-        payment_status: 'pending',
-        updated_at: new Date().toISOString(),
-      }
-      if (khipuResponse.expiresAt) {
-        khipuUpdatePayload.khipu_expires_at = khipuResponse.expiresAt
-      }
-
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update(khipuUpdatePayload)
-        .eq('id', paymentData.orderId);
-
-      if (updateError) {
-        console.error(
-          'Error actualizando orden con datos de Khipu:',
-          updateError
-        );
-        throw new Error('Error al actualizar orden con datos de pago');
-      }
+      // 🐛 BUG #36 FIX: NO hacer PATCH de orders desde frontend para Khipu.
+      // El edge function create-payment-khipu ya persiste khipu_payment_id/url con
+      // service_role y el segundo PATCH gatilla trigger "No permission to modify this order".
 
       // Crear transacción de pago
       const { error: transactionError } = await supabase

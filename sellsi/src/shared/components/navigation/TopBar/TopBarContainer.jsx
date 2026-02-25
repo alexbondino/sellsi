@@ -16,7 +16,7 @@ import FeedbackIcon from '@mui/icons-material/Feedback';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { supabase } from '../../../services/supabase';
 import useCartStore from '../../../stores/cart/cartStore';
-import { useRole } from '../../../../infrastructure/providers';
+import { useRole, useAuth } from '../../../../infrastructure/providers';
 import { setSkipScrollToTopOnce } from '../ScrollToTop/ScrollToTop';
 import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 import { useNotificationsContext } from '../../../../domains/notifications/components/NotificationProvider';
@@ -31,6 +31,26 @@ import { useMarketplaceSearch } from './hooks/useMarketplaceSearch';
 import { useMarketplaceSearchBus } from '../../../contexts/MarketplaceSearchContext';
 import { TopBarView } from './TopBarView';
 
+// Referencia estable: evita new array en cada render cuando notifCtx es null
+const EMPTY_ARRAY = [];
+
+// Sx pre-computados a nivel de módulo: evitan new objects dentro de useMemo
+const FEEDBACK_BTN_SX = {
+  ...navButtonBase,
+  mr: 2,
+  color: 'white',
+  textTransform: 'none',
+  fontSize: '0.85rem',
+  border: '1px solid white',
+  borderRadius: '20px',
+  px: 2,
+  '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)', border: '1px solid white' },
+};
+const DOCS_BTN_SX = { ...iconButtonBase, color: 'white' };
+const CART_BTN_SX = { ...iconButtonBase, color: 'white', mr: 3 };
+const LOGIN_BTN_SX = { ...navButtonBase, mr: 1 };
+const REGISTER_BTN_SX = { color: 'white', border: 'none', ...navButtonBase };
+
 export default function TopBarContainer({
   session,
   isBuyer,
@@ -42,6 +62,7 @@ export default function TopBarContainer({
   const location = useLocation();
   const itemsInCart = useCartStore(state => state.items).length;
   const { isRoleLoading } = useRole();
+  const { userProfile: authUserProfile } = useAuth();
 
   // ====== TODOS LOS HOOKS DEBEN IR AQUÍ ARRIBA ======
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
@@ -71,7 +92,7 @@ export default function TopBarContainer({
   const notifCtx = useNotificationsContext?.() || null;
   const marketplaceSearchBus = useMarketplaceSearchBus();
   const updateExternalSearchTerm = marketplaceSearchBus?.updateExternalSearchTerm;
-  const notifications = notifCtx?.notifications || [];
+  const notifications = notifCtx?.notifications ?? EMPTY_ARRAY;
   const unreadCount = notifCtx?.unreadCount || 0;
   const activeNotifTab = notifCtx?.activeTab || 'all';
   const setActiveNotifTab = notifCtx?.setActiveTab;
@@ -89,7 +110,6 @@ export default function TopBarContainer({
   }, [navigate]);
 
   const {
-    term: mobileSearch,
     inputProps: mobileSearchInputProps,
     submit: submitMobileSearch,
   } = useMarketplaceSearch({
@@ -125,6 +145,8 @@ export default function TopBarContainer({
   const handleCloseMobileMenu = useCallback(() => setMobileMenuAnchor(null), []);
   const handleOpenProfileMenu = useCallback(e => setProfileAnchor(e.currentTarget), []);
   const handleCloseProfileMenu = useCallback(() => setProfileAnchor(null), []);
+  const handleOpenFeedback = useCallback(() => setFeedbackModalOpen(true), []);
+  const handleCloseFeedback = useCallback(() => setFeedbackModalOpen(false), []);
 
   const handleNavigate = useCallback(ref => {
     handleCloseMobileMenu();
@@ -156,13 +178,6 @@ export default function TopBarContainer({
       onRoleChange(newRole, { skipNavigation: false });
   }, [onRoleChange]);
 
-  const CustomShoppingCartIcon = useCallback(({ sx, ...props }) => (
-    <ShoppingCartIcon
-      {...props}
-      sx={{ fontSize: '1.5rem', color: '#fff !important', ...sx }}
-    />
-  ), []);
-
   const getProfileRoute = flag =>
     flag ? '/buyer/profile' : '/supplier/profile';
   const goToProfile = useCallback(() => navigate(getProfileRoute(isBuyer)), [navigate, isBuyer]);
@@ -179,15 +194,6 @@ export default function TopBarContainer({
     } else navigate('/?scrollTo=top');
   }, [isLoggedIn, currentRole, navigate]);
 
-  const profileMenuButton = useMemo(() => (
-    <ProfileAvatarButton
-      id="topbar-profile-button"
-      logoUrl={logoUrl}
-      onClick={handleOpenProfileMenu}
-      expanded={Boolean(profileAnchor)}
-    />
-  ), [logoUrl, handleOpenProfileMenu, profileAnchor]);
-  
   const handleOpenNotif = useCallback(e => setNotifAnchor(e.currentTarget), []);
   const handleCloseNotif = useCallback(() => setNotifAnchor(null), []);
   const handleViewAllNotif = useCallback(() => {
@@ -215,6 +221,40 @@ export default function TopBarContainer({
     } catch (_) {}
     handleCloseNotif();
   }, [navigate, currentRole, markNotificationsAsRead, handleCloseNotif]);
+
+  // Nodo aislado: solo recalcula cuando cambia el estado de notificaciones
+  const desktopNotifNode = useMemo(() => (
+    <NotificationsMenu
+      showBell
+      unreadCount={unreadCount}
+      notifications={notifications}
+      activeTab={activeNotifTab}
+      onTabChange={setActiveNotifTab}
+      onItemClick={handleNotifItemClick}
+      onViewAll={handleViewAllNotif}
+      onCloseDialog={handleCloseNotifModal}
+      anchorEl={notifAnchor}
+      onOpen={handleOpenNotif}
+      onClose={handleCloseNotif}
+      dialogOpen={notifModalOpen}
+    />
+  ), [unreadCount, notifications, activeNotifTab, setActiveNotifTab, handleNotifItemClick, handleViewAllNotif, handleCloseNotifModal, notifAnchor, handleOpenNotif, handleCloseNotif, notifModalOpen]);
+
+  // Nodo aislado: solo recalcula cuando cambia itemsInCart
+  const cartButtonNode = useMemo(() => (
+    <Tooltip title="Carrito" arrow>
+      <IconButton
+        onClick={() => navigate('/buyer/cart')}
+        sx={CART_BTN_SX}
+        disableRipple
+        disableFocusRipple
+      >
+        <Badge badgeContent={itemsInCart} color="error">
+          <ShoppingCartIcon sx={{ lineHeight: 1 }} />
+        </Badge>
+      </IconButton>
+    </Tooltip>
+  ), [itemsInCart, navigate]);
 
   // Memoize paddingX to prevent TopBarView re-renders
   const paddingX = useMemo(() => {
@@ -262,14 +302,14 @@ export default function TopBarContainer({
             onClick={openLoginModalOpen}
             variant="contained"
             color="primary"
-            sx={{ ...navButtonBase, mr: 1 }}
+            sx={LOGIN_BTN_SX}
           >
             Iniciar sesión
           </Button>
           <Button
             onClick={openRegisterModalOpen}
             variant="outlined"
-            sx={{ color: 'white', border: 'none', ...navButtonBase }}
+            sx={REGISTER_BTN_SX}
           >
             Registrarse
           </Button>
@@ -286,22 +326,9 @@ export default function TopBarContainer({
           sx={{ mr: 2, opacity: isRoleLoading ? 0.6 : 1 }}
         />
         <Button
-          onClick={() => setFeedbackModalOpen(true)}
+          onClick={handleOpenFeedback}
           startIcon={<FeedbackIcon />}
-          sx={{
-            ...navButtonBase,
-            mr: 2,
-            color: 'white',
-            textTransform: 'none',
-            fontSize: '0.85rem',
-            border: '1px solid white',
-            borderRadius: '20px',
-            px: 2,
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid white',
-            },
-          }}
+          sx={FEEDBACK_BTN_SX}
           disableRipple
         >
           Ayúdanos a mejorar
@@ -309,7 +336,7 @@ export default function TopBarContainer({
         <Tooltip title="Mis Documentos" arrow>
           <IconButton
             onClick={() => navigate(currentRole === 'supplier' ? '/supplier/my-documents' : '/buyer/my-documents')}
-            sx={{ ...iconButtonBase, color: 'white' }}
+            sx={DOCS_BTN_SX}
             aria-label="Mis Documentos"
             disableRipple
             disableFocusRipple
@@ -317,40 +344,6 @@ export default function TopBarContainer({
             <DescriptionIcon sx={{ fontSize: '1.5rem' }} />
           </IconButton>
         </Tooltip>
-        <NotificationsMenu
-          showBell
-          unreadCount={unreadCount}
-          notifications={notifications}
-          activeTab={activeNotifTab}
-          onTabChange={setActiveNotifTab}
-          onItemClick={handleNotifItemClick}
-          onViewAll={handleViewAllNotif}
-          onCloseDialog={handleCloseNotifModal}
-          anchorEl={notifAnchor}
-          onOpen={handleOpenNotif}
-          onClose={handleCloseNotif}
-          dialogOpen={notifModalOpen}
-        />
-        <Tooltip title="Carrito" arrow>
-          <IconButton
-            onClick={() => navigate('/buyer/cart')}
-            sx={{ ...iconButtonBase, color: 'white', mr: 3 }}
-            disableRipple
-            disableFocusRipple
-          >
-            <Badge badgeContent={itemsInCart} color="error">
-              <ShoppingCartIcon sx={{ lineHeight: 1 }} />
-            </Badge>
-          </IconButton>
-        </Tooltip>
-        {profileMenuButton}
-        <FeedbackModal
-          open={feedbackModalOpen}
-          onClose={() => setFeedbackModalOpen(false)}
-          userEmail={session?.user?.email}
-          companyName={session?.user?.user_metadata?.company_name}
-          userName={session?.user?.user_metadata?.full_name}
-        />
       </>
     );
   }, [
@@ -360,22 +353,8 @@ export default function TopBarContainer({
     currentRole,
     isRoleLoading,
     handleRoleToggleChange,
-    unreadCount,
-    notifications,
-    activeNotifTab,
-    setActiveNotifTab,
-    handleNotifItemClick,
-    handleViewAllNotif,
-    handleCloseNotifModal,
-    notifAnchor,
-    handleOpenNotif,
-    handleCloseNotif,
-    notifModalOpen,
     navigate,
-    itemsInCart,
-    profileMenuButton,
-    feedbackModalOpen,
-    session,
+    handleOpenFeedback,
   ]);
 
   // Memoize mobile menu items to prevent re-creation
@@ -560,34 +539,50 @@ export default function TopBarContainer({
   }
 
   return (
-    <TopBarView
-      isLoggedIn={isLoggedIn}
-      isBuyerRole={isBuyerRole}
-      desktopNavLinks={desktopNavLinks}
-      desktopRightContent={desktopRightContent}
-      mobileMenuItems={mobileMenuItems}
-      mobileMenuAnchor={mobileMenuAnchor}
-      onOpenMobileMenu={handleOpenMobileMenu}
-      onCloseMobileMenu={handleCloseMobileMenu}
-      profileAnchor={profileAnchor}
-      onOpenProfileMenu={handleOpenProfileMenu}
-      onCloseProfileMenu={handleCloseProfileMenu}
-      paddingX={paddingX}
-      mobileSearchInputProps={mobileSearchInputProps}
-      onMobileSearchButton={handleMobileSearchButton}
-      mobileSearchInputRef={mobileSearchInputRef}
-      notifBellCount={unreadCount}
-      onOpenNotif={handleOpenNotif}
-      notifMenuOpen={Boolean(notifAnchor)}
-      onLogoClick={handleLogoClick}
-      onGoToProfile={goToProfile}
-      onLogout={handleLogout}
-      openLoginModal={openLoginModal}
-      openRegisterModal={openRegisterModal}
-      onCloseLoginModal={closeLoginModal}
-      onCloseRegisterModal={closeRegisterModal}
-      onLoginToRegister={handleLoginToRegisterTransition}
-      profileMenuButton={profileMenuButton}
-    />
+    <>
+      <TopBarView
+        isLoggedIn={isLoggedIn}
+        isBuyerRole={isBuyerRole}
+        desktopNavLinks={desktopNavLinks}
+        desktopRightContent={desktopRightContent}
+        desktopNotifNode={desktopNotifNode}
+        cartButtonNode={cartButtonNode}
+        mobileMenuItems={mobileMenuItems}
+        mobileMenuAnchor={mobileMenuAnchor}
+        onOpenMobileMenu={handleOpenMobileMenu}
+        onCloseMobileMenu={handleCloseMobileMenu}
+        profileAnchor={profileAnchor}
+        onOpenProfileMenu={handleOpenProfileMenu}
+        onCloseProfileMenu={handleCloseProfileMenu}
+        isProfileMenuOpen={Boolean(profileAnchor)}
+        paddingX={paddingX}
+        mobileSearchInputProps={mobileSearchInputProps}
+        onMobileSearchButton={handleMobileSearchButton}
+        mobileSearchInputRef={mobileSearchInputRef}
+        notifBellCount={unreadCount}
+        onOpenNotif={handleOpenNotif}
+        notifMenuOpen={Boolean(notifAnchor)}
+        onLogoClick={handleLogoClick}
+        onGoToProfile={goToProfile}
+        onLogout={handleLogout}
+        userName={authUserProfile?.user_nm || ''}
+        userEmail={authUserProfile?.email || session?.user?.email || ''}
+        userLogoUrl={logoUrl}
+        openLoginModal={openLoginModal}
+        openRegisterModal={openRegisterModal}
+        onCloseLoginModal={closeLoginModal}
+        onCloseRegisterModal={closeRegisterModal}
+        onLoginToRegister={handleLoginToRegisterTransition}
+      />
+      {isLoggedIn && (
+        <FeedbackModal
+          open={feedbackModalOpen}
+          onClose={handleCloseFeedback}
+          userEmail={session?.user?.email}
+          companyName={session?.user?.user_metadata?.company_name}
+          userName={session?.user?.user_metadata?.full_name}
+        />
+      )}
+    </>
   );
 }

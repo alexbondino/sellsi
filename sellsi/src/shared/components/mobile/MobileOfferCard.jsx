@@ -16,6 +16,7 @@ import {
   Delete as DeleteIcon,
   Cancel as CancelIcon,
   CheckCircle as CheckCircleIcon,
+  LocalOffer as LocalOfferIcon,
   LocalShipping as ShippingIcon,
   Chat as ChatIcon,
 } from '@mui/icons-material'
@@ -56,10 +57,21 @@ const MobileOfferCard = ({ variant, data, fullOffer, onAction, isMobile }) => {
     supplier_name,
     purchase_deadline,
     expires_at,
+    current_turn,
+    supplier_counteroffers_count,
+    buyer_counteroffers_count,
     product, // Objeto product completo para AddToCart
     product_id,
     product_image,
   } = data
+
+  const resolvedTurn = current_turn || 'supplier'
+  const supplierCounterCount = Number(supplier_counteroffers_count || 0)
+  const buyerCounterCount = Number(buyer_counteroffers_count || 0)
+  const canBuyerCounter = status === 'pending' && resolvedTurn === 'buyer' && buyerCounterCount < 2
+  const canBuyerCancel = status === 'approved' || (status === 'pending' && resolvedTurn !== 'buyer')
+  const canSupplierAct = status === 'pending' && resolvedTurn === 'supplier'
+  const canSupplierCounter = canSupplierAct && supplierCounterCount < 2
 
   // Procesar thumbnail con fallbacks (misma lógica que OffersList.jsx)
   const processedThumbnail = React.useMemo(() => {
@@ -136,37 +148,50 @@ const MobileOfferCard = ({ variant, data, fullOffer, onAction, isMobile }) => {
     label: status,
   }
 
+  const parseDateToMs = (dateValue) => {
+    if (!dateValue) return null
+    const parsed = new Date(dateValue).getTime()
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  const formatRemainingMs = (remainingMs) => {
+    if (remainingMs <= 0) return 'Caducada'
+    const hrs = Math.floor(remainingMs / 3600000)
+    const mins = Math.floor((remainingMs % 3600000) / 60000)
+    if (hrs >= 1) return `${hrs}h ${mins}m`
+    return `${mins}m`
+  }
+
+  const getPendingRemainingMs = () => {
+    const expiresAtMs = parseDateToMs(expires_at)
+    if (expiresAtMs != null) return expiresAtMs - Date.now()
+
+    const createdAtMs = parseDateToMs(created_at)
+    if (createdAtMs != null) {
+      return createdAtMs + 48 * 60 * 60 * 1000 - Date.now()
+    }
+
+    return null
+  }
+
   // Calcular tiempo RESTANTE hasta deadline (NO tiempo transcurrido)
   const getTimeRemaining = () => {
     const now = Date.now()
-    const pdMs = data.purchase_deadline
-      ? new Date(data.purchase_deadline).getTime()
-      : null
-    const expMs = data.expires_at ? new Date(data.expires_at).getTime() : null
+    const pdMs = parseDateToMs(purchase_deadline)
+    const expMs = parseDateToMs(expires_at)
 
     // Pending: usar expires_at (48h)
-    if (status === 'pending' && expMs != null) {
-      const remaining = expMs - now
-      if (remaining <= 0) return 'Caducada'
-      if (remaining < 48 * 60 * 60 * 1000) {
-        const hrs = Math.floor(remaining / 3600000)
-        const mins = Math.floor((remaining % 3600000) / 60000)
-        if (hrs >= 1) return `${hrs}h ${mins}m`
-        return `${mins}m`
-      }
-      return '-'
+    if (status === 'pending') {
+      const remaining = getPendingRemainingMs()
+      if (remaining == null) return '-'
+      return formatRemainingMs(remaining)
     }
 
     // Approved: usar purchase_deadline; fallback expires_at
     if (status === 'approved') {
       const target = pdMs || expMs
       if (target != null) {
-        const remaining = target - now
-        if (remaining <= 0) return 'Caducada'
-        const hrs = Math.floor(remaining / 3600000)
-        const mins = Math.floor((remaining % 3600000) / 60000)
-        if (hrs >= 1) return `${hrs}h ${mins}m`
-        return `${mins}m`
+        return formatRemainingMs(target - now)
       }
       return '<24h'
     }
@@ -204,8 +229,30 @@ const MobileOfferCard = ({ variant, data, fullOffer, onAction, isMobile }) => {
               </Typography>
             </>
           )}
-          {(status === 'pending' || status === 'approved') && (
+          {canBuyerCancel && (
             <>
+              {canBuyerCounter && (
+                <>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    fullWidth
+                    size="large"
+                    sx={{ minHeight: 44 }}
+                    startIcon={<LocalOfferIcon />}
+                    onClick={() => onAction('counteroffer', fullOffer || data)}
+                  >
+                    Contraoferta
+                  </Button>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ textAlign: 'center', display: 'block', mt: 0.5 }}
+                  >
+                    Envía una propuesta alternativa al proveedor
+                  </Typography>
+                </>
+              )}
               <Button
                 variant="outlined"
                 color="error"
@@ -255,7 +302,7 @@ const MobileOfferCard = ({ variant, data, fullOffer, onAction, isMobile }) => {
     if (variant === 'supplier') {
       return (
         <>
-          {status === 'pending' && (
+          {canSupplierAct && (
             <>
               <Button
                 variant="contained"
@@ -275,6 +322,28 @@ const MobileOfferCard = ({ variant, data, fullOffer, onAction, isMobile }) => {
               >
                 Reserva inventario y notifica al comprador
               </Typography>
+              {canSupplierCounter && (
+                <>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    fullWidth
+                    size="large"
+                    sx={{ minHeight: 44, mt: 1 }}
+                    startIcon={<LocalOfferIcon />}
+                    onClick={() => onAction('counteroffer', fullOffer || data)}
+                  >
+                    Contraoferta
+                  </Button>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ textAlign: 'center', display: 'block', mt: 0.5 }}
+                  >
+                    Envía una propuesta alternativa al ofertante
+                  </Typography>
+                </>
+              )}
               <Button
                 variant="outlined"
                 color="error"
@@ -542,6 +611,9 @@ MobileOfferCard.propTypes = {
     supplier_name: PropTypes.string,
     purchase_deadline: PropTypes.string,
     expires_at: PropTypes.string,
+    current_turn: PropTypes.oneOf(['buyer', 'supplier']),
+    supplier_counteroffers_count: PropTypes.number,
+    buyer_counteroffers_count: PropTypes.number,
     product: PropTypes.object,
     product_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     product_image: PropTypes.string,
