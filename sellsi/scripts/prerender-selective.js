@@ -282,6 +282,50 @@ function hasNoindexRobots(html) {
   return /noindex/i.test(match[1] || '');
 }
 
+function isMissingBrowserExecutableError(error) {
+  const message = String(error?.message || '');
+  return (
+    message.includes("browserType.launch") &&
+    message.includes("Executable doesn't exist")
+  );
+}
+
+async function ensurePlaywrightChromiumInstalled() {
+  console.warn('[prerender] Chromium no disponible. Instalando navegador de Playwright...');
+  await new Promise((resolve, reject) => {
+    const installer = spawn('npx', ['playwright', 'install', 'chromium'], {
+      cwd: PROJECT_ROOT,
+      env: process.env,
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    });
+
+    installer.on('error', reject);
+    installer.on('close', code => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+
+      reject(new Error(`playwright install chromium finalizó con código ${code}`));
+    });
+  });
+  console.warn('[prerender] Instalación de Chromium finalizada. Reintentando prerender...');
+}
+
+async function createBrowserWithRecovery() {
+  try {
+    return await chromium.launch({ headless: true });
+  } catch (error) {
+    if (!isMissingBrowserExecutableError(error)) {
+      throw error;
+    }
+
+    await ensurePlaywrightChromiumInstalled();
+    return chromium.launch({ headless: true });
+  }
+}
+
 async function waitForDynamicSeoReady(page, route) {
   if (!isDynamicSeoRoute(route)) return;
 
@@ -336,7 +380,7 @@ async function renderRouteHtml(context, route) {
 }
 
 async function prerenderRoutes(routes) {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await createBrowserWithRecovery();
   const context = await browser.newContext();
 
   try {
