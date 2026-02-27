@@ -7,6 +7,7 @@ import HeroSection from '../components/HeroSection.jsx'; //Carrusel supererio (S
 import AboutUsSection from '../components/AboutUsSection.jsx'; //Sección ¿Quiénes somos?
 import ServicesSection from '../components/ServicesSection.jsx'; //Sección Nuestros Servicios (Carrusel de servicios
 import ContactSection from '../components/ContactSection.jsx';
+import SEOHead, { SEO_PRESETS } from '../../../shared/components/seo/SEOHead';
 /**
  * ============================================================================
  * HOME - PÁGINA PRINCIPAL/LANDING PAGE
@@ -105,6 +106,20 @@ const Home = ({ scrollTargets }) => {
 
   return (
     <Box ref={topRef} sx={{ width: '100%', overflowX: 'hidden' }}>
+      <SEOHead
+        {...SEO_PRESETS.HOME}
+        canonical="https://sellsi.cl/"
+        url="https://sellsi.cl/"
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          inLanguage: 'es-CL',
+          name: 'Sellsi - Marketplace B2B en Chile',
+          url: 'https://sellsi.cl/',
+          description:
+            'Marketplace B2B líder en Chile para compra y venta de repuestos y suministros industriales.',
+        }}
+      />
       {/* Sección Hero con texto, botón, estadísticas y carrucel */}
       <HeroSection
         currentPromoSlide={currentPromoSlide}

@@ -40,6 +40,7 @@ import MobilePaymentLayout from './MobilePaymentLayout';
 import BankTransferModal from '../../../shared/components/modals/BankTransferModal';
 import BankTransferConfirmModal from '../../../shared/components/modals/BankTransferConfirmModal';
 import KhipuEmbeddedModal from './KhipuEmbeddedModal';
+import { getFriendlyCheckoutErrorMessage } from '../services/checkoutErrorMessages';
 
 // ============================================================================
 // COMPONENTE PRINCIPAL
@@ -360,8 +361,45 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
   
   // ===== HANDLERS PARA KHIPU EMBEDDED MODAL =====
 
+  const setCheckoutOrderVisibility = useCallback(async (orderId, hidden, source = 'khipu_modal_visibility') => {
+    if (!orderId) return;
+
+    try {
+      const { supabase } = await import('../../../services/supabase');
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          hidden_by_buyer: !!hidden,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', orderId);
+
+      if (error) {
+        console.warn('[PaymentMethodSelector] No se pudo actualizar visibilidad de orden checkout Khipu:', {
+          orderId,
+          hidden: !!hidden,
+          source,
+          error: error.message,
+        });
+      } else {
+        console.log('[PaymentMethodSelector] Visibilidad de orden checkout Khipu actualizada:', {
+          orderId,
+          hidden: !!hidden,
+          source,
+        });
+      }
+    } catch (visibilityErr) {
+      console.warn('[PaymentMethodSelector] Error actualizando visibilidad de orden checkout Khipu:', {
+        orderId,
+        hidden: !!hidden,
+        source,
+        error: visibilityErr?.message,
+      });
+    }
+  }, []);
+
   const handleKhipuSuccess = useCallback(
-    (result) => {
+    async (result) => {
       console.log('[PaymentMethodSelector] ✅ Khipu pago OK:', result);
       setKhipuModalOpen(false);
       const context = khipuModalContext;
@@ -369,6 +407,10 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
       setKhipuModalPaymentId(null);
       setKhipuModalFallbackUrl(null);
       setKhipuModalContext(null);
+
+      if (context?.type === 'checkout' && context?.orderId) {
+        await setCheckoutOrderVisibility(context.orderId, false, 'khipu_modal_success');
+      }
 
       if (context?.type === 'financing') {
         toast.success('¡Pago procesado! Redirigiendo a tus financiamientos...');
@@ -378,39 +420,60 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
         navigate(`/checkout/success?payment_id=${paymentId}`);
       }
     },
-    [khipuModalContext, khipuModalPaymentId, navigate]
+    [khipuModalContext, khipuModalPaymentId, navigate, setCheckoutOrderVisibility]
   );
 
   const handleKhipuError = useCallback(
-    (result) => {
+    async (result) => {
       console.warn('[PaymentMethodSelector] ❌ Khipu pago error:', result);
+      const context = khipuModalContext;
       setKhipuModalOpen(false);
       setKhipuModalPaymentId(null);
       setKhipuModalFallbackUrl(null);
       setKhipuModalContext(null);
+
+      if (context?.type === 'checkout' && context?.orderId) {
+        await setCheckoutOrderVisibility(context.orderId, true, 'khipu_modal_error');
+      }
+
       paymentSuccessRef.current = false;
       isProcessingRef.current = false;
       setIsProcessing(false);
-      const msg =
-        result?.exitMessage ||
-        'El pago fue rechazado o cancelado. Puedes intentarlo nuevamente.';
+      const msg = getFriendlyCheckoutErrorMessage(
+        result,
+        'El pago fue rechazado o cancelado. Puedes intentarlo nuevamente.'
+      );
       toast.error(msg);
       setError(msg);
     },
-    [setError]
+    [setError, khipuModalContext, setCheckoutOrderVisibility]
   );
 
-  const handleKhipuModalClose = useCallback(() => {
+  const handleKhipuModalClose = useCallback(async () => {
     console.log('[PaymentMethodSelector] Modal Khipu cerrado manualmente');
+    const context = khipuModalContext;
     setKhipuModalOpen(false);
     setKhipuModalPaymentId(null);
     setKhipuModalFallbackUrl(null);
     setKhipuModalContext(null);
+
+    if (context?.type === 'checkout' && context?.orderId) {
+      await setCheckoutOrderVisibility(context.orderId, true, 'khipu_modal_closed');
+    }
+
     // Permitir que el usuario intente de nuevo
     paymentSuccessRef.current = false;
     isProcessingRef.current = false;
     setIsProcessing(false);
-  }, []);
+  }, [khipuModalContext, setCheckoutOrderVisibility]);
+
+  useEffect(() => {
+    return () => {
+      if (khipuModalOpen && khipuModalContext?.type === 'checkout' && khipuModalContext?.orderId) {
+        setCheckoutOrderVisibility(khipuModalContext.orderId, true, 'khipu_modal_unmounted');
+      }
+    };
+  }, [khipuModalOpen, khipuModalContext, setCheckoutOrderVisibility]);
 
   // Reanudar pago pendiente existente para evitar enviar al usuario a Orders
   // cuando ocurre conflicto uniq_orders_cart_pending al reintentar.
@@ -444,7 +507,8 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
           console.log('[PaymentMethodSelector] 🔄 Reanudando pago Khipu pendiente:', existingOrder.khipu_payment_id);
           paymentSuccessRef.current = true;
           toast.info('Retomando tu pago pendiente en Khipu...');
-          setKhipuModalContext({ type: 'checkout' });
+          await setCheckoutOrderVisibility(existingOrder.id, true, 'khipu_modal_resume_existing');
+          setKhipuModalContext({ type: 'checkout', orderId: existingOrder.id });
           setKhipuModalPaymentId(existingOrder.khipu_payment_id);
           setKhipuModalFallbackUrl(existingOrder.khipu_payment_url);
           setKhipuModalOpen(true);
@@ -473,7 +537,8 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
           console.log('[PaymentMethodSelector] 🔄 Sesión Khipu regenerada para orden pendiente:', paymentResult.paymentId);
           paymentSuccessRef.current = true;
           toast.info('Retomando tu pago pendiente en Khipu...');
-          setKhipuModalContext({ type: 'checkout' });
+          await setCheckoutOrderVisibility(existingOrder.id, true, 'khipu_modal_resume_regenerated');
+          setKhipuModalContext({ type: 'checkout', orderId: existingOrder.id });
           setKhipuModalPaymentId(paymentResult.paymentId);
           setKhipuModalFallbackUrl(paymentResult.paymentUrl || null);
           setKhipuModalOpen(true);
@@ -486,6 +551,7 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
           console.log('[PaymentMethodSelector] 🔄 Reanudando pago Flow pendiente:', existingOrder.flow_order);
           paymentSuccessRef.current = true;
           toast.info('Retomando tu pago pendiente en Flow...');
+          await setCheckoutOrderVisibility(existingOrder.id, true, 'flow_redirect_resume_existing');
           setTimeout(() => {
             window.location.href = existingOrder.flow_payment_url;
           }, 800);
@@ -498,7 +564,7 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
       console.warn('[PaymentMethodSelector] No se pudo reanudar pago pendiente:', resumeErr?.message);
       return false;
     }
-  }, [selectedMethod, orderData]);
+  }, [selectedMethod, orderData, setCheckoutOrderVisibility]);
 
   // ===== 🆕 HANDLER PARA PAGO DE FINANCIAMIENTO =====
   const handleFinancingPayment = async () => {
@@ -749,9 +815,10 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
       }
     } catch (error) {
       console.error('[PaymentMethodSelector] Error procesando pago de financiamiento:', error);
-      setError(error.message);
-      toast.error(error.message);
-      failPayment(error.message);
+      const friendlyMessage = getFriendlyCheckoutErrorMessage(error);
+      setError(friendlyMessage);
+      toast.error(friendlyMessage);
+      failPayment(friendlyMessage);
     } finally {
       // Mantener lock mientras esperamos redirección al gateway
       if (!paymentSuccessRef.current) {
@@ -955,9 +1022,10 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
         return;
       }
 
-      setError(error.message);
-      toast.error(error.message);
-      failPayment(error.message);
+      const friendlyMessage = getFriendlyCheckoutErrorMessage(error);
+      setError(friendlyMessage);
+      toast.error(friendlyMessage);
+      failPayment(friendlyMessage);
       
       // Cerrar modal en caso de error
       setShowBankTransferConfirmModal(false);
@@ -1239,7 +1307,7 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
           } else if (finalizeErr.message?.includes('MINIMUM_PURCHASE_NOT_MET')) {
             toast.error('No se alcanzó la compra mínima requerida');
           } else {
-            toast.error('Error al procesar la orden: ' + finalizeErr.message);
+            toast.error(getFriendlyCheckoutErrorMessage(finalizeErr));
           }
           
           setIsProcessing(false);
@@ -1282,7 +1350,8 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
             paymentResult.paymentId
           );
           toast.info('Completa tu pago en el diálogo de Khipu.');
-          setKhipuModalContext({ type: 'checkout' });
+          await setCheckoutOrderVisibility(order.id, true, 'khipu_modal_opened');
+          setKhipuModalContext({ type: 'checkout', orderId: order.id });
           setKhipuModalPaymentId(paymentResult.paymentId);
           setKhipuModalFallbackUrl(paymentResult.paymentUrl || null);
           setKhipuModalOpen(true);
@@ -1315,6 +1384,7 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
             paymentResult.paymentUrl
           );
           toast.success('Redirigiendo a Flow para completar el pago...');
+          await setCheckoutOrderVisibility(order.id, true, 'flow_redirect_opened');
           setTimeout(() => {
             window.location.href = paymentResult.paymentUrl;
           }, 1500);
@@ -1388,9 +1458,10 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
       }
 
       // Error desconocido
-      setError(error.message);
-      toast.error(error.message);
-      failPayment(error.message);
+      const friendlyMessage = getFriendlyCheckoutErrorMessage(error);
+      setError(friendlyMessage);
+      toast.error(friendlyMessage);
+      failPayment(friendlyMessage);
     } finally {
       // Mantener lock visual/lógico si ya se inició un flujo de pago exitoso
       // (ej: Khipu/Flow con redirect pendiente) para prevenir doble invocación.

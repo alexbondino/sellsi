@@ -39,7 +39,7 @@ const SupplierOffers = () => {
           disableGutters={isMobile ? true : false}
           sx={{ width: '100%' }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
             <LocalOfferIcon
               sx={{ color: 'primary.main', mr: 1, fontSize: '1.75rem' }}
             />
@@ -47,11 +47,13 @@ const SupplierOffers = () => {
               variant="h4"
               fontWeight={600}
               color="primary.main"
-              gutterBottom
             >
               Ofertas Recibidas
             </Typography>
           </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4, fontSize: { md: '0.95rem' } }}>
+            Aquí aparecen las ofertas de precio que tus compradores te han enviado. Puedes aceptarlas, rechazarlas o enviar una contraoferta.
+          </Typography>
 
           <SupplierOffersList
             offers={offers}

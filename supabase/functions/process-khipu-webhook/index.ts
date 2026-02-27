@@ -607,6 +607,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         .from('orders')
         .update({
           payment_status: 'paid',
+          hidden_by_buyer: false,
           khipu_payment_id: paymentIdFromPayload,
           paid_at: paidAt,
           updated_at: new Date().toISOString(),

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, lazy, Suspense } from 'react';
+import React, { useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -90,16 +90,6 @@ import {
   EmptyProductsState,
 } from '../../../../shared/components/feedback/AdvancedLoading';
 
-// Constantes
-const CATEGORIES = [
-  { value: 'all', label: 'Todas las categorías' },
-  { value: 'Tabaquería', label: 'Tabaquería' },
-  { value: 'Alcoholes', label: 'Alcoholes' },
-  { value: 'Ferretería y Construcción', label: 'Ferretería y Construcción' },
-  { value: 'Gastronomía', label: 'Gastronomía' },
-  { value: 'Otros', label: 'Otros' },
-];
-
 const SORT_OPTIONS = [
   { value: 'updateddt', label: 'Más recientes' },
   { value: 'createddt', label: 'Más antiguos' },
@@ -119,6 +109,7 @@ const MyProducts = () => {
   const supplierId = localStorage.getItem('user_id');
 
   const {
+    products,
     uiProducts,
     stats,
     searchTerm,
@@ -137,6 +128,31 @@ const MyProducts = () => {
     clearError,
     updateProduct,
   } = useSupplierProducts();
+
+  const availableCategories = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    const unique = [
+      ...new Set(
+        products
+          .filter(
+            product =>
+              !product.deletion_status || product.deletion_status === 'active'
+          )
+          .map(product => product.category || product.categoria || null)
+          .filter(Boolean)
+      ),
+    ];
+    return unique.sort();
+  }, [products]);
+
+  useEffect(() => {
+    if (
+      categoryFilter !== 'all' &&
+      !availableCategories.includes(categoryFilter)
+    ) {
+      setCategoryFilter('all');
+    }
+  }, [availableCategories, categoryFilter, setCategoryFilter]);
 
   const didInitLoadRef = useRef(false);
 
@@ -423,7 +439,7 @@ const MyProducts = () => {
                       Mis Productos
                     </Typography>
                   </Box>
-                  <Typography variant="body1" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: { md: '0.95rem' } }}>
                     Gestiona tu catálogo eficientemente
                   </Typography>
                 </Box>
@@ -548,11 +564,17 @@ const MyProducts = () => {
                 <MobileFilterAccordion
                   currentFilter={categoryFilter}
                   onFilterChange={setCategoryFilter}
-                  filterOptions={CATEGORIES.map(cat => ({
-                    value: cat.value,
-                    label: cat.label,
-                    count: cat.value === 'all' ? stats.total : undefined,
-                  }))}
+                  filterOptions={[
+                    {
+                      value: 'all',
+                      label: 'Todas las categorías',
+                      count: stats.total,
+                    },
+                    ...availableCategories.map(category => ({
+                      value: category,
+                      label: category,
+                    })),
+                  ]}
                   label="Categoría de productos"
                 />
 
@@ -668,9 +690,10 @@ const MyProducts = () => {
                           disableScrollLock: true,
                         }}
                       >
-                        {CATEGORIES.map(category => (
-                          <MenuItem key={category.value} value={category.value}>
-                            {category.label}
+                        <MenuItem value="all">Todas las categorías</MenuItem>
+                        {availableCategories.map(category => (
+                          <MenuItem key={category} value={category}>
+                            {category}
                           </MenuItem>
                         ))}
                       </Select>

@@ -207,7 +207,7 @@ const BuyerOrders = memo(function BuyerOrders() {
             sx={{ width: '100%' }}
           >
             {/* Header: siempre visible, fuera del skeleton */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
               <AssignmentIcon
                 sx={{ color: 'primary.main', fontSize: 36, mr: 1 }}
               />
@@ -215,11 +215,13 @@ const BuyerOrders = memo(function BuyerOrders() {
                 variant="h4"
                 fontWeight={600}
                 color="primary.main"
-                gutterBottom
               >
                 Mis Pedidos
               </Typography>
             </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4, fontSize: { md: '0.95rem' } }}>
+              Aquí puedes revisar el estado de tus pedidos, desde la confirmación de pago hasta la entrega.
+            </Typography>
 
             {/* Lista placeholder */}
             <BuyerOrdersSkeleton rows={3} />
@@ -278,7 +280,7 @@ const BuyerOrders = memo(function BuyerOrders() {
           sx={{ width: '100%' }}
         >
           {/* Título de la página */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
             <AssignmentIcon
               sx={{
                 color: 'primary.main',
@@ -290,11 +292,13 @@ const BuyerOrders = memo(function BuyerOrders() {
               variant="h4"
               fontWeight={600}
               color="primary.main"
-              gutterBottom
             >
               Mis Pedidos
             </Typography>
           </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4, fontSize: { md: '0.95rem' } }}>
+            Aquí puedes revisar el estado de tus pedidos, desde la confirmación de pago hasta la entrega.
+          </Typography>
 
           {/* Lista de pedidos */}
           {orders.length > 0 ? (

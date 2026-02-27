@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import ContactModal from '../../../shared/components/modals/ContactModal';
+import SEOHead from '../../../shared/components/seo/SEOHead';
 
 const FAQPage = () => {
   const [isContactOpen, setIsContactOpen] = useState(false);
@@ -75,8 +76,35 @@ const FAQPage = () => {
     []
   );
 
+  const faqSchema = useMemo(
+    () => ({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      inLanguage: 'es-CL',
+      mainEntity: faqSections.flatMap(section =>
+        section.items.map(item => ({
+          '@type': 'Question',
+          name: item.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: item.answer,
+          },
+        }))
+      ),
+    }),
+    [faqSections]
+  );
+
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-white">
+      <SEOHead
+        title="Preguntas Frecuentes"
+        description="Resuelve dudas sobre Sellsi: registro, seguridad, compras B2B, proveedores y soporte para empresas en Chile."
+        canonical="https://sellsi.cl/faq"
+        url="https://sellsi.cl/faq"
+        keywords="faq sellsi, preguntas frecuentes b2b, marketplace chile, proveedores industriales"
+        schema={faqSchema}
+      />
       <section className="relative w-full bg-gradient-to-br from-gray-900 via-black to-gray-900 py-20 md:py-24 lg:py-28 overflow-hidden">
         <div className="absolute inset-0 opacity-[0.15]">
           <div

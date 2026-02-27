@@ -646,29 +646,21 @@ const OffersList = ({
                             sx={{ color: 'common.white' }}
                             display="block"
                           >
-                            Cuando una oferta es aprobada, la forma de completar
-                            la compra es agregando esa oferta al carrito desde
-                            esta sección. <br /> <br />
-                            Contarás con un máximo de 24 horas para hacer esto
-                            antes de que la oferta caduque.
+                            <strong>Agregar al carrito:</strong> cuando el proveedor aprueba tu oferta, tienes 24 horas para agregarla al carrito y completar la compra.
                           </Typography>
                           <Typography
                             variant="caption"
                             sx={{ color: 'common.white', mt: 1 }}
                             display="block"
                           >
-                                En ofertas pendientes también puedes enviar una
-                                contraoferta para continuar la negociación.
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                sx={{ color: 'common.white', mt: 1 }}
-                                display="block"
-                              >
-                            Para cancelar una oferta (Pendiente o Aprobada),
-                            utiliza la acción "Cancelar Oferta". Una vez
-                            cancelada, la oferta se marcará como "Cancelada" y
-                            podrás limpiarla si lo deseas.
+                            <strong>Contraoferta:</strong> si el proveedor responde con una contraoferta, puedes aceptarla, cancelarla o enviar tu propia contraoferta (hasta 2 veces).
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: 'common.white', mt: 1 }}
+                            display="block"
+                          >
+                            <strong>Cancelar:</strong> disponible en ofertas pendientes (mientras esperas respuesta) y en ofertas aprobadas. Una vez cancelada, puedes limpiarla con el basurero.
                           </Typography>
                         </Box>
                       }

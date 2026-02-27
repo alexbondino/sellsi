@@ -12,6 +12,16 @@ const KHIPU_SCRIPT_SRC = 'https://js.khipu.com/v1/kws.js';
 const KHIPU_MOUNT_ID = 'khipu-web-root';
 const KHIPU_BRIDGE_FLAG = '__sellsiKhipuCtor';
 
+const isGenericKhipuOperationFailure = (result) => {
+  const exitTitle = String(result?.exitTitle || '').toLowerCase();
+  const exitMessage = String(result?.exitMessage || '').toLowerCase();
+
+  return (
+    exitTitle.includes('operationfailedtitle') ||
+    exitMessage.includes('operationfailedbody')
+  );
+};
+
 // ============================================================================
 // Carga dinámica del SDK de Khipu (una sola vez por sesión)
 // ============================================================================
@@ -224,6 +234,9 @@ const KhipuEmbeddedModal = ({ open, paymentId, fallbackUrl, onSuccess, onError, 
           // USER_CANCELED → tratar como "cerrar" en lugar de error duro
           if (isUserCanceled) {
             onClose?.();
+          } else if (isGenericKhipuOperationFailure(result) && fallbackUrl) {
+            console.warn('[KhipuEmbeddedModal] Error genérico de operación en SDK, usando fallback hosted checkout');
+            window.location.href = fallbackUrl;
           } else {
             onError?.(result);
           }
@@ -240,7 +253,7 @@ const KhipuEmbeddedModal = ({ open, paymentId, fallbackUrl, onSuccess, onError, 
           onError?.(result);
       }
     },
-    [onSuccess, onError, onClose]
+    [onSuccess, onError, onClose, fallbackUrl]
   );
 
   // --------------------------------------------------------------------------

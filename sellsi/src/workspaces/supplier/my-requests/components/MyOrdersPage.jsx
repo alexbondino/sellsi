@@ -907,7 +907,7 @@ const MyOrdersPage = () => {
           }}
         >
           <Container maxWidth={false} disableGutters={isMobile ? true : false} sx={{ width: '100%' }}>
-            <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center' }}>
               <AssignmentIcon
                 sx={{ color: 'primary.main', fontSize: 36, mr: 1 }}
               />
@@ -915,11 +915,13 @@ const MyOrdersPage = () => {
                 variant="h4"
                 fontWeight={600}
                 color="primary.main"
-                gutterBottom
               >
                 Mis Pedidos
               </Typography>
             </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4, fontSize: { md: '0.95rem' } }}>
+              Gestiona tus pedidos recibidos: acepta, despacha y confirma la entrega a tus compradores.
+            </Typography>
             {isMobile ? (
               <MobileSupplierOrdersSkeleton rows={3} />
             ) : (
@@ -986,7 +988,7 @@ const MyOrdersPage = () => {
       >
         <Container maxWidth={false} disableGutters={isMobile ? true : false} sx={{ width: { xs: '100%', md: '108%', lg: '100%', xl: '100%' } }}>
           {/* Título de la página */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
             <AssignmentIcon
               sx={{ color: 'primary.main', fontSize: 36, mr: 1 }}
             />
@@ -994,11 +996,13 @@ const MyOrdersPage = () => {
               variant="h4"
               fontWeight={600}
               color="primary.main"
-              gutterBottom
             >
               Mis Pedidos
             </Typography>
           </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4, fontSize: { md: '0.95rem' } }}>
+            Gestiona tus pedidos recibidos: acepta, despacha y confirma la entrega a tus compradores.
+          </Typography>
 
           {/* Renderizado condicional mobile vs desktop */}
           {isMobile ? (

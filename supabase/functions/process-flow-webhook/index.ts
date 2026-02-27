@@ -489,6 +489,7 @@ serve((req: Request) => withMetrics('process-flow-webhook', req, async () => {
         .from('orders')
         .update({
           payment_status: 'paid',
+          hidden_by_buyer: false,
           flow_order: flowOrder,
           paid_at: paidAt,
           updated_at: new Date().toISOString(),
