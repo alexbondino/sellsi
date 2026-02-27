@@ -18,12 +18,16 @@ const DIST_DIR = path.join(PROJECT_ROOT, 'dist');
 const PREVIEW_HOST = process.env.PRERENDER_PREVIEW_HOST || '127.0.0.1';
 const PREVIEW_PORT = Number(process.env.PRERENDER_PREVIEW_PORT || 4173);
 const PREVIEW_BASE = `http://${PREVIEW_HOST}:${PREVIEW_PORT}`;
+const IS_VERCEL = process.env.VERCEL === '1';
 
 const STATIC_ROUTES = ['/', '/faq'];
 
 const PRODUCT_LIMIT = Number(process.env.PRERENDER_PRODUCTS_LIMIT || 500);
 const CATALOG_LIMIT = Number(process.env.PRERENDER_CATALOGS_LIMIT || 500);
-const PRERENDER_STRICT = process.env.PRERENDER_STRICT !== 'false';
+const PRERENDER_STRICT =
+  typeof process.env.PRERENDER_STRICT === 'string'
+    ? process.env.PRERENDER_STRICT !== 'false'
+    : !IS_VERCEL;
 const PRERENDER_RETRIES = Number(process.env.PRERENDER_RETRIES || 2);
 const PRERENDER_CONCURRENCY = Math.max(
   1,
@@ -282,6 +286,73 @@ function hasNoindexRobots(html) {
   return /noindex/i.test(match[1] || '');
 }
 
+function isMissingBrowserExecutableError(error) {
+  const message = String(error?.message || '');
+  return (
+    message.includes("browserType.launch") &&
+    message.includes("Executable doesn't exist")
+  );
+}
+
+function isMissingHostDependenciesError(error) {
+  const message = String(error?.message || '');
+  return (
+    message.includes('Host system is missing dependencies to run browsers') ||
+    message.includes('Please install them with the following command')
+  );
+}
+
+async function ensurePlaywrightChromiumInstalled() {
+  console.warn('[prerender] Chromium no disponible. Instalando navegador de Playwright...');
+  await new Promise((resolve, reject) => {
+    const installer = spawn('npx', ['playwright', 'install', 'chromium'], {
+      cwd: PROJECT_ROOT,
+      env: process.env,
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    });
+
+    installer.on('error', reject);
+    installer.on('close', code => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+
+      reject(new Error(`playwright install chromium finalizó con código ${code}`));
+    });
+  });
+  console.warn('[prerender] Instalación de Chromium finalizada. Reintentando prerender...');
+}
+
+async function createBrowserWithRecovery() {
+  try {
+    return await chromium.launch({ headless: true });
+  } catch (error) {
+    if (isMissingHostDependenciesError(error)) {
+      throw new Error(
+        'Entorno sin dependencias del sistema para Playwright (libnspr4/libnss3/libgbm1)'
+      );
+    }
+
+    if (!isMissingBrowserExecutableError(error)) {
+      throw error;
+    }
+
+    await ensurePlaywrightChromiumInstalled();
+    try {
+      return await chromium.launch({ headless: true });
+    } catch (retryError) {
+      if (isMissingHostDependenciesError(retryError)) {
+        throw new Error(
+          'Entorno sin dependencias del sistema para Playwright (libnspr4/libnss3/libgbm1)'
+        );
+      }
+      throw retryError;
+    }
+  }
+}
+
 async function waitForDynamicSeoReady(page, route) {
   if (!isDynamicSeoRoute(route)) return;
 
@@ -336,7 +407,7 @@ async function renderRouteHtml(context, route) {
 }
 
 async function prerenderRoutes(routes) {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await createBrowserWithRecovery();
   const context = await browser.newContext();
 
   try {
