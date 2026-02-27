@@ -37,12 +37,28 @@ class CheckoutService {
     if (!cartId) return null;
 
     try {
-      const { data: existing, error } = await supabase
+      let { data: existing, error } = await supabase
         .from('orders')
         .select('id, items, total, payment_method, khipu_expires_at, flow_expires_at, khipu_payment_url, flow_payment_url, payment_status, created_at')
         .eq('cart_id', cartId)
         .eq('payment_status', 'pending')
         .maybeSingle();
+
+      if (error && String(error.message || '').toLowerCase().includes('multiple')) {
+        console.warn('[CheckoutService] Se detectaron múltiples ordenes pending, intentando recuperar la más reciente');
+        const { data: pendingList, error: pendingListError } = await supabase
+          .from('orders')
+          .select('id, items, total, payment_method, khipu_expires_at, flow_expires_at, khipu_payment_url, flow_payment_url, payment_status, created_at')
+          .eq('cart_id', cartId)
+          .eq('payment_status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (!pendingListError && Array.isArray(pendingList) && pendingList.length > 0) {
+          existing = pendingList[0];
+          error = null;
+        }
+      }
 
       // Si hay error de red/DB, fallar silenciosamente y dejar que el INSERT decida
       if (error) {
@@ -51,6 +67,32 @@ class CheckoutService {
       }
 
       if (!existing) return null;
+
+      // Verificar que items coincidan ANTES de cualquier reuso por expiración.
+      // Esto evita retomar una orden vieja cuando el carrito cambió.
+      const existingHash = this._hashItems(existing.items);
+      const currentHash = this._hashItems(currentItems);
+
+      if (existingHash !== currentHash) {
+        console.log('[CheckoutService] Items cambiaron, expirando orden anterior:', existing.id);
+        try {
+          const { error: expireError } = await supabase.from('orders')
+            .update({ payment_status: 'expired', status: 'cancelled', cancellation_reason: 'cart items changed' })
+            .eq('id', existing.id)
+            .eq('payment_status', 'pending');
+          if (expireError) {
+            console.warn(
+              '[CheckoutService] No se pudo expirar orden por items (reusando pendiente):',
+              expireError.message
+            );
+            return existing;
+          }
+        } catch (expireErr) {
+          console.warn('[CheckoutService] Error marcando orden expired por items (reusando pendiente):', expireErr.message);
+          return existing;
+        }
+        return null;
+      }
 
       // Verificar expiración según payment_method
       let isExpired = false;
@@ -99,31 +141,21 @@ class CheckoutService {
         return existing;
       }
 
-      // Verificar que items coincidan
-      const existingHash = this._hashItems(existing.items);
-      const currentHash = this._hashItems(currentItems);
-
-      if (existingHash !== currentHash) {
-        console.log('[CheckoutService] Items cambiaron, expirando orden anterior:', existing.id);
-        try {
-          await supabase.from('orders')
-            .update({ payment_status: 'expired', status: 'cancelled', cancellation_reason: 'cart items changed' })
-            .eq('id', existing.id);
-        } catch (expireErr) {
-          console.warn('[CheckoutService] Error marcando orden expired por items (ignorando):', expireErr.message);
-        }
-        return null;
-      }
-
       // Validar que órdenes de Flow/Khipu tengan payment_url (prevenir zombies)
       if (existing.payment_method === 'flow' && !existing.flow_payment_url) {
         console.log('[CheckoutService] Orden Flow sin payment_url, expirando como zombie');
         try {
-          await supabase.from('orders')
+          const { error: expireError } = await supabase.from('orders')
             .update({ payment_status: 'expired', status: 'cancelled', cancellation_reason: 'flow url missing' })
-            .eq('id', existing.id);
+            .eq('id', existing.id)
+            .eq('payment_status', 'pending');
+          if (expireError) {
+            console.warn('[CheckoutService] Error marcando orden Flow zombie (reusando pendiente):', expireError.message);
+            return existing;
+          }
         } catch (err) {
-          console.warn('[CheckoutService] Error marcando orden Flow zombie:', err.message);
+          console.warn('[CheckoutService] Error marcando orden Flow zombie (reusando pendiente):', err.message);
+          return existing;
         }
         return null;
       }
@@ -131,11 +163,17 @@ class CheckoutService {
       if (existing.payment_method === 'khipu' && !existing.khipu_payment_url) {
         console.log('[CheckoutService] Orden Khipu sin payment_url, expirando como zombie');
         try {
-          await supabase.from('orders')
+          const { error: expireError } = await supabase.from('orders')
             .update({ payment_status: 'expired', status: 'cancelled', cancellation_reason: 'khipu url missing' })
-            .eq('id', existing.id);
+            .eq('id', existing.id)
+            .eq('payment_status', 'pending');
+          if (expireError) {
+            console.warn('[CheckoutService] Error marcando orden Khipu zombie (reusando pendiente):', expireError.message);
+            return existing;
+          }
         } catch (err) {
-          console.warn('[CheckoutService] Error marcando orden Khipu zombie:', err.message);
+          console.warn('[CheckoutService] Error marcando orden Khipu zombie (reusando pendiente):', err.message);
+          return existing;
         }
         return null;
       }

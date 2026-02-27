@@ -262,7 +262,7 @@ describe('checkoutService - Duplicate Order Handling', () => {
       }));
     });
 
-    it('retorna null y expira orden si khipu_expires_at pasó', async () => {
+    it('reutiliza orden si khipu_expires_at pasó (fallback robusto)', async () => {
       const existingOrder = {
         id: 'order-123',
         items: [{ product_id: 'prod-1', quantity: 2 }],
@@ -277,13 +277,34 @@ describe('checkoutService - Duplicate Order Handling', () => {
       const currentItems = [{ product_id: 'prod-1', quantity: 2 }];
       const result = await checkoutService.getOrReuseExistingOrder('cart-123', currentItems);
       
+      expect(result).toEqual(existingOrder);
+      expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('si orden expirada tiene items distintos, intenta expirar y no la reutiliza', async () => {
+      const existingOrder = {
+        id: 'order-expired-items-changed',
+        items: [{ product_id: 'prod-1', quantity: 2 }],
+        total: 10000,
+        payment_method: 'khipu',
+        khipu_expires_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+        payment_status: 'pending',
+        created_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+      };
+      mockOrderMaybeSingle.mockResolvedValue({ data: existingOrder, error: null });
+
+      const currentItems = [{ product_id: 'prod-1', quantity: 5 }];
+      const result = await checkoutService.getOrReuseExistingOrder('cart-123', currentItems);
+
       expect(result).toBeNull();
       expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
-        payment_status: 'expired'
+        payment_status: 'expired',
+        status: 'cancelled',
+        cancellation_reason: 'cart items changed'
       }));
     });
 
-    it('detecta orden zombie (>5 min sin khipu_expires_at)', async () => {
+    it('reutiliza orden zombie (>5 min sin khipu_expires_at) para regenerar sesión', async () => {
       const existingOrder = {
         id: 'order-123',
         items: [{ product_id: 'prod-1', quantity: 2 }],
@@ -298,13 +319,11 @@ describe('checkoutService - Duplicate Order Handling', () => {
       const currentItems = [{ product_id: 'prod-1', quantity: 2 }];
       const result = await checkoutService.getOrReuseExistingOrder('cart-123', currentItems);
       
-      expect(result).toBeNull();
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
-        cancellation_reason: expect.stringContaining('zombie')
-      }));
+      expect(result).toEqual(existingOrder);
+      expect(mockUpdate).not.toHaveBeenCalled();
     });
 
-    it('khipu_expires_at exactamente ahora se considera expirado', async () => {
+    it('khipu_expires_at exactamente ahora también se reutiliza', async () => {
       const now = new Date();
       const existingOrder = {
         id: 'order-now',
@@ -318,8 +337,8 @@ describe('checkoutService - Duplicate Order Handling', () => {
       mockOrderMaybeSingle.mockResolvedValue({ data: existingOrder, error: null });
 
       const result = await checkoutService.getOrReuseExistingOrder('cart-123', [{ product_id: 'prod-1', quantity: 2 }]);
-      expect(result).toBeNull();
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ payment_status: 'expired' }));
+      expect(result).toEqual(existingOrder);
+      expect(mockUpdate).not.toHaveBeenCalled();
     });
 
     // =========================================================================
@@ -344,7 +363,7 @@ describe('checkoutService - Duplicate Order Handling', () => {
       expect(result).toEqual(existingOrder);
     });
 
-    it('retorna null y expira orden Flow si flow_expires_at pasó', async () => {
+    it('reutiliza orden Flow si flow_expires_at pasó (fallback robusto)', async () => {
       const existingOrder = {
         id: 'order-flow-2',
         items: [{ product_id: 'prod-1', quantity: 2 }],
@@ -359,14 +378,11 @@ describe('checkoutService - Duplicate Order Handling', () => {
       const currentItems = [{ product_id: 'prod-1', quantity: 2 }];
       const result = await checkoutService.getOrReuseExistingOrder('cart-123', currentItems);
       
-      expect(result).toBeNull();
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
-        payment_status: 'expired',
-        cancellation_reason: expect.stringContaining('payment window expired')
-      }));
+      expect(result).toEqual(existingOrder);
+      expect(mockUpdate).not.toHaveBeenCalled();
     });
 
-    it('detecta orden Flow zombie (>5 min sin flow_expires_at)', async () => {
+    it('reutiliza orden Flow zombie (>5 min sin flow_expires_at)', async () => {
       const existingOrder = {
         id: 'order-flow-3',
         items: [{ product_id: 'prod-1', quantity: 2 }],
@@ -381,11 +397,8 @@ describe('checkoutService - Duplicate Order Handling', () => {
       const currentItems = [{ product_id: 'prod-1', quantity: 2 }];
       const result = await checkoutService.getOrReuseExistingOrder('cart-123', currentItems);
       
-      expect(result).toBeNull();
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
-        payment_status: 'expired',
-        cancellation_reason: expect.stringContaining('zombie')
-      }));
+      expect(result).toEqual(existingOrder);
+      expect(mockUpdate).not.toHaveBeenCalled();
     });
 
     it('fail-open: retorna null si hay error de DB', async () => {

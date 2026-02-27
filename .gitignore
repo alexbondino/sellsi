@@ -2,9 +2,11 @@
 *.md
 
 # Recovered folders
-scripts/
+/scripts/
 sellsi/Documentacion/
-sellsi/scripts/
+sellsi/scripts/*
+!sellsi/scripts/generate-sitemap-hybrid.js
+!sellsi/scripts/prerender-selective.js
 sellsi/sql/
 
 # Ignore folio folder generated files

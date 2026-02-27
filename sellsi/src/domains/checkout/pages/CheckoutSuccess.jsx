@@ -24,6 +24,7 @@ import { toast } from 'react-hot-toast';
 
 // Servicios
 import { checkoutService } from '../services';
+import { getFriendlyCheckoutErrorMessage } from '../services/checkoutErrorMessages';
 import useCartStore from '../../../shared/stores/cart/cartStore.js';
 import { useOfferStore } from '../../../stores/offerStore.js';
 
@@ -155,8 +156,12 @@ const CheckoutSuccess = () => {
         }
       } catch (error) {
         console.error('[CheckoutSuccess] Error verificando pago:', error);
-        setVerificationError(error.message);
-        toast.error(error.message);
+        const friendlyMessage = getFriendlyCheckoutErrorMessage(
+          error,
+          'No pudimos verificar el estado del pago. Revisa Mis Pedidos en unos minutos.'
+        );
+        setVerificationError(friendlyMessage);
+        toast.error(friendlyMessage);
       } finally {
         setIsVerifying(false);
       }

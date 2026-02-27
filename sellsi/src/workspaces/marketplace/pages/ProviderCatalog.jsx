@@ -61,6 +61,7 @@ import { showErrorToast } from '../../../utils/toastHelpers';
 import { CATEGORIAS } from '../components/CategoryNavigation/CategoryNavigation';
 import { formatNumber } from '../../../shared/utils/formatters';
 import FinancingModals from '../../buyer/my-financing/components/FinancingModals';
+import SEOHead from '../../../shared/components/seo/SEOHead';
 
 /**
  * ProviderCatalog - Catálogo de productos de un proveedor específico
@@ -635,9 +636,71 @@ const ProviderCatalog = () => {
     [provider?.descripcion_proveedor]
   );
 
+  const normalizeSupplierSlug = value =>
+    (value || 'proveedor')
+      .toString()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+
+  const catalogCanonicalUrl = useMemo(() => {
+    const safeName = normalizeSupplierSlug(userNm);
+    const safeId = (userId || '').toString().trim().slice(0, 4);
+    return `https://sellsi.cl/catalog/${safeName}/${safeId}`;
+  }, [userNm, userId]);
+
+  const catalogSeo = useMemo(() => {
+    const providerName = provider?.user_nm || 'Proveedor en Sellsi';
+    const productCount = provider?.productCount ?? filteredProducts.length ?? 0;
+    const description =
+      provider?.descripcion_proveedor ||
+      `Catálogo B2B de ${providerName} en Sellsi. Revisa productos industriales y cotiza en Chile.`;
+
+    return {
+      title: `${providerName} - Catálogo B2B`,
+      description,
+      canonical: catalogCanonicalUrl,
+      url: catalogCanonicalUrl,
+      type: 'website',
+      keywords:
+        'catalogo proveedor, marketplace b2b chile, productos industriales, repuestos por mayor',
+      schema: {
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'Organization',
+            name: providerName,
+            description,
+            url: catalogCanonicalUrl,
+            inLanguage: 'es-CL',
+          },
+          {
+            '@type': 'CollectionPage',
+            name: `Catálogo de ${providerName}`,
+            url: catalogCanonicalUrl,
+            inLanguage: 'es-CL',
+            mainEntity: {
+              '@type': 'ItemList',
+              numberOfItems: Number(productCount) || 0,
+            },
+          },
+        ],
+      },
+    };
+  }, [provider, filteredProducts.length, catalogCanonicalUrl]);
+
   if (loading) {
     return (
       <ThemeProvider theme={dashboardThemeCore}>
+        <SEOHead
+          title="Catálogo de Proveedor"
+          description="Cargando catálogo de proveedor en Sellsi"
+          canonical={catalogCanonicalUrl}
+          url={catalogCanonicalUrl}
+          noindex={true}
+          nofollow={true}
+        />
         <Box
           sx={{
             backgroundColor: 'background.default',
@@ -660,6 +723,14 @@ const ProviderCatalog = () => {
   if (error) {
     return (
       <ThemeProvider theme={dashboardThemeCore}>
+        <SEOHead
+          title="Catálogo no disponible"
+          description="Este catálogo no está disponible temporalmente."
+          canonical={catalogCanonicalUrl}
+          url={catalogCanonicalUrl}
+          noindex={true}
+          nofollow={true}
+        />
         <Box
           sx={{
             backgroundColor: 'background.default',
@@ -700,6 +771,7 @@ const ProviderCatalog = () => {
 
   return (
     <ThemeProvider theme={dashboardThemeCore}>
+      <SEOHead {...catalogSeo} />
       <Box
         sx={{
           backgroundColor: 'background.default',

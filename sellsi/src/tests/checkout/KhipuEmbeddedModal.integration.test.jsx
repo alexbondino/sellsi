@@ -133,4 +133,37 @@ describe('KhipuEmbeddedModal integration', () => {
     expect(onError).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it('ERROR operationFailed* con fallbackUrl evita onError/onClose (usa fallback hosted)', async () => {
+    const { client, getCallback } = setupKhipuMock();
+    const onSuccess = jest.fn();
+    const onError = jest.fn();
+    const onClose = jest.fn();
+
+    render(
+      <KhipuEmbeddedModal
+        open
+        paymentId="pay_999"
+        fallbackUrl="https://khipu.com/payment/info/hosted-123"
+        onSuccess={onSuccess}
+        onError={onError}
+        onClose={onClose}
+      />
+    );
+
+    await waitFor(() => {
+      expect(client.startOperation).toHaveBeenCalledTimes(1);
+    });
+
+    const callback = getCallback();
+    callback({
+      result: 'ERROR',
+      exitTitle: 'operationFailedTitle',
+      exitMessage: 'operationFailedBody',
+    });
+
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

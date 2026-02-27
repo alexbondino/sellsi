@@ -135,6 +135,7 @@ export default function InvoiceDocuments({ role }) {
   const [loadError, setLoadError] = useState(null);
 
   const ITEMS_PER_PAGE = 50;
+  const isSupplier = role === 'supplier';
 
 
   useEffect(() => {
@@ -271,17 +272,19 @@ export default function InvoiceDocuments({ role }) {
     return acc;
   }, [allInvoices]);
 
+  const activeCategory = isSupplier ? category : 'recibidas';
+
   const filtered = useMemo(() => {
-    if (category === 'all') return allInvoices;
-    return allInvoices.filter(inv => inv.category === category);
-  }, [allInvoices, category]);
+    if (activeCategory === 'all') return allInvoices;
+    return allInvoices.filter(inv => inv.category === activeCategory);
+  }, [allInvoices, activeCategory]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const totalItemsForPagination = filtered.length;
 
   useEffect(() => {
     setPage(1);
-  }, [category]);
+  }, [activeCategory]);
 
   useEffect(() => {
     if (totalPages > 0 && page > totalPages) setPage(totalPages);
@@ -293,7 +296,7 @@ export default function InvoiceDocuments({ role }) {
     return filtered.slice(start, start + ITEMS_PER_PAGE);
   }, [filtered, page]);
 
-  const empty = EMPTY_STATE[category];
+  const empty = EMPTY_STATE[activeCategory];
 
   const LoadingSkeleton = () => (
     <>
@@ -382,31 +385,41 @@ export default function InvoiceDocuments({ role }) {
     <Box>
       {/* Descripción */}
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 960, fontSize: '14px' }}>
-        Aquí encontrarás las facturas y boletas vinculadas a tus pedidos. Las facturas
-        <strong> emitidas</strong> corresponden a documentos que adjuntaste a tus ventas;
-        las <strong>recibidas</strong> son las que tus proveedores adjuntaron a tus compras.
+        {isSupplier ? (
+          <>
+            Aquí encontrarás las facturas y boletas vinculadas a tus pedidos. Las facturas
+            <strong> emitidas</strong> corresponden a documentos que adjuntaste a tus ventas;
+            las <strong>recibidas</strong> son las que tus proveedores adjuntaron a tus compras.
+          </>
+        ) : (
+          <>
+            Aquí encontrarás las facturas y boletas que tus proveedores adjuntaron a tus compras.
+          </>
+        )}
       </Typography>
 
       {/* Filtro */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
-        <Typography fontWeight={600}>Filtrar por tipo:</Typography>
-        <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel id="invoice-filter-label">Tipo</InputLabel>
-          <Select
-            labelId="invoice-filter-label"
-            value={category}
-            label="Tipo"
-            onChange={(e) => setCategory(e.target.value)}
-            MenuProps={{ disableScrollLock: true }}
-          >
-            {FILTER_OPTIONS.map(opt => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label} ({counts[opt.value]})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
+      {isSupplier && (
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
+          <Typography fontWeight={600}>Filtrar por tipo:</Typography>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel id="invoice-filter-label">Tipo</InputLabel>
+            <Select
+              labelId="invoice-filter-label"
+              value={category}
+              label="Tipo"
+              onChange={(e) => setCategory(e.target.value)}
+              MenuProps={{ disableScrollLock: true }}
+            >
+              {FILTER_OPTIONS.map(opt => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label} ({counts[opt.value]})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      )}
 
       {loadError ? (
         <Paper

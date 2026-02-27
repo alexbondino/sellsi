@@ -6,8 +6,12 @@ import ProductPageView from './ProductPageView';
 import { supabase } from '../../../services/supabase';
 import { useAuth } from '../../../infrastructure/providers/UnifiedAuthProvider';
 import useCartStore from '../../../shared/stores/cart/cartStore';
-import { extractProductIdFromSlug } from '../../../shared/utils/product/productUrl';
+import {
+  createProductSlug,
+  extractProductIdFromSlug,
+} from '../../../shared/utils/product/productUrl';
 import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils';
+import SEOHead from '../../../shared/components/seo/SEOHead';
 
 const ProductPageWrapper = () => {
   const { session, currentAppRole } = useAuth();
@@ -194,8 +198,72 @@ const ProductPageWrapper = () => {
       addToCart(productToAdd, productToAdd.quantity);
   };
 
+  const productSeo = useMemo(() => {
+    const fallbackId = id || extractProductIdFromSlug(productSlug || '') || '';
+
+    if (!product) {
+      return {
+        title: 'Producto en Sellsi',
+        description:
+          'Detalle de producto en Sellsi Marketplace B2B para empresas en Chile.',
+        canonical: fallbackId
+          ? `https://sellsi.cl/marketplace/product/${fallbackId}`
+          : 'https://sellsi.cl/marketplace',
+        url: fallbackId
+          ? `https://sellsi.cl/marketplace/product/${fallbackId}`
+          : 'https://sellsi.cl/marketplace',
+        noindex: true,
+        nofollow: true,
+      };
+    }
+
+    const productId = product.productid || product.id;
+    const productName = product.nombre || 'Producto';
+    const productSlugName = createProductSlug(productName);
+    const canonical = productSlugName
+      ? `https://sellsi.cl/marketplace/product/${productId}/${productSlugName}`
+      : `https://sellsi.cl/marketplace/product/${productId}`;
+    const description =
+      product.descripcion ||
+      `${productName} disponible en Sellsi Marketplace B2B para empresas en Chile.`;
+    const price = Number(product.precio || 0);
+
+    return {
+      title: productName,
+      description,
+      canonical,
+      url: canonical,
+      type: 'product',
+      image: product.imagen || undefined,
+      schema: {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: productName,
+        description,
+        image: product.imagen || undefined,
+        sku: productId,
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'CLP',
+          price: Number.isFinite(price) ? Math.round(price) : 0,
+          availability:
+            Number(product.stock || 0) > 0
+              ? 'https://schema.org/InStock'
+              : 'https://schema.org/OutOfStock',
+          url: canonical,
+        },
+        brand: {
+          '@type': 'Organization',
+          name: product.proveedor || 'Sellsi',
+        },
+        inLanguage: 'es-CL',
+      },
+    };
+  }, [product, id, productSlug]);
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
+      <SEOHead {...productSeo} noindex={!!(loading || error || !product)} />
       <Box sx={{ pt: 0 }}>
         {loading ? (
           // 🆕 Mostrar loading mientras carga

@@ -384,7 +384,7 @@ const MyFinancing = () => {
           sx={{ width: '100%' }}
         >
           {/* Header */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, px: { xs: 2, md: 0 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, px: { xs: 2, md: 0 } }}>
             <AccountBalanceIcon
               sx={{ color: 'primary.main', mr: 1, fontSize: 36 }}
             />
@@ -392,11 +392,13 @@ const MyFinancing = () => {
               variant="h4"
               fontWeight={600}
               color="primary.main"
-              gutterBottom
             >
               Mis Financiamientos
             </Typography>
           </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4, px: { xs: 2, md: 0 }, fontSize: { md: '0.95rem' } }}>
+            Gestiona tus solicitudes de financiamiento: revisa su estado, firma contratos y realiza pagos.
+          </Typography>
 
           {/* Lista de Financiamientos */}
           <BuyerFinancingsList

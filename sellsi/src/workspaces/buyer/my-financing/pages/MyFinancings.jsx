@@ -63,7 +63,7 @@ const MyFinancings = () => {
           sx={{ width: '100%' }}
         >
           {/* Header */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, px: { xs: 2, md: 0 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, px: { xs: 2, md: 0 } }}>
             <RequestQuoteIcon
               sx={{ color: 'primary.main', mr: 1, fontSize: 36 }}
             />
@@ -71,11 +71,13 @@ const MyFinancings = () => {
               variant="h4"
               fontWeight={600}
               color="primary.main"
-              gutterBottom
             >
               Solicitar Financiamiento
             </Typography>
           </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4, px: { xs: 2, md: 0 }, fontSize: { md: '0.95rem' } }}>
+            Solicita financiamiento para tus compras. Elige entre un préstamo express o una solicitud extendida según tus necesidades.
+          </Typography>
 
           {/* Botón principal */}
           <Box sx={{ px: { xs: 2, md: 0 } }}>

@@ -19,6 +19,26 @@ import {
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { getFriendlyCheckoutErrorMessage } from '../services/checkoutErrorMessages'
+
+const getCancelReasonMessage = (reason) => {
+  const normalizedReason = String(reason || '').toLowerCase()
+
+  if (normalizedReason === 'user_cancelled') {
+    return 'Cancelaste el pago en Khipu.'
+  }
+  if (normalizedReason === 'timeout') {
+    return 'El tiempo para completar el pago se agotó.'
+  }
+  if (normalizedReason === 'error') {
+    return 'Ocurrió un error durante el proceso de pago.'
+  }
+
+  return getFriendlyCheckoutErrorMessage(
+    reason,
+    'No se pudo completar el pago. Puedes intentarlo nuevamente.'
+  )
+}
 
 // ============================================================================
 // COMPONENTE PRINCIPAL
@@ -30,7 +50,8 @@ const CheckoutCancel = () => {
   
   // Obtener parámetros de la URL de cancelación de Khipu
   const paymentId = searchParams.get('payment_id')
-  const reason = searchParams.get('reason') || 'El usuario canceló el pago'
+  const reason = searchParams.get('reason') || 'user_cancelled'
+  const reasonMessage = getCancelReasonMessage(reason)
 
   const handleBackToCart = () => {
     navigate('/buyer/cart')
@@ -81,10 +102,7 @@ const CheckoutCancel = () => {
           <Alert severity="info" sx={{ mb: 3, textAlign: 'left' }}>
             <Typography variant="body2">
               <strong>¿Qué pasó?</strong><br />
-              {reason === 'user_cancelled' && 'Cancelaste el pago en Khipu'}
-              {reason === 'timeout' && 'El tiempo para completar el pago se agotó'}
-              {reason === 'error' && 'Ocurrió un error durante el proceso de pago'}
-              {!['user_cancelled', 'timeout', 'error'].includes(reason) && reason}
+              {reasonMessage}
             </Typography>
           </Alert>
 
