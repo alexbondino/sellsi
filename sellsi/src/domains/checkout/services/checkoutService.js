@@ -82,14 +82,14 @@ class CheckoutService {
             .eq('payment_status', 'pending');
           if (expireError) {
             console.warn(
-              '[CheckoutService] No se pudo expirar orden por items (reusando pendiente):',
+              '[CheckoutService] No se pudo expirar orden por items (NO se reutiliza pendiente):',
               expireError.message
             );
-            return existing;
+            return null;
           }
         } catch (expireErr) {
-          console.warn('[CheckoutService] Error marcando orden expired por items (reusando pendiente):', expireErr.message);
-          return existing;
+          console.warn('[CheckoutService] Error marcando orden expired por items (NO se reutiliza pendiente):', expireErr.message);
+          return null;
         }
         return null;
       }
@@ -412,28 +412,51 @@ class CheckoutService {
         ? orderData.billingAddress
         : null;
 
-      const { data, error } = await supabase
-        .from('orders')
-        .insert({
-          user_id: orderData.userId,
-          items: orderData.items,
-          subtotal: orderData.subtotal,
-          tax: orderData.tax,
-          shipping: orderData.shipping,
-          total: orderData.total,
-          financing_amount: orderData.financingAmount || 0, // ✅ CRÍTICO: Monto cubierto por financiamiento
-          currency: orderData.currency || 'CLP',
-          status: 'pending',
-          payment_method: orderData.paymentMethod,
-          payment_status: 'pending',
-          payment_fee: orderData.paymentFee || null,
-          grand_total: orderData.grandTotal || null,
-          shipping_address: shippingAddressObj,
-          billing_address: billingAddressObj,
-          cart_id: orderData.cartId || null, // ✅ Vincular con carrito para limpieza server-side
-        })
-        .select()
-        .single();
+      const buildOrderInsertPayload = (cartIdOverride) => ({
+        user_id: orderData.userId,
+        items: orderData.items,
+        subtotal: orderData.subtotal,
+        tax: orderData.tax,
+        shipping: orderData.shipping,
+        total: orderData.total,
+        financing_amount: orderData.financingAmount || 0,
+        currency: orderData.currency || 'CLP',
+        status: 'pending',
+        payment_method: orderData.paymentMethod,
+        payment_status: 'pending',
+        payment_fee: orderData.paymentFee || null,
+        grand_total: orderData.grandTotal || null,
+        shipping_address: shippingAddressObj,
+        billing_address: billingAddressObj,
+        cart_id: cartIdOverride || null,
+      });
+
+      const insertOrder = async (payload) =>
+        supabase
+          .from('orders')
+          .insert(payload)
+          .select()
+          .single();
+
+      let { data, error } = await insertOrder(buildOrderInsertPayload(orderData.cartId));
+
+      // 🐛 BUG #38 FIX:
+      // Si existe una orden pending "atascada" para el mismo cart_id (RLS/trigger impide expirar),
+      // reintentar insert sin cart_id para no bloquear el checkout actual.
+      const insertErrorMessage = String(error?.message || '').toLowerCase();
+      const isPendingCartUniqueConflict =
+        insertErrorMessage.includes('uniq_orders_cart_pending') ||
+        insertErrorMessage.includes('duplicate key');
+
+      if (error && orderData.cartId && isPendingCartUniqueConflict) {
+        console.warn(
+          '[CheckoutService] Conflicto uniq_orders_cart_pending detectado, reintentando createOrder sin cart_id:',
+          error.message
+        );
+        const retry = await insertOrder(buildOrderInsertPayload(null));
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) throw error;
 
