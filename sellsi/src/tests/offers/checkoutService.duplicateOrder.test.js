@@ -14,6 +14,7 @@ const mockEq = jest.fn();
 const mockOrderMaybeSingle = jest.fn();
 const mockCartMaybeSingle = jest.fn();
 const mockUpdate = jest.fn();
+const mockUpdateResult = jest.fn();
 const mockInsert = jest.fn();
 const mockSingle = jest.fn();
 const mockGetUserProfile = jest.fn();
@@ -54,7 +55,7 @@ jest.mock('../../services/supabase', () => ({
           update: (...updateArgs) => {
             mockUpdate(...updateArgs);
             return {
-              eq: () => ({ eq: () => Promise.resolve({ error: null }) })
+              eq: () => ({ eq: () => mockUpdateResult() })
             };
           }
         };
@@ -80,7 +81,7 @@ jest.mock('../../services/supabase', () => ({
       return {
         select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }),
         insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }),
-        update: () => ({ eq: () => ({ eq: () => Promise.resolve({ error: null }) }) })
+        update: () => ({ eq: () => ({ eq: () => mockUpdateResult() }) })
       }; 
     }
   }
@@ -124,6 +125,7 @@ describe('checkoutService - Duplicate Order Handling', () => {
     mockOrderMaybeSingle.mockResolvedValue({ data: null, error: null });
     mockSingle.mockResolvedValue({ data: { id: 'new-order' }, error: null });
     mockGetUserProfile.mockResolvedValue({ data: {} });
+    mockUpdateResult.mockResolvedValue({ error: null });
   });
 
   // =========================================================================
@@ -302,6 +304,32 @@ describe('checkoutService - Duplicate Order Handling', () => {
         status: 'cancelled',
         cancellation_reason: 'cart items changed'
       }));
+    });
+
+    it('si items cambiaron y expirar falla por permisos, NO reutiliza orden pendiente', async () => {
+      const existingOrder = {
+        id: 'order-permission-denied',
+        items: [{ product_id: 'prod-old', quantity: 1 }],
+        total: 400000,
+        payment_method: 'bank_transfer',
+        payment_status: 'pending',
+        created_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+      };
+      mockOrderMaybeSingle.mockResolvedValue({ data: existingOrder, error: null });
+      mockUpdateResult.mockResolvedValueOnce({ error: { message: 'No permission to modify this order' } });
+
+      const result = await checkoutService.getOrReuseExistingOrder('cart-123', [
+        { product_id: 'prod-new', quantity: 1 },
+      ]);
+
+      expect(result).toBeNull();
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payment_status: 'expired',
+          status: 'cancelled',
+          cancellation_reason: 'cart items changed',
+        })
+      );
     });
 
     it('reutiliza orden zombie (>5 min sin khipu_expires_at) para regenerar sesión', async () => {
@@ -589,6 +617,38 @@ describe('checkoutService - Duplicate Order Handling', () => {
           grand_total: null
         })
       );
+    });
+
+    it('createOrder: reintenta sin cart_id si ocurre uniq_orders_cart_pending', async () => {
+      mockOrderMaybeSingle.mockResolvedValue({ data: null, error: null });
+      mockSingle
+        .mockResolvedValueOnce({
+          data: null,
+          error: {
+            message:
+              'duplicate key value violates unique constraint "uniq_orders_cart_pending"',
+          },
+        })
+        .mockResolvedValueOnce({ data: { id: 'order-retry-no-cart' }, error: null });
+
+      const orderData = {
+        cartId: 'cart-123',
+        items: [{ product_id: 'prod-1', quantity: 1 }],
+        userId: 'user-123',
+        total: 5000,
+        paymentMethod: 'khipu',
+      };
+
+      const result = await checkoutService.createOrder(orderData);
+
+      expect(mockInsert).toHaveBeenCalledTimes(2);
+      expect(mockInsert.mock.calls[0][0]).toEqual(
+        expect.objectContaining({ cart_id: 'cart-123' })
+      );
+      expect(mockInsert.mock.calls[1][0]).toEqual(
+        expect.objectContaining({ cart_id: null })
+      );
+      expect(result).toEqual({ id: 'order-retry-no-cart' });
     });
   });
 });

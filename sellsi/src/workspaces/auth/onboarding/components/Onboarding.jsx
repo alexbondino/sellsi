@@ -481,8 +481,9 @@ const Onboarding = ({ devMode = false }) => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: { xs: 'stretch', md: 'center' },
-        justifyContent: { xs: 'flex-start', md: 'center' },
-        py: { xs: 0, md: 6 },
+        justifyContent: 'flex-start',
+        pt: { xs: 0, md: 3 },
+        pb: { xs: 0, md: 2 },
         px: { xs: 0, md: 2 },
       }}
     >
@@ -577,7 +578,7 @@ const Onboarding = ({ devMode = false }) => {
           </Box>
 
           {/* Contenido del paso */}
-          <Box sx={{ px: { xs: 3, sm: 5 }, pt: { xs: 1, md: 3 }, pb: 4, height: { xs: 'auto', md: 400 }, flex: { xs: 1, md: 'none' }, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
+          <Box sx={{ px: { xs: 3, sm: 5 }, pt: { xs: 1, md: 3 }, pb: 4, height: { xs: 'auto', md: 400, lg: 520 }, flex: { xs: 1, md: 'none' }, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
 
             {/* Paso 0: Tipo de cuenta */}
             {activeStep === 0 && (
