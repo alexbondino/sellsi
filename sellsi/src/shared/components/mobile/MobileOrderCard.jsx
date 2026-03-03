@@ -292,6 +292,43 @@ const MobileOrderCard = ({ order, onAction }) => {
   const shipping = computeShipping()
   const totalOrder = totalProducts + shipping
 
+  const getPaymentBreakdown = () => {
+    const totalWithShipping = Math.max(0, totalOrder)
+    const rawFinancing = Math.max(
+      0,
+      Math.round(Number(order?.financing_amount || 0))
+    )
+    const financing = Math.min(rawFinancing, totalWithShipping)
+    const traditional = Math.max(0, totalWithShipping - financing)
+
+    const financingPct =
+      totalWithShipping > 0
+        ? Math.round((financing / totalWithShipping) * 100)
+        : 0
+    const traditionalPct = Math.max(0, 100 - financingPct)
+
+    if (financing > 0 && traditional > 0) {
+      return {
+        mode: 'Mixto',
+        details: `Crédito ${financingPct}% · Contado ${traditionalPct}%`,
+      }
+    }
+
+    if (financing > 0) {
+      return {
+        mode: 'Crédito',
+        details: null,
+      }
+    }
+
+    return {
+      mode: 'Contado',
+      details: null,
+    }
+  }
+
+  const paymentBreakdown = getPaymentBreakdown()
+
   // Formatear fecha a dd-mm-yyyy (igual que desktop)
   const formatDate = (dateStr) => {
     if (!dateStr) return '—'
@@ -838,6 +875,21 @@ const MobileOrderCard = ({ order, onAction }) => {
                   </Typography>
                 )}
               </Box>
+            </Box>
+
+            {/* Forma de Pago (alineado con desktop) */}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Forma de Pago
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {paymentBreakdown.mode}
+              </Typography>
+              {paymentBreakdown.mode === 'Mixto' && (
+                <Typography variant="caption" color="text.secondary">
+                  {paymentBreakdown.details}
+                </Typography>
+              )}
             </Box>
           </Box>
         </Collapse>

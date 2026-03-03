@@ -5,7 +5,12 @@
 
 import { supabase } from '../supabase';
 import { BANKS } from '../../shared/constants/profile';
-import { invalidateUserProfileCache } from './profileCache';
+import {
+  invalidateUserProfileCache,
+  getCachedUserProfileEntry,
+  setCachedUserProfileEntry,
+  isCachedUserProfileValid,
+} from './profileCache';
 
 // ============================================================================
 // PERF PROFILE CACHE (dedupe + TTL)
@@ -13,8 +18,6 @@ import { invalidateUserProfileCache } from './profileCache';
 // Evita N llamadas simultáneas a getUserProfile (ownership, shippingRegion, shippingValidation etc.)
 // y reduce 3 fetch shipping_info => 1 usando embedding.
 
-const PROFILE_CACHE_TTL = 1_800_000; // 30 minutos (balance entre performance y freshness de datos)
-const profileCache = new Map(); // userId -> { data, ts }
 const inFlight = new Map(); // userId -> Promise
 
 export { invalidateUserProfileCache } from './profileCache';
@@ -49,8 +52,8 @@ export const getUserProfile = async (userId, options = {}) => {
   if (!userId) return { data: null, error: new Error('userId requerido') };
 
   // 1. Cache hit
-  const cached = profileCache.get(userId);
-  if (!force && cached && (Date.now() - cached.ts) < PROFILE_CACHE_TTL) {
+  const cached = getCachedUserProfileEntry(userId);
+  if (!force && cached && isCachedUserProfileValid(cached)) {
     return { data: cached.data, error: null, cached: true };
   }
 
@@ -120,7 +123,7 @@ export const getUserProfile = async (userId, options = {}) => {
         minimum_purchase_amount: data?.minimum_purchase_amount ?? (data?.main_supplier ? 1 : 0),
       };
 
-      profileCache.set(userId, { data: completeProfile, ts: Date.now() });
+      setCachedUserProfileEntry(userId, completeProfile);
       return completeProfile;
     } catch (embedErr) {
       // Fallback legacy (4 consultas) solo si embedding falla por RLS o relación no declarada
@@ -174,7 +177,7 @@ export const getUserProfile = async (userId, options = {}) => {
             // minimum_purchase_amount: suppliers mínimo 1, buyers pueden 0
             minimum_purchase_amount: userData?.minimum_purchase_amount ?? (userData?.main_supplier ? 1 : 0),
         };
-        profileCache.set(userId, { data: completeProfile, ts: Date.now() });
+        setCachedUserProfileEntry(userId, completeProfile);
         return completeProfile;
       } catch (legacyErr) {
         throw embedErr || legacyErr;
@@ -380,6 +383,7 @@ export const updateUserProfile = async (userId, profileData) => {
 
   // Invalidar cache tras actualización completa
   try { invalidateUserProfileCache(userId); } catch(e) {}
+  try { inFlight.delete(userId); } catch(e) {}
   return { success: true, error: null, partialErrors: Object.keys(partialErrors).length ? partialErrors : undefined };
   } catch (error) {
         return { success: false, error };
@@ -451,6 +455,7 @@ export const uploadProfileImage = async (userId, imageFile) => {
 
   // Invalidate cache para que profile refresque logo_url
   invalidateUserProfileCache(userId);
+  try { inFlight.delete(userId); } catch(e) {}
   return { url: publicUrl, error: null };
   } catch (error) {
         return { url: null, error };

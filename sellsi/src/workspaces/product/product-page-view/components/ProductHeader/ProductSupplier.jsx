@@ -12,7 +12,7 @@ import {
   Verified as VerifiedIcon,
   Store as StoreIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   SUPPLIER_STYLES,
   normalizeProviderSlug,
@@ -25,15 +25,9 @@ const ProductSupplier = ({
   isLoggedIn = false,
   supplierId,
 }) => {
-  const navigate = useNavigate();
-
-  const handleSupplierClick = () => {
-    if (!isLoggedIn) return;
-
-    const proveedorSlug = normalizeProviderSlug(proveedor);
-    const shortId = (supplierId || 'userid').toString().slice(0, 4);
-    navigate(`/catalog/${proveedorSlug}/${shortId}`);
-  }; 
+  const proveedorSlug = normalizeProviderSlug(proveedor);
+  const shortId = (supplierId || 'userid').toString().slice(0, 4);
+  const supplierCatalogPath = `/catalog/${proveedorSlug}/${shortId}`;
 
   return (
     <Box sx={SUPPLIER_STYLES.container}>
@@ -67,7 +61,8 @@ const ProductSupplier = ({
             )}
           </Box>
         }
-        onClick={isLoggedIn ? handleSupplierClick : undefined}
+        component={isLoggedIn ? RouterLink : undefined}
+        to={isLoggedIn ? supplierCatalogPath : undefined}
         clickable={isLoggedIn}
         sx={{
           py: 2.5,
@@ -93,6 +88,7 @@ const ProductSupplier = ({
             px: 1.5,
             fontWeight: 600,
             color: 'primary.main', // Asegurar texto azul
+            textDecoration: 'none',
           },
           '& .MuiChip-avatar': {
             ml: 1,

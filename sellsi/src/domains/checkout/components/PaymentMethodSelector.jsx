@@ -366,28 +366,65 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
 
     try {
       const { supabase } = await import('../../../services/supabase');
-      const { error } = await supabase
+      const actorUserId = session?.user?.id || localStorage.getItem('user_id');
+      const { data: orderRow, error: orderErr } = await supabase
         .from('orders')
-        .update({
-          hidden_by_buyer: !!hidden,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', orderId);
+        .select('id, user_id, payment_status, hidden_by_buyer')
+        .eq('id', orderId)
+        .maybeSingle();
 
-      if (error) {
-        console.warn('[PaymentMethodSelector] No se pudo actualizar visibilidad de orden checkout Khipu:', {
+      if (orderErr || !orderRow) {
+        console.warn('[PaymentMethodSelector] No se pudo leer orden para visibilidad checkout Khipu (skip):', {
           orderId,
           hidden: !!hidden,
           source,
-          error: error.message,
+          error: orderErr?.message || 'order_not_found',
         });
-      } else {
-        console.log('[PaymentMethodSelector] Visibilidad de orden checkout Khipu actualizada:', {
-          orderId,
-          hidden: !!hidden,
-          source,
-        });
+        return;
       }
+
+      if (actorUserId && orderRow.user_id && actorUserId !== orderRow.user_id) {
+        console.warn('[PaymentMethodSelector] Visibilidad checkout Khipu omitida por ownership mismatch (skip):', {
+          orderId,
+          actorUserId,
+          orderUserId: orderRow.user_id,
+          hidden: !!hidden,
+          source,
+        });
+        return;
+      }
+
+      // Seguridad: no hacer PATCH directo de hidden_by_buyer en orders.
+      // Solo ocultar vía RPC permitida para órdenes expiradas.
+      if (hidden && orderRow.payment_status === 'expired') {
+        const { error: rpcErr } = await supabase.rpc('mark_order_hidden_by_buyer', {
+          p_order_id: orderId,
+        });
+
+        if (rpcErr) {
+          console.warn('[PaymentMethodSelector] RPC mark_order_hidden_by_buyer falló (skip):', {
+            orderId,
+            source,
+            error: rpcErr.message,
+          });
+          return;
+        }
+
+        console.log('[PaymentMethodSelector] Orden expirda ocultada vía RPC:', {
+          orderId,
+          source,
+        });
+        return;
+      }
+
+      // Para órdenes pending/success del checkout no forzamos toggles en DB.
+      // Evita ruido de permisos (P0001) sin impactar el flujo de pago.
+      console.log('[PaymentMethodSelector] Visibilidad checkout Khipu omitida (safe no-op):', {
+        orderId,
+        hidden: !!hidden,
+        paymentStatus: orderRow.payment_status,
+        source,
+      });
     } catch (visibilityErr) {
       console.warn('[PaymentMethodSelector] Error actualizando visibilidad de orden checkout Khipu:', {
         orderId,
@@ -396,7 +433,7 @@ const PaymentMethodSelector = ({ variant = 'default' }) => {
         error: visibilityErr?.message,
       });
     }
-  }, []);
+  }, [session?.user?.id]);
 
   const handleKhipuSuccess = useCallback(
     async (result) => {

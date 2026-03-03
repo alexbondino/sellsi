@@ -75,7 +75,6 @@ const AddToCart = ({
     handleConfigureShipping,
     handleClose: handleCloseShipping,
     refresh: refreshShippingValidation,
-    awaitValidation,
   } = useShippingInfoModal();
 
   // Detectar si la oferta ya está en el carrito para bloquear flujo UI
@@ -176,8 +175,13 @@ const AddToCart = ({
           waitForAuthStable(3000);
         } catch (_) {}
 
-        // Gate rápido: si falta shipping info, abrir modal de configuración y salir.
-        const didOpenShipping = openIfIncomplete();
+        // Gate fast-first: si la validación está loading no bloqueamos la apertura.
+        // Esto prioriza UX instantánea en el click de carrito.
+        let didOpenShipping = false;
+        if (!shippingIsLoading) {
+          didOpenShipping = openIfIncomplete();
+        }
+
         if (didOpenShipping || shippingIsOpen) {
           if (onModalStateChange) onModalStateChange(true);
           openingRef.current = false;
@@ -203,6 +207,7 @@ const AddToCart = ({
     onModalStateChange,
     openIfIncomplete,
     shippingIsOpen,
+    shippingIsLoading,
     offerId,
     isOfferInCart,
   ]);

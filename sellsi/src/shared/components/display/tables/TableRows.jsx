@@ -42,9 +42,6 @@ const Rows = ({ order, onActionClick }) => {
   const [productsAnchor, setProductsAnchor] = useState(null);
   const [productsCopied, setProductsCopied] = useState(false);
   const productsCopyTimerRef = useRef(null);
-  const [addrAnchor, setAddrAnchor] = useState(null);
-  const [addrCopied, setAddrCopied] = useState(false);
-  const addrCopyTimerRef = useRef(null);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [downloadingTaxDoc, setDownloadingTaxDoc] = useState(false);
 
@@ -185,17 +182,6 @@ const Rows = ({ order, onActionClick }) => {
   };
   const openProducts = Boolean(productsAnchor);
 
-  const handleOpenAddr = event => setAddrAnchor(event.currentTarget);
-  const handleCloseAddr = () => {
-    setAddrAnchor(null);
-    if (addrCopyTimerRef.current) {
-      clearTimeout(addrCopyTimerRef.current);
-      addrCopyTimerRef.current = null;
-    }
-    setAddrCopied(false);
-  };
-  const openAddr = Boolean(addrAnchor);
-
   const handleCopyId = async () => {
     try {
       if (order?.order_id) await navigator.clipboard.writeText(order.order_id);
@@ -229,42 +215,6 @@ const Rows = ({ order, onActionClick }) => {
     return `#${s.slice(-8)}`;
   };
 
-  // Formatear dirección
-  const formatAddress = address => {
-  // Dirección puede venir como string simple o como objeto normalizado
-
-    if (!address) return '—';
-
-    // String directo
-    if (typeof address === 'string') {
-  const raw = address.trim() || '—';
-  if (raw === '—') return raw;
-  return raw.length > 60 ? `${raw.slice(0, 60)}...` : raw;
-    }
-
-    // Filtro para ignorar placeholders tipo "no especificada"
-    const clean = v => {
-      if (!v) return '';
-      const s = String(v).trim();
-      if (!s) return '';
-      return /no especificad/i.test(s) ? '' : s;
-    };
-
-    // Priorizar shipping_* y fullAddress
-    const street = clean(
-      address.shipping_address || address.fullAddress || address.street || address.address
-    );
-  const communeRaw = clean(address.shipping_commune || address.commune || address.city);
-  const commune = communeRaw ? getCommuneDisplay(communeRaw) : '';
-  const regionRaw = clean(address.shipping_region || address.region);
-  const region = regionRaw ? getRegionDisplay(regionRaw, { withPrefix: true }) : '';
-
-    const parts = [street, commune, region].filter(Boolean);
-  const result = parts.length ? parts.join(', ') : '—';
-  if (!result) return '—';
-  return result.length > 60 ? `${result.slice(0, 40)}...` : result;
-  };
-
   // Obtener fecha de solicitud (solo una fecha)
   const getRequestedDate = () => {
     const d = order?.requestedDate?.start || order?.created_at;
@@ -284,24 +234,6 @@ const Rows = ({ order, onActionClick }) => {
     } catch (_) {
       return '—';
     }
-  };
-
-  // Construir texto profesional para copiar dirección
-  const buildAddressCopy = (addr) => {
-    const clean = v => {
-      if (!v) return '';
-      const s = String(v).trim();
-      return /no especificad/i.test(s) ? '' : s;
-    };
-  const regionRaw = clean(addr?.region || addr?.shipping_region);
-  const region = regionRaw ? getRegionDisplay(regionRaw, { withPrefix: true }) : '';
-  const communeRaw = clean(addr?.commune || addr?.shipping_commune);
-  const commune = communeRaw ? getCommuneDisplay(communeRaw) : '';
-    const street = clean(addr?.address || addr?.shipping_address);
-    const number = clean(addr?.number || addr?.shipping_number);
-    const dept = clean(addr?.department || addr?.shipping_dept);
-    const streetLine = [street, number, dept].filter(Boolean).join(' ');
-  return `Región: ${region || '—'}\nComuna: ${commune || '—'}\nDirección: ${streetLine || '—'}`;
   };
 
   // Normalizar billing_address que puede venir como string JSON o como objeto
@@ -361,16 +293,6 @@ const Rows = ({ order, onActionClick }) => {
     lines.push(`Región: ${region}`);
     lines.push(`Comuna: ${commune}`);
     return lines.join('\n');
-  };
-
-  const handleCopyAddress = async () => {
-    try {
-      const text = buildAddressCopy(order?.deliveryAddress);
-      await navigator.clipboard.writeText(text);
-      setAddrCopied(true);
-      if (addrCopyTimerRef.current) clearTimeout(addrCopyTimerRef.current);
-      addrCopyTimerRef.current = setTimeout(() => setAddrCopied(false), 3000);
-    } catch (_) {}
   };
 
   // Obtener color del chip según estado
@@ -630,7 +552,58 @@ const Rows = ({ order, onActionClick }) => {
     }
   };
 
+  const getPaymentBreakdown = () => {
+    const sale = Number(order.total_amount || 0);
+    const shipping = computeShippingTotal();
+    const totalWithShipping = Math.max(0, sale + shipping);
+
+    const rawFinancing = Math.max(0, Math.round(Number(order?.financing_amount || 0)));
+    const financing = Math.min(rawFinancing, totalWithShipping);
+    const traditional = Math.max(0, totalWithShipping - financing);
+
+    const financingPct = totalWithShipping > 0 ? Math.round((financing / totalWithShipping) * 100) : 0;
+    const traditionalPct = Math.max(0, 100 - financingPct);
+
+    if (financing > 0 && traditional > 0) {
+      return {
+        mode: 'Mixto',
+        details: `Crédito ${financingPct}% · Contado ${traditionalPct}%`,
+      };
+    }
+
+    if (financing > 0) {
+      return {
+        mode: 'Crédito',
+        details: formatCurrency(financing),
+      };
+    }
+
+    return {
+      mode: 'Contado',
+      details: formatCurrency(traditional),
+    };
+  };
+
   const statusChipProps = getStatusChipProps(order.status);
+  const paymentBreakdown = getPaymentBreakdown();
+  const deliveryAddr = order?.deliveryAddress || {};
+  const deliveryStreet = [deliveryAddr?.address, deliveryAddr?.number, deliveryAddr?.department]
+    .filter(Boolean)
+    .join(' ') || '—';
+  const deliveryFields = [
+    {
+      label: 'Región',
+      value: deliveryAddr?.region ? getRegionDisplay(deliveryAddr.region, { withPrefix: true }) : '—',
+    },
+    {
+      label: 'Comuna',
+      value: deliveryAddr?.commune ? getCommuneDisplay(deliveryAddr.commune) : '—',
+    },
+    {
+      label: 'Dirección de despacho',
+      value: deliveryStreet,
+    },
+  ];
   // Detectar si hay al menos un item ofertado (para chip agregado en columna Producto)
   const hasOfferedItem = React.useMemo(() => {
     // Preferir `items` si tiene elementos; si viene vacío, fallback a `products`.
@@ -640,17 +613,72 @@ const Rows = ({ order, onActionClick }) => {
 
   return (
     <TableRow hover>
-  {/* Columna de Advertencia */}
-  <TableCell align="center" sx={{ verticalAlign: 'middle' }}>
-        {order.isLate && (
-          <Tooltip title="Atrasado">
-            <WarningAmberIcon color="warning" />
+      {/* Columna ID Venta */}
+      <TableCell>
+        <Box sx={{ display: 'inline-block' }}>
+          <Tooltip title="Clic para ver y copiar" placement="top">
+            <Typography
+              variant="body2"
+              fontWeight="medium"
+              onClick={handleOpenId}
+              sx={{ cursor: 'pointer', userSelect: 'none' }}
+            >
+              {shortId(order.order_id)}
+            </Typography>
           </Tooltip>
-        )}
+          <Popover
+            open={openId}
+            anchorEl={idAnchor}
+            onClose={handleCloseId}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            PaperProps={{ sx: { p: 2, width: 420, maxWidth: '90vw' } }}
+            disableScrollLock
+          >
+            <Typography variant="subtitle2" gutterBottom>
+              ID de venta (completo)
+            </Typography>
+            <TextField
+              value={order.order_id || ''}
+              fullWidth
+              size="small"
+              InputProps={{ readOnly: true }}
+            />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                Selecciona o usa el botón para copiar
+              </Typography>
+              {copied ? (
+                <Button
+                  size="small"
+                  color="success"
+                  variant="contained"
+                  startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 18 }} />}
+                  disableElevation
+                >
+                  Copiado
+                </Button>
+              ) : (
+                <Button onClick={handleCopyId} size="small">Copiar</Button>
+              )}
+            </Box>
+          </Popover>
+        </Box>
       </TableCell>
 
-  {/* Columna Productos */}
-  <TableCell sx={{ verticalAlign: 'middle', pl: 0 }}>
+      {/* Columna Solicitado Por */}
+      <TableCell>
+        <InfoPopover
+          label={order?.buyer_user_nm || 'Comprador'}
+          linkText="Ver Detalles"
+          title="Dirección de despacho"
+          fields={deliveryFields}
+          popoverWidth={460}
+        />
+      </TableCell>
+
+      {/* Columna Productos */}
+      <TableCell sx={{ verticalAlign: 'middle', pl: 0 }}>
     <Box sx={{ display: 'block', width: '100%' }}>
       <Tooltip title="Clic para ver y copiar" placement="top">
         <Box sx={{ cursor: 'pointer', userSelect: 'none', display: 'flex', flexDirection: 'column', gap: 0.5 }} onClick={handleOpenProducts}>
@@ -700,121 +728,8 @@ const Rows = ({ order, onActionClick }) => {
     </Box>
   </TableCell>
 
-  {/* Columna Unidades */}
-  <TableCell sx={{ verticalAlign: 'middle', width: '110px', whiteSpace: 'nowrap' }}>{renderProductQuantities()}</TableCell>
-
-      {/* Columna ID Venta */}
-      <TableCell>
-        <Box sx={{ display: 'inline-block' }}>
-          <Tooltip title="Clic para ver y copiar" placement="top">
-            <Typography
-              variant="body2"
-              fontWeight="medium"
-              onClick={handleOpenId}
-              sx={{ cursor: 'pointer', userSelect: 'none' }}
-            >
-              {shortId(order.order_id)}
-            </Typography>
-          </Tooltip>
-          <Popover
-            open={openId}
-            anchorEl={idAnchor}
-            onClose={handleCloseId}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-            PaperProps={{ sx: { p: 2, width: 420, maxWidth: '90vw' } }}
-            // Evita que el Modal subyacente bloquee el scroll del body y produzca shift en el layout
-            disableScrollLock
-          >
-            <Typography variant="subtitle2" gutterBottom>
-              ID de venta (completo)
-            </Typography>
-            <TextField
-              value={order.order_id || ''}
-              fullWidth
-              size="small"
-              InputProps={{ readOnly: true }}
-            />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Selecciona o usa el botón para copiar
-              </Typography>
-              {copied ? (
-                <Button
-                  size="small"
-                  color="success"
-                  variant="contained"
-                  startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 18 }} />}
-                  disableElevation
-                >
-                  Copiado
-                </Button>
-              ) : (
-                <Button onClick={handleCopyId} size="small">Copiar</Button>
-              )}
-            </Box>
-          </Popover>
-        </Box>
-      </TableCell>
-
-      {/* Columna Dirección Entrega */}
-      <TableCell>
-        <Box sx={{ display: 'inline-block' }}>
-          <Tooltip title="Clic para ver y copiar" placement="top">
-            <Typography
-              variant="body2"
-              onClick={handleOpenAddr}
-              sx={{ cursor: 'pointer', userSelect: 'none' }}
-            >
-              {formatAddress(order.deliveryAddress)}
-            </Typography>
-          </Tooltip>
-          <Popover
-            open={openAddr}
-            anchorEl={addrAnchor}
-            onClose={handleCloseAddr}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-            PaperProps={{ sx: { p: 2, width: 460, maxWidth: '95vw' } }}
-            // Evita que el Modal subyacente bloquee el scroll del body y produzca shift en el layout
-            disableScrollLock
-          >
-            <Typography variant="subtitle2" gutterBottom>
-              Dirección de entrega
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', rowGap: 1, columnGap: 1 }}>
-              <Typography variant="body2" color="text.secondary">Región:</Typography>
-              <Typography variant="body2">{order?.deliveryAddress?.region ? getRegionDisplay(order.deliveryAddress.region, { withPrefix: true }) : '—'}</Typography>
-              <Typography variant="body2" color="text.secondary">Comuna:</Typography>
-              <Typography variant="body2">{order?.deliveryAddress?.commune ? getCommuneDisplay(order.deliveryAddress.commune) : '—'}</Typography>
-              <Typography variant="body2" color="text.secondary">Dirección:</Typography>
-              <Typography variant="body2">
-                {[order?.deliveryAddress?.address, order?.deliveryAddress?.number, order?.deliveryAddress?.department]
-                  .filter(Boolean)
-                  .join(' ') || '—'}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Selecciona o usa el botón para copiar
-              </Typography>
-              {addrCopied ? (
-                <Button
-                  size="small"
-                  color="success"
-                  variant="contained"
-                  startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 18 }} />}
-                  disableElevation
-                >
-                  Copiado
-                </Button>
-              ) : (
-                <Button onClick={handleCopyAddress} size="small">Copiar</Button>
-              )}
-            </Box>
-          </Popover>
-        </Box>
-      </TableCell>
+      {/* Columna Unidades */}
+      <TableCell sx={{ verticalAlign: 'middle', width: '110px', whiteSpace: 'nowrap', display: { md: 'none', lg: 'table-cell' } }}>{renderProductQuantities()}</TableCell>
 
       {/* Columna Fecha: mostrar Solicitud y Entrega Límite en dd-mm-aaaa */}
       <TableCell>
@@ -913,6 +828,16 @@ const Rows = ({ order, onActionClick }) => {
         })()}
       </TableCell>
 
+      {/* Columna Forma de Pago */}
+      <TableCell>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Typography variant="body2" fontWeight="medium">{paymentBreakdown.mode}</Typography>
+          {paymentBreakdown.mode === 'Mixto' && (
+            <Typography variant="caption" color="text.secondary">{paymentBreakdown.details}</Typography>
+          )}
+        </Box>
+      </TableCell>
+
   {/* Column "Fecha Entrega Limite" removed - date now shown inside Fecha column */}
 
       {/* Columna Venta y Envío */}
@@ -934,7 +859,12 @@ const Rows = ({ order, onActionClick }) => {
 
       {/* Columna Estado */}
       <TableCell>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'center', justifyContent: 'center' }}>
+          {order.isLate && (
+            <Tooltip title="Atrasado">
+              <WarningAmberIcon color="warning" sx={{ fontSize: 18 }} />
+            </Tooltip>
+          )}
           <Chip
             label={statusChipProps.label}
             color={statusChipProps.color}

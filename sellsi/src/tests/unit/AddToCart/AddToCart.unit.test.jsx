@@ -110,6 +110,34 @@ describe('AddToCart - unit tests (robust)', () => {
     expect(onModalStateChange).toHaveBeenCalledWith(true)
   })
 
+  it('when shipping is loading, does not wait validation and opens cart modal immediately', async () => {
+    const product = { id: 'p-loading-ok', name: 'LoadingOk' }
+    const openIfIncompleteMock = jest.fn(() => false)
+    const awaitValidationMock = jest.fn(async () => ({ complete: true, isLoading: false }))
+
+    mockUseShipping.mockReturnValue({
+      isOpen: false,
+      openIfIncomplete: openIfIncompleteMock,
+      isLoading: true,
+      missingFieldLabels: [],
+      handleConfigureShipping: () => {},
+      handleClose: () => {},
+      refresh: () => {},
+      awaitValidation: awaitValidationMock,
+    })
+
+    render(<AddToCart product={product} />, { wrapper: Wrapper })
+
+    const btn = screen.getByRole('button', { name: /Agregar al Carrito|Agregar al carrito/i })
+    await user.click(btn)
+
+    await waitFor(() => {
+      expect(awaitValidationMock).not.toHaveBeenCalled()
+      expect(openIfIncompleteMock).not.toHaveBeenCalled()
+      expect(screen.getByTestId('mock-modal')).toBeInTheDocument()
+    })
+  })
+
   it('expired offer shows error and does not open modal', async () => {
     const past = new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString()
     const product = { id: 'p5', name: 'Expired' }

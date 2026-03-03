@@ -925,7 +925,7 @@ const MyOrdersPage = () => {
             {isMobile ? (
               <MobileSupplierOrdersSkeleton rows={3} />
             ) : (
-              <TableSkeleton rows={7} columns={6} />
+              <TableSkeleton rows={7} columns={10} />
             )}
           </Container>
         </Box>

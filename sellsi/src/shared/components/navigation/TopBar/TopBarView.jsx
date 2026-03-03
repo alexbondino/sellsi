@@ -20,6 +20,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
+import { Link as RouterLink } from 'react-router-dom';
 import { NotificationBell } from '../../../../domains/notifications';
 import { MobileMenu } from './components/MobileMenu';
 import { AuthModals } from './components/AuthModals';
@@ -97,7 +98,7 @@ const PROFILE_OPTIONS_BOX_SX = { py: 0.5 };
 const ProfileMenuPopover = memo(function ProfileMenuPopover({
   profileAnchor,
   onCloseProfileMenu,
-  onGoToProfile,
+  profileRoute,
   onLogout,
   userName,
   userEmail,
@@ -133,10 +134,9 @@ const ProfileMenuPopover = memo(function ProfileMenuPopover({
 
       <Box sx={PROFILE_OPTIONS_BOX_SX}>
         <MenuItem
-          onClick={() => {
-            onGoToProfile();
-            onCloseProfileMenu();
-          }}
+          component={RouterLink}
+          to={profileRoute}
+          onClick={onCloseProfileMenu}
         >
           <ListItemIcon>
             <PersonIcon fontSize="small" />
@@ -178,7 +178,7 @@ export const TopBarView = memo(function TopBarView({
   notifMenuOpen = false,
   // Profile menu utilities
   onLogoClick,
-  onGoToProfile,
+  profileRoute,
   onLogout,
   userName,
   userEmail,
@@ -410,7 +410,7 @@ export const TopBarView = memo(function TopBarView({
       <ProfileMenuPopover
         profileAnchor={profileAnchor}
         onCloseProfileMenu={onCloseProfileMenu}
-        onGoToProfile={onGoToProfile}
+        profileRoute={profileRoute}
         onLogout={onLogout}
         userName={userName}
         userEmail={userEmail}

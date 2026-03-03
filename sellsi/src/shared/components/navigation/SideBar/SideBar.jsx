@@ -25,7 +25,7 @@ import {
   LocalOffer as OffersIcon,
   RequestQuote as FinancingIcon,
 } from '@mui/icons-material';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, Link as RouterLink } from 'react-router-dom';
 import {
   prefetchOnHover,
   prefetchForPath,
@@ -73,7 +73,6 @@ const providerMenuItems = [
  */
 const SideBar = ({ role, width = '13%', onWidthChange }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const theme = useTheme();
   const { userProfile, session } = useAuth();
   // ✅ Usar estado global del LayoutProvider en lugar de estado local
@@ -477,9 +476,13 @@ const SideBar = ({ role, width = '13%', onWidthChange }) => {
                   }}
                 >
                   <ListItemButton
-                    onClick={() => {
-                      if (!isActive) {
-                        navigate(item.path);
+                    component={isActive ? 'button' : RouterLink}
+                    to={isActive ? undefined : item.path}
+                    onClick={e => {
+                      if (isActive) return;
+                      const isModifiedClick =
+                        e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1;
+                      if (!isModifiedClick) {
                         setTimeout(() => {
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }, 100);

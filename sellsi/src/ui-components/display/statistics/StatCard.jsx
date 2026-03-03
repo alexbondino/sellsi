@@ -9,7 +9,7 @@ import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 export default function StatCard({
   title,
@@ -23,7 +23,6 @@ export default function StatCard({
   tooltip,
 }) {
   const theme = useTheme();
-  const navigate = useNavigate();
 
   const trendColors = {
     up:
@@ -168,9 +167,10 @@ export default function StatCard({
           }}
         >
           <Button
+            component={RouterLink}
+            to={linkTo}
             size="small"
             endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
-            onClick={() => navigate(linkTo)}
             sx={{
               textTransform: 'none',
               fontSize: '0.75rem',
