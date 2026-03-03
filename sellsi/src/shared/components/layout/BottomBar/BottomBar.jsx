@@ -1,7 +1,7 @@
 // 📁 shared/components/layout/BottomBar/BottomBar.jsx
 import React, { useState } from 'react';
 import { Box, Typography, IconButton, Divider, Button, Collapse } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
@@ -10,10 +10,6 @@ import EmailIcon from '@mui/icons-material/Email';
 import SupportIcon from '@mui/icons-material/Support';
 
 const BottomBar = () => {
-  const navigate = useNavigate();
-  const handleNavigateToTerms = () => navigate('/terms-and-conditions');
-  const handleNavigateToPrivacy = () => navigate('/privacy-policy');
-
   return (
     <>
       <Box sx={{ width: '100%', px: { xs: 2.25 }, bgcolor: '#000' }}>
@@ -57,9 +53,9 @@ const BottomBar = () => {
               <Box sx={{ minWidth: 160 }}>
                 <Typography variant="h6" sx={sectionTitleStyle}>Soporte</Typography>
                 <Box sx={columnStyle}>
-                  <Typography variant="body2" sx={navItemStyle} onClick={handleNavigateToTerms}>Términos y Condiciones</Typography>
-                  <Typography variant="body2" sx={navItemStyle} onClick={handleNavigateToPrivacy}>Política de Privacidad</Typography>
-                  <Typography variant="body2" sx={navItemStyle} onClick={() => navigate('/faq')}>Preguntas Frecuentes</Typography>
+                  <Typography component={Link} to="/terms-and-conditions" variant="body2" sx={navItemStyle}>Términos y Condiciones</Typography>
+                  <Typography component={Link} to="/privacy-policy" variant="body2" sx={navItemStyle}>Política de Privacidad</Typography>
+                  <Typography component={Link} to="/faq" variant="body2" sx={navItemStyle}>Preguntas Frecuentes</Typography>
                 </Box>
 
               </Box>
@@ -99,9 +95,9 @@ const BottomBar = () => {
             <Box sx={{ width: '100%', maxWidth: 420, mx: 'auto' }}>
               <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', ml: { xs: 0, md: 0 } }}>
                 <Typography variant="h6" sx={{ ...sectionTitleStyle, textAlign: 'center', width: '100%' }}>Soporte</Typography>
-                <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%', textAlign: 'center' }} onClick={handleNavigateToTerms}>Términos & Condiciones</Typography>
-                <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%', textAlign: 'center' }} onClick={handleNavigateToPrivacy}>Política de Privacidad</Typography>
-                <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%', textAlign: 'center' }} onClick={() => navigate('/faq')}>Preguntas Frecuentes</Typography>
+                <Typography component={Link} to="/terms-and-conditions" variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%', textAlign: 'center' }}>Términos & Condiciones</Typography>
+                <Typography component={Link} to="/privacy-policy" variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%', textAlign: 'center' }}>Política de Privacidad</Typography>
+                <Typography component={Link} to="/faq" variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%', textAlign: 'center' }}>Preguntas Frecuentes</Typography>
               </Box>
               <Typography variant="h6" sx={{ ...sectionTitleStyle, textAlign: 'center', width: '100%', mt: '20px' }}>Síguenos</Typography>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', width: '100%' }}>
@@ -141,6 +137,7 @@ const BottomBar = () => {
 const navItemStyle = {
   color: '#b0b0b0',
   cursor: 'pointer',
+  textDecoration: 'none',
   '&:hover': { color: '#fff' },
 };
 

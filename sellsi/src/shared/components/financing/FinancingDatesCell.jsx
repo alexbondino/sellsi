@@ -8,6 +8,7 @@
  * CARACTERÍSTICAS:
  * - Muestra fecha de Solicitud (created_at)
  * - Muestra fecha de Aprobación (activated_at)
+ * - Muestra fecha de Vencimiento (expires_at)
  * - Formato DD/MM/YYYY
  * 
  * COMPARTIDO entre Supplier y Buyer views.
@@ -50,6 +51,9 @@ const FinancingDatesCell = ({ financing }) => {
       <Typography variant="caption" display="block">
         <strong>Aprobación:</strong> Fecha en que la operación fue aprobada por Sellsi
       </Typography>
+      <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+        <strong>Vencimiento:</strong> Fecha límite de vigencia del financiamiento
+      </Typography>
     </Box>
   );
 
@@ -61,7 +65,7 @@ const FinancingDatesCell = ({ financing }) => {
       enterDelay={200}
       leaveDelay={100}
     >
-      <Box sx={{ minWidth: 120 }}>
+      <Box sx={{ minWidth: 140 }}>
         {/* Fecha de Solicitud */}
         <Box sx={{ mb: 0.5 }}>
           <Typography variant="caption" color="text.secondary" sx={{ fontSize: '12px', display: 'block' }}>
@@ -79,6 +83,16 @@ const FinancingDatesCell = ({ financing }) => {
           </Typography>
           <Typography variant="body2" fontWeight={600} color="primary" sx={{ fontSize: '14px' }}>
             {formatDate(financing.activated_at)}
+          </Typography>
+        </Box>
+
+        {/* Fecha de Vencimiento */}
+        <Box sx={{ mt: 0.5 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '12px', display: 'block' }}>
+            Vencimiento:
+          </Typography>
+          <Typography variant="body2" fontWeight={500} sx={{ fontSize: '14px' }}>
+            {formatDate(financing.expires_at)}
           </Typography>
         </Box>
       </Box>

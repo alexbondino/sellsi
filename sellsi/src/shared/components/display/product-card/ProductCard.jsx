@@ -183,6 +183,14 @@ const ProductCard = React.memo(
         }
 
         const productUrl = generateProductUrl(product);
+        const isModifiedClick =
+          e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1;
+
+        if (isModifiedClick) {
+          window.open(productUrl, '_blank', 'noopener,noreferrer');
+          return;
+        }
+
         navigate(productUrl, { state: { from: fromPath } });
       },
       [isModalOpen, navigate, product, generateProductUrl]

@@ -48,15 +48,40 @@ const Table = ({ orders, onActionClick }) => {
       <MuiTable sx={{ minWidth: 650 }} aria-label="tabla de pedidos">
         <TableHead>
           <TableRow>
-            <TableCell align="center" sx={{ width: '50px', fontWeight: 600 }}>
-              {/* Columna para icono de advertencia */}
-            </TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Solicitado Por</TableCell>
             <TableCell sx={{ pl: 0, fontWeight: 600 }}>Producto</TableCell>
-            <TableCell sx={{ fontWeight: 600 }}>Unidades</TableCell>
-            <TableCell sx={{ fontWeight: 600 }}>ID Venta</TableCell>
-            <TableCell sx={{ fontWeight: 600 }}>Dirección Entrega</TableCell>
+            <TableCell sx={{ fontWeight: 600, display: { md: 'none', lg: 'table-cell' } }}>Unidades</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>Fechas</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>Documento</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <span style={{ fontWeight: 600 }}>Forma de Pago</span>
+                <Tooltip
+                  placement="top"
+                  title={
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ color: 'common.white' }} gutterBottom>
+                        Tipos de pago
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
+                        • Crédito: 100% con financiamiento.
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
+                        • Contado: 100% con métodos tradicionales (Khipu, Flow o transferencia).
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
+                        • Mixto: combinación de Crédito + Contado (se muestran porcentajes).
+                      </Typography>
+                    </Box>
+                  }
+                >
+                  <IconButton size="small" aria-label="Información de forma de pago">
+                    <InfoOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </TableCell>
             <TableCell align="right" sx={{ fontWeight: 600 }}>Monto (IVA inc.)</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>

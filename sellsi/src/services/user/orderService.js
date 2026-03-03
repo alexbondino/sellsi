@@ -103,7 +103,7 @@ class OrderService {
         // Se agrega accepted_at para recalcular SLA (Fecha Entrega Límite = accepted_at + días hábiles)
         // Incluir billing_address para que el frontend pueda mostrar datos de facturación
         .select(
-          'id, items, status, payment_status, estimated_delivery_date, created_at, accepted_at, updated_at, shipping, total, subtotal, shipping_address, billing_address, supplier_parts_meta'
+          'id, user_id, items, status, payment_status, estimated_delivery_date, created_at, accepted_at, updated_at, shipping, total, subtotal, shipping_address, billing_address, supplier_parts_meta, users(user_nm)'
         )
         .contains('supplier_ids', [supplierId]) // nuevo filtro server-side (B1)
         .order('created_at', { ascending: false })
@@ -235,6 +235,8 @@ class OrderService {
               ...p,
               order_id: row.id,
               parent_order_id: row.id,
+              buyer_user_id: row.user_id || null,
+              buyer_user_nm: p.buyer_user_nm || row?.users?.user_nm || null,
               accepted_at: row.accepted_at || null,
               estimated_delivery_date: est,
               total_amount: p.subtotal,

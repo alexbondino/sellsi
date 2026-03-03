@@ -1,7 +1,7 @@
 // 📁 shared/components/layout/BottomBar/BottomBar.jsx
 import React, { useState } from 'react';
 import { Box, Typography, IconButton, Divider, Button, Collapse } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
@@ -9,10 +9,6 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import SupportIcon from '@mui/icons-material/Support';
 
 const BottomBar = () => {
-  const navigate = useNavigate();
-  const handleNavigateToTerms = () => navigate('/terms-and-conditions');
-  const handleNavigateToPrivacy = () => navigate('/privacy-policy');
-
   return (
     <>
       <Box sx={{ width: '100%', px: { xs: 2.25 }, bgcolor: '#000' }}>
@@ -56,8 +52,8 @@ const BottomBar = () => {
               <Box sx={{ minWidth: 160 }}>
                 <Typography variant="h6" sx={sectionTitleStyle}>Soporte</Typography>
                 <Box sx={columnStyle}>
-                  <Typography variant="body2" sx={navItemStyle} onClick={handleNavigateToTerms}>Términos y Condiciones</Typography>
-                  <Typography variant="body2" sx={navItemStyle} onClick={handleNavigateToPrivacy}>Política de Privacidad</Typography>
+                  <Typography component={Link} to="/terms-and-conditions" variant="body2" sx={navItemStyle}>Términos y Condiciones</Typography>
+                  <Typography component={Link} to="/privacy-policy" variant="body2" sx={navItemStyle}>Política de Privacidad</Typography>
                 </Box>
               </Box>
 
@@ -91,8 +87,8 @@ const BottomBar = () => {
             <Box sx={{ width: '100%', maxWidth: 420, mx: 'auto' }}>
               <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', ml: { xs: 10.5, md: 0 } }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Soporte</Typography>
-                <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%' }} onClick={handleNavigateToTerms}>Términos & Condiciones</Typography>
-                <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%' }} onClick={handleNavigateToPrivacy}>Política de Privacidad</Typography>
+                <Typography component={Link} to="/terms-and-conditions" variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%' }}>Términos & Condiciones</Typography>
+                <Typography component={Link} to="/privacy-policy" variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%' }}>Política de Privacidad</Typography>
               </Box>
             </Box>
             
@@ -130,6 +126,7 @@ const BottomBar = () => {
 const navItemStyle = {
   color: '#b0b0b0',
   cursor: 'pointer',
+  textDecoration: 'none',
   '&:hover': { color: '#fff' },
 };
 

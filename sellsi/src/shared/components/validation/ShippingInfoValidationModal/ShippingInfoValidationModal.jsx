@@ -26,16 +26,7 @@ export const useShippingInfoModal = () => {
     
     // Si está cargando, esperar a que termine
     if (loading) {
-      // Esperar hasta que termine de cargar y luego verificar
-      const checkAfterLoad = () => {
-        if (!isLoadingRef.current && !isCompleteRef.current) {
-          setIsOpen(true);
-        }
-      };
-      
-      // Usar un pequeño delay para permitir que el estado se actualice
-      setTimeout(checkAfterLoad, 100);
-      return false; // No abrir inmediatamente
+      return false; // No abrir mientras sigue cargando
     }
     
     if (!complete) {
@@ -58,15 +49,20 @@ export const useShippingInfoModal = () => {
   // Espera activa a que termine la validación (con timeout) y retorna el estado final
   const awaitValidation = async (timeoutMs = 4000, stepMs = 120) => {
     const startedAt = Date.now();
-    if (!isLoadingRef.current) return { complete: isCompleteRef.current };
+    if (!isLoadingRef.current) {
+      return {
+        complete: isCompleteRef.current,
+        isLoading: false,
+      };
+    }
     return new Promise(resolve => {
       const tick = () => {
         if (!isLoadingRef.current) {
-          resolve({ complete: isCompleteRef.current });
+          resolve({ complete: isCompleteRef.current, isLoading: false });
           return;
         }
         if (Date.now() - startedAt >= timeoutMs) {
-          resolve({ complete: isCompleteRef.current });
+          resolve({ complete: isCompleteRef.current, isLoading: isLoadingRef.current });
           return;
         }
         setTimeout(tick, stepMs);

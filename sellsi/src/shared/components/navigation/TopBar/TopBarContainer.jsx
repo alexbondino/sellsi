@@ -1,6 +1,6 @@
 // Fase 3: Container que orquesta hooks y pasa datos a TopBarView
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -180,7 +180,8 @@ export default function TopBarContainer({
 
   const getProfileRoute = flag =>
     flag ? '/buyer/profile' : '/supplier/profile';
-  const goToProfile = useCallback(() => navigate(getProfileRoute(isBuyer)), [navigate, isBuyer]);
+  const profileRoute = getProfileRoute(isBuyer);
+  const documentsRoute = currentRole === 'supplier' ? '/supplier/my-documents' : '/buyer/my-documents';
 
   // Handler logo (home / marketplace according a role / or landing)
   const handleLogoClick = useCallback(() => {
@@ -244,7 +245,8 @@ export default function TopBarContainer({
   const cartButtonNode = useMemo(() => (
     <Tooltip title="Carrito" arrow>
       <IconButton
-        onClick={() => navigate('/buyer/cart')}
+        component={RouterLink}
+        to="/buyer/cart"
         sx={CART_BTN_SX}
         disableRipple
         disableFocusRipple
@@ -254,7 +256,7 @@ export default function TopBarContainer({
         </Badge>
       </IconButton>
     </Tooltip>
-  ), [itemsInCart, navigate]);
+  ), [itemsInCart]);
 
   // Memoize paddingX to prevent TopBarView re-renders
   const paddingX = useMemo(() => {
@@ -335,7 +337,8 @@ export default function TopBarContainer({
         </Button>
         <Tooltip title="Mis Documentos" arrow>
           <IconButton
-            onClick={() => navigate(currentRole === 'supplier' ? '/supplier/my-documents' : '/buyer/my-documents')}
+            component={RouterLink}
+            to={documentsRoute}
             sx={DOCS_BTN_SX}
             aria-label="Mis Documentos"
             disableRipple
@@ -353,7 +356,7 @@ export default function TopBarContainer({
     currentRole,
     isRoleLoading,
     handleRoleToggleChange,
-    navigate,
+    documentsRoute,
     handleOpenFeedback,
   ]);
 
@@ -425,20 +428,18 @@ export default function TopBarContainer({
       </MenuItem>,
       <MenuItem
         key="my-documents"
-        onClick={() => {
-          navigate(currentRole === 'supplier' ? '/supplier/my-documents' : '/buyer/my-documents');
-          handleCloseMobileMenu();
-        }}
+        component={RouterLink}
+        to={documentsRoute}
+        onClick={handleCloseMobileMenu}
       >
         <DescriptionIcon sx={{ mr: 1, fontSize: '1.2rem' }} />
         Mis Documentos
       </MenuItem>,
       <MenuItem
         key="profile"
-        onClick={() => {
-          goToProfile();
-          handleCloseMobileMenu();
-        }}
+        component={RouterLink}
+        to={profileRoute}
+        onClick={handleCloseMobileMenu}
       >
         Mi Perfil
       </MenuItem>,
@@ -455,9 +456,9 @@ export default function TopBarContainer({
     currentRole,
     isRoleLoading,
     handleRoleToggleChange,
-    goToProfile,
     handleLogout,
-    navigate,
+    documentsRoute,
+    profileRoute,
   ]);
 
   const handleMobileSearchButton = useCallback(() => submitMobileSearch(), [submitMobileSearch]);
@@ -563,7 +564,7 @@ export default function TopBarContainer({
         onOpenNotif={handleOpenNotif}
         notifMenuOpen={Boolean(notifAnchor)}
         onLogoClick={handleLogoClick}
-        onGoToProfile={goToProfile}
+        profileRoute={profileRoute}
         onLogout={handleLogout}
         userName={authUserProfile?.user_nm || ''}
         userEmail={authUserProfile?.email || session?.user?.email || ''}
